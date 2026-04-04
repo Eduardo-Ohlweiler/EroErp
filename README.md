@@ -1,6 +1,6 @@
 Tecnologias Utilizadas
 
-================ Backend ==============
+================ Backend ===============
 - Java 21 & Spring Boot 3.5
 - Spring Security & JWT: Autenticação e autorização segura.
 - Spring Data JPA: Persistência de dados.
@@ -30,3 +30,18 @@ Como Executar o Backend
 - Rodando a aplicaçãoa a API estará disponível em http://localhost:8080.
 - Documentação da API:
   - Após iniciar o servidor, você pode visualizar e testar os endpoints através do Swagger em: http://localhost:8080/swagger-ui.html
+
+
+================ Frontend ===============
+- Pré-requisitos:
+    - Node.js (LTS) e NPM/Yarn.
+
+1. Instalação:
+   - Navegue até a pasta do frontend, abra o terminal bash e execute:
+     npm install
+
+2. Execução:
+  - Inicie o servidor de desenvolvimento:
+     `npm run dev`
+     
+  - O frontend estará disponível em: http://localhost:5173
