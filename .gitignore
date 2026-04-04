@@ -1,0 +1,43 @@
+# ------------------
+# Frontend (React / Vite)
+# ------------------
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node / build
+ero/node_modules
+ero/dist
+ero/dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ------------------
+# Backend (Java / Spring Boot)
+# ------------------
+ero-erp-api/target
+ero-erp-api/.classpath
+ero-erp-api/.project
+ero-erp-api/.settings
+
+# ------------------
+# Outros
+# ------------------
+# Mac/Linux
+*.swp
+*.tmp

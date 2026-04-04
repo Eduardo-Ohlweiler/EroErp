@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004-create-usuario" author="eduardo">
+
+        <createTable tableName="usuario">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="nome" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="senha" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="telefone" type="VARCHAR(20)"/>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"/>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="created_by" type="BIGINT"/>
+
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="updated_by" type="BIGINT"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="usuario"
+                baseColumnNames="cliente_id"
+                referencedTableName="cliente"
+                referencedColumnNames="id"
+                constraintName="fk_usuario_cliente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="usuario"
+                baseColumnNames="created_by"
+                referencedTableName="usuario"
+                referencedColumnNames="id"
+                constraintName="fk_usuario_created_by"/>
+
+        <addForeignKeyConstraint
+                baseTableName="usuario"
+                baseColumnNames="updated_by"
+                referencedTableName="usuario"
+                referencedColumnNames="id"
+                constraintName="fk_usuario_updated_by"/>
+
+        <addUniqueConstraint
+                tableName="usuario"
+                columnNames="cliente_id, email"
+                constraintName="uk_usuario_email_cliente"/>
+
+        <createIndex tableName="usuario" indexName="idx_usuario_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
