@@ -46,16 +46,19 @@ public class JwtFilter extends OncePerRequestFilter {
                         .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                         .collect(Collectors.toList());
 
-                Authentication auth = new UsernamePasswordAuthenticationToken(
-                        id, null, authorities
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                    Authentication auth = new UsernamePasswordAuthenticationToken(
+                            id, null, authorities
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             } catch (ExpiredJwtException e) {
+                SecurityContextHolder.clearContext();
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("Token expirado. Faça login novamente");
                 return;
             } catch (JwtException | IllegalArgumentException e) {
+                SecurityContextHolder.clearContext();
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("Token inválido.");
                 return;

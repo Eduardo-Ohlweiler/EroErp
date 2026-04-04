@@ -34,7 +34,6 @@ public class JwtUtil {
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
-
     }
 
     //pegar o id
@@ -46,14 +45,14 @@ public class JwtUtil {
     //pegar roles
     public List<String> getRoles(String token) {
         Claims claims = getClaims(token);
-        return claims.get("roles", List.class);
+        return (List<String>) claims.get("roles");
     }
 
     private Claims getClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
-                .parseClaimsJwt(token)
+                .parseClaimsJws(token)
                 .getBody();
     }
 }
