@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
-public class GlobalExceptionHandler extends RuntimeException{
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<Object> applicationException(ApplicationException e, WebRequest request){

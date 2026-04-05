@@ -1,5 +1,6 @@
 package com.api.ero_erp.config;
 
+import com.api.ero_erp.exceptions.UnauthorizedException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -54,14 +55,10 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             } catch (ExpiredJwtException e) {
                 SecurityContextHolder.clearContext();
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Token expirado. Faça login novamente");
-                return;
+                throw new UnauthorizedException("JWT-001: Token expirado");
             } catch (JwtException | IllegalArgumentException e) {
                 SecurityContextHolder.clearContext();
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Token inválido.");
-                return;
+                throw new UnauthorizedException("JWT-002: Token inválido");
             }
         }
         filterChain.doFilter(request, response);
