@@ -2,8 +2,6 @@ package com.api.ero_erp.role.entity;
 
 import jakarta.persistence.*;
 
-import java.util.Objects;
-
 @Entity
 @Table(name = "role")
 public class Role {
@@ -21,10 +19,6 @@ public class Role {
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getNome() {

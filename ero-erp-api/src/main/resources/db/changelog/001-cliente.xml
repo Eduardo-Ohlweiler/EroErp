@@ -15,12 +15,18 @@
                 <constraints nullable="false"/>
             </column>
 
-            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
 
             <column name="telefone" type="VARCHAR(20)"/>
             <column name="email" type="VARCHAR(255)"/>
 
-            <column name="created_at" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
     </changeSet>
 
