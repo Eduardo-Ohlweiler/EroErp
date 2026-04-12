@@ -32,7 +32,9 @@
 
             <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"/>
 
-            <column name="created_at" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
             <column name="created_by" type="BIGINT"/>
 
             <column name="updated_at" type="TIMESTAMP"/>
@@ -62,8 +64,8 @@
 
         <addUniqueConstraint
                 tableName="usuario"
-                columnNames="cliente_id, email"
-                constraintName="uk_usuario_email_cliente"/>
+                columnNames="email"
+                constraintName="uk_usuario_email"/>
 
         <createIndex tableName="usuario" indexName="idx_usuario_cliente">
             <column name="cliente_id"/>
