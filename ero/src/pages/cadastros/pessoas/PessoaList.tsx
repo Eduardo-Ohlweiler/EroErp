@@ -4,7 +4,6 @@ import { TForm } from "../../../components/tform"
 import { TEntry } from "../../../components/tentry"
 import { TButton } from "../../../components/tbutton"
 
-// pages/cadastros/pessoas/PessoaForm.tsx
 export function PessoaList() {
   const navigate = useNavigate()
 

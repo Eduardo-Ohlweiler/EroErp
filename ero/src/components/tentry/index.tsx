@@ -1,4 +1,3 @@
-// components/adianti/TEntry.tsx
 interface TEntryProps {
   name: string
   label: string

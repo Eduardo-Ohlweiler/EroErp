@@ -1,4 +1,3 @@
-// components/adianti/TPage.tsx
 interface TPageProps {
   title: string
   subtitle?: string
