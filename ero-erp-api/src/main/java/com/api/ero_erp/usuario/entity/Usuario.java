@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "usuario") // 🔥 simples, sem unique aqui
+@Table(name = "usuario")
 @Getter
 @Setter
 @NoArgsConstructor

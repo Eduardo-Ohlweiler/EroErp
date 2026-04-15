@@ -14,7 +14,7 @@ export default function Header({ toggleMenu }: Props) {
         ☰
       </button>
 
-      <h1 className="ml-4 text-sm text-gray-300">
+      <h1 className="ml-4 text-lg text-gray-300">
         EroErp
       </h1>
 

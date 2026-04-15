@@ -238,7 +238,7 @@ export default function Sidebar({ collapsed }: SideBarProps) {
 
       <div className="px-4 py-5 text-lg font-semibold tracking-wide border-b border-[#30363d] text-[#e6edf3] flex justify-center">
 
-        {collapsed ? "AF" : "AvaliaFit"}
+        {collapsed ? "Ero" : "EroErp"}
 
       </div>
 
@@ -255,7 +255,7 @@ export default function Sidebar({ collapsed }: SideBarProps) {
       {!collapsed && (
         <div className="flex justify-center p-4 text-xs text-[#6e7681] border-t border-[#30363d]">
 
-          AvaliaFit
+          EroErp
 
         </div>
       )}
