@@ -31,7 +31,7 @@ export function TEntry({
   return (
     <div
       className="flex flex-col gap-1"
-      style={{ width }} // 👈 aqui está o controle real
+      style={{ width }} 
     >
 
       <label className="text-sm text-[#9da5b4]">

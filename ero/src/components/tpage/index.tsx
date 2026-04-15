@@ -3,7 +3,7 @@ interface TPageProps {
   subtitle?: string
   breadcrumb?: string[]
   children: React.ReactNode
-  actions?: React.ReactNode // botões no canto superior direito
+  actions?: React.ReactNode 
 }
 
 export function TPage({ title, subtitle, breadcrumb, children, actions }: TPageProps) {
