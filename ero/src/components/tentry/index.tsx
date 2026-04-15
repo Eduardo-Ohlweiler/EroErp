@@ -1,11 +1,12 @@
 interface TEntryProps {
   name: string
   label: string
-  type?: "text" | "email" | "password" | "number" | "date" | "tel"
+  type?: "text" | "email" | "password" | "number" | "date" | "tel" | "hidden"
   placeholder?: string
   required?: boolean
   defaultValue?: string
   disabled?: boolean
+  width?: string
   hint?: string          // texto de ajuda abaixo do campo
   colSpan?: 1 | 2 | 3   // para ocupar mais colunas no grid
   onChange?: (value: string) => void
@@ -21,13 +22,17 @@ export function TEntry({
   disabled,
   hint,
   colSpan,
+  width = "100%",
   onChange
 }: TEntryProps) {
 
   const spanClass = colSpan ? `col-span-${colSpan}` : ""
 
   return (
-    <div className={`flex flex-col gap-1 ${spanClass}`}>
+    <div
+      className="flex flex-col gap-1"
+      style={{ width }} // 👈 aqui está o controle real
+    >
 
       <label className="text-sm text-[#9da5b4]">
         {label}
@@ -42,7 +47,7 @@ export function TEntry({
         defaultValue={defaultValue}
         disabled={disabled}
         onChange={(e) => onChange?.(e.target.value)}
-        className="bg-[#0e1116] border border-[#30363d] rounded-md px-3 py-2 text-sm
+        className="w-full bg-[#0e1116] border border-[#30363d] rounded-md px-3 py-2 text-sm
         text-[#e6edf3] placeholder-[#6e7681]
         focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
         disabled:opacity-50 disabled:cursor-not-allowed
