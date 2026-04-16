@@ -5,7 +5,7 @@ interface TColProps {
 
 export function TCol({ children, flex = 1 }: TColProps) {
   return (
-    <div style={{ flex }}>
+    <div style={{ flex, minWidth: 0 }}>
       {children}
     </div>
   )
