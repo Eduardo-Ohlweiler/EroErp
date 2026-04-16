@@ -31,9 +31,9 @@ export function TCombo({
   return (
     <div className="flex flex-col gap-1" style={{ width }}>
 
-      <label className="text-sm text-[#9da5b4]">
+      <label className="text-sm text-[var(--text-secondary)]">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-[var(--danger)] ml-1">*</span>}
       </label>
 
       <select
@@ -42,22 +42,22 @@ export function TCombo({
         disabled={disabled}
         defaultValue={defaultValue ?? ""}
         onChange={(e) => onChange?.(e.target.value)}
-        className="w-full bg-[#0e1116] border border-[#30363d] rounded-md px-3 py-2 text-sm
-        text-[#e6edf3]
-        focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+        className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-md px-3 py-2 text-sm
+        text-[var(--text-primary)]
+        focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]
         disabled:opacity-50 disabled:cursor-not-allowed transition"
       >
-        <option value="" disabled className="text-[#6e7681]">
+        <option value="" disabled className="text-[var(--text-muted)]">
           {placeholder}
         </option>
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value} className="bg-[#0e1116]">
+          <option key={opt.value} value={opt.value} className="bg-[var(--bg-input)]">
             {opt.label}
           </option>
         ))}
       </select>
 
-      {hint && <p className="text-xs text-[#6e7681]">{hint}</p>}
+      {hint && <p className="text-xs text-[var(--text-muted)]">{hint}</p>}
 
     </div>
   )

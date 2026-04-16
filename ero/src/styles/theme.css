@@ -1,0 +1,87 @@
+/* src/styles/theme.css */
+
+:root {
+  /* Fundo */
+  --bg-base:        #f4f5f7;
+  --bg-surface:     #ffffff;
+  --bg-hover:       #e8eaed;
+  --bg-input:       #ffffff;
+  --bg-sidebar:     #1c2b39;
+  --bg-header:      #1c2b39;
+
+  /* Bordas */
+  --border:         #c8cdd4;
+  --border-strong:  #9aa0a8;
+
+  /* Texto */
+  --text-primary:   #1a1f25;
+  --text-secondary: #4a5568;
+  --text-muted:     #718096;
+  --text-inverse:   #ffffff;
+  --text-sidebar:   #a0aec0;
+  --text-sidebar-active: #ffffff;
+
+  /* Accent — azul TOTVS */
+  --accent:         #0068b0;
+  --accent-hover:   #005290;
+  --accent-light:   #e6f0f9;
+
+  /* Status */
+  --danger:         #c0392b;
+  --danger-hover:   #a93226;
+  --success:        #1e7e34;
+  --success-hover:  #196a2c;
+  --warning:        #d68910;
+  --warning-hover:  #b7770d;
+
+  /* Metálico — superfícies especiais */
+  --metal-100:      #f0f2f5;
+  --metal-200:      #dde1e7;
+  --metal-300:      #c1c7d0;
+  --metal-400:      #97a0af;
+  --metal-500:      #6b778c;
+  --metal-600:      #42526e;
+  --metal-700:      #253858;
+  --metal-800:      #1c2b39;
+  --metal-900:      #0e1624;
+}
+
+[data-theme="dark"] {
+  --bg-base:        #111820;
+  --bg-surface:     #1a2332;
+  --bg-hover:       #243040;
+  --bg-input:       #1a2332;
+  --bg-sidebar:     #0e1624;
+  --bg-header:      #0e1624;
+
+  --border:         #2d3f55;
+  --border-strong:  #3d5270;
+
+  --text-primary:   #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-muted:     #6b778c;
+  --text-inverse:   #ffffff;
+  --text-sidebar:   #7a8fa6;
+  --text-sidebar-active: #ffffff;
+
+  --accent:         #1a85d4;
+  --accent-hover:   #2196e8;
+  --accent-light:   #0d2a45;
+
+  --danger:         #e74c3c;
+  --danger-hover:   #c0392b;
+  --success:        #27ae60;
+  --success-hover:  #1e7e34;
+  --warning:        #f39c12;
+  --warning-hover:  #d68910;
+
+  --metal-100:      #1a2332;
+  --metal-200:      #243040;
+  --metal-300:      #2d3f55;
+  --metal-400:      #3d5270;
+  --metal-500:      #4a6080;
+  --metal-600:      #6b778c;
+  --metal-700:      #8899aa;
+  --metal-800:      #a0aec0;
+  --metal-900:      #e2e8f0;
+}

@@ -1,25 +1,37 @@
-import { useNavigate } from "react-router-dom"
-import { TPage } from "../../../components/tpage"
-import { TForm, TFormActionsLeft, TFormActionsRight, TFormFooter } from "../../../components/tform"
-import { TEntry } from "../../../components/tentry"
-import { TRow } from "../../../components/trow"
-import { TCol } from "../../../components/tcol"
-import { TButton } from "../../../components/tbutton"
-import { TSpace } from "../../../components/tspace"
-import { TRadio } from "../../../components/tradio"
-import { TCombo } from "../../../components/tcombo"
-import { TCheckbox } from "../../../components/tcheckbox"
+import { useNavigate } from "react-router-dom";
+import { TPage } from "../../../components/tpage";
+import {
+  TForm,
+  TFormActionsLeft,
+  TFormActionsRight,
+  TFormFooter,
+} from "../../../components/tform";
+import { TEntry } from "../../../components/tentry";
+import { TRow } from "../../../components/trow";
+import { TCol } from "../../../components/tcol";
+import { TButton } from "../../../components/tbutton";
+import { TSpace } from "../../../components/tspace";
+import { TRadio } from "../../../components/tradio";
+import { TCombo } from "../../../components/tcombo";
+import { TCheckbox } from "../../../components/tcheckbox";
 
 export function PessoaList() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <TPage title="Nova Pessoa" breadcrumb={["Cadastros", "Pessoas"]}>
       <TForm onSubmit={console.log}>
-
         <TRow>
           <TCol>
-            <TEntry name="nome" label="Nome" required/>
+            <TEntry name="nome" label="Nome"  />
+          </TCol>
+        </TRow>
+        <TRow>
+          <TCol>
+            <TEntry name="nome" label="Nome" required />
+          </TCol>
+          <TCol>
+            <TEntry name="nome" label="Nome" required />
           </TCol>
         </TRow>
         <TRow>
@@ -55,52 +67,96 @@ export function PessoaList() {
 
         <TRow>
           <TCol>
-            <TEntry name="cpf"      label="CPF"      mask="cpf" width="220px"/>
+            <TEntry name="cpf" label="CPF" mask="cpf" width="220px" />
           </TCol>
         </TRow>
         <TRow>
-          <TEntry name="celular"  label="Celular"  mask="celular" width="220px"/>
+          <TEntry name="celular" label="Celular" mask="celular" width="220px" />
         </TRow>
         <TRow>
-          <TEntry name="cep"      label="CEP"      mask="cep" width="220px"/>
+          <TEntry name="cep" label="CEP" mask="cep" width="220px" />
         </TRow>
         <TRow>
-          <TEntry name="valor"    label="Valor"    mask="moeda" width="220px"/>
+          <TEntry name="valor" label="Valor" mask="moeda" width="220px" />
         </TRow>
         <TRow>
-          <TEntry name="obs"      label="Obs"      maxLength={200} hint="Máximo 200 caracteres" />
+          <TEntry
+            name="obs"
+            label="Obs"
+            maxLength={200}
+            hint="Máximo 200 caracteres"
+          />
         </TRow>
 
         <TRow>
-    <TCol>
-      <TCombo
-        name="estado"
-        label="Estado"
-        options={[
-          { value: "RS", label: "Rio Grande do Sul" },
-          { value: "SP", label: "São Paulo" },
-        ]}
-      />
-    </TCol>
-    <TCol>
-      <TRadio
-        name="tipo"
-        label="Tipo"
-        options={[
-          { value: "F", label: "Física" },
-          { value: "J", label: "Jurídica" },
-        ]}
-        defaultValue="F"
-      />
-    </TCol>
-  </TRow>
+          <TCol>
+            <TCombo
+              name="estado"
+              label="Estado"
+              options={[
+                { value: "RS", label: "Rio Grande do Sul" },
+                { value: "SP", label: "São Paulo" },
+              ]}
+            />
+          </TCol>
+          <TCol>
+            <TRadio
+              name="tipo"
+              label="Tipo"
+              direction="column"
+              options={[
+                { value: "F", label: "Física" },
+                { value: "J", label: "Jurídica" },
+              ]}
+              defaultValue="F"
+            />
+          </TCol>
+        </TRow>
+        <TRow>
+          <TCol>
+            <TRadio
+              name="tipo"
+              label="Tipo"
+              options={[
+                { value: "F", label: "Física" },
+                { value: "J", label: "Jurídica" },
+                { value: "J", label: "Outros" },
+              ]}
+              defaultValue="F"
+            />
+          </TCol>
+        </TRow>
 
-  <TRow>
-    <TCol><TCheckbox name="ativo"     label="Ativo" defaultChecked /></TCol>
-    <TCol><TCheckbox name="newsletter" label="Receber newsletter" /></TCol>
-  </TRow>
+        <TCheckbox
+          name="dias"
+          label="Dias de funcionamento"
+          direction="row"
+          defaultValues={["seg", "ter"]}
+          options={[
+            { value: "seg", label: "Segunda" },
+            { value: "ter", label: "Terça" },
+            { value: "qua", label: "Quarta" },
+            { value: "qui", label: "Quinta" },
+            { value: "sex", label: "Sexta" },
+          ]}
+          onChange={(values) => console.log(values)}
+        />
+
+        <TCheckbox
+          name="dias"
+          label="Dias de funcionamento"
+          direction="column"
+          defaultValues={["seg", "ter"]}
+          options={[
+            { value: "seg", label: "Segunda" },
+            { value: "ter", label: "Terça" },
+            { value: "qua", label: "Quarta" },
+            { value: "qui", label: "Quinta" },
+            { value: "sex", label: "Sexta" },
+          ]}
+          onChange={(values) => console.log(values)}
+        />
         <TFormFooter>
-
           <TFormActionsLeft>
             <TButton
               label="Voltar"
@@ -110,22 +166,12 @@ export function PessoaList() {
           </TFormActionsLeft>
 
           <TFormActionsRight>
-            <TButton
-              label="Limpar"
-              variant="secondary"
-              type="reset"
-            />
+            <TButton label="Limpar" variant="secondary" type="reset" />
 
-            <TButton
-              label="Salvar"
-              type="submit"
-              variant="primary"
-            />
+            <TButton label="Salvar" type="submit" variant="primary" />
           </TFormActionsRight>
-
         </TFormFooter>
-
       </TForm>
     </TPage>
-  )
+  );
 }

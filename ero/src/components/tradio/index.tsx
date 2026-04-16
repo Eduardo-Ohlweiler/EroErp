@@ -15,26 +15,19 @@ interface TRadioProps {
 }
 
 export function TRadio({
-  name,
-  label,
-  options,
-  defaultValue,
-  disabled,
-  direction = "row",
-  hint,
-  onChange
+  name, label, options, defaultValue, disabled, direction = "row", hint, onChange
 }: TRadioProps) {
   return (
     <div className="flex flex-col gap-1">
 
-      <span className="text-sm text-[#9da5b4]">{label}</span>
+      <span className="text-sm text-[var(--text-secondary)]">{label}</span>
 
-      <div className={`flex gap-4 ${direction === "column" ? "flex-col" : "flex-row flex-wrap"}`}>
+      <div className={`flex gap-4 ${direction === "column" ? "flex-col ml-3" : "flex-row flex-wrap"}`}>
         {options.map((opt) => (
           <label
             key={opt.value}
-            className={`flex items-center gap-2 cursor-pointer select-none text-sm text-[#9da5b4]
-              ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-[#e6edf3]"}`}
+            className={`flex items-center gap-2 cursor-pointer select-none text-sm text-[var(--text-secondary)]
+              ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-[var(--text-primary)]"}`}
           >
             <input
               type="radio"
@@ -43,14 +36,14 @@ export function TRadio({
               defaultChecked={defaultValue === opt.value}
               disabled={disabled}
               onChange={() => onChange?.(opt.value)}
-              className="accent-blue-500 cursor-pointer"
+              className="cursor-pointer accent-[var(--accent)]"
             />
             {opt.label}
           </label>
         ))}
       </div>
 
-      {hint && <p className="text-xs text-[#6e7681]">{hint}</p>}
+      {hint && <p className="text-xs text-[var(--text-muted)]">{hint}</p>}
 
     </div>
   )

@@ -1,34 +1,28 @@
 interface TFormProps {
   onSubmit: (data: Record<string, string>) => void
   children: React.ReactNode
-  submitLabel?: string
-  onCancel?: () => void
 }
 
 export function TForm({ onSubmit, children }: TFormProps) {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-
     const form = e.currentTarget
     const inputs = form.querySelectorAll<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >("input, select, textarea")
-
     const data: Record<string, string> = {}
-
     inputs.forEach((el) => {
       if (!el.name) return
       data[el.name] = el.value
     })
-
     onSubmit(data)
   }
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-[#161b22] border border-[#30363d] rounded-lg p-6"
+      className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg p-6"
     >
       <div className="flex flex-col gap-4">
         {children}
@@ -37,13 +31,9 @@ export function TForm({ onSubmit, children }: TFormProps) {
   )
 }
 
-interface TFormFooterProps {
-  children: React.ReactNode
-}
-
-export function TFormFooter({ children }: TFormFooterProps) {
+export function TFormFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex justify-between mt-6 pt-4 border-t border-[#30363d]">
+    <div className="flex justify-between mt-6 pt-4 border-t border-[var(--border)]">
       {children}
     </div>
   )
