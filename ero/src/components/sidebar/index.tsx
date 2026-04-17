@@ -9,22 +9,24 @@ interface SideBarProps {
 
 export default function Sidebar({ collapsed }: SideBarProps) {
 
-  const location = useLocation()
-  const [open, setOpen] = useState<Record<string, boolean>>({})
+  const location              = useLocation()
+  const [open, setOpen]       = useState<Record<string, boolean>>({})
   const [hovered, setHovered] = useState<string | null>(null)
-  const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const closeTimeout          = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function toggle(label: string) {
     setOpen((prev) => ({ ...prev, [label]: !prev[label] }))
   }
 
   function isActive(path?: string) {
-    if (!path) return false
+    if (!path) 
+      return false
     return location.pathname.startsWith(path)
   }
 
   function handleMouseEnter(label: string) {
-    if (closeTimeout.current) clearTimeout(closeTimeout.current)
+    if (closeTimeout.current) 
+      clearTimeout(closeTimeout.current)
     setHovered(label)
   }
 

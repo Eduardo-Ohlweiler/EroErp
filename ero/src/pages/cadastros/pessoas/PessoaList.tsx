@@ -14,6 +14,7 @@ import { TSpace } from "../../../components/tspace";
 import { TRadio } from "../../../components/tradio";
 import { TCombo } from "../../../components/tcombo";
 import { TCheckbox } from "../../../components/tcheckbox";
+import { TText } from "../../../components/ttext";
 
 export function PessoaList() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export function PessoaList() {
       <TForm onSubmit={console.log}>
         <TRow>
           <TCol>
-            <TEntry name="nome" label="Nome"  />
+            <TEntry name="nome" label="Nome" />
           </TCol>
         </TRow>
         <TRow>
@@ -155,6 +156,16 @@ export function PessoaList() {
             { value: "sex", label: "Sexta" },
           ]}
           onChange={(values) => console.log(values)}
+        />
+
+        <TText
+          name="observacao"
+          label="Observação:"
+          placeholder="Digite aqui..."
+          maxLength={500}
+          height="150px"
+          hint="Campo opcional"
+          resize="vertical"
         />
         <TFormFooter>
           <TFormActionsLeft>

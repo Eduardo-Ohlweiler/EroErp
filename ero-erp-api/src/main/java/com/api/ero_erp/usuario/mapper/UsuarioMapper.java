@@ -3,7 +3,9 @@ package com.api.ero_erp.usuario.mapper;
 import com.api.ero_erp.role.entity.Role;
 import com.api.ero_erp.usuario.dtos.UsuarioResponseDto;
 import com.api.ero_erp.usuario.entity.Usuario;
+import org.springframework.stereotype.Component;
 
+@Component
 public class UsuarioMapper {
     public UsuarioResponseDto toDTO(Usuario usuario) {
 
