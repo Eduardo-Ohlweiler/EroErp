@@ -15,6 +15,10 @@ import { TRadio } from "../../../components/tradio";
 import { TCombo } from "../../../components/tcombo";
 import { TCheckbox } from "../../../components/tcheckbox";
 import { TText } from "../../../components/ttext";
+import { TDbCombo } from "../../../components/tdbcombo";
+import { TUniqueSearch } from "../../../components/tuniquesearch";
+import { TDbCheckbox } from "../../../components/tdbcheckbox";
+import { TDbRadio } from "../../../components/tdbradio";
 
 export function PessoaList() {
   const navigate = useNavigate();
@@ -167,6 +171,62 @@ export function PessoaList() {
           hint="Campo opcional"
           resize="vertical"
         />
+
+        <TRow>
+          <TCol>
+            <TDbCombo
+              name="clienteId"
+              label="Cliente"
+              url="/clientes"
+              valueField="id"
+              displayField="nome"
+              searchField="nome"
+              minLength={2}
+            />
+          </TCol>
+          <TCol>
+            <TDbCombo
+              name="clienteId"
+              label="Cliente"
+              url="/clientes"
+              valueField="id"
+              displayField={(item) => `${item.nome} (${item.email})`}
+              searchField="nome"
+            />
+          </TCol>
+        </TRow>
+        <TRow>
+          <TCol>
+            <TUniqueSearch
+              name="clienteId"
+              label="Cliente"
+              url="/clientes"
+              valueField="id"
+              displayField={(item) => `${item.nome} (${item.email})`}
+              searchField="nome"
+              minLength={2}
+              onChange={(value, item) => console.log(value, item)}
+              width="80%"
+            />
+          </TCol>
+        </TRow>
+        <TDbCheckbox
+          name="roleIds"
+          label="Perfis de acesso"
+          url="/roles"
+          valueField="id"
+          labelField="nome"
+          direction="row"
+        />
+
+        <TDbRadio
+          name="roleId"
+          label="Perfil principal"
+          url="/roles"
+          valueField="id"
+          labelField="nome"
+        />
+
         <TFormFooter>
           <TFormActionsLeft>
             <TButton

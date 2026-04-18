@@ -6,6 +6,10 @@ import { ProdutoList } from "../pages/cadastros/produtos/ProdutoList";
 import { PrivateRoute } from "./PrivateRoute";
 import { Login } from "../pages/public/auth/Login";
 import { PublicRoute } from "./PublicRoute";
+import { TRoleRoute } from "./TRoleRoute";
+import ClienteList from "../pages/administrativo/clientes/ClienteList";
+import UsuarioList from "../pages/administrativo/usuarios/UsuarioList";
+import ClienteForm from "../pages/administrativo/clientes/ClienteForm";
 
 export function Router() {
   return (
@@ -20,6 +24,16 @@ export function Router() {
         {/* rotas privadas */}
         <Route element={<PrivateRoute />}>
           <Route element={<Layout />}>
+            
+            {/* rotas só para SUPERADMIN */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN"]} />}>
+                <Route path="/clientes"         element={<ClienteList />} />
+                <Route path="/clientes/novo"    element={<ClienteForm />} />
+                <Route path="/clientes/:id"     element={<ClienteForm />} />
+                
+                <Route path="/usuarios"         element={<UsuarioList />} />
+            </Route>
+
             <Route path="/" element={<DashBoard />} />
             <Route path="/pessoas" element={<PessoaList />} />
             <Route path="/produtos" element={<ProdutoList />} />

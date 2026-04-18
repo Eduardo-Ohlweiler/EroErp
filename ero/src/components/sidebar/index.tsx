@@ -1,6 +1,7 @@
 import { useState, useRef } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { menu } from "../../config/menu"
+import { useAuth } from "../../hooks/useAuth"
 import type { MenuItem } from "../../types/MenuItem"
 
 interface SideBarProps {
@@ -10,6 +11,7 @@ interface SideBarProps {
 export default function Sidebar({ collapsed }: SideBarProps) {
 
   const location              = useLocation()
+  const { hasRole }           = useAuth()
   const [open, setOpen]       = useState<Record<string, boolean>>({})
   const [hovered, setHovered] = useState<string | null>(null)
   const closeTimeout          = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -19,14 +21,12 @@ export default function Sidebar({ collapsed }: SideBarProps) {
   }
 
   function isActive(path?: string) {
-    if (!path) 
-      return false
+    if (!path) return false
     return location.pathname.startsWith(path)
   }
 
   function handleMouseEnter(label: string) {
-    if (closeTimeout.current) 
-      clearTimeout(closeTimeout.current)
+    if (closeTimeout.current) clearTimeout(closeTimeout.current)
     setHovered(label)
   }
 
@@ -34,10 +34,24 @@ export default function Sidebar({ collapsed }: SideBarProps) {
     closeTimeout.current = setTimeout(() => setHovered(null), 400)
   }
 
+  function temAcesso(item: MenuItem): boolean {
+    if (!item.roles || item.roles.length === 0) return true
+    return item.roles.some((role) => hasRole(role))
+  }
+
+  function filtrarMenu(items: MenuItem[]): MenuItem[] {
+    return items
+      .filter(temAcesso)
+      .map((item) => ({
+        ...item,
+        children: item.children ? filtrarMenu(item.children) : undefined
+      }))
+  }
+
   function renderMenu(items: MenuItem[], level = 0): React.ReactNode {
-    return items.map((item) => {
+    return filtrarMenu(items).map((item) => {
       const padding = level > 0 ? "ml-5" : ""
-      const Icon = item.icon
+      const Icon    = item.icon
 
       if (item.children && item.children.length > 0) {
         return (
@@ -51,7 +65,7 @@ export default function Sidebar({ collapsed }: SideBarProps) {
               onClick={() => !collapsed && toggle(item.label)}
               title={collapsed ? item.label : ""}
               className={`flex items-center justify-between w-full px-3 py-2 text-sm rounded-md transition
-                text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] hover:bg-[var(--bg-hover)] ${padding}`}
+                text-(--text-sidebar) hover:text-(--text-sidebar-active) hover:bg-(--bg-hover) ${padding}`}
             >
               <div className="flex items-center gap-3">
                 {Icon && <Icon size={18} />}
@@ -66,7 +80,7 @@ export default function Sidebar({ collapsed }: SideBarProps) {
 
             {/* submenu normal */}
             {!collapsed && open[item.label] && (
-              <div className="mt-1 space-y-1 border-l border-[var(--border)] ml-3 pl-3">
+              <div className="mt-1 space-y-1 border-l border-(--border) ml-3 pl-3">
                 {renderMenu(item.children, level + 1)}
               </div>
             )}
@@ -76,15 +90,15 @@ export default function Sidebar({ collapsed }: SideBarProps) {
               <div
                 onMouseEnter={() => handleMouseEnter(item.label)}
                 onMouseLeave={() => handleMouseLeave()}
-                className="absolute left-full top-0 ml-2 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-md shadow-xl p-2 min-w-[220px] z-50"
+                className="absolute left-full top-0 ml-2 bg-(--bg-sidebar) border border-(--border) rounded-md shadow-xl p-2 min-w-220px z-50"
               >
                 {item.children.map((child) => {
                   const ChildIcon = child.icon
 
                   if (child.children && child.children.length > 0) {
                     return (
-                      <div key={child.label} className="border-t border-[var(--border)] mt-1 pt-1">
-                        <div className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-sidebar-active)]">
+                      <div key={child.label} className="border-t border-(--border) mt-1 pt-1">
+                        <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--text-sidebar-active)">
                           {ChildIcon && <ChildIcon size={16} />}
                           {child.label}
                         </div>
@@ -95,7 +109,7 @@ export default function Sidebar({ collapsed }: SideBarProps) {
                               key={sub.label}
                               to={sub.path || "#"}
                               className="flex items-center gap-3 px-6 py-2 text-sm rounded-md
-                                text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] hover:bg-[var(--bg-hover)]"
+                                text-(--text-sidebar) hover:text-(--text-sidebar-active) hover:bg-(--bg-hover)"
                             >
                               {SubIcon && <SubIcon size={14} />}
                               {sub.label}
@@ -111,7 +125,7 @@ export default function Sidebar({ collapsed }: SideBarProps) {
                       key={child.label}
                       to={child.path || "#"}
                       className="flex items-center gap-3 px-3 py-2 text-sm rounded-md
-                        text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] hover:bg-[var(--bg-hover)]"
+                        text-(--text-sidebar) hover:text-(--text-sidebar-active) hover:bg-(--bg-hover)"
                     >
                       {ChildIcon && <ChildIcon size={16} />}
                       {child.label}
@@ -138,8 +152,8 @@ export default function Sidebar({ collapsed }: SideBarProps) {
               title={collapsed ? item.label : ""}
               className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition ${padding}
                 ${active
-                  ? "bg-[var(--accent)] text-[var(--text-inverse)]"
-                  : "text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] hover:bg-[var(--bg-hover)]"
+                  ? "bg-(--accent) text-(--text-inverse)"
+                  : "text-(--text-sidebar) hover:text-(--text-sidebar-active) hover:bg-(--bg-hover)"
                 }`}
             >
               {Icon && <Icon size={18} />}
@@ -151,7 +165,7 @@ export default function Sidebar({ collapsed }: SideBarProps) {
               <div
                 onMouseEnter={() => handleMouseEnter(item.label)}
                 onMouseLeave={() => handleMouseLeave()}
-                className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-md px-3 py-2 text-sm text-[var(--text-sidebar-active)] shadow-lg whitespace-nowrap z-50"
+                className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-(--bg-sidebar) border border-(--border) rounded-md px-3 py-2 text-sm text-(--text-sidebar-active) shadow-lg whitespace-nowrap z-50"
               >
                 {item.label}
               </div>
@@ -167,11 +181,11 @@ export default function Sidebar({ collapsed }: SideBarProps) {
   return (
     <aside
       className={`${collapsed ? "w-16" : "w-64"} 
-        bg-[var(--bg-sidebar)] text-[var(--text-sidebar)] min-h-screen flex flex-col 
-        border-r border-[var(--border-strong)] transition-all duration-300`}
+        bg-(--bg-sidebar) text-(--text-sidebar) min-h-screen flex flex-col 
+        border-r border-(--border-strong) transition-all duration-300`}
     >
       {/* LOGO */}
-      <div className="px-4 py-5 text-lg font-semibold tracking-wide border-b border-[var(--border-strong)] text-[var(--text-inverse)] flex justify-center">
+      <div className="px-4 py-5 text-lg font-semibold tracking-wide border-b border-(--border-strong) text-(--text-inverse) flex justify-center">
         {collapsed ? "Ero" : "EroErp"}
       </div>
 
@@ -182,7 +196,7 @@ export default function Sidebar({ collapsed }: SideBarProps) {
 
       {/* FOOTER */}
       {!collapsed && (
-        <div className="flex justify-center p-4 text-xs text-[var(--text-muted)] border-t border-[var(--border-strong)]">
+        <div className="flex justify-center p-4 text-xs text-(--text-muted) border-t border-(--border-strong)">
           EroErp
         </div>
       )}

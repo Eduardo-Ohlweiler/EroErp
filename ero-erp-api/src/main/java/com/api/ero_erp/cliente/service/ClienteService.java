@@ -29,8 +29,8 @@ public class ClienteService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Cliente> getAll(Pageable pageable){
-        return clienteRepository.findAll(pageable);
+    public Page<Cliente> getAll(Pageable pageable, String nome, String email) {
+        return clienteRepository.findAllWithFilters(pageable, nome, email);
     }
 
     @Transactional

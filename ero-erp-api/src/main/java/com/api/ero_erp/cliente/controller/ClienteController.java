@@ -50,10 +50,11 @@ public class ClienteController {
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
     public Page<Cliente> getAll(
-            @PageableDefault(size = 50, sort = "nome")
-            Pageable pageable
+            @PageableDefault(size = 10, sort = "nome") Pageable pageable,
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) String email
     ) {
-        return clienteService.getAll(pageable);
+        return clienteService.getAll(pageable, nome, email);
     }
 
     @Operation(summary = "Cria um novo cliente")

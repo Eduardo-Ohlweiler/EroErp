@@ -18,3 +18,4 @@ interface AuthContextData {
 
 export type { User, AuthContextData }
 export const AuthContext = createContext<AuthContextData>({} as AuthContextData)
+
