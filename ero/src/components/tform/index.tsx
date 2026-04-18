@@ -22,7 +22,7 @@ export function TForm({ onSubmit, children }: TFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg p-6"
+      className="bg-(--bg-surface) border border-(--border) rounded-lg p-6"
     >
       <div className="flex flex-col gap-4">
         {children}
@@ -33,7 +33,7 @@ export function TForm({ onSubmit, children }: TFormProps) {
 
 export function TFormFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex justify-between mt-6 pt-4 border-t border-[var(--border)]">
+    <div className="flex justify-between mt-6 pt-4 border-t border-(--border)">
       {children}
     </div>
   )
