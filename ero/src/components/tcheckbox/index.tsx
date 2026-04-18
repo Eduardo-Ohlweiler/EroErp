@@ -6,14 +6,14 @@ interface TCheckboxOption {
 }
 
 interface TCheckboxProps {
-  name: string
-  label: string
-  options: TCheckboxOption[]
+  name:           string
+  label:          string
+  options:        TCheckboxOption[]
   defaultValues?: string[]
-  disabled?: boolean
-  direction?: "row" | "column"
-  hint?: string
-  onChange?: (values: string[]) => void
+  disabled?:      boolean
+  direction?:     "row" | "column"
+  hint?:          string
+  onChange?:      (values: string[]) => void
 }
 
 export function TCheckbox({
@@ -40,30 +40,30 @@ export function TCheckbox({
   return (
     <div className="flex flex-col gap-1">
 
-      <span className="text-sm text-[var(--text-secondary)]">{label}</span>
+      <span className="text-sm text-(--text-secondary)">{label}</span>
 
       <div className={`flex gap-4 ${direction === "column" ? "flex-col ml-3" : "flex-row flex-wrap"}`}>
         {options.map((opt) => (
           <label
             key={opt.value}
-            className={`flex items-center gap-2 cursor-pointer select-none text-sm text-[var(--text-secondary)]
-              ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-[var(--text-primary)]"}`}
+            className={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary)
+              ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
           >
             <input
-              type="checkbox"
-              name={name}
-              value={opt.value}
+              type          ="checkbox"
+              name          ={name}
+              value         ={opt.value}
               defaultChecked={defaultValues.includes(opt.value)}
-              disabled={disabled}
-              onChange={(e) => handleChange(opt.value, e.target.checked)}
-              className="w-4 h-4 cursor-pointer accent-[var(--accent)]"
+              disabled      ={disabled}
+              onChange      ={(e) => handleChange(opt.value, e.target.checked)}
+              className     ="w-4 h-4 cursor-pointer accent-(--accent)"
             />
             {opt.label}
           </label>
         ))}
       </div>
 
-      {hint && <p className="text-xs text-[var(--text-muted)]">{hint}</p>}
+      {hint && <p className="text-xs text-(--text-muted)">{hint}</p>}
 
     </div>
   )

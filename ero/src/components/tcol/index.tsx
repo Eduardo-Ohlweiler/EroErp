@@ -1,6 +1,6 @@
 interface TColProps {
   children: React.ReactNode
-  flex?: number
+  flex?:    number
 }
 
 export function TCol({ children, flex = 1 }: TColProps) {

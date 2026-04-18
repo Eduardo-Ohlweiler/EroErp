@@ -7,8 +7,8 @@ export function TForm({ onSubmit, children }: TFormProps) {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const form = e.currentTarget
-    const inputs = form.querySelectorAll<
+    const form    = e.currentTarget
+    const inputs  = form.querySelectorAll<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >("input, select, textarea")
     const data: Record<string, string> = {}

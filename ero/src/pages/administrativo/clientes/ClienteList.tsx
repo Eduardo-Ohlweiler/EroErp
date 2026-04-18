@@ -17,6 +17,7 @@ import { TCol } from "../../../components/tcol";
 import { TEntry } from "../../../components/tentry";
 import { TDataGrid } from "../../../components/tdatagrid";
 import { TDataGridFooter } from "../../../components/tdatagridfooter";
+import { useQuestion } from '../../../hooks/useQuestion';
 
 const columns: TDataGridColumn<Cliente>[] = [
   { label: "ID", field: "id", width: "60px", align: "center" },
@@ -41,6 +42,7 @@ const columns: TDataGridColumn<Cliente>[] = [
 
 export default function ClienteList() {
   const navigate                            = useNavigate();
+  const { ask }                             = useQuestion();
   const { showMessage }                     = useMessage();
   const [data,          setData]            = useState<Cliente[]>([]);
   const [loading,       setLoading]         = useState(false);
@@ -51,7 +53,7 @@ export default function ClienteList() {
   const [filtroEmail,   setFiltroEmail]     = useState("");
   const [resetKey, setResetKey] = useState(0)
 
-  const pageSize = 10;
+  const pageSize = 15;
 
   useEffect(() => {
     load();
@@ -172,7 +174,6 @@ export default function ClienteList() {
             </TFormFooter>
         </TForm>
 
-      {/* listagem */}
         <TDataGrid
             columns={columns}
             data={data}
@@ -182,22 +183,36 @@ export default function ClienteList() {
             onRowClick={(row) => navigate(`/clientes/${row.id}`)}
             actions={(row) => (
             <TButton
-                label={row.ativo ? "Bloquear" : "Ativar"}
-                variant={row.ativo ? "block" : "unblock"}
-                onClick={(e) => {
-                e?.stopPropagation();
-                handleToggleAtivo(row.id, row.ativo);
-                }}
+              label={row.ativo ? "Bloquear" : "Ativar"}
+              variant={row.ativo ? "block" : "unblock"}
+              onClick={(e) => {
+                e?.stopPropagation()
+                ask(
+                  `Deseja ${row.ativo ? "bloquear" : "ativar"} o cliente ${row.nome}?`,
+                  [
+                    {
+                      label:   "Cancelar",
+                      variant: "cancel",
+                      onClick: () => {}
+                    },
+                    {
+                      label:   row.ativo ? "Bloquear" : "Ativar",
+                      variant: row.ativo ? "block"    : "unblock",
+                      onClick: () => handleToggleAtivo(row.id, row.ativo)
+                    }
+                  ]
+                )
+              }}
             />
             )}
         />
 
         <TDataGridFooter
-            page={page}
-            totalPages={totalPages}
-            totalElements={totalElements}
-            pageSize={pageSize}
-            onPageChange={handlePageChange}
+            page          ={page}
+            totalPages    ={totalPages}
+            totalElements ={totalElements}
+            pageSize      ={pageSize}
+            onPageChange  ={handlePageChange}
         />
     </TPage>
   );

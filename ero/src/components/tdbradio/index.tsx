@@ -2,16 +2,16 @@ import { useState, useEffect } from "react";
 import { api } from "../../services/api";
 
 interface TDbRadioProps {
-  name: string;
-  label: string;
-  url: string;
-  valueField: string;
-  labelField: string;
-  defaultValue?: string;
-  disabled?: boolean;
-  direction?: "row" | "column";
-  hint?: string;
-  onChange?: (value: string) => void;
+  name:           string;
+  label:          string;
+  url:            string;
+  valueField:     string;
+  labelField:     string;
+  defaultValue?:  string;
+  disabled?:      boolean;
+  direction?:     "row" | "column";
+  hint?:          string;
+  onChange?:      (value: string) => void;
 }
 
 export function TDbRadio({
@@ -53,18 +53,18 @@ export function TDbRadio({
       >
         {options.map((opt) => (
           <label
-            key={String(opt[valueField])}
-            className={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary)
-              ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
+            key       ={String(opt[valueField])}
+            className ={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary)
+                        ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
           >
             <input
-              type="radio"
-              name={name}
-              value={String(opt[valueField])}
+              type          ="radio"
+              name          ={name}
+              value         ={String(opt[valueField])}
               defaultChecked={defaultValue === String(opt[valueField])}
-              disabled={disabled}
-              onChange={() => onChange?.(String(opt[valueField]))}
-              className="cursor-pointer accent-(--accent)"
+              disabled      ={disabled}
+              onChange      ={() => onChange?.(String(opt[valueField]))}
+              className     ="cursor-pointer accent-(--accent)"
             />
             {String(opt[labelField] ?? "")}
           </label>

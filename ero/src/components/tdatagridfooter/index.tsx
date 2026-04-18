@@ -1,9 +1,9 @@
 interface TDataGridFooterProps {
-  page: number
-  totalPages: number
-  totalElements: number
-  pageSize: number
-  onPageChange: (page: number) => void
+  page:           number
+  totalPages:     number
+  totalElements:  number
+  pageSize:       number
+  onPageChange:   (page: number) => void
 }
 
 export function TDataGridFooter({

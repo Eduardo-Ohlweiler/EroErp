@@ -40,7 +40,6 @@ export function Login() {
 
       <div className="w-full max-w-sm bg-(--bg-surface) border border-(--border) rounded-lg p-8 shadow-lg">
 
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-(--text-primary)">EroErp</h1>
           <p className="text-sm text-(--text-muted) mt-1">
@@ -48,10 +47,8 @@ export function Login() {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-          {/* Email */}
           <div className="flex flex-col gap-1">
             <label className="text-sm text-(--text-secondary)">E-mail</label>
             <input
@@ -69,7 +66,6 @@ export function Login() {
             />
           </div>
 
-          {/* Senha */}
           <div className="flex flex-col gap-1">
             <label className="text-sm text-(--text-secondary)">Senha</label>
             <input
@@ -87,14 +83,12 @@ export function Login() {
             />
           </div>
 
-          {/* Erro */}
           {erro && (
             <div className="text-sm text-(--danger) px-3 py-2 rounded-md border border-(--danger) bg-red-500/10">
               {erro}
             </div>
           )}
 
-          {/* Botão */}
           <button
             type="submit"
             disabled={loading}

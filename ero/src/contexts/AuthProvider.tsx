@@ -7,14 +7,14 @@ import type { AuthResponse } from "../types/Auth"
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("user")
+    const savedUser     = localStorage.getItem("user")
     return savedUser ? JSON.parse(savedUser) : null
   })
 
   async function login(email: string, senha: string) {
-    const response = await api.post<AuthResponse>("/auth/login", { email, senha })
-    const { token, id, nome, roles } = response.data
-    const loggedUser: User = { id, nome, email, roles }
+    const response                    = await api.post<AuthResponse>("/auth/login", { email, senha })
+    const { token, id, nome, roles }  = response.data
+    const loggedUser: User            = { id, nome, email, roles }
     localStorage.setItem("token", token)
     localStorage.setItem("user", JSON.stringify(loggedUser))
     setUser(loggedUser)

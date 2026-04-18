@@ -30,27 +30,27 @@ export function TDataGrid<T extends object>({
     <div className="w-full overflow-x-auto rounded-lg border border-(--border)">
       <table className="w-full text-sm">
 
-        {/* cabeçalho */}
         <thead>
           <tr className="bg-(--metal-700) border-b border-(--border)">
-            {columns.map((col) => (
-              <th
-                key={String(col.field ?? col.label)}
-                style={{ width: col.width }}
-                className={`px-4 py-3 font-medium text-(--text-inverse)
-                  ${alignClass[col.align ?? "left"]}`}
-              >
-                {col.label}
-              </th>
-            ))}
+
             {actions && (
               <th className="px-4 py-3 font-medium text-(--text-inverse) text-center w-120px">
                 Ações
               </th>
             )}
+
+            {columns.map((col) => (
+              <th
+                key       ={String(col.field ?? col.label)}
+                style     ={{ width: col.width }}
+                className ={`px-4 py-3 font-medium text-(--text-inverse)
+                  ${alignClass[col.align ?? "left"]}`}
+              >
+                {col.label}
+              </th>
+            ))}
           </tr>
         </thead>
-
         <tbody>
 
           {loading && (
@@ -88,6 +88,13 @@ export function TDataGrid<T extends object>({
                 ${onRowClick ? "cursor-pointer hover:bg-(--accent-light)" : "hover:bg-(--bg-hover)"}
               `}
             >
+              {actions && (
+                <td className="px-4 py-3 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    {actions(row)}
+                  </div>
+                </td>
+              )}
               {columns.map((col) => (
                 <td
                   key={String(col.field ?? col.label)}
@@ -101,17 +108,8 @@ export function TDataGrid<T extends object>({
                   }
                 </td>
               ))}
-
-              {actions && (
-                <td className="px-4 py-3 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    {actions(row)}
-                  </div>
-                </td>
-              )}
             </tr>
           ))}
-
         </tbody>
       </table>
     </div>

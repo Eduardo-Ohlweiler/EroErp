@@ -8,7 +8,7 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <div className="flex h-screen bg-[var(--bg-base)] transition-all duration-300">
+    <div className="flex h-screen bg-(--bg-base) transition-all duration-300">
 
       <Sidebar collapsed={collapsed} />
 

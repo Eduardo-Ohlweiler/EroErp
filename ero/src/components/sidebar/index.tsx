@@ -85,7 +85,6 @@ export default function Sidebar({ collapsed }: SideBarProps) {
               </div>
             )}
 
-            {/* flyout */}
             {collapsed && hovered === item.label && (
               <div
                 onMouseEnter={() => handleMouseEnter(item.label)}
@@ -160,7 +159,6 @@ export default function Sidebar({ collapsed }: SideBarProps) {
               {!collapsed && item.label}
             </Link>
 
-            {/* tooltip */}
             {collapsed && hovered === item.label && (
               <div
                 onMouseEnter={() => handleMouseEnter(item.label)}

@@ -1,3 +1,5 @@
+import { useState } from "react"
+
 type MaskType = "cpf" | "cnpj" | "telefone" | "celular" | "cep" | "data" | "hora" | "moeda"
 
 function applyMask(value: string, mask: MaskType): string {
@@ -42,7 +44,7 @@ function applyMask(value: string, mask: MaskType): string {
 
     case "moeda": {
       const cents = onlyDigits.slice(0, 13)
-      const num = parseInt(cents || "0", 10) / 100
+      const num   = parseInt(cents || "0", 10) / 100
       return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
     }
 
@@ -51,33 +53,64 @@ function applyMask(value: string, mask: MaskType): string {
   }
 }
 
+function removeMask(value: string): string {
+  return value.replace(/\D/g, "")
+}
+
 interface TEntryProps {
-  name: string
-  label: string
-  type?: "text" | "email" | "password" | "number" | "date" | "tel" | "hidden"
-  placeholder?: string
-  required?: boolean
+  name:          string
+  label:         string
+  type?:         "text" | "email" | "password" | "number" | "date" | "tel" | "hidden"
+  placeholder?:  string
+  required?:     boolean
   defaultValue?: string
-  disabled?: boolean
-  width?: string
-  hint?: string
-  maxLength?: number
-  mask?: MaskType
-  onChange?: (value: string) => void
+  disabled?:     boolean
+  width?:        string
+  hint?:         string
+  maxLength?:    number
+  mask?:         MaskType
+  onChange?:     (value: string) => void
 }
 
 export function TEntry({
-  name, label, type = "text", placeholder, required,
-  defaultValue, disabled, hint, width = "100%", maxLength, mask, onChange
+  name,
+  label,
+  type         = "text",
+  placeholder,
+  required,
+  defaultValue,
+  disabled,
+  hint,
+  width        = "100%",
+  maxLength,
+  mask,
+  onChange
 }: TEntryProps) {
 
+  const initialDisplay = defaultValue && mask
+    ? applyMask(defaultValue, mask)
+    : defaultValue ?? ""
+
+  const [displayValue, setDisplayValue] = useState(initialDisplay)
+  const [rawValue,     setRawValue]     = useState(
+    defaultValue ? removeMask(defaultValue) : ""
+  )
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    let value = e.target.value
+    const value = e.target.value
+
     if (mask) {
-      value = applyMask(value, mask)
-      e.target.value = value
+      const masked    = applyMask(value, mask)
+      const raw       = removeMask(masked)
+      e.target.value  = masked
+      setDisplayValue(masked)
+      setRawValue(raw)
+      onChange?.(raw)
+    } else {
+      setDisplayValue(value)
+      setRawValue(value)
+      onChange?.(value)
     }
-    onChange?.(value)
   }
 
   if (type === "hidden") {
@@ -87,27 +120,32 @@ export function TEntry({
   return (
     <div className="flex flex-col gap-1" style={{ width }}>
 
-      <label className="text-sm text-[var(--text-secondary)]">
+      <label className="text-sm text-(--text-secondary)">
         {label}
-        {required && <span className="text-[var(--danger)] ml-1">*</span>}
+        {required && <span className="text-(--danger) ml-1">*</span>}
       </label>
 
       <input
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        required={required}
-        defaultValue={defaultValue}
-        disabled={disabled}
-        maxLength={maxLength}
-        onChange={handleChange}
-        className="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-md px-3 py-2 text-sm
-        text-[var(--text-primary)] placeholder-[var(--text-muted)]
-        focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]
-        disabled:opacity-50 disabled:cursor-not-allowed transition"
+        type        ={type}
+        placeholder ={placeholder}
+        required    ={required}
+        disabled    ={disabled}
+        maxLength   ={maxLength}
+        value       ={displayValue}
+        onChange    ={handleChange}
+        className   ="w-full bg-(--bg-input) border border-(--border) rounded-md px-3 py-2 text-sm
+                      text-(--text-primary) placeholder-(--text-muted)
+                      focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent)
+                      disabled:opacity-50 disabled:cursor-not-allowed transition"
       />
 
-      {hint && <p className="text-xs text-[var(--text-muted)]">{hint}</p>}
+      <input
+        type="hidden"
+        name={name}
+        value={mask ? rawValue : displayValue}
+      />
+
+      {hint && <p className="text-xs text-(--text-muted)">{hint}</p>}
 
     </div>
   )

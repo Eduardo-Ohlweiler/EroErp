@@ -2,16 +2,16 @@ import { useState, useEffect } from "react";
 import { api } from "../../services/api";
 
 interface TDbCheckboxProps {
-  name: string;
-  label: string;
-  url: string;
-  valueField: string;
-  labelField: string;
+  name:           string;
+  label:          string;
+  url:            string;
+  valueField:     string;
+  labelField:     string;
   defaultValues?: string[];
-  disabled?: boolean;
-  direction?: "row" | "column";
-  hint?: string;
-  onChange?: (values: string[]) => void;
+  disabled?:      boolean;
+  direction?:     "row" | "column";
+  hint?:          string;
+  onChange?:      (values: string[]) => void;
 }
 
 export function TDbCheckbox({
@@ -26,7 +26,7 @@ export function TDbCheckbox({
   hint,
   onChange,
 }: TDbCheckboxProps) {
-  const [options, setOptions] = useState<Record<string, unknown>[]>([]);
+  const [options,  setOptions]  = useState<Record<string, unknown>[]>([]);
   const [selected, setSelected] = useState<string[]>(defaultValues);
 
   useEffect(() => {

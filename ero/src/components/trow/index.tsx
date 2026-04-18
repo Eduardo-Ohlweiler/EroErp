@@ -1,20 +1,20 @@
 interface TRowProps {
   children: React.ReactNode
-  gap?: number
-  wrap?: boolean
-  align?: "start" | "center" | "end"
+  gap?:     number
+  wrap?:    boolean
+  align?:   "start" | "center" | "end"
 }
 
 export function TRow({
   children,
-  gap = 4,
-  wrap = true,
-  align = "start"
+  gap     = 4,
+  wrap    = true,
+  align   = "start"
 }: TRowProps) {
   const alignClass = {
-    start: "items-start",
+    start:  "items-start",
     center: "items-center",
-    end: "items-end"
+    end:    "items-end"
   }[align]
 
   return (
