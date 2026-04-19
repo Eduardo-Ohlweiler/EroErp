@@ -200,7 +200,7 @@ export default function UsuarioList() {
         onRowClick  ={(row) => navigate(`/usuarios/${row.id}`)}
         actions     ={(row) => (
           <TButton
-            label   ={row.ativo ? "Bloquear"  : "Ativar"}
+            label   ={row.ativo ? ""  : ""}
             variant ={row.ativo ? "block"     : "unblock"}
             onClick ={(e) => {
               e?.stopPropagation()

@@ -12,13 +12,15 @@ import {
 interface TButtonProps {
   label:     string
   onClick?:  (e?: React.MouseEvent<HTMLButtonElement>) => void
-  type?:     "button" | "submit" | "reset"
+  type?:     "button"    | "submit"    | "reset"
   variant?:  "primary"   | "secondary" | "danger"  | "success"
            | "save"      | "new"       | "delete"  | "block"
            | "unblock"   | "edit"      | "confirm" | "cancel"
   icon?:     React.ReactNode
   disabled?: boolean
   loading?:  boolean
+  width?:    string
+  height?:   string
 }
 
 const variantConfig: Record<string, { classes: string; defaultIcon: React.ReactNode }> = {
@@ -43,17 +45,26 @@ export function TButton({
   variant = "primary",
   icon,
   disabled,
-  loading
+  loading,
+  width,
+  height
 }: TButtonProps) {
 
-  const config     = variantConfig[variant] ?? variantConfig.primary
-  const iconToShow = icon ?? config.defaultIcon
+  const config            = variantConfig[variant] ?? variantConfig.primary
+  const iconToShow        = icon ?? config.defaultIcon
+  const DEFAULT_HEIGHT    = "35px"
+  const DEFAULT_PADDING_X = "12px"
 
   return (
     <button
       type={type}
       onClick={(e) => onClick?.(e)}
       disabled={disabled || loading}
+      style={{
+        width:         width  ??  "auto",
+        height:        height ??  DEFAULT_HEIGHT,
+        paddingInline: width  ?   undefined : DEFAULT_PADDING_X,
+      }}
       className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition
         ${config.classes}
         disabled:opacity-50 disabled:cursor-not-allowed`}
