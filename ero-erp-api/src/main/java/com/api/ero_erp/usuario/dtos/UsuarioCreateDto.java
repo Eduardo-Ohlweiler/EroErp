@@ -32,8 +32,8 @@ public record UsuarioCreateDto(
         String telefone,
 
         @Schema(
-                description = "IDs das roles do usuário",
-                example = "[1, 2]"
+                description = "Nome das roles do usuário",
+                example = "[SUPERADMIN, ADMIN]"
         )
-        Set<Long> roleIds
+        Set<String> roleIds
 ) {}

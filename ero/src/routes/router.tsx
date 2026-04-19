@@ -10,6 +10,7 @@ import { TRoleRoute } from "./TRoleRoute";
 import ClienteList from "../pages/administrativo/clientes/ClienteList";
 import UsuarioList from "../pages/administrativo/usuarios/UsuarioList";
 import ClienteForm from "../pages/administrativo/clientes/ClienteForm";
+import UsuarioForm from "../pages/administrativo/usuarios/UsuarioForm";
 
 export function Router() {
   return (
@@ -32,6 +33,8 @@ export function Router() {
                 <Route path="/clientes/:id"     element={<ClienteForm />} />
                 
                 <Route path="/usuarios"         element={<UsuarioList />} />
+                <Route path="/usuarios/novo"    element={<UsuarioForm />} />
+                <Route path="/usuarios/:id"     element={<UsuarioForm />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />

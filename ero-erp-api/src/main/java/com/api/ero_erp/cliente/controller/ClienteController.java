@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/clientes")
 @Tag(name = "Clientes)", description = "Operações realcionadas a clientes")
@@ -86,5 +88,21 @@ public class ClienteController {
     ) {
         Cliente cliente = clienteService.update(id, dto);
         return ResponseEntity.ok(cliente);
+    }
+
+    @Operation(
+            summary = "Lista todos os clientes sem paginação",
+            description = "Exemplo: /clientes/select"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autorizado")
+    })
+    @GetMapping("/select")
+    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    public List<Cliente> select(
+            @RequestParam(required = false) String nome
+    ) {
+        return clienteService.select(nome);
     }
 }

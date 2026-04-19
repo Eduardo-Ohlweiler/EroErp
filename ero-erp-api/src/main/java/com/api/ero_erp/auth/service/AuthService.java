@@ -47,7 +47,6 @@ public class AuthService {
                 .map(r -> r.getNome())
                 .collect(Collectors.toSet());
 
-        // JwtUtil espera List<String>
         String token = jwtUtil.gerar(usuario.getId(), List.copyOf(roles));
 
         return new AuthResponseDto(

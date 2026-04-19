@@ -12,12 +12,15 @@ import com.api.ero_erp.usuario.dtos.UsuarioUpdateDto;
 import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.mapper.UsuarioMapper;
 import com.api.ero_erp.usuario.repository.UsuarioRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,6 +48,20 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
+    public List<UsuarioResponseDto> select(Long clienteId, String nome) {
+        return usuarioRepository.findForSelect(clienteId, nome)
+                .stream()
+                .map(usuarioMapper::toDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UsuarioResponseDto> getAll(Pageable pageable, Long clienteId, String nome, String email) {
+        return usuarioRepository.findAllWithFilters(pageable, clienteId, nome, email)
+                .map(usuarioMapper::toDTO);
+    }
+
+    @Transactional(readOnly = true)
     public Usuario findById(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado, verifique!"));
@@ -62,14 +79,19 @@ public class UsuarioService {
             throw new ConflictException("Já existe usuário com esse email, verifique!");
 
         Cliente cliente = clienteService.findById(clienteId);
+        if(!Boolean.TRUE.equals(cliente.getAtivo()))
+            throw new ConflictException("Cliente inativo, verifique!");
 
-        // busca o usuário logado para setar como createdBy
         Long loggedId = getLoggedUserId();
         Usuario createdBy = loggedId != null ? this.findById(loggedId) : null;
 
         Set<Role> roles = new HashSet<>();
-        if (dto.roleIds() != null && !dto.roleIds().isEmpty()) {
-            roles = new HashSet<>(roleRepository.findAllById(dto.roleIds()));
+
+        if (dto.roleIds() != null) {
+            roles = dto.roleIds().stream()
+                    .map(nome -> roleRepository.findByNomeIgnoreCase(nome)
+                            .orElseThrow(() -> new NotFoundException("Role não encontrada: " + nome)))
+                    .collect(java.util.stream.Collectors.toSet());
         }
 
         Usuario usuario = new Usuario();
@@ -88,6 +110,8 @@ public class UsuarioService {
     public UsuarioResponseDto update(Long id, UsuarioUpdateDto dto) {
 
         Usuario usuario = this.findById(id);
+        if (usuario.getCliente() == null || !Boolean.TRUE.equals(usuario.getCliente().getAtivo()))
+            throw new ConflictException("Cliente inativo, verifique!");
 
         Long loggedId = getLoggedUserId();
         Usuario updatedBy = loggedId != null ? this.findById(loggedId) : null;
@@ -111,8 +135,14 @@ public class UsuarioService {
         if (dto.ativo() != null)
             usuario.setAtivo(dto.ativo());
 
-        if (dto.roleIds() != null && !dto.roleIds().isEmpty())
-            usuario.setRoles(new HashSet<>(roleRepository.findAllById(dto.roleIds())));
+        if (dto.roleIds() != null) {
+            Set<Role> roles = dto.roleIds().stream()
+                    .map(nome -> roleRepository.findByNomeIgnoreCase(nome)
+                            .orElseThrow(() -> new NotFoundException("Role não encontrada: " + nome)))
+                    .collect(java.util.stream.Collectors.toSet());
+
+            usuario.setRoles(roles);
+        }
 
         usuario.setUpdatedBy(updatedBy);
 

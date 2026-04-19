@@ -26,62 +26,60 @@ export function TDbCheckbox({
   hint,
   onChange,
 }: TDbCheckboxProps) {
-  const [options,  setOptions]  = useState<Record<string, unknown>[]>([]);
-  const [selected, setSelected] = useState<string[]>(defaultValues);
+
+  const [options,  setOptions]  = useState<Record<string, unknown>[]>([])
+  const [selected, setSelected] = useState<string[]>([])
 
   useEffect(() => {
-    let cancelled = false;
+    setSelected(defaultValues)
+  }, [defaultValues])
 
-    api
-      .get(`${url}?size=100`)
+  useEffect(() => {
+    api.get(`${url}?size=100`)
       .then((response) => {
-        if (!cancelled) setOptions(response.data.content ?? response.data);
+        setOptions(response.data.content ?? response.data)
       })
-      .catch(() => {
-        if (!cancelled) setOptions([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [url]);
+      .catch(() => setOptions([]))
+  }, [url])
 
   function handleChange(value: string, checked: boolean) {
     const next = checked
       ? [...selected, value]
-      : selected.filter((v) => v !== value);
-    setSelected(next);
-    onChange?.(next);
+      : selected.filter((v) => v !== value)
+
+    setSelected(next)
+    onChange?.(next)
   }
 
   return (
     <div className="flex flex-col gap-1">
       <span className="text-sm text-(--text-secondary)">{label}</span>
-      <div
-        className={`flex gap-4 ${direction === "column" ? "flex-col ml-3" : "flex-row flex-wrap"}`}
-      >
-        {options.map((opt) => (
-          <label
-            key={String(opt[valueField])}
-            className={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary)
-              ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
-          >
-            <input
-              type="checkbox"
-              name={name}
-              value={String(opt[valueField])}
-              defaultChecked={defaultValues.includes(String(opt[valueField]))}
-              disabled={disabled}
-              onChange={(e) =>
-                handleChange(String(opt[valueField]), e.target.checked)
-              }
-              className="w-4 h-4 cursor-pointer accent-(--accent)"
-            />
-            {String(opt[labelField] ?? "")}
-          </label>
-        ))}
+
+      <div className={`flex gap-4 ${direction === "column" ? "flex-col ml-3" : "flex-row flex-wrap"}`}>
+        {options.map((opt) => {
+          const value = String(opt[valueField])
+
+          return (
+            <label key={value} className="flex items-center gap-2 text-sm">
+              <input
+                type    ="checkbox"
+                name    ={name}
+                value   ={value}
+                checked ={selected.includes(value)}
+                disabled={disabled}
+                onChange={(e) => handleChange(value, e.target.checked)}
+              />
+              {String(opt[labelField])}
+            </label>
+          )
+        })}
       </div>
+      <input
+        type="hidden"
+        name={name}
+        value={selected.join(",")}
+      />
       {hint && <p className="text-xs text-(--text-muted)">{hint}</p>}
     </div>
-  );
+  )
 }

@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/roles")
 @Tag(name = "Role", description = "Operação relacionadas a roles")
@@ -54,6 +56,20 @@ public class RoleController {
             Pageable pageable
     ) {
         return roleService.getAll(pageable);
+    }
+
+    @Operation(
+            summary = "Lista todos os roles sem paginação",
+            description = "Exemplo: /roles/select"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autorizado")
+    })
+    @GetMapping("/select")
+    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    public List<Role> select() {
+        return roleService.select();
     }
 
     @Operation(summary = "Deleta um role")

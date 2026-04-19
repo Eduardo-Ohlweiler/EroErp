@@ -5,6 +5,7 @@ interface TDbComboProps {
   name:          string
   label:         string
   url:           string
+  value?:        string
   valueField:    string
   displayField:  string | ((item: Record<string, unknown>) => string)
   searchField?:  string
@@ -25,6 +26,7 @@ export function TDbCombo({
   displayField,
   searchField,
   placeholder  = "Selecione...",
+  value,
   required,
   disabled,
   width        = "100%",
@@ -33,36 +35,59 @@ export function TDbCombo({
   onChange
 }: TDbComboProps) {
 
-  const [search,    setSearch]    = useState("")
-  const [options,   setOptions]   = useState<Record<string, unknown>[]>([])
-  const [selected,  setSelected]  = useState<Record<string, unknown> | null>(null)
-  const [open,      setOpen]      = useState(false)
-  const [loading,   setLoading]   = useState(false)
-  const debounce                  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [search,  setSearch]  = useState("")
+  const [options, setOptions] = useState<Record<string, unknown>[]>([])
+  const [open,    setOpen]    = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (minLength === 0) buscar("", false)  // false = não abre
-  }, [])
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function getDisplay(item: Record<string, unknown>): string {
-    if (typeof displayField === "function") 
-      return displayField(item)
+    if (typeof displayField === "function") return displayField(item)
     return String(item[displayField] ?? "")
   }
 
-  function buscar(valor: string, abrirDropdown = true) {
-  if (debounce.current) clearTimeout(debounce.current)
+  useEffect(() => {
+    if (!value) {
+      setSearch("")
+      return
+    }
 
-  debounce.current = setTimeout(async () => {
+    api.get(`${url}/${value}`)
+      .then((response) => {
+        const item  = response.data
+        const label = getDisplay(item)
+
+        setSearch((prev) => (prev !== label ? label : prev))
+      })
+      .catch(() => {})
+  }, [value])
+
+  useEffect(() => {
+    if (minLength === 0) {
+      buscar("", false)
+    }
+  }, [])
+
+  function buscar(valor: string, abrirDropdown = true) {
+    if (debounce.current) clearTimeout(debounce.current)
+
+    debounce.current = setTimeout(async () => {
       setLoading(true)
       try {
-        const params = new URLSearchParams({ size: "50" })
-        if (valor && searchField) 
+        const params = new URLSearchParams()
+        if (valor && searchField) {
           params.append(searchField, valor)
+        }
+
         const response = await api.get(`${url}?${params.toString()}`)
-        setOptions(response.data.content ?? response.data)
-        if (abrirDropdown) 
-          setOpen(true)  
+        const data = response.data
+
+        setOptions(Array.isArray(data) ? data : data.content ?? [])
+
+        if (abrirDropdown) {
+          setOpen(true)
+        }
       } catch {
         setOptions([])
       } finally {
@@ -74,7 +99,8 @@ export function TDbCombo({
   function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
     const valor = e.target.value
     setSearch(valor)
-    setSelected(null)
+
+    onChange?.("")
 
     if (valor.length >= minLength) {
       buscar(valor)
@@ -85,23 +111,33 @@ export function TDbCombo({
   }
 
   function handleSelect(item: Record<string, unknown>) {
-    setSelected(item)
-    setSearch(getDisplay(item))
+    const label = getDisplay(item)
+    const val   = String(item[valueField])
+
+    setSearch(label)
     setOpen(false)
-    onChange?.(String(item[valueField]), item)
+
+    onChange?.(val, item)
   }
 
   function handleClear() {
-    setSelected(null)
     setSearch("")
     setOptions([])
     setOpen(false)
+
     onChange?.("")
-    if (minLength === 0) buscar("")
+
+    if (minLength === 0) {
+      buscar("", false)
+    }
   }
 
   function handleFocus() {
-    if (search.length >= minLength) buscar(search)
+    if (options.length > 0 && search.length >= minLength) {
+      setOpen(true)
+    } else if (search.length >= minLength) {
+      buscar(search)
+    }
   }
 
   return (
@@ -113,32 +149,32 @@ export function TDbCombo({
       </label>
 
       <input
-        type  ="hidden"
-        name  ={name}
-        value ={selected ? String(selected[valueField]) : ""}
+        type="hidden"
+        name={name}
+        value={value ?? ""}
       />
 
       <div className="relative">
         <input
-          type        ="text"
-          value       ={search}
-          onChange    ={handleInput}
-          onFocus     ={handleFocus}
-          onBlur      ={() => setTimeout(() => setOpen(false), 200)}
-          placeholder ={minLength > 0 ? `Digite ${minLength}+ caracteres...` : placeholder}
-          disabled    ={disabled}
-          className   ="w-full bg-(--bg-input) border border-(--border) rounded-md px-3 py-2 pr-8 text-sm
-                          text-(--text-primary) placeholder-(--text-muted)
-                          focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent)
-                          disabled:opacity-50 disabled:cursor-not-allowed transition"
+          type="text"
+          value={search}
+          onChange={handleInput}
+          onFocus={handleFocus}
+          onBlur={() => setTimeout(() => setOpen(false), 200)}
+          placeholder={minLength > 0 ? `Digite ${minLength}+ caracteres...` : placeholder}
+          disabled={disabled}
+          className="w-full bg-(--bg-input) border border-(--border) rounded-md px-3 py-2 pr-8 text-sm
+                     text-(--text-primary) placeholder-(--text-muted)
+                     focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent)
+                     disabled:opacity-50 disabled:cursor-not-allowed transition"
         />
 
-        {search && (
+        {search && !disabled && (
           <button
-            type      ="button"
-            onClick   ={handleClear}
-            className ="absolute right-2 top-1/2 -translate-y-1/2 text-(--text-muted)
-                        hover:text-(--text-primary) transition"
+            type="button"
+            onClick={handleClear}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-(--text-muted)
+                       hover:text-(--text-primary) transition"
           >
             ✕
           </button>
@@ -147,7 +183,7 @@ export function TDbCombo({
 
       {open && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-(--bg-surface) border border-(--border)
-        rounded-md shadow-xl z-50 max-h-52 overflow-y-auto">
+          rounded-md shadow-xl z-50 max-h-52 overflow-y-auto">
 
           {loading && (
             <div className="flex items-center gap-2 px-3 py-2 text-sm text-(--text-muted)">
@@ -164,11 +200,11 @@ export function TDbCombo({
 
           {!loading && options.map((opt) => (
             <button
-              key         ={String(opt[valueField])}
-              type        ="button"
-              onMouseDown ={() => handleSelect(opt)}
-              className   ="w-full text-left px-3 py-2 text-sm text-(--text-primary)
-                            hover:bg-(--bg-hover) transition"
+              key={String(opt[valueField])}
+              type="button"
+              onMouseDown={() => handleSelect(opt)}
+              className="w-full text-left px-3 py-2 text-sm text-(--text-primary)
+                         hover:bg-(--bg-hover) transition"
             >
               {getDisplay(opt)}
             </button>
@@ -177,8 +213,7 @@ export function TDbCombo({
         </div>
       )}
 
-      {hint && <p className="text-xs text-(--text-muted)]">{hint}</p>}
-
+      {hint && <p className="text-xs text-(--text-muted)">{hint}</p>}
     </div>
   )
 }
