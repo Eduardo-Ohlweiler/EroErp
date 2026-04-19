@@ -16,10 +16,10 @@ import { TDataGrid } from "../../../components/tdatagrid"
 import { TDataGridFooter } from "../../../components/tdatagridfooter"
 
 const columns: TDataGridColumn<Usuario>[] = [
-  { label: "ID", field: "id", width: "60px", align: "center" },
-  { label: "Nome", field: "nome" },
-  { label: "E-mail", field: "email" },
-  { label: "Telefone", field: "telefone", width: "160px" },
+  { label: "ID",        field: "id",        width: "60px", align: "center" },
+  { label: "Nome",      field: "nome" },
+  { label: "E-mail",    field: "email" },
+  { label: "Telefone",  field: "telefone",  width: "160px" },
   {
     label: "Status",
     field: "ativo",
@@ -37,18 +37,17 @@ const columns: TDataGridColumn<Usuario>[] = [
 ]
 
 export default function UsuarioList() {
-  const navigate = useNavigate()
+  const navigate        = useNavigate()
   const { showMessage } = useMessage()
-  const { ask } = useQuestion()
+  const { ask }         = useQuestion()
 
-  const [data, setData] = useState<Usuario[]>([])
-  const [loading, setLoading] = useState(false)
-  const [page, setPage] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
+  const [data,          setData]          = useState<Usuario[]>([])
+  const [loading,       setLoading]       = useState(false)
+  const [page,          setPage]          = useState(0)
+  const [totalPages,    setTotalPages]    = useState(0)
   const [totalElements, setTotalElements] = useState(0)
-
-  const [filtroNome, setFiltroNome] = useState("")
-  const [filtroEmail, setFiltroEmail] = useState("")
+  const [filtroNome,    setFiltroNome]    = useState("")
+  const [filtroEmail,   setFiltroEmail]   = useState("")
   const [filtroCliente, setFiltroCliente] = useState("")
 
   const [resetKey, setResetKey] = useState(0)
@@ -108,7 +107,7 @@ export default function UsuarioList() {
   function handleLimpar() {
     setFiltroNome("")
     setFiltroEmail("")
-    setFiltroCliente("") // 🔥 limpa combo corretamente
+    setFiltroCliente("") 
     setResetKey((prev) => prev + 1)
     setPage(0)
 
@@ -132,20 +131,20 @@ export default function UsuarioList() {
 
   return (
     <TPage title="Usuários" breadcrumb={["Administração", "Usuários"]}>
-      <TForm key={resetKey} onSubmit={handleFiltrar}>
+      <TForm key={resetKey} onSubmit  ={handleFiltrar}>
         <TRow>
           <TCol>
             <TDbCombo
-              name="clienteId"
-              label="Cliente"
-              url="/clientes"
-              valueField="id"
+              name        ="clienteId"
+              label       ="Cliente"
+              url         ="/clientes"
+              valueField  ="id"
               displayField="nome"
-              searchField="nome"
-              placeholder="Todos os clientes..."
-              width="60%"
-              value={filtroCliente}              
-              onChange={setFiltroCliente}        
+              searchField ="nome"
+              placeholder ="Todos os clientes..."
+              width       ="60%"
+              value       ={filtroCliente}              
+              onChange    ={setFiltroCliente}        
             />
           </TCol>
         </TRow>
@@ -153,10 +152,10 @@ export default function UsuarioList() {
         <TRow>
           <TCol>
             <TEntry
-              name="nome"
-              label="Nome"
-              placeholder="Filtrar por nome..."
-              width="60%"
+              name        ="nome"
+              label       ="Nome"
+              placeholder ="Filtrar por nome..."
+              width       ="60%"
             />
           </TCol>
         </TRow>
@@ -164,10 +163,10 @@ export default function UsuarioList() {
         <TRow>
           <TCol>
             <TEntry
-              name="email"
-              label="E-mail"
-              placeholder="Filtrar por e-mail..."
-              width="60%"
+              name        ="email"
+              label       ="E-mail"
+              placeholder ="Filtrar por e-mail..."
+              width       ="60%"
             />
           </TCol>
         </TRow>
@@ -176,16 +175,16 @@ export default function UsuarioList() {
           <TFormActionsLeft>
             <TButton label="Filtrar" type="submit" />
             <TButton
-              label="Novo"
-              variant="new"
-              type="button"
-              onClick={() => navigate("/usuarios/novo")}
+              label   ="Novo"
+              variant ="new"
+              type    ="button"
+              onClick ={() => navigate("/usuarios/novo")}
             />
             <TButton
-              label="Limpar"
-              variant="cancel"
-              type="button"
-              onClick={handleLimpar}
+              label   ="Limpar"
+              variant ="cancel"
+              type    ="button"
+              onClick ={handleLimpar}
             />
           </TFormActionsLeft>
         </TFormFooter>
