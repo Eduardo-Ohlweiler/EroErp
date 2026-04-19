@@ -2,6 +2,8 @@ package com.api.ero_erp.config;
 
 import com.api.ero_erp.exceptions.ErrorResponse;
 import com.api.ero_erp.exceptions.UnauthorizedException;
+import com.api.ero_erp.usuario.entity.Usuario;
+import com.api.ero_erp.usuario.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -26,11 +28,16 @@ import java.util.stream.Collectors;
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
-    private final JwtUtil      jwtUtil;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final JwtUtil           jwtUtil;
+    private final UsuarioRepository usuarioRepository;
+    private final ObjectMapper      mapper = new ObjectMapper();
 
-    public JwtFilter(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
+    public JwtFilter(
+            JwtUtil jwtUtil,
+            UsuarioRepository usuarioRepository
+    ) {
+        this.jwtUtil            = jwtUtil;
+        this.usuarioRepository  = usuarioRepository;
     }
 
     @Override
@@ -42,20 +49,21 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        System.out.println("=== JwtFilter executando ===");
-        System.out.println("Header: " + header);
-
         if (header != null && !header.isBlank() && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            System.out.println("Token recebido: " + token.substring(0, 20) + "...");
-
             try {
-                Long id = jwtUtil.getId(token);
+                Long id             = jwtUtil.getId(token);
+                List<String> roles  = jwtUtil.getRoles(token);
 
-                System.out.println("ID extraído: " + id);
-
-
-                List<String> roles = jwtUtil.getRoles(token);
+                Usuario usuario = usuarioRepository.findByIdWithDetails(id).orElse(null);
+                if (usuario == null || !usuario.getAtivo()) {
+                    escreverErro(response, "Usuário inativo ou não encontrado");
+                    return;
+                }
+                if (usuario.getCliente() != null && !usuario.getCliente().getAtivo()) {
+                    escreverErro(response, "Acesso bloqueado, contate o administrador");
+                    return;
+                }
 
                 List<GrantedAuthority> authorities = roles.stream()
                         .map(role -> new SimpleGrantedAuthority("ROLE_" + role))

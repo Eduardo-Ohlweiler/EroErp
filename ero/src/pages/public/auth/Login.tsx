@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import { useAuth } from "../../../hooks/useAuth"
@@ -13,6 +13,14 @@ export function Login() {
   const [senha, setSenha] = useState("")
   const [erro, setErro] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+  const msg = sessionStorage.getItem("authError")
+    if (msg) {
+      setErro(msg)
+      sessionStorage.removeItem("authError")
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

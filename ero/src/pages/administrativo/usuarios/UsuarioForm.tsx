@@ -147,32 +147,32 @@ export default function UsuarioForm() {
             </TRow>
 
             <TRow>
-            <TCol>
-                <TDbCombo
-                    name        ="clienteId"
-                    label       ="Cliente"
-                    url         ="/clientes"
-                    valueField  ="id"
-                    displayField="nome"
-                    searchField ="nome"
-                    required    ={!isEdit}
-                    disabled    ={isEdit}
-                    value       ={clienteId}                 
-                    onChange    ={setClienteId} 
-                />
-            </TCol>
-            <TCol>
-                <TCombo
-                    name        ="ativo"
-                    label       ="Status"
-                    width       ="200px"
-                    defaultValue={usuario ? (usuario.ativo ? "true" : "false") : "true"}
-                        options ={[
-                            { value: "true",  label: "Ativo"     },
-                            { value: "false", label: "Bloqueado"  },
-                        ]}
-                />
-            </TCol>
+                <TCol>
+                    <TDbCombo
+                        name        ="clienteId"
+                        label       ="Cliente"
+                        url         ="/clientes"
+                        valueField  ="id"
+                        displayField="nome"
+                        searchField ="nome"
+                        required    ={!isEdit}
+                        disabled    ={isEdit}
+                        value       ={clienteId}                 
+                        onChange    ={setClienteId} 
+                    />
+                </TCol>
+                <TCol>
+                    <TCombo
+                        name        ="ativo"
+                        label       ="Status"
+                        width       ="200px"
+                        defaultValue={usuario ? (usuario.ativo ? "true" : "false") : "true"}
+                            options ={[
+                                { value: "true",  label: "Ativo"     },
+                                { value: "false", label: "Bloqueado"  },
+                            ]}
+                    />
+                </TCol>
             </TRow>
 
             <TRow>

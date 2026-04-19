@@ -8,6 +8,7 @@ interface           TDataGridProps<T extends object> {
   emptyMessage?:    string
   onRowClick?:      (row: T) => void
   actions?:         (row: T) => React.ReactNode
+  actionsWidth?:    string
 }
 
 export function TDataGrid<T extends object>({
@@ -17,7 +18,8 @@ export function TDataGrid<T extends object>({
   loading = false,
   emptyMessage = "Nenhum registro encontrado",
   onRowClick,
-  actions
+  actions,
+  actionsWidth = "120px"
 }: TDataGridProps<T>) {
 
   const alignClass = {
@@ -34,7 +36,10 @@ export function TDataGrid<T extends object>({
           <tr className="bg-(--metal-700) border-b border-(--border)">
 
             {actions && (
-              <th className="px-4 py-3 font-medium text-(--text-inverse) text-center w-120px">
+              <th
+                style     ={{ width: actionsWidth }}
+                className ="px-4 py-3 font-medium text-(--text-inverse) text-center"
+              >
                 Ações
               </th>
             )}

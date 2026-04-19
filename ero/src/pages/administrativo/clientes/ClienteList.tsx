@@ -20,10 +20,10 @@ import { TDataGridFooter } from "../../../components/tdatagridfooter";
 import { useQuestion } from '../../../hooks/useQuestion';
 
 const columns: TDataGridColumn<Cliente>[] = [
-  { label: "ID", field: "id", width: "60px", align: "center" },
-  { label: "Nome", field: "nome" },
-  { label: "E-mail", field: "email" },
-  { label: "Telefone", field: "telefone", width: "160px" },
+  { label: "ID",        field: "id",        width: "60px", align: "center" },
+  { label: "Nome",      field: "nome" },
+  { label: "E-mail",    field: "email" },
+  { label: "Telefone",  field: "telefone", width: "160px" },
   {
     label: "Status",
     field: "ativo",
@@ -175,35 +175,35 @@ export default function ClienteList() {
         </TForm>
 
         <TDataGrid
-            columns={columns}
-            data={data}
-            keyField="id"
-            loading={loading}
+            columns     ={columns}
+            data        ={data}
+            keyField    ="id"
+            loading     ={loading}
             emptyMessage="Nenhum cliente encontrado"
-            onRowClick={(row) => navigate(`/clientes/${row.id}`)}
-            actions={(row) => (
-            <TButton
-              label={row.ativo ? "Bloquear" : "Ativar"}
-              variant={row.ativo ? "block" : "unblock"}
-              onClick={(e) => {
-                e?.stopPropagation()
-                ask(
-                  `Deseja ${row.ativo ? "bloquear" : "ativar"} o cliente ${row.nome}?`,
-                  [
-                    {
-                      label:   "Cancelar",
-                      variant: "cancel",
-                      onClick: () => {}
-                    },
-                    {
-                      label:   row.ativo ? "Bloquear" : "Ativar",
-                      variant: row.ativo ? "block"    : "unblock",
-                      onClick: () => handleToggleAtivo(row.id, row.ativo)
-                    }
-                  ]
-                )
-              }}
-            />
+            onRowClick  ={(row) => navigate(`/clientes/${row.id}`)}
+            actions     ={(row) => (
+              <TButton
+                label   ={row.ativo ? ""  : ""}
+                variant ={row.ativo ? "block"     : "unblock"}
+                onClick ={(e) => {
+                  e?.stopPropagation()
+                  ask(
+                    `Deseja ${row.ativo ? "bloquear" : "ativar"} o cliente ${row.nome}?`,
+                    [
+                      {
+                        label:   "Cancelar",
+                        variant: "cancel",
+                        onClick: () => {}
+                      },
+                      {
+                        label:   row.ativo ? "Bloquear" : "Ativar",
+                        variant: row.ativo ? "block"    : "unblock",
+                        onClick: () => handleToggleAtivo(row.id, row.ativo)
+                      }
+                    ]
+                  )
+                }}
+              />
             )}
         />
 

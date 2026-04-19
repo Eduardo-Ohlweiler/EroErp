@@ -40,6 +40,10 @@ public class AuthService {
         if (!usuario.getAtivo())
             throw new UnauthorizedException("Usuário inativo, contate o administrador");
 
+        if (usuario.getCliente() != null && !usuario.getCliente().getAtivo())
+            throw new UnauthorizedException("Acesso bloqueado, contate o administrador");
+
+
         if (!passwordEncoder.matches(dto.senha(), usuario.getSenha()))
             throw new UnauthorizedException("Email ou senha inválidos");
 
