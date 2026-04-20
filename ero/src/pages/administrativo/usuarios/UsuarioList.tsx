@@ -81,7 +81,6 @@ export default function UsuarioList() {
 
       const response = await api.get(`/usuarios?${params.toString()}`)
 
-      console.log({ nome, email, clienteId })
       setData(response.data.content)
       setTotalPages(response.data.totalPages)
       setTotalElements(response.data.totalElements)

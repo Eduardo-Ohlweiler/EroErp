@@ -14,6 +14,7 @@ import { TCombo } from "../../../components/tcombo"
 import { TDbCombo } from "../../../components/tdbcombo"
 import { TDbCheckbox } from "../../../components/tdbcheckbox"
 import { TButton } from "../../../components/tbutton"
+import { TSpace } from "../../../components/tspace"
 
 export default function UsuarioForm() {
 
@@ -56,35 +57,50 @@ export default function UsuarioForm() {
         setFormKey((prev) => prev + 1)
     }
 
+    async function reload(id: string) {
+    try {
+        const response = await api.get(`/usuarios/${id}`)
+        setUsuario(response.data)
+        setClienteId(String(response.data.clienteId))
+        setFormKey((prev) => prev + 1)
+    } catch {
+        showMessage("error", "Erro ao recarregar usuário")
+    }
+    }
+
     async function handleSubmit(data: Record<string, string>) {
         setSaving(true)
         try {
-        const payload = {
-            ...data,
-            ativo:   data.ativo === "true",
-            roleIds: data.roleIds ? data.roleIds.split(",") : []
-        }
+            const { createdById, createdAt, updatedById, updatedAt, ...rest } = data
+            const payload = {
+                ...rest,
+                ativo:   data.ativo === "true",
+                roleIds: data.roleIds ? data.roleIds.split(",") : []
+            }
 
-        if (isEdit) {
-            await api.patch(`/usuarios/${currentId}`, payload)
-            showMessage("success", "Usuário atualizado com sucesso!")
-        } else {
-            const response = await api.post(
-            `/usuarios/cliente/${data.clienteId}`,
-            payload
-            )
-            showMessage("success", "Usuário cadastrado com sucesso!")
-            setCurrentId(String(response.data.id))
-        }
+            if (isEdit) {
+                await api.patch(`/usuarios/${currentId}`, payload)
+                showMessage("success", "Usuário atualizado com sucesso!")
+                await reload(currentId!)
+            } else {
+                const response = await api.post(
+                `/usuarios/cliente/${data.clienteId}`,
+                payload
+                )
+                showMessage("success", "Usuário cadastrado com sucesso!")
+                const novoId = String(response.data.id)
+                setCurrentId(novoId)
+                await reload(novoId)
+            }
         } catch (err) {
-        if (axios.isAxiosError(err)) {
-            const errData = err.response?.data as ErrorResponse
-            showMessage("error", errData?.erro ?? "Erro ao salvar usuário")
-        } else {
-            showMessage("error", "Erro inesperado ao salvar usuário")
-        }
+            if (axios.isAxiosError(err)) {
+                const errData = err.response?.data as ErrorResponse
+                showMessage("error", errData?.erro ?? "Erro ao salvar usuário")
+            } else {
+                showMessage("error", "Erro inesperado ao salvar usuário")
+            }
         } finally {
-        setSaving(false)
+            setSaving(false)
         }
     }
 
@@ -188,6 +204,56 @@ export default function UsuarioForm() {
                 />
             </TCol>
             </TRow>
+            
+            {isEdit && (
+                <TRow>
+                    <TCol>
+                    <TEntry
+                        name         ="createdById"
+                        label        ="Criado por"
+                        disabled
+                        defaultValue ={usuario?.createdByNome ?? "—"}
+                    />
+                    </TCol>
+                    <TCol>
+                    <TEntry
+                        name         ="createdAt"
+                        label        ="Criado em"
+                        disabled
+                        width="160px"
+                        defaultValue ={usuario?.createdAt
+                                        ? new Date(usuario.createdAt).toLocaleString("pt-BR")
+                                        : "—"}
+                    />
+                    </TCol>
+                    <TSpace />
+                </TRow>
+            )}
+
+            {isEdit && usuario?.updatedAt && (
+                <TRow>
+                    <TCol>
+                    <TEntry
+                        name         ="updatedById"
+                        label        ="Alterado por"
+                        disabled
+                        defaultValue ={usuario?.updatedByNome ?? "—"}
+                    />
+                    </TCol>
+                    <TCol>
+                    <TEntry
+                        name         ="updatedAt"
+                        label        ="Alterado em"
+                        disabled
+                        width="160px"
+                        defaultValue ={usuario?.updatedAt
+                                        ? new Date(usuario.updatedAt).toLocaleString("pt-BR")
+                                        : "—"}
+                    />
+                    </TCol>
+                    <TSpace />
+                </TRow>
+            )}
 
             <TFormFooter>
             <TFormActionsLeft>

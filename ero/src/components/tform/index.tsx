@@ -1,9 +1,10 @@
 interface TFormProps {
+  id?:      string
   onSubmit: (data: Record<string, string>) => void
   children: React.ReactNode
 }
 
-export function TForm({ onSubmit, children }: TFormProps) {
+export function TForm({ id, onSubmit, children }: TFormProps) {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -21,6 +22,7 @@ export function TForm({ onSubmit, children }: TFormProps) {
 
   return (
     <form
+      id={id}
       onSubmit={handleSubmit}
       className="bg-(--bg-surface) border border-(--border) rounded-lg p-6"
     >

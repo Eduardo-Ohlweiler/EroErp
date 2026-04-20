@@ -21,6 +21,7 @@ interface TButtonProps {
   loading?:  boolean
   width?:    string
   height?:   string
+  form?:     string
 }
 
 const variantConfig: Record<string, { classes: string; defaultIcon: React.ReactNode }> = {
@@ -47,7 +48,8 @@ export function TButton({
   disabled,
   loading,
   width,
-  height
+  height,
+  form
 }: TButtonProps) {
 
   const config            = variantConfig[variant] ?? variantConfig.primary
@@ -58,6 +60,7 @@ export function TButton({
   return (
     <button
       type={type}
+      form={form}
       onClick={(e) => onClick?.(e)}
       disabled={disabled || loading}
       style={{

@@ -19,9 +19,17 @@ import { TDbCombo } from "../../../components/tdbcombo";
 import { TUniqueSearch } from "../../../components/tuniquesearch";
 import { TDbCheckbox } from "../../../components/tdbcheckbox";
 import { TDbRadio } from "../../../components/tdbradio";
+import { TWindow } from "../../../components/twindow";
+import { useState } from "react";
+import { TDate } from "../../../components/tdate";
 
 export function PessoaList() {
   const navigate = useNavigate();
+  const [openWindow, setOpenWindow] = useState(false);
+
+  async function handleSubmit(data: Record<string, string>) {
+    console.log("Form data:", data);
+  }
 
   return (
     <TPage title="Nova Pessoa" breadcrumb={["Cadastros", "Pessoas"]}>
@@ -29,6 +37,9 @@ export function PessoaList() {
         <TRow>
           <TCol>
             <TEntry name="nome" label="Nome" />
+          </TCol>
+          <TCol>
+            <TDate name="nascimento" label="Nascimento" />
           </TCol>
         </TRow>
         <TRow>
@@ -83,6 +94,9 @@ export function PessoaList() {
         </TRow>
         <TRow>
           <TEntry name="valor" label="Valor" mask="moeda" width="220px" />
+        </TRow>
+        <TRow>
+          <TEntry name="data" label="Data" mask="data" width="220px" />
         </TRow>
         <TRow>
           <TEntry
@@ -227,6 +241,10 @@ export function PessoaList() {
           labelField="nome"
         />
 
+        <TButton label="Abrir twindow" onClick={() => setOpenWindow(true)} />
+
+        
+
         <TFormFooter>
           <TFormActionsLeft>
             <TButton
@@ -243,6 +261,70 @@ export function PessoaList() {
           </TFormActionsRight>
         </TFormFooter>
       </TForm>
+
+      <TWindow
+          title="Novo Registro"
+          open={openWindow}
+          onClose={() => setOpenWindow(false)}
+          width="600px"
+          actions={
+            <>
+              <TButton
+                label="Cancelar"
+                variant="cancel"
+                onClick={() => setOpenWindow(false)}
+              />
+              <TButton
+                label="Salvar"
+                variant="save"
+                type="submit"
+                form="form-window"
+              />
+            </>
+          }
+        >
+          <TForm id="form-window" onSubmit={handleSubmit}>
+            {/* <TFieldList columns={2}>
+            <TEntry name="nome" label="Nome" />
+          </TFieldList> */}
+            <TRow>
+              <TCol>
+                <TEntry name="nome" label="Nome" />
+              </TCol>
+            </TRow>
+            <TRow>
+              <TCol>
+                <TEntry name="nome" label="Nome" required />
+              </TCol>
+              <TCol>
+                <TEntry name="nome" label="Nome" required />
+              </TCol>
+            </TRow>
+            <TRow>
+              <TCol>
+                <TEntry name="nome" label="Nome" />
+              </TCol>
+              <TCol>
+                <TEntry name="nome" label="Nome" />
+              </TCol>
+              <TCol>
+                <TEntry name="nome" label="Nome" />
+              </TCol>
+            </TRow>
+            <TRow>
+              <TCol>
+                <TEntry name="nome" label="Nome" />
+              </TCol>
+              <TCol>
+                <TEntry name="nome" label="Nome" disabled />
+              </TCol>
+              <TCol>
+                <TSpace />
+              </TCol>
+            </TRow>
+          </TForm>
+        </TWindow>
     </TPage>
+    
   );
 }

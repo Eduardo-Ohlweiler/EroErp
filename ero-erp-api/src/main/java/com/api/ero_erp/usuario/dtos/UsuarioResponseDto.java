@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 public record UsuarioResponseDto(
-
         Long            id,
         String          nome,
         String          email,
@@ -13,7 +12,9 @@ public record UsuarioResponseDto(
         Long            clienteId,
         LocalDateTime   createdAt,
         LocalDateTime   updatedAt,
-        Long            createdBy,
-        Long            updatedBy,
+        Long            createdById,
+        String          createdByNome,
+        Long            updatedById,
+        String          updatedByNome,
         Set<String>     roles
 ) {}
