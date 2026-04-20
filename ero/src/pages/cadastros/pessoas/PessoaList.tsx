@@ -22,6 +22,7 @@ import { TDbRadio } from "../../../components/tdbradio";
 import { TWindow } from "../../../components/twindow";
 import { useState } from "react";
 import { TDate } from "../../../components/tdate";
+import { TFieldList } from "../../../components/tfieldlist";
 
 export function PessoaList() {
   const navigate = useNavigate();
@@ -239,6 +240,39 @@ export function PessoaList() {
           url="/roles"
           valueField="id"
           labelField="nome"
+        />
+
+        <TFieldList
+          name="itens"
+          minRows={3}
+          columns={[
+            { label: "Produto",    name: "produto",    width: "30%" },
+            { label: "Quantidade", name: "quantidade", width: "15%" },
+            { label: "Valor",      name: "valor",      width: "20%" },
+            {
+              label: "Vencimento",
+              name:  "vencimento",
+              width: "20%",
+              render: (rowIndex) => (
+                <TDate name={`itens[${rowIndex}][vencimento]`} label="" />
+              )
+            },
+            {
+              label: "Status",
+              name:  "status",
+              width: "15%",
+              render: (rowIndex) => (
+                <TCombo
+                  name    ={`itens[${rowIndex}][status]`}
+                  label   =""
+                  options ={[
+                    { value: "A", label: "Ativo"   },
+                    { value: "I", label: "Inativo" },
+                  ]}
+                />
+              )
+            },
+          ]}
         />
 
         <TButton label="Abrir twindow" onClick={() => setOpenWindow(true)} />
