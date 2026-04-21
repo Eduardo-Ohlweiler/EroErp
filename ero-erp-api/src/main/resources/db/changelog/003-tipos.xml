@@ -7,6 +7,7 @@
 
     <changeSet id="003-create-tipos" author="eduardo">
 
+        <!-- TIPO TELEFONE -->
         <createTable tableName="tipo_telefone">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true"/>
@@ -15,8 +16,13 @@
                 <constraints nullable="false"/>
             </column>
             <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
 
+        <!-- TIPO EMAIL -->
         <createTable tableName="tipo_email">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true"/>
@@ -25,8 +31,13 @@
                 <constraints nullable="false"/>
             </column>
             <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
 
+        <!-- TIPO ENDERECO -->
         <createTable tableName="tipo_endereco">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true"/>
@@ -35,6 +46,10 @@
                 <constraints nullable="false"/>
             </column>
             <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
 
     </changeSet>
