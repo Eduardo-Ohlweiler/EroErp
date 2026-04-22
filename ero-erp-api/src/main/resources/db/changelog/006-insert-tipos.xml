@@ -54,6 +54,38 @@
             <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
         </insert>
 
+
+        <!-- TIPO REDE SOCIAL -->
+        <insert tableName="tipo_rede_social">
+            <column name="nome" value="Facebook"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_rede_social">
+            <column name="nome" value="Instagram"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_rede_social">
+            <column name="nome" value="LinkedIn"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_rede_social">
+            <column name="nome" value="TikTok"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_rede_social">
+            <column name="nome" value="Twitter / X"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
     </changeSet>
 
 </databaseChangeLog>
