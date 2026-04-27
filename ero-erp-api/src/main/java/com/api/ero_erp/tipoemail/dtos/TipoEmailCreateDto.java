@@ -1,4 +1,13 @@
 package com.api.ero_erp.tipoemail.dtos;
 
-public class TipoEmailCreateDto {
-}
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record TipoEmailCreateDto (
+
+        @Schema(description = "Nome do tipo", example = "Particular")
+        @NotBlank(message = "Nome é obrigatório")
+        @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
+        String nome
+) {}
