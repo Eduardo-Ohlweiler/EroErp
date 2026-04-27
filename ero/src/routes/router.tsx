@@ -8,10 +8,10 @@ import { Login } from "../pages/public/auth/Login";
 import { PublicRoute } from "./PublicRoute";
 import { TRoleRoute } from "./TRoleRoute";
 import ClienteList from "../pages/administrativo/clientes/ClienteList";
-import UsuarioList from "../pages/administrativo/usuarios/UsuarioFormList";
 import ClienteForm from "../pages/administrativo/clientes/ClienteForm";
 import UsuarioForm from "../pages/administrativo/usuarios/UsuarioForm";
-import TipoTelefoneFormList from "../pages/administrativo/usuarios/UsuarioFormList";
+import TipoTelefoneFormList from "../pages/administrativo/auxiliares/TipoTelefoneFormList";
+import UsuarioList from "../pages/administrativo/usuarios/UsuarioList";
 
 export function Router() {
   return (

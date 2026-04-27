@@ -14,13 +14,7 @@ import { TCombo } from "../../../components/tcombo"
 import { TButton } from "../../../components/tbutton"
 import { TDataGrid } from "../../../components/tdatagrid"
 import { TDataGridFooter } from "../../../components/tdatagridfooter"
-
-
-interface TipoTelefone {
-  id:    number
-  nome:  string
-  ativo: boolean
-}
+import type { TipoTelefone } from "../../../types/TipoTelefone"
 
 const columns: TDataGridColumn<TipoTelefone>[] = [
   { label: "ID",   field: "id",   width: "60px", align: "center" },
@@ -29,14 +23,14 @@ const columns: TDataGridColumn<TipoTelefone>[] = [
     label: "Status", field: "ativo", width: "100px", align: "center",
     render: (row) => (
       <span className={`px-2 py-0.5 rounded-full text-xs font-medium text-white
-        ${row.ativo ? "bg-[var(--success)]" : "bg-[var(--danger)]"}`}>
+        ${row.ativo ? "bg-(--success)" : "bg-(--danger)"}`}>
         {row.ativo ? "Ativo" : "Inativo"}
       </span>
     )
   },
 ]
 
-export default function TipoTelefoneFormList1() {
+export default function TipoTelefoneFormList() {
 
   const { showMessage } = useMessage()
   const { ask }         = useQuestion()
