@@ -8,9 +8,10 @@ import { Login } from "../pages/public/auth/Login";
 import { PublicRoute } from "./PublicRoute";
 import { TRoleRoute } from "./TRoleRoute";
 import ClienteList from "../pages/administrativo/clientes/ClienteList";
-import UsuarioList from "../pages/administrativo/usuarios/UsuarioList";
+import UsuarioList from "../pages/administrativo/usuarios/UsuarioFormList";
 import ClienteForm from "../pages/administrativo/clientes/ClienteForm";
 import UsuarioForm from "../pages/administrativo/usuarios/UsuarioForm";
+import TipoTelefoneFormList from "../pages/administrativo/usuarios/UsuarioFormList";
 
 export function Router() {
   return (
@@ -28,13 +29,19 @@ export function Router() {
             
             {/* rotas só para SUPERADMIN */}
             <Route element={<TRoleRoute roles={["SUPERADMIN"]} />}>
-                <Route path="/clientes"         element={<ClienteList />} />
-                <Route path="/clientes/novo"    element={<ClienteForm />} />
-                <Route path="/clientes/:id"     element={<ClienteForm />} />
+                {/*ROTAS CLIENTES*/}
+                <Route path="/clientes"           element={<ClienteList />} />
+                <Route path="/clientes/novo"      element={<ClienteForm />} />
+                <Route path="/clientes/:id"       element={<ClienteForm />} />
                 
-                <Route path="/usuarios"         element={<UsuarioList />} />
-                <Route path="/usuarios/novo"    element={<UsuarioForm />} />
-                <Route path="/usuarios/:id"     element={<UsuarioForm />} />
+                {/*ROTAS USUARIOS*/}
+                <Route path="/usuarios"           element={<UsuarioList />} />
+                <Route path="/usuarios/novo"      element={<UsuarioForm />} />
+                <Route path="/usuarios/:id"       element={<UsuarioForm />} />
+                
+                {/*ROTAS TIPO TELEFONE*/}
+                <Route path="/tipos/telefone"     element={<TipoTelefoneFormList />} />
+
             </Route>
 
             <Route path="/" element={<DashBoard />} />

@@ -9,6 +9,16 @@ export const menu: MenuItem[] = [
     children: [
       { label: "Clientes",  path: "/clientes",  icon: FaUsers },
       { label: "Usuários",  path: "/usuarios",  icon: FaUsers },
+      {
+        label: "Auxiliares",
+        icon: FaPhone,
+        children: [
+          {
+            label: "Tipo Telefone",
+            path: "/tipos/telefone"
+          }
+        ]
+      }
     ]
   },
   {
