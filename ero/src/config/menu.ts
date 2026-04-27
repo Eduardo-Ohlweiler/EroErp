@@ -14,7 +14,11 @@ export const menu: MenuItem[] = [
         icon: FaPhone,
         children: [
           {
-            label: "Tipo Telefone",
+            label: "Tipos de Email",
+            path: "/tipos/email"
+          },
+          {
+            label: "Tipos de Telefone",
             path: "/tipos/telefone"
           }
         ]
@@ -34,16 +38,6 @@ export const menu: MenuItem[] = [
         label: "Produtos",
         path: "/produtos",
         icon: FaBox
-      },
-      {
-        label: "Auxiliares",
-        icon: FaPhone,
-        children: [
-          {
-            label: "Tipo Telefone",
-            path: "/tipo-telefone"
-          }
-        ]
       }
     ]
   }

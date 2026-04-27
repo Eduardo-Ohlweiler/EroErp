@@ -55,7 +55,7 @@ public class TipoEmailService {
         TipoEmail tipoEmail = findById(id);
         if(dto.nome() != null && !dto.nome().isBlank()){
             Optional<TipoEmail> existente = tipoEmailRepository.findByNomeIgnoreCase(dto.nome());
-            if(existente.isPresent() && !existente.get().equals(id))
+            if(existente.isPresent() && !existente.get().getId().equals(id))
                 throw new ConflictException("Já existe outro tipo de email com esse nome");
 
             tipoEmail.setNome(dto.nome());

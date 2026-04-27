@@ -19,7 +19,7 @@ export default function Header({ toggleMenu }: Props) {
   }
 
   return (
-    <header className="h-14 flex items-center justify-between px-4
+    <header className="h-17.5 flex items-center justify-between px-4
       bg-(--bg-header) border-b border-(--border-strong)">
 
       <div className="flex items-center gap-4">

@@ -12,6 +12,7 @@ import ClienteForm from "../pages/administrativo/clientes/ClienteForm";
 import UsuarioForm from "../pages/administrativo/usuarios/UsuarioForm";
 import TipoTelefoneFormList from "../pages/administrativo/auxiliares/TipoTelefoneFormList";
 import UsuarioList from "../pages/administrativo/usuarios/UsuarioList";
+import TipoEmailFormList from "../pages/administrativo/auxiliares/TipoEmailFormList";
 
 export function Router() {
   return (
@@ -41,6 +42,9 @@ export function Router() {
                 
                 {/*ROTAS TIPO TELEFONE*/}
                 <Route path="/tipos/telefone"     element={<TipoTelefoneFormList />} />
+
+                {/*ROTAS TIPO EMAIL*/}
+                <Route path="/tipos/email"     element={<TipoEmailFormList />} />
 
             </Route>
 

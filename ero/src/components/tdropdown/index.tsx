@@ -49,9 +49,9 @@ interface TDropdownOption {
 
         {open && (
             <div
-            className={`absolute top-full mt-2 bg-(--bg-surface) border border-(--border)
-            rounded-lg shadow-xl z-50 min-w-180px
-            ${align === "right" ? "right-0" : "left-0"}`}
+                className={`absolute top-full mt-2 bg-(--bg-surface) border border-(--border)
+                rounded-lg shadow-xl z-50 min-w-[160px]
+                ${align === "right" ? "right-0" : "left-0"}`}
             >
             {options.map((opt, index) => (
                 <div key={index}>

@@ -35,14 +35,12 @@ export default function TipoTelefoneFormList() {
   const { showMessage } = useMessage()
   const { ask }         = useQuestion()
 
-  // form
   const [formKey,    setFormKey]    = useState(0)
   const [saving,     setSaving]     = useState(false)
   const [currentId,  setCurrentId]  = useState<number | null>(null)
   const [nome,       setNome]       = useState("")
   const [ativo,      setAtivo]      = useState("true")
 
-  // grid
   const [data,          setData]          = useState<TipoTelefone[]>([])
   const [loading,       setLoading]       = useState(false)
   const [page,          setPage]          = useState(0)
@@ -123,8 +121,6 @@ export default function TipoTelefoneFormList() {
 
   return (
     <TPage title="Tipos de Telefone" breadcrumb={["Cadastros", "Auxiliares", "Tipos de Telefone"]}>
-
-      {/* formulário */}
       <TForm key={formKey} onSubmit={handleSubmit}>
         <TRow>
           <TCol>
@@ -134,8 +130,11 @@ export default function TipoTelefoneFormList() {
               required
               maxLength    ={100}
               defaultValue ={nome}
+              width="60%"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TCombo
               name         ="ativo"
@@ -160,7 +159,6 @@ export default function TipoTelefoneFormList() {
         </TFormFooter>
       </TForm>
 
-      {/* grid */}
       <TDataGrid
         columns      ={columns}
         data         ={data}
