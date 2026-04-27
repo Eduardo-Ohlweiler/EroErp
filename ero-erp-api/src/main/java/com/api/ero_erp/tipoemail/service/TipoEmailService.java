@@ -2,6 +2,7 @@ package com.api.ero_erp.tipoemail.service;
 
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.tipoemail.dtos.TipoEmailCreateDto;
 import com.api.ero_erp.tipoemail.dtos.TipoEmailUpdateDto;
 import com.api.ero_erp.tipoemail.entity.TipoEmail;
 import com.api.ero_erp.tipoemail.repository.TipoEmailRepository;
@@ -40,7 +41,7 @@ public class TipoEmailService {
     }
 
     @Transactional
-    public TipoEmail create(TipoTelefoneCreateDto dto){
+    public TipoEmail create(TipoEmailCreateDto dto){
         if(tipoEmailRepository.existsByNomeIgnoreCase(dto.nome()))
             throw new ConflictException("Já existe um tipo de email com esse nome");
 
