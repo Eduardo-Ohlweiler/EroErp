@@ -86,6 +86,61 @@
             <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
         </insert>
 
+        <!-- TIPO CADASTRO -->
+        <insert tableName="tipo_cadastro">
+            <column name="nome" value="Funcionário"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_cadastro">
+            <column name="nome" value="Cliente"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_cadastro">
+            <column name="nome" value="Fornecedor"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_cadastro">
+            <column name="nome" value="Prestador de Serviço"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_cadastro">
+            <column name="nome" value="Motorista"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_cadastro">
+            <column name="nome" value="Representante"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_cadastro">
+            <column name="nome" value="Filial"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_cadastro">
+            <column name="nome" value="Correspondente"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="tipo_cadastro">
+            <column name="nome" value="Outros"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
     </changeSet>
 
 </databaseChangeLog>
