@@ -28,6 +28,42 @@ export function TDataGrid<T extends object>({
     right:  "text-right",
   }
 
+  function applyColumnMask(value: string, mask: TDataGridColumn["mask"]): string {
+    if (!mask || !value) 
+      return value
+    const d = value.replace(/\D/g, "")
+
+    switch (mask) {
+      case "cpf":
+        return d.slice(0,11).replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2")
+      case "cnpj":
+        return d.slice(0,14).replace(/(\d{2})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1/$2").replace(/(\d{4})(\d{1,2})$/,"$1-$2")
+      case "telefone":
+        return d.slice(0,10).replace(/(\d{2})(\d)/,"($1) $2").replace(/(\d{4})(\d{1,4})$/,"$1-$2")
+      case "celular":
+        return d.slice(0,11).replace(/(\d{2})(\d)/,"($1) $2").replace(/(\d{5})(\d{1,4})$/,"$1-$2")
+      case "cep":
+        return d.slice(0,8).replace(/(\d{5})(\d{1,3})$/,"$1-$2")
+      case "hora":
+        return d.slice(0,4).replace(/(\d{2})(\d{1,2})$/,"$1:$2")
+      case "data": {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+          const [yyyy, mm, day] = value.split("-")
+          return `${day}/${mm}/${yyyy}`
+        }
+        return d.slice(0,8).replace(/(\d{2})(\d)/,"$1/$2").replace(/(\d{2})(\d{1,4})$/,"$1/$2")
+      }
+      case "moeda": {
+        const num = parseFloat(value)
+        if (!isNaN(num)) return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+        const cents = parseInt(d || "0", 10) / 100
+        return cents.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+      }
+      default:
+        return value
+    }
+  }
+
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-(--border)">
       <table className="w-full text-sm">
@@ -108,7 +144,7 @@ export function TDataGrid<T extends object>({
                   {col.render
                     ? col.render(row)
                     : col.field
-                      ? String(row[col.field] ?? "")
+                      ? applyColumnMask(String(row[col.field] ?? ""), col.mask)
                       : ""
                   }
                 </td>

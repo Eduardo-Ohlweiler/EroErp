@@ -23,7 +23,7 @@ const columns: TDataGridColumn<Cliente>[] = [
   { label: "ID",        field: "id",        width: "60px", align: "center" },
   { label: "Nome",      field: "nome" },
   { label: "E-mail",    field: "email" },
-  { label: "Telefone",  field: "telefone", width: "160px" },
+  { label: "Celular",  field: "telefone", width: "160px", mask: "celular" },
   {
     label: "Status",
     field: "ativo",
