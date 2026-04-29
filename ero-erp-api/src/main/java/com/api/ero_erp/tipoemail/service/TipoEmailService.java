@@ -6,7 +6,6 @@ import com.api.ero_erp.tipoemail.dtos.TipoEmailCreateDto;
 import com.api.ero_erp.tipoemail.dtos.TipoEmailUpdateDto;
 import com.api.ero_erp.tipoemail.entity.TipoEmail;
 import com.api.ero_erp.tipoemail.repository.TipoEmailRepository;
-import com.api.ero_erp.tipotelefone.dtos.TipoTelefoneCreateDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

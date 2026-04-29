@@ -19,7 +19,7 @@ const columns: TDataGridColumn<Usuario>[] = [
   { label: "ID",        field: "id",        width: "60px", align: "center" },
   { label: "Nome",      field: "nome" },
   { label: "E-mail",    field: "email" },
-  { label: "Celular",  field: "telefone",  width: "160px", mask: "celular" },
+  { label: "Celular",   field: "telefone",  width: "160px", mask: "celular" },
   {
     label: "Status",
     field: "ativo",
@@ -49,8 +49,7 @@ export default function UsuarioList() {
   const [filtroNome,    setFiltroNome]    = useState("")
   const [filtroEmail,   setFiltroEmail]   = useState("")
   const [filtroCliente, setFiltroCliente] = useState("")
-
-  const [resetKey, setResetKey] = useState(0)
+  const [resetKey, setResetKey]           = useState(0)
 
   const pageSize = 15
 
