@@ -14,6 +14,11 @@ export const menu: MenuItem[] = [
         icon: FaCogs,
         children: [
           {
+            label: "Tipos de Cadastros",
+            path: "/tipos/cadastro",
+            icon: FaCog
+          },
+          {
             label: "Tipos de Email",
             path: "/tipos/email",
             icon: FaCog
