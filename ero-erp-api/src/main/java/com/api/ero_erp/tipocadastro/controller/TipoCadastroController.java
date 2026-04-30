@@ -1,9 +1,9 @@
-package com.api.ero_erp.tipoemail.controller;
+package com.api.ero_erp.tipocadastro.controller;
 
-import com.api.ero_erp.tipoemail.dtos.TipoEmailCreateDto;
-import com.api.ero_erp.tipoemail.dtos.TipoEmailUpdateDto;
-import com.api.ero_erp.tipoemail.entity.TipoEmail;
-import com.api.ero_erp.tipoemail.service.TipoEmailService;
+import com.api.ero_erp.tipocadastro.dtos.TipoCadastroCreateDto;
+import com.api.ero_erp.tipocadastro.dtos.TipoCadastroUpdateDto;
+import com.api.ero_erp.tipocadastro.entity.TipoCadastro;
+import com.api.ero_erp.tipocadastro.service.TipoCadastroService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,19 +21,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/tipos/email")
-@Tag(name = "Tipo Email", description = "Gerenciamento de tipos de email")
-public class TipoEmailController {
+@RequestMapping("/tipos/cadastro")
+@Tag(name = "Tipo Cadastro", description = "Gerenciamento de tipos de cadastro")
+public class TipoCadastroController {
 
-    private final TipoEmailService service;
+    private final TipoCadastroService service;
 
-    public TipoEmailController(TipoEmailService service) {
+    public TipoCadastroController(TipoCadastroService service) {
         this.service = service;
     }
 
     @Operation(
-            summary     =     "Listar tipos de email",
-            description = "Retorna lista paginada de tipos de email com filtro por nome"
+            summary     =     "Listar tipos de cadstro",
+            description = "Retorna lista paginada de tipos de cadastro com filtro por nome"
     )
     @ApiResponses({
             @ApiResponse(
@@ -43,7 +43,7 @@ public class TipoEmailController {
     })
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
-    public Page<TipoEmail> getAll(
+    public Page<TipoCadastro> getAll(
             @Parameter(description = "Paginação e ordenação")
             @PageableDefault(size = 15, sort = "nome") Pageable pageable,
 
@@ -55,18 +55,18 @@ public class TipoEmailController {
 
     @Operation(
             summary     = "Listar para select",
-            description = "Retorna lista simples de tipos de email (ativo = true)"
+            description = "Retorna lista simples de tipos de cadastro (ativo = true)"
     )
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping("/select")
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
-    public List<TipoEmail> select() {
+    public List<TipoCadastro> select() {
         return service.select();
     }
 
     @Operation(
             summary     = "Buscar por ID",
-            description = "Retorna um tipo de email pelo ID"
+            description = "Retorna um tipo de cadastro pelo ID"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Encontrado com sucesso"),
@@ -74,16 +74,16 @@ public class TipoEmailController {
     })
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
-    public TipoEmail findById(
-            @Parameter(description = "ID do tipo de email", example = "1")
+    public TipoCadastro findById(
+            @Parameter(description = "ID do tipo de cadastro", example = "1")
             @PathVariable Long id
     ) {
         return service.findById(id);
     }
 
     @Operation(
-            summary     = "Criar tipo de email",
-            description = "Cria um novo tipo de email"
+            summary     = "Criar tipo de cadastro",
+            description = "Cria um novo tipo de cadastro"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Criado com sucesso"),
@@ -91,15 +91,15 @@ public class TipoEmailController {
     })
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
-    public ResponseEntity<TipoEmail> create(
-            @RequestBody @Valid TipoEmailCreateDto dto
+    public ResponseEntity<TipoCadastro> create(
+            @RequestBody @Valid TipoCadastroCreateDto dto
     ) {
         return new ResponseEntity<>(service.create(dto), HttpStatus.CREATED);
     }
 
     @Operation(
-            summary     = "Atualizar tipo de email",
-            description = "Atualiza parcialmente um tipo de email"
+            summary     = "Atualizar tipo de cadastro",
+            description = "Atualiza parcialmente um tipo de cadastro"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Atualizado com sucesso"),
@@ -108,11 +108,11 @@ public class TipoEmailController {
     })
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
-    public ResponseEntity<TipoEmail> update(
-            @Parameter(description = "ID do tipo de email", example = "1")
+    public ResponseEntity<TipoCadastro> update(
+            @Parameter(description = "ID do tipo de cadastro", example = "1")
             @PathVariable Long id,
 
-            @RequestBody @Valid TipoEmailUpdateDto dto
+            @RequestBody @Valid TipoCadastroUpdateDto dto
     ) {
         return ResponseEntity.ok(service.update(id, dto));
     }
