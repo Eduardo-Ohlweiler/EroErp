@@ -1,6 +1,6 @@
 package com.api.ero_erp.tiporedesocial.controller;
 
-import com.api.ero_erp.tiporedesocial.TipoRedeSocialService;
+import com.api.ero_erp.tiporedesocial.service.TipoRedeSocialService;
 import com.api.ero_erp.tiporedesocial.dtos.TipoRedeSocialCreateDto;
 import com.api.ero_erp.tiporedesocial.dtos.TipoRedeSocialUpdateDto;
 import com.api.ero_erp.tiporedesocial.entity.TipoRedeSocial;

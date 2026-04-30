@@ -46,6 +46,8 @@ public class TipoEmailService {
 
         TipoEmail tipo = new TipoEmail();
         tipo.setNome(dto.nome());
+        if(dto.ativo() != null)
+            tipo.setAtivo(dto.ativo());
         return tipoEmailRepository.save(tipo);
     }
 

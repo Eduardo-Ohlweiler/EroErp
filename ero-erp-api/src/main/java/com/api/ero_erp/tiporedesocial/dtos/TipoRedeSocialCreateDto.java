@@ -8,5 +8,8 @@ public record TipoRedeSocialCreateDto (
         @Schema(description = "Nome do tipo", example = "Instagram")
         @NotBlank(message = "Nome é obrigatório")
         @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
-        String nome
+        String nome,
+
+        @Schema(description = "Definir se o tipo esta ativo", example = "true")
+        Boolean ativo
 ) {}

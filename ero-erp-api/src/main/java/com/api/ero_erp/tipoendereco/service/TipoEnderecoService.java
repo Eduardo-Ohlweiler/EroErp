@@ -45,6 +45,8 @@ public class TipoEnderecoService {
 
         TipoEndereco tipo = new TipoEndereco();
         tipo.setNome(dto.nome());
+        if(dto.ativo() != null)
+            tipo.setAtivo(dto.ativo());
         return repository.save(tipo);
     }
 

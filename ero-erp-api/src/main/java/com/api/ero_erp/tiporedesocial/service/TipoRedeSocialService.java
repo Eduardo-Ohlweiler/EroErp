@@ -1,4 +1,4 @@
-package com.api.ero_erp.tiporedesocial;
+package com.api.ero_erp.tiporedesocial.service;
 
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
@@ -46,6 +46,8 @@ public class TipoRedeSocialService {
 
         TipoRedeSocial tipo = new TipoRedeSocial();
         tipo.setNome(dto.nome());
+        if(dto.ativo() != null)
+            tipo.setAtivo(dto.ativo());
 
         return repository.save(tipo);
     }

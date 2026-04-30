@@ -46,6 +46,8 @@ public class TipoTelefoneService {
 
         TipoTelefone tipo = new TipoTelefone();
         tipo.setNome(dto.nome());
+        if(dto.ativo() != null)
+            tipo.setAtivo(dto.ativo());
         return repository.save(tipo);
     }
 
