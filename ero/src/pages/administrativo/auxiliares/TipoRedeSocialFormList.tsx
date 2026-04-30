@@ -1,26 +1,22 @@
 import { useEffect, useState } from "react";
-import { useMessage } from "../../../hooks/useMessage";
-import { useQuestion } from "../../../hooks/useQuestion";
 import type { TDataGridColumn } from "../../../types/TDataGridColumn";
-import type { TipoEmail } from "../../../types/TipoEmail";
+import type { TipoRedeSocial } from "../../../types/TipoRedeSocial";
 import { api } from "../../../services/api";
 import axios from "axios";
 import type { ErrorResponse } from "../../../types/ErrorResponse";
 import { TPage } from "../../../components/tpage";
-import {
-    TForm,
-    TFormActionsLeft,
-    TFormFooter,
-} from "../../../components/tform";
+import { TForm, TFormActionsLeft, TFormFooter } from "../../../components/tform";
 import { TRow } from "../../../components/trow";
 import { TCol } from "../../../components/tcol";
 import { TEntry } from "../../../components/tentry";
+import { TCombo } from "../../../components/tcombo";
 import { TButton } from "../../../components/tbutton";
 import { TDataGrid } from "../../../components/tdatagrid";
-import { TCombo } from "../../../components/tcombo";
 import { TDataGridFooter } from "../../../components/tdatagridfooter";
+import { useMessage } from "../../../hooks/useMessage";
+import { useQuestion } from "../../../hooks/useQuestion";
 
-const columns: TDataGridColumn<TipoEmail>[] = [
+const columns: TDataGridColumn<TipoRedeSocial>[] = [
     { label: "ID",   field: "id", width: "60px", align: "center" },
     { label: "Nome", field: "nome" },
     {
@@ -39,7 +35,8 @@ const columns: TDataGridColumn<TipoEmail>[] = [
     },
 ];
 
-export default function TipoEmailFormList() {
+export default function TipoRedeSocialFormList() {
+
     const { showMessage }                     = useMessage();
     const { ask }                             = useQuestion();
     const [formKey,         setFormKey]       = useState(0);
@@ -47,7 +44,7 @@ export default function TipoEmailFormList() {
     const [currentId,       setCurrentId]     = useState<number | null>(null);
     const [nome,            setNome]          = useState("");
     const [ativo,           setAtivo]         = useState("true");
-    const [data,            setData]          = useState<TipoEmail[]>([]);
+    const [data,            setData]          = useState<TipoRedeSocial[]>([]);
     const [loading,         setLoading]       = useState(false);
     const [page,            setPage]          = useState(0);
     const [totalPages,      setTotalPages]    = useState(0);
@@ -55,8 +52,8 @@ export default function TipoEmailFormList() {
     const pageSize = 15;
 
     useEffect(() => {
-        loadGrid();
-    }, [page]);
+            loadGrid();
+        }, [page]);
 
     async function loadGrid(pagina = page) {
         setLoading(true);
@@ -66,7 +63,7 @@ export default function TipoEmailFormList() {
             size: String(pageSize),
             sort: "nome",
         });
-        const response = await api.get(`/tipos/email?${params.toString()}`);
+        const response = await api.get(`/tipos/redesocial?${params.toString()}`);
             setData(response.data.content);
             setTotalPages(response.data.totalPages);
             setTotalElements(response.data.totalElements);
@@ -84,7 +81,7 @@ export default function TipoEmailFormList() {
         setFormKey((prev) => prev + 1);
     }
 
-    function handleEdit(row: TipoEmail) {
+    function handleEdit(row: TipoRedeSocial) {
         setCurrentId(row.id);
         setNome(row.nome);
         setAtivo(row.ativo ? "true" : "false");
@@ -98,10 +95,10 @@ export default function TipoEmailFormList() {
             const payload = { nome: data.nome, ativo: data.ativo === "true" };
 
             if (currentId) {
-                await api.patch(`/tipos/email/${currentId}`, payload);
+                await api.patch(`/tipos/redesocial/${currentId}`, payload);
                 showMessage("success", "Registro atualizado com sucesso!");
             } else {
-                await api.post("/tipos/email", payload);
+                await api.post("/tipos/redesocial", payload);
                 showMessage("success", "Registro cadastrado com sucesso!");
             }
 
@@ -122,7 +119,7 @@ export default function TipoEmailFormList() {
 
     async function handleToggleAtivo(id: number, ativoAtual: boolean) {
         try {
-            await api.patch(`/tipos/email/${id}`, { ativo: !ativoAtual });
+            await api.patch(`/tipos/redesocial/${id}`, { ativo: !ativoAtual });
             showMessage(
                 "success",
                 ativoAtual ? "Registro bloqueado!" : "Registro ativado!",
@@ -135,8 +132,8 @@ export default function TipoEmailFormList() {
 
     return (
         <TPage
-            title       ="Tipos de Email"
-            breadcrumb  ={["Cadastros", "Auxiliares", "Tipos de Email"]}
+            title       ="Tipos de Redes sociais"
+            breadcrumb  ={["Cadastros", "Auxiliares", "Tipos de Redes sociais"]}
         >
         <TForm key={formKey} onSubmit={handleSubmit}>
             <TRow>

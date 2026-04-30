@@ -6,7 +6,7 @@ import { api } from "../../../services/api"
 import type { ErrorResponse } from "../../../types/ErrorResponse"
 import axios from "axios"
 import { TPage } from "../../../components/tpage"
-import { TForm, TFormActionsLeft, TFormActionsRight, TFormFooter } from "../../../components/tform"
+import { TForm, TFormActionsLeft, TFormFooter } from "../../../components/tform"
 import { TRow } from "../../../components/trow"
 import { TCol } from "../../../components/tcol"
 import { TEntry } from "../../../components/tentry"
@@ -152,10 +152,11 @@ export default function TipoTelefoneFormList() {
         <TFormFooter>
           <TFormActionsLeft>
             <TButton label="Limpar" variant="cancel" type="button" onClick={handleClear} />
-          </TFormActionsLeft>
-          <TFormActionsRight>
             <TButton label="Salvar" variant="save" type="submit" loading={saving} />
-          </TFormActionsRight>
+          </TFormActionsLeft>
+          {/* <TFormActionsRight>
+            <TButton label="Salvar" variant="save" type="submit" loading={saving} />
+          </TFormActionsRight> */}
         </TFormFooter>
       </TForm>
 
