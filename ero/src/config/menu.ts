@@ -1,33 +1,37 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaBox, FaCogs, FaPhone } from "react-icons/fa"
+import { FaUsers, FaBox, FaCogs, FaUserShield, FaCog /*, FaPhone, FaTools*/ } from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
     label: "Administração",
-    icon: FaCogs,
+    icon: FaUserShield,
     roles: ["SUPERADMIN"],
     children: [
       { label: "Clientes",  path: "/clientes",  icon: FaUsers },
       { label: "Usuários",  path: "/usuarios",  icon: FaUsers },
       {
         label: "Auxiliares",
-        icon: FaPhone,
+        icon: FaCogs,
         children: [
           {
             label: "Tipos de Email",
-            path: "/tipos/email"
+            path: "/tipos/email",
+            icon: FaCog
           },
           {
             label: "Tipos de Endereço",
-            path: "/tipos/endereco"
+            path: "/tipos/endereco",
+            icon: FaCog
           },
           {
             label: "Tipos de Redes sociais",
-            path: "/tipos/redesocial"
+            path: "/tipos/redesocial",
+            icon: FaCog
           },
           {
             label: "Tipos de Telefone",
-            path: "/tipos/telefone"
+            path: "/tipos/telefone",
+            icon: FaCog
           }
         ]
       }

@@ -4,7 +4,7 @@
   /* Fundo */
   --bg-base:        #f4f5f7;
   --bg-surface:     #ffffff;
-  --bg-hover:       #e8eaed;
+  --bg-hover:       #dfe3e8;
   --bg-input:       #ffffff;
   --bg-sidebar:     #1c2b39;
   --bg-header:      #1c2b39;
@@ -19,7 +19,7 @@
   --text-muted:     #718096;
   --text-inverse:   #ffffff;
   --text-sidebar:   #a0aec0;
-  --text-sidebar-active: #ffffff;
+  --text-sidebar-active: #1a1f25;
 
   /* Accent — azul TOTVS */
   --accent:         #0068b0;
