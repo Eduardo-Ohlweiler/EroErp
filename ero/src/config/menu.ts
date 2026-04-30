@@ -18,6 +18,10 @@ export const menu: MenuItem[] = [
             path: "/tipos/email"
           },
           {
+            label: "Tipos de Endereço",
+            path: "/tipos/endereco"
+          },
+          {
             label: "Tipos de Redes sociais",
             path: "/tipos/redesocial"
           },

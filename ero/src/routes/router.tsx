@@ -1,19 +1,20 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { DashBoard } from "../pages/dashboard";
-import Layout from "../components/Layout";
-import { PessoaList } from "../pages/cadastros/pessoas/PessoaList";
-import { ProdutoList } from "../pages/cadastros/produtos/ProdutoList";
-import { PrivateRoute } from "./PrivateRoute";
-import { Login } from "../pages/public/auth/Login";
-import { PublicRoute } from "./PublicRoute";
-import { TRoleRoute } from "./TRoleRoute";
-import ClienteList from "../pages/administrativo/clientes/ClienteList";
-import ClienteForm from "../pages/administrativo/clientes/ClienteForm";
-import UsuarioForm from "../pages/administrativo/usuarios/UsuarioForm";
-import TipoTelefoneFormList from "../pages/administrativo/auxiliares/TipoTelefoneFormList";
-import UsuarioList from "../pages/administrativo/usuarios/UsuarioList";
-import TipoEmailFormList from "../pages/administrativo/auxiliares/TipoEmailFormList";
-import TipoRedeSocialFormList from "../pages/administrativo/auxiliares/TipoRedeSocialFormList";
+import { DashBoard }                              from "../pages/dashboard";
+import Layout                                     from "../components/Layout";
+import { PessoaList }                             from "../pages/cadastros/pessoas/PessoaList";
+import { ProdutoList }                            from "../pages/cadastros/produtos/ProdutoList";
+import { PrivateRoute }                           from "./PrivateRoute";
+import { Login }                                  from "../pages/public/auth/Login";
+import { PublicRoute }                            from "./PublicRoute";
+import { TRoleRoute }                             from "./TRoleRoute";
+import ClienteList                                from "../pages/administrativo/clientes/ClienteList";
+import ClienteForm                                from "../pages/administrativo/clientes/ClienteForm";
+import UsuarioForm                                from "../pages/administrativo/usuarios/UsuarioForm";
+import TipoTelefoneFormList                       from "../pages/administrativo/auxiliares/TipoTelefoneFormList";
+import UsuarioList                                from "../pages/administrativo/usuarios/UsuarioList";
+import TipoEmailFormList                          from "../pages/administrativo/auxiliares/TipoEmailFormList";
+import TipoRedeSocialFormList                     from "../pages/administrativo/auxiliares/TipoRedeSocialFormList";
+import TipoEnderecoFormList                       from "../pages/administrativo/auxiliares/TipoEnderecoFormList";
 
 export function Router() {
   return (
@@ -45,10 +46,13 @@ export function Router() {
                 <Route path="/tipos/telefone"     element={<TipoTelefoneFormList />} />
 
                 {/*ROTAS TIPO EMAIL*/}
-                <Route path="/tipos/email"     element={<TipoEmailFormList />} />
+                <Route path="/tipos/email"        element={<TipoEmailFormList />} />
 
-                {/*ROTAS TIPO RED SOCIAL*/}
-                <Route path="/tipos/redesocial"     element={<TipoRedeSocialFormList />} />
+                {/*ROTAS TIPO REDE SOCIAL*/}
+                <Route path="/tipos/redesocial"   element={<TipoRedeSocialFormList />} />
+
+                {/*ROTAS TIPO ENDERECO*/}
+                <Route path="/tipos/endereco"     element={<TipoEnderecoFormList />} />
 
             </Route>
 
