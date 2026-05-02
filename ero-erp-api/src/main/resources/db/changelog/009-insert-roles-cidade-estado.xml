@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="009-insert-roles-cidade-estado" author="eduardo">
+
+        <insert tableName="role">
+            <column name="nome" value="ESTADO"/>
+            <column name="descricao" value="Permissão geral para Estado"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="ESTADO_GET"/>
+            <column name="descricao" value="Permissão para consultar Estado"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="ESTADO_POST"/>
+            <column name="descricao" value="Permissão para criar Estado"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="ESTADO_DELETE"/>
+            <column name="descricao" value="Permissão para excluir Estado"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="CIDADE"/>
+            <column name="descricao" value="Permissão geral para Cidade"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="CIDADE_GET"/>
+            <column name="descricao" value="Permissão para consultar Cidade"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="CIDADE_POST"/>
+            <column name="descricao" value="Permissão para criar Cidade"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="CIDADE_DELETE"/>
+            <column name="descricao" value="Permissão para excluir Cidade"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

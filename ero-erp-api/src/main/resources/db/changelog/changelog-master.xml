@@ -5,11 +5,14 @@
        http://www.liquibase.org/xml/ns/dbchangelog
        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <include file="001-cliente.xml" relativeToChangelogFile="true"/>
-    <include file="002-role.xml" relativeToChangelogFile="true"/>
-    <include file="003-tipos.xml" relativeToChangelogFile="true"/>
-    <include file="004-usuario.xml" relativeToChangelogFile="true"/>
-    <include file="005-usuario-role.xml" relativeToChangelogFile="true"/>
-    <include file="006-insert-tipos.xml" relativeToChangelogFile="true"/>
+    <include file="001-cliente.xml"                     relativeToChangelogFile="true" />
+    <include file="002-role.xml"                        relativeToChangelogFile="true" />
+    <include file="003-tipos.xml"                       relativeToChangelogFile="true" />
+    <include file="004-usuario.xml"                     relativeToChangelogFile="true" />
+    <include file="005-usuario-role.xml"                relativeToChangelogFile="true" />
+    <include file="006-insert-tipos.xml"                relativeToChangelogFile="true" />
+    <include file="007-create-estado-cidade.xml"        relativeToChangelogFile="true" />
+    <include file="008-insert-estados.xml"              relativeToChangelogFile="true" />
+    <include file="009-insert-roles-cidade-estado.xml"  relativeToChangelogFile="true" />
 
 </databaseChangeLog>
