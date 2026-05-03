@@ -14,42 +14,9 @@ import java.util.Optional;
 @Repository
 public interface CidadeRepository extends JpaRepository<Cidade, Long> {
 
-    @Query("""
-        SELECT c FROM Cidade c
-        JOIN FETCH c.estado
-        WHERE c.cliente.id = :clienteId
-        AND (:nome IS NULL OR LOWER(c.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
-        AND (:estadoId IS NULL OR c.estado.id = :estadoId)
-    """)
-    Page<Cidade> findAllWithFilters(
-            Pageable pageable,
-            @Param("clienteId") Long   clienteId,
-            @Param("nome")      String nome,
-            @Param("estadoId")  Long   estadoId
-    );
-
-    @Query("""
-        SELECT c FROM Cidade c
-        JOIN FETCH c.estado
-        WHERE c.cliente.id = :clienteId
-        AND c.ativo = true
-        AND (:nome IS NULL OR LOWER(c.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
-        ORDER BY c.nome
-    """)
-    List<Cidade> findForSelect(
-            @Param("clienteId") Long   clienteId,
-            @Param("nome")      String nome
-    );
-
-    @Query("""
-        SELECT c FROM Cidade c
-        JOIN FETCH c.estado
-        WHERE c.id = :id
-        AND c.cliente.id = :clienteId
-    """)
-    Optional<Cidade> findByIdAndClienteId(
-            @Param("id")        Long id,
-            @Param("clienteId") Long clienteId
+    boolean existsByCodigoIbgeAndClienteId(
+            Integer codigoIbge,
+            Long    clienteId
     );
 
     boolean existsByNomeIgnoreCaseAndEstadoIdAndClienteId(
@@ -60,10 +27,51 @@ public interface CidadeRepository extends JpaRepository<Cidade, Long> {
 
     @Query("""
         SELECT c FROM Cidade c
-        JOIN FETCH c.estado
+            JOIN FETCH c.estado
+        WHERE c.cliente.id = :clienteId
+            AND (:nome       IS NULL OR LOWER(c.nome)       LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
+            AND (:estadoId   IS NULL OR c.estado.id         = :estadoId)
+            AND (:codigoIbge IS NULL OR c.codigoIbge        = :codigoIbge)
+            AND (:ativo      IS NULL OR c.ativo             = :ativo)
+    """)
+    Page<Cidade> findAllWithFilters(
+            Pageable pageable,
+            @Param("clienteId")  Long    clienteId,
+            @Param("nome")       String  nome,
+            @Param("estadoId")   Long    estadoId,
+            @Param("codigoIbge") Integer codigoIbge,
+            @Param("ativo")      Boolean ativo
+    );
+
+    @Query("""
+        SELECT c FROM Cidade c
+            JOIN FETCH c.estado
+        WHERE c.cliente.id = :clienteId
+            AND c.ativo = true
+            AND (:nome IS NULL OR LOWER(c.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
+        ORDER BY c.nome
+    """)
+    List<Cidade> findForSelect(
+            @Param("clienteId") Long   clienteId,
+            @Param("nome")      String nome
+    );
+
+    @Query("""
+        SELECT c FROM Cidade c
+            JOIN FETCH c.estado
+        WHERE c.id = :id
+            AND c.cliente.id = :clienteId
+    """)
+    Optional<Cidade> findByIdAndClienteId(
+            @Param("id")        Long id,
+            @Param("clienteId") Long clienteId
+    );
+
+    @Query("""
+        SELECT c FROM Cidade c
         WHERE LOWER(c.nome) = LOWER(:nome)
-        AND c.estado.id = :estadoId
-        AND c.cliente.id = :clienteId
+            AND c.estado.id    = :estadoId
+            AND c.cliente.id   = :clienteId
     """)
     Optional<Cidade> findByNomeAndEstadoAndCliente(
             @Param("nome")      String nome,
