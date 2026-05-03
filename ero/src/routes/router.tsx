@@ -17,6 +17,8 @@ import TipoRedeSocialFormList                     from "../pages/administrativo/
 import TipoEnderecoFormList                       from "../pages/administrativo/auxiliares/TipoEnderecoFormList";
 import TipoCadastroFormList from "../pages/administrativo/auxiliares/TipoCadastroFormList";
 import EstadoFormList from "../pages/administrativo/auxiliares/EstadoFormList";
+import CidadeList from "../pages/cadastros/auxiliares/CidadeList";
+import CidadeForm from "../pages/cadastros/auxiliares/CidadeForm";
 
 export function Router() {
   return (
@@ -44,7 +46,7 @@ export function Router() {
                 <Route path="/usuarios/novo"      element={<UsuarioForm />} />
                 <Route path="/usuarios/:id"       element={<UsuarioForm />} />
 
-                {/*ROTAS endereçlo*/}
+                {/*ROTAS ESTADOS*/}
                 <Route path="/estados"            element={<EstadoFormList />} />
                 
                 {/*ROTAS TIPO TELEFONE*/}
@@ -62,6 +64,12 @@ export function Router() {
                 {/*ROTAS TIPO ENDERECO*/}
                 <Route path="/tipos/endereco"     element={<TipoEnderecoFormList />} />
 
+            </Route>
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "CIDADE", "CIDADE_GET", "CIDADE_POST"]} />}>
+              {/*ROTAS CIDADES*/}
+              <Route path="/cidades" element={<CidadeList />} />
+              <Route path="/cidades/novo" element={<CidadeForm />} />
+              <Route path="/cidades/:id"  element={<CidadeForm />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />

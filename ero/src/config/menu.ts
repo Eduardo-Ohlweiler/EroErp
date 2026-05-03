@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaBox, FaCogs, FaUserShield, FaCog /*, FaPhone, FaTools*/ } from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog /*, FaPhone, FaTools*/ } from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -13,6 +13,7 @@ export const menu: MenuItem[] = [
         label: "Auxiliares",
         icon: FaCogs,
         children: [
+          { label: "Cidades",                 path: "/cidades",           icon: FaCog },
           { label: "Estados",                 path: "/estados",           icon: FaCog },
           { label: "Tipos de Cadastros",      path: "/tipos/cadastro",    icon: FaCog },
           { label: "Tipos de Email",          path: "/tipos/email",       icon: FaCog },
@@ -31,11 +32,6 @@ export const menu: MenuItem[] = [
         label: "Pessoas",
         path: "/pessoas",
         icon: FaUsers
-      },
-      {
-        label: "Produtos",
-        path: "/produtos",
-        icon: FaBox
       }
     ]
   }

@@ -135,7 +135,7 @@ export default function UsuarioList() {
             <TDbCombo
               name        ="clienteId"
               label       ="Cliente"
-              url         ="/clientes"
+              url         ="/clientes/select"
               valueField  ="id"
               displayField="nome"
               searchField ="nome"

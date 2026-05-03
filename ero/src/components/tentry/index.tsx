@@ -1,11 +1,13 @@
 import { useState } from "react"
 
-type MaskType = "cpf" | "cnpj" | "telefone" | "celular" | "cep" | "data" | "hora" | "moeda"
+type MaskType = "cpf" | "cnpj" | "telefone" | "celular" | "cep" | "data" | "hora" | "moeda" | "numero"
 
 function applyMask(value: string, mask: MaskType): string {
   const onlyDigits = value.replace(/\D/g, "")
 
   switch (mask) {
+    case "numero":
+      return onlyDigits
     case "cpf":
       return onlyDigits.slice(0, 11)
         .replace(/(\d{3})(\d)/, "$1.$2")
@@ -63,6 +65,7 @@ function getRawValue(masked: string, mask: MaskType): string {
     case "telefone":
     case "celular":
     case "cep":
+    case "numero":
       return masked.replace(/\D/g, "")
 
     // hora: envia HH:mm
