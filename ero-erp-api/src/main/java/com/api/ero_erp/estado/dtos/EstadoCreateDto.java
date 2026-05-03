@@ -1,6 +1,7 @@
 package com.api.ero_erp.estado.dtos;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record EstadoCreateDto(
@@ -13,5 +14,8 @@ public record EstadoCreateDto(
         @Size(min = 2, max = 2, message = "Sigla deve ter exatamente 2 caracteres")
         String sigla,
 
-        Integer codigoIbge
+        @NotNull(message = "Código IBGE é obrigatório")
+        Integer codigoIbge,
+
+        Boolean ativo
 ) {}

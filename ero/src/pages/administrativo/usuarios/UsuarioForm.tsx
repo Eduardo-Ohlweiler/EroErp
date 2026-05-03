@@ -122,44 +122,44 @@ export default function UsuarioForm() {
         <TForm key={formKey} onSubmit={handleSubmit}>
 
             <TRow>
-            <TCol>
-                <TEntry
-                name="nome"
-                label="Nome"
-                required
-                maxLength={255}
-                defaultValue={usuario?.nome}
-                />
-            </TCol>
-            <TCol>
-                <TEntry
-                name="email"
-                label="E-mail"
-                type="email"
-                required
-                maxLength={255}
-                defaultValue={usuario?.email}
-                />
-            </TCol>
+                <TCol>
+                    <TEntry
+                    name="nome"
+                    label="Nome"
+                    required
+                    maxLength={255}
+                    defaultValue={usuario?.nome}
+                    />
+                </TCol>
+                <TCol>
+                    <TEntry
+                    name="email"
+                    label="E-mail"
+                    type="email"
+                    required
+                    maxLength={255}
+                    defaultValue={usuario?.email}
+                    />
+                </TCol>
             </TRow>
 
             <TRow>
-            <TCol>
-                <TEntry
-                name        ="telefone"
-                label       ="Telefone"
-                mask        ="celular"
-                defaultValue={usuario?.telefone}
-                />
-            </TCol>
-            <TCol>
-                <TEntry
-                name    ="senha"
-                label   ={isEdit ? "Nova Senha (deixe vazio para manter)" : "Senha"}
-                type    ="password"
-                required={!isEdit}
-                />
-            </TCol>
+                <TCol>
+                    <TEntry
+                    name        ="telefone"
+                    label       ="Telefone"
+                    mask        ="celular"
+                    defaultValue={usuario?.telefone}
+                    />
+                </TCol>
+                <TCol>
+                    <TEntry
+                    name    ="senha"
+                    label   ={isEdit ? "Nova Senha (deixe vazio para manter)" : "Senha"}
+                    type    ="password"
+                    required={!isEdit}
+                    />
+                </TCol>
             </TRow>
 
             <TRow>
@@ -192,39 +192,39 @@ export default function UsuarioForm() {
             </TRow>
 
             <TRow>
-            <TCol>
-                <TDbCheckbox
-                name            ="roleIds"
-                label           ="Perfis de acesso"
-                url             ="/roles"
-                valueField      ="nome"
-                labelField      ="nome"
-                direction       ="row"
-                defaultValues   ={usuario?.roles ?? []}
-                />
-            </TCol>
+                <TCol>
+                    <TDbCheckbox
+                    name            ="roleIds"
+                    label           ="Perfis de acesso"
+                    url             ="/roles"
+                    valueField      ="nome"
+                    labelField      ="nome"
+                    direction       ="column"
+                    defaultValues   ={usuario?.roles ?? []}
+                    />
+                </TCol>
             </TRow>
             
             {isEdit && (
                 <TRow>
                     <TCol>
-                    <TEntry
-                        name         ="createdById"
-                        label        ="Criado por"
-                        disabled
-                        defaultValue ={usuario?.createdByNome ?? "—"}
-                    />
+                        <TEntry
+                            name         ="createdById"
+                            label        ="Criado por"
+                            disabled
+                            defaultValue ={usuario?.createdByNome ?? "—"}
+                        />
                     </TCol>
                     <TCol>
-                    <TEntry
-                        name         ="createdAt"
-                        label        ="Criado em"
-                        disabled
-                        width="160px"
-                        defaultValue ={usuario?.createdAt
-                                        ? new Date(usuario.createdAt).toLocaleString("pt-BR")
-                                        : "—"}
-                    />
+                        <TEntry
+                            name         ="createdAt"
+                            label        ="Criado em"
+                            disabled
+                            width="160px"
+                            defaultValue ={usuario?.createdAt
+                                            ? new Date(usuario.createdAt).toLocaleString("pt-BR")
+                                            : "—"}
+                        />
                     </TCol>
                     <TSpace />
                 </TRow>
@@ -233,36 +233,36 @@ export default function UsuarioForm() {
             {isEdit && usuario?.updatedAt && (
                 <TRow>
                     <TCol>
-                    <TEntry
-                        name         ="updatedById"
-                        label        ="Alterado por"
-                        disabled
-                        defaultValue ={usuario?.updatedByNome ?? "—"}
-                    />
+                        <TEntry
+                            name         ="updatedById"
+                            label        ="Alterado por"
+                            disabled
+                            defaultValue ={usuario?.updatedByNome ?? "—"}
+                        />
                     </TCol>
                     <TCol>
-                    <TEntry
-                        name         ="updatedAt"
-                        label        ="Alterado em"
-                        disabled
-                        width="160px"
-                        defaultValue ={usuario?.updatedAt
-                                        ? new Date(usuario.updatedAt).toLocaleString("pt-BR")
-                                        : "—"}
-                    />
+                        <TEntry
+                            name         ="updatedAt"
+                            label        ="Alterado em"
+                            disabled
+                            width="160px"
+                            defaultValue ={usuario?.updatedAt
+                                            ? new Date(usuario.updatedAt).toLocaleString("pt-BR")
+                                            : "—"}
+                        />
                     </TCol>
                     <TSpace />
                 </TRow>
             )}
 
             <TFormFooter>
-            <TFormActionsLeft>
-                <TButton label="Voltar" variant="cancel" onClick={() => navigate("/usuarios")} />
-                <TButton label="Novo"   variant="new"    onClick={handleNovo} />
-            </TFormActionsLeft>
-            <TFormActionsRight>
-                <TButton label="Salvar" variant="save" type="submit" loading={saving} />
-            </TFormActionsRight>
+                <TFormActionsLeft>
+                    <TButton label="Voltar" variant="cancel" onClick={() => navigate("/usuarios")} />
+                    <TButton label="Novo"   variant="new"    onClick={handleNovo} />
+                </TFormActionsLeft>
+                <TFormActionsRight>
+                    <TButton label="Salvar" variant="save" type="submit" loading={saving} />
+                </TFormActionsRight>
             </TFormFooter>
 
         </TForm>

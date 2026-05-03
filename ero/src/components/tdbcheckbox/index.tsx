@@ -10,6 +10,7 @@ interface TDbCheckboxProps {
   defaultValues?: string[];
   disabled?:      boolean;
   direction?:     "row" | "column";
+  height?:        string;
   hint?:          string;
   onChange?:      (values: string[]) => void;
 }
@@ -22,7 +23,8 @@ export function TDbCheckbox({
   labelField,
   defaultValues = [],
   disabled,
-  direction = "row",
+  direction = "column",
+  height    = "200px",
   hint,
   onChange,
 }: TDbCheckboxProps) {
@@ -35,9 +37,10 @@ export function TDbCheckbox({
   }, [defaultValues])
 
   useEffect(() => {
-    api.get(`${url}?size=100`)
+    api.get(url)
       .then((response) => {
-        setOptions(response.data.content ?? response.data)
+        const data = response.data
+        setOptions(Array.isArray(data) ? data : data.content ?? [])
       })
       .catch(() => setOptions([]))
   }, [url])
@@ -52,34 +55,48 @@ export function TDbCheckbox({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1" style={direction === "column" ? { display: "inline-flex" } : undefined}>
+
       <span className="text-sm text-(--text-secondary)">{label}</span>
 
-      <div className={`flex gap-4 ${direction === "column" ? "flex-col ml-3" : "flex-row flex-wrap"}`}>
+      <div
+        className={direction === "column"
+          ? "ml-3 overflow-y-auto pr-2 border border-(--border) rounded-md p-2"
+          : "flex flex-row flex-wrap gap-4"
+        }
+        style={direction === "column" ? { height, width: "fit-content", minWidth: "150px" } : undefined}
+      >
         {options.map((opt) => {
           const value = String(opt[valueField])
-
           return (
-            <label key={value} className="flex items-center gap-2 text-sm">
+            <label
+              key       ={value}
+              className ={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary) mb-2
+                ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
+            >
               <input
-                type    ="checkbox"
-                name    ={name}
-                value   ={value}
-                checked ={selected.includes(value)}
-                disabled={disabled}
-                onChange={(e) => handleChange(value, e.target.checked)}
+                type     ="checkbox"
+                name     ={name}
+                value    ={value}
+                checked  ={selected.includes(value)}
+                disabled ={disabled}
+                onChange ={(e) => handleChange(value, e.target.checked)}
+                className="w-4 h-4 cursor-pointer accent-(--accent)"
               />
               {String(opt[labelField])}
             </label>
           )
         })}
       </div>
+
       <input
-        type="hidden"
-        name={name}
+        type ="hidden"
+        name ={name}
         value={selected.join(",")}
       />
+
       {hint && <p className="text-xs text-(--text-muted)">{hint}</p>}
+
     </div>
   )
 }

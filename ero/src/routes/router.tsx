@@ -16,6 +16,7 @@ import TipoEmailFormList                          from "../pages/administrativo/
 import TipoRedeSocialFormList                     from "../pages/administrativo/auxiliares/TipoRedeSocialFormList";
 import TipoEnderecoFormList                       from "../pages/administrativo/auxiliares/TipoEnderecoFormList";
 import TipoCadastroFormList from "../pages/administrativo/auxiliares/TipoCadastroFormList";
+import EstadoFormList from "../pages/administrativo/auxiliares/EstadoFormList";
 
 export function Router() {
   return (
@@ -42,6 +43,9 @@ export function Router() {
                 <Route path="/usuarios"           element={<UsuarioList />} />
                 <Route path="/usuarios/novo"      element={<UsuarioForm />} />
                 <Route path="/usuarios/:id"       element={<UsuarioForm />} />
+
+                {/*ROTAS endereçlo*/}
+                <Route path="/estados"            element={<EstadoFormList />} />
                 
                 {/*ROTAS TIPO TELEFONE*/}
                 <Route path="/tipos/telefone"     element={<TipoTelefoneFormList />} />

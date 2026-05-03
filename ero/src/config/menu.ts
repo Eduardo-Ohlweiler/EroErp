@@ -13,31 +13,12 @@ export const menu: MenuItem[] = [
         label: "Auxiliares",
         icon: FaCogs,
         children: [
-          {
-            label: "Tipos de Cadastros",
-            path: "/tipos/cadastro",
-            icon: FaCog
-          },
-          {
-            label: "Tipos de Email",
-            path: "/tipos/email",
-            icon: FaCog
-          },
-          {
-            label: "Tipos de Endereço",
-            path: "/tipos/endereco",
-            icon: FaCog
-          },
-          {
-            label: "Tipos de Redes sociais",
-            path: "/tipos/redesocial",
-            icon: FaCog
-          },
-          {
-            label: "Tipos de Telefone",
-            path: "/tipos/telefone",
-            icon: FaCog
-          }
+          { label: "Estados",                 path: "/estados",           icon: FaCog },
+          { label: "Tipos de Cadastros",      path: "/tipos/cadastro",    icon: FaCog },
+          { label: "Tipos de Email",          path: "/tipos/email",       icon: FaCog },
+          { label: "Tipos de Endereço",       path: "/tipos/endereco",    icon: FaCog },
+          { label: "Tipos de Redes sociais",  path: "/tipos/redesocial",  icon: FaCog },
+          { label: "Tipos de Telefone",       path: "/tipos/telefone",    icon: FaCog }
         ]
       }
     ]

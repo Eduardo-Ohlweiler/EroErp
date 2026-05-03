@@ -17,7 +17,9 @@
             <column name="sigla" type="CHAR(2)">
                 <constraints nullable="false"/>
             </column>
-            <column name="codigo_ibge" type="INTEGER"/>
+            <column name="codigo_ibge" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
             <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"/>
             <column name="created_at" type="TIMESTAMP">
                 <constraints nullable="false"/>

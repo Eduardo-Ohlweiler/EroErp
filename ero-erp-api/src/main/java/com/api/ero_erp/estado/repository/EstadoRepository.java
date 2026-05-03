@@ -27,17 +27,17 @@ public interface EstadoRepository extends JpaRepository<Estado, Long> {
     List<Estado> findForSelect();
 
     @Query("""
-    SELECT e FROM Estado e
-    WHERE (:nome IS NULL OR LOWER(e.nome) LIKE LOWER(CONCAT('%', :nome, '%')))
-      AND (:sigla IS NULL OR LOWER(e.sigla) = LOWER(:sigla))
-      AND (:codigoIbge IS NULL OR e.codigoIbge = :codigoIbge)
-      AND (:ativo IS NULL OR e.ativo = :ativo)
-""")
+        SELECT e FROM Estado e
+        WHERE (:nome IS NULL OR LOWER(e.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
+          AND (:sigla IS NULL OR LOWER(e.sigla) = LOWER(CAST(:sigla AS string)))
+          AND (:codigoIbge IS NULL OR e.codigoIbge = :codigoIbge)
+          AND (:ativo IS NULL OR e.ativo = :ativo)
+    """)
     Page<Estado> findAllWithFilters(
             Pageable pageable,
-            @Param("nome") String nome,
-            @Param("sigla") String sigla,
+            @Param("nome")       String  nome,
+            @Param("sigla")      String  sigla,
             @Param("codigoIbge") Integer codigoIbge,
-            @Param("ativo") Boolean ativo
+            @Param("ativo")      Boolean ativo
     );
 }

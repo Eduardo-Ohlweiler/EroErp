@@ -66,7 +66,9 @@ public class EstadoService {
         Estado estado = new Estado();
         estado.setNome(dto.nome());
         estado.setSigla(dto.sigla().toUpperCase());
-        if (dto.codigoIbge() != null) estado.setCodigoIbge(dto.codigoIbge());
+        estado.setCodigoIbge(dto.codigoIbge());
+        if(dto.ativo() != null)
+            estado.setAtivo(dto.ativo());
 
         return estadoRepository.save(estado);
     }
