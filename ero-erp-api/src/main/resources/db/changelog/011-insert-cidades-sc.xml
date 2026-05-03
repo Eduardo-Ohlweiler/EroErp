@@ -1,0 +1,2368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="011-insert-cidades-sc" author="eduardo">
+
+        <insert tableName="cidade">
+            <column name="nome" value="Abdon Batista"/>
+            <column name="codigo_ibge" valueNumeric="4200051"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Abelardo Luz"/>
+            <column name="codigo_ibge" valueNumeric="4200101"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Agrolândia"/>
+            <column name="codigo_ibge" valueNumeric="4200200"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Agronômica"/>
+            <column name="codigo_ibge" valueNumeric="4200309"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Água Doce"/>
+            <column name="codigo_ibge" valueNumeric="4200408"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Águas de Chapecó"/>
+            <column name="codigo_ibge" valueNumeric="4200507"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Águas Frias"/>
+            <column name="codigo_ibge" valueNumeric="4200556"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Águas Mornas"/>
+            <column name="codigo_ibge" valueNumeric="4200606"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Alfredo Wagner"/>
+            <column name="codigo_ibge" valueNumeric="4200705"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Alto Bela Vista"/>
+            <column name="codigo_ibge" valueNumeric="4200754"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Anchieta"/>
+            <column name="codigo_ibge" valueNumeric="4200804"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Angelina"/>
+            <column name="codigo_ibge" valueNumeric="4200903"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Anita Garibaldi"/>
+            <column name="codigo_ibge" valueNumeric="4201000"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Anitápolis"/>
+            <column name="codigo_ibge" valueNumeric="4201109"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Antônio Carlos"/>
+            <column name="codigo_ibge" valueNumeric="4201208"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Apiúna"/>
+            <column name="codigo_ibge" valueNumeric="4201257"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Arabutã"/>
+            <column name="codigo_ibge" valueNumeric="4201273"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Araquari"/>
+            <column name="codigo_ibge" valueNumeric="4201307"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Araranguá"/>
+            <column name="codigo_ibge" valueNumeric="4201406"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Armazém"/>
+            <column name="codigo_ibge" valueNumeric="4201505"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Arroio Trinta"/>
+            <column name="codigo_ibge" valueNumeric="4201604"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Arvoredo"/>
+            <column name="codigo_ibge" valueNumeric="4201653"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ascurra"/>
+            <column name="codigo_ibge" valueNumeric="4201703"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Atalanta"/>
+            <column name="codigo_ibge" valueNumeric="4201802"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Aurora"/>
+            <column name="codigo_ibge" valueNumeric="4201901"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Balneário Arroio do Silva"/>
+            <column name="codigo_ibge" valueNumeric="4201950"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Balneário Barra do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4202057"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Balneário Camboriú"/>
+            <column name="codigo_ibge" valueNumeric="4202008"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Balneário Gaivota"/>
+            <column name="codigo_ibge" valueNumeric="4202073"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Balneário Piçarras"/>
+            <column name="codigo_ibge" valueNumeric="4212809"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Balneário Rincão"/>
+            <column name="codigo_ibge" valueNumeric="4220000"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Bandeirante"/>
+            <column name="codigo_ibge" valueNumeric="4202081"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Barra Bonita"/>
+            <column name="codigo_ibge" valueNumeric="4202099"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Barra Velha"/>
+            <column name="codigo_ibge" valueNumeric="4202107"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Bela Vista do Toldo"/>
+            <column name="codigo_ibge" valueNumeric="4202131"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Belmonte"/>
+            <column name="codigo_ibge" valueNumeric="4202156"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Benedito Novo"/>
+            <column name="codigo_ibge" valueNumeric="4202206"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Biguaçu"/>
+            <column name="codigo_ibge" valueNumeric="4202305"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Blumenau"/>
+            <column name="codigo_ibge" valueNumeric="4202404"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Bocaina do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4202438"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Bom Jardim da Serra"/>
+            <column name="codigo_ibge" valueNumeric="4202503"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Bom Jesus"/>
+            <column name="codigo_ibge" valueNumeric="4202537"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Bom Jesus do Oeste"/>
+            <column name="codigo_ibge" valueNumeric="4202578"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Bom Retiro"/>
+            <column name="codigo_ibge" valueNumeric="4202602"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Bombinhas"/>
+            <column name="codigo_ibge" valueNumeric="4202453"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Botuverá"/>
+            <column name="codigo_ibge" valueNumeric="4202701"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Braço do Norte"/>
+            <column name="codigo_ibge" valueNumeric="4202800"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Braço do Trombudo"/>
+            <column name="codigo_ibge" valueNumeric="4202859"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Brunópolis"/>
+            <column name="codigo_ibge" valueNumeric="4202875"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Brusque"/>
+            <column name="codigo_ibge" valueNumeric="4202909"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Caçador"/>
+            <column name="codigo_ibge" valueNumeric="4203006"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Caibi"/>
+            <column name="codigo_ibge" valueNumeric="4203105"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Calmon"/>
+            <column name="codigo_ibge" valueNumeric="4203154"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Camboriú"/>
+            <column name="codigo_ibge" valueNumeric="4203204"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Campo Alegre"/>
+            <column name="codigo_ibge" valueNumeric="4203303"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Campo Belo do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4203402"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Campo Erê"/>
+            <column name="codigo_ibge" valueNumeric="4203501"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Campos Novos"/>
+            <column name="codigo_ibge" valueNumeric="4203600"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Canelinha"/>
+            <column name="codigo_ibge" valueNumeric="4203709"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Canoinhas"/>
+            <column name="codigo_ibge" valueNumeric="4203808"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Capão Alto"/>
+            <column name="codigo_ibge" valueNumeric="4203253"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Capinzal"/>
+            <column name="codigo_ibge" valueNumeric="4203907"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Capivari de Baixo"/>
+            <column name="codigo_ibge" valueNumeric="4203956"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Catanduvas"/>
+            <column name="codigo_ibge" valueNumeric="4204004"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Caxambu do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4204103"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Celso Ramos"/>
+            <column name="codigo_ibge" valueNumeric="4204152"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Cerro Negro"/>
+            <column name="codigo_ibge" valueNumeric="4204178"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Chapadão do Lageado"/>
+            <column name="codigo_ibge" valueNumeric="4204194"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Chapecó"/>
+            <column name="codigo_ibge" valueNumeric="4204202"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Cocal do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4204251"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Concórdia"/>
+            <column name="codigo_ibge" valueNumeric="4204301"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Cordilheira Alta"/>
+            <column name="codigo_ibge" valueNumeric="4204350"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Coronel Freitas"/>
+            <column name="codigo_ibge" valueNumeric="4204400"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Coronel Martins"/>
+            <column name="codigo_ibge" valueNumeric="4204459"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Correia Pinto"/>
+            <column name="codigo_ibge" valueNumeric="4204558"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Corupá"/>
+            <column name="codigo_ibge" valueNumeric="4204509"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Criciúma"/>
+            <column name="codigo_ibge" valueNumeric="4204608"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Cunha Porã"/>
+            <column name="codigo_ibge" valueNumeric="4204707"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Cunhataí"/>
+            <column name="codigo_ibge" valueNumeric="4204756"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Curitibanos"/>
+            <column name="codigo_ibge" valueNumeric="4204806"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Descanso"/>
+            <column name="codigo_ibge" valueNumeric="4204905"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Dionísio Cerqueira"/>
+            <column name="codigo_ibge" valueNumeric="4205001"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Dona Emma"/>
+            <column name="codigo_ibge" valueNumeric="4205100"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Doutor Pedrinho"/>
+            <column name="codigo_ibge" valueNumeric="4205159"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Entre Rios"/>
+            <column name="codigo_ibge" valueNumeric="4205175"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ermo"/>
+            <column name="codigo_ibge" valueNumeric="4205191"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Erval Velho"/>
+            <column name="codigo_ibge" valueNumeric="4205209"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Faxinal dos Guedes"/>
+            <column name="codigo_ibge" valueNumeric="4205308"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Flor do Sertão"/>
+            <column name="codigo_ibge" valueNumeric="4205357"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Florianópolis"/>
+            <column name="codigo_ibge" valueNumeric="4205407"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Formosa do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4205431"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Forquilhinha"/>
+            <column name="codigo_ibge" valueNumeric="4205456"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Fraiburgo"/>
+            <column name="codigo_ibge" valueNumeric="4205506"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Frei Rogério"/>
+            <column name="codigo_ibge" valueNumeric="4205555"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Galvão"/>
+            <column name="codigo_ibge" valueNumeric="4205605"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Garopaba"/>
+            <column name="codigo_ibge" valueNumeric="4205704"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Garuva"/>
+            <column name="codigo_ibge" valueNumeric="4205803"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Gaspar"/>
+            <column name="codigo_ibge" valueNumeric="4205902"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Governador Celso Ramos"/>
+            <column name="codigo_ibge" valueNumeric="4206009"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Grão-Pará"/>
+            <column name="codigo_ibge" valueNumeric="4206108"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Gravatal"/>
+            <column name="codigo_ibge" valueNumeric="4206207"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Guabiruba"/>
+            <column name="codigo_ibge" valueNumeric="4206306"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Guaraciaba"/>
+            <column name="codigo_ibge" valueNumeric="4206405"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Guaramirim"/>
+            <column name="codigo_ibge" valueNumeric="4206504"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Guarujá do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4206603"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Guatambú"/>
+            <column name="codigo_ibge" valueNumeric="4206652"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Herval d'Oeste"/>
+            <column name="codigo_ibge" valueNumeric="4206702"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ibiam"/>
+            <column name="codigo_ibge" valueNumeric="4206751"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ibicaré"/>
+            <column name="codigo_ibge" valueNumeric="4206801"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ibirama"/>
+            <column name="codigo_ibge" valueNumeric="4206900"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Içara"/>
+            <column name="codigo_ibge" valueNumeric="4207007"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ilhota"/>
+            <column name="codigo_ibge" valueNumeric="4207106"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Imaruí"/>
+            <column name="codigo_ibge" valueNumeric="4207205"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Imbituba"/>
+            <column name="codigo_ibge" valueNumeric="4207304"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Imbuia"/>
+            <column name="codigo_ibge" valueNumeric="4207403"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Indaial"/>
+            <column name="codigo_ibge" valueNumeric="4207502"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Iomerê"/>
+            <column name="codigo_ibge" valueNumeric="4207577"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ipira"/>
+            <column name="codigo_ibge" valueNumeric="4207601"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Iporã do Oeste"/>
+            <column name="codigo_ibge" valueNumeric="4207650"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ipuaçu"/>
+            <column name="codigo_ibge" valueNumeric="4207684"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ipumirim"/>
+            <column name="codigo_ibge" valueNumeric="4207700"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Iraceminha"/>
+            <column name="codigo_ibge" valueNumeric="4207759"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Irani"/>
+            <column name="codigo_ibge" valueNumeric="4207809"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Irati"/>
+            <column name="codigo_ibge" valueNumeric="4207858"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Irineópolis"/>
+            <column name="codigo_ibge" valueNumeric="4207908"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Itá"/>
+            <column name="codigo_ibge" valueNumeric="4208005"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Itaiópolis"/>
+            <column name="codigo_ibge" valueNumeric="4208104"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Itajaí"/>
+            <column name="codigo_ibge" valueNumeric="4208203"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Itapema"/>
+            <column name="codigo_ibge" valueNumeric="4208302"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Itapiranga"/>
+            <column name="codigo_ibge" valueNumeric="4208401"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Itapoá"/>
+            <column name="codigo_ibge" valueNumeric="4208450"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ituporanga"/>
+            <column name="codigo_ibge" valueNumeric="4208500"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Jaborá"/>
+            <column name="codigo_ibge" valueNumeric="4208609"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Jacinto Machado"/>
+            <column name="codigo_ibge" valueNumeric="4208708"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Jaguaruna"/>
+            <column name="codigo_ibge" valueNumeric="4208807"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Jaraguá do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4208906"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Jardinópolis"/>
+            <column name="codigo_ibge" valueNumeric="4208955"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Joaçaba"/>
+            <column name="codigo_ibge" valueNumeric="4209003"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Joinville"/>
+            <column name="codigo_ibge" valueNumeric="4209102"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="José Boiteux"/>
+            <column name="codigo_ibge" valueNumeric="4209151"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Jupiá"/>
+            <column name="codigo_ibge" valueNumeric="4209177"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Lacerdópolis"/>
+            <column name="codigo_ibge" valueNumeric="4209201"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Lages"/>
+            <column name="codigo_ibge" valueNumeric="4209300"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Laguna"/>
+            <column name="codigo_ibge" valueNumeric="4209409"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Lajeado Grande"/>
+            <column name="codigo_ibge" valueNumeric="4209458"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Laurentino"/>
+            <column name="codigo_ibge" valueNumeric="4209508"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Lauro Müller"/>
+            <column name="codigo_ibge" valueNumeric="4209607"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Lebon Régis"/>
+            <column name="codigo_ibge" valueNumeric="4209706"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Leoberto Leal"/>
+            <column name="codigo_ibge" valueNumeric="4209805"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Lindóia do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4209854"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Lontras"/>
+            <column name="codigo_ibge" valueNumeric="4209904"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Luiz Alves"/>
+            <column name="codigo_ibge" valueNumeric="4210001"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Luzerna"/>
+            <column name="codigo_ibge" valueNumeric="4210035"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Macieira"/>
+            <column name="codigo_ibge" valueNumeric="4210050"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Mafra"/>
+            <column name="codigo_ibge" valueNumeric="4210100"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Major Gercino"/>
+            <column name="codigo_ibge" valueNumeric="4210209"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Major Vieira"/>
+            <column name="codigo_ibge" valueNumeric="4210308"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Maracajá"/>
+            <column name="codigo_ibge" valueNumeric="4210407"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Maravilha"/>
+            <column name="codigo_ibge" valueNumeric="4210506"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Marema"/>
+            <column name="codigo_ibge" valueNumeric="4210555"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Massaranduba"/>
+            <column name="codigo_ibge" valueNumeric="4210605"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Matos Costa"/>
+            <column name="codigo_ibge" valueNumeric="4210704"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Meleiro"/>
+            <column name="codigo_ibge" valueNumeric="4210803"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Mirim Doce"/>
+            <column name="codigo_ibge" valueNumeric="4210852"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Modelo"/>
+            <column name="codigo_ibge" valueNumeric="4210902"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Mondaí"/>
+            <column name="codigo_ibge" valueNumeric="4211009"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Monte Carlo"/>
+            <column name="codigo_ibge" valueNumeric="4211058"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Monte Castelo"/>
+            <column name="codigo_ibge" valueNumeric="4211108"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Morro da Fumaça"/>
+            <column name="codigo_ibge" valueNumeric="4211207"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Morro Grande"/>
+            <column name="codigo_ibge" valueNumeric="4211256"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Navegantes"/>
+            <column name="codigo_ibge" valueNumeric="4211306"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Nova Erechim"/>
+            <column name="codigo_ibge" valueNumeric="4211405"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Nova Itaberaba"/>
+            <column name="codigo_ibge" valueNumeric="4211454"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Nova Trento"/>
+            <column name="codigo_ibge" valueNumeric="4211504"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Nova Veneza"/>
+            <column name="codigo_ibge" valueNumeric="4211603"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Novo Horizonte"/>
+            <column name="codigo_ibge" valueNumeric="4211652"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Orleans"/>
+            <column name="codigo_ibge" valueNumeric="4211702"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Otacílio Costa"/>
+            <column name="codigo_ibge" valueNumeric="4211751"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ouro"/>
+            <column name="codigo_ibge" valueNumeric="4211801"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ouro Verde"/>
+            <column name="codigo_ibge" valueNumeric="4211850"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Paial"/>
+            <column name="codigo_ibge" valueNumeric="4211876"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Painel"/>
+            <column name="codigo_ibge" valueNumeric="4211892"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Palhoça"/>
+            <column name="codigo_ibge" valueNumeric="4211900"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Palma Sola"/>
+            <column name="codigo_ibge" valueNumeric="4212007"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Palmeira"/>
+            <column name="codigo_ibge" valueNumeric="4212056"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Palmitos"/>
+            <column name="codigo_ibge" valueNumeric="4212106"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Papanduva"/>
+            <column name="codigo_ibge" valueNumeric="4212205"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Paraíso"/>
+            <column name="codigo_ibge" valueNumeric="4212239"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Passo de Torres"/>
+            <column name="codigo_ibge" valueNumeric="4212254"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Passos Maia"/>
+            <column name="codigo_ibge" valueNumeric="4212270"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Paulo Lopes"/>
+            <column name="codigo_ibge" valueNumeric="4212304"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Pedras Grandes"/>
+            <column name="codigo_ibge" valueNumeric="4212403"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Penha"/>
+            <column name="codigo_ibge" valueNumeric="4212502"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Peritiba"/>
+            <column name="codigo_ibge" valueNumeric="4212601"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Pescaria Brava"/>
+            <column name="codigo_ibge" valueNumeric="4212650"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Petrolândia"/>
+            <column name="codigo_ibge" valueNumeric="4212700"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Pinhalzinho"/>
+            <column name="codigo_ibge" valueNumeric="4212908"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Pinheiro Preto"/>
+            <column name="codigo_ibge" valueNumeric="4213005"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Piratuba"/>
+            <column name="codigo_ibge" valueNumeric="4213104"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Planalto Alegre"/>
+            <column name="codigo_ibge" valueNumeric="4213153"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Pomerode"/>
+            <column name="codigo_ibge" valueNumeric="4213203"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ponte Alta"/>
+            <column name="codigo_ibge" valueNumeric="4213302"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ponte Alta do Norte"/>
+            <column name="codigo_ibge" valueNumeric="4213351"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Ponte Serrada"/>
+            <column name="codigo_ibge" valueNumeric="4213401"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Porto Belo"/>
+            <column name="codigo_ibge" valueNumeric="4213500"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Porto União"/>
+            <column name="codigo_ibge" valueNumeric="4213609"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Pouso Redondo"/>
+            <column name="codigo_ibge" valueNumeric="4213708"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Praia Grande"/>
+            <column name="codigo_ibge" valueNumeric="4213807"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Presidente Castello Branco"/>
+            <column name="codigo_ibge" valueNumeric="4213906"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Presidente Getúlio"/>
+            <column name="codigo_ibge" valueNumeric="4214003"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Presidente Nereu"/>
+            <column name="codigo_ibge" valueNumeric="4214102"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Princesa"/>
+            <column name="codigo_ibge" valueNumeric="4214151"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Quilombo"/>
+            <column name="codigo_ibge" valueNumeric="4214201"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rancho Queimado"/>
+            <column name="codigo_ibge" valueNumeric="4214300"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rio das Antas"/>
+            <column name="codigo_ibge" valueNumeric="4214409"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rio do Campo"/>
+            <column name="codigo_ibge" valueNumeric="4214508"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rio do Oeste"/>
+            <column name="codigo_ibge" valueNumeric="4214607"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rio do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4214805"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rio dos Cedros"/>
+            <column name="codigo_ibge" valueNumeric="4214706"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rio Fortuna"/>
+            <column name="codigo_ibge" valueNumeric="4214904"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rio Negrinho"/>
+            <column name="codigo_ibge" valueNumeric="4215000"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rio Rufino"/>
+            <column name="codigo_ibge" valueNumeric="4215059"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Riqueza"/>
+            <column name="codigo_ibge" valueNumeric="4215075"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Rodeio"/>
+            <column name="codigo_ibge" valueNumeric="4215109"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Romelândia"/>
+            <column name="codigo_ibge" valueNumeric="4215208"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Salete"/>
+            <column name="codigo_ibge" valueNumeric="4215307"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Saltinho"/>
+            <column name="codigo_ibge" valueNumeric="4215356"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Salto Veloso"/>
+            <column name="codigo_ibge" valueNumeric="4215406"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Sangão"/>
+            <column name="codigo_ibge" valueNumeric="4215455"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Santa Cecília"/>
+            <column name="codigo_ibge" valueNumeric="4215505"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Santa Helena"/>
+            <column name="codigo_ibge" valueNumeric="4215554"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Santa Rosa de Lima"/>
+            <column name="codigo_ibge" valueNumeric="4215604"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Santa Rosa do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4215653"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Santa Terezinha"/>
+            <column name="codigo_ibge" valueNumeric="4215679"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Santa Terezinha do Progresso"/>
+            <column name="codigo_ibge" valueNumeric="4215687"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Santiago do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4215695"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Santo Amaro da Imperatriz"/>
+            <column name="codigo_ibge" valueNumeric="4215703"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Bento do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4215802"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Bernardino"/>
+            <column name="codigo_ibge" valueNumeric="4215752"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Bonifácio"/>
+            <column name="codigo_ibge" valueNumeric="4215901"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Carlos"/>
+            <column name="codigo_ibge" valueNumeric="4216008"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Cristóvão do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4216057"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Domingos"/>
+            <column name="codigo_ibge" valueNumeric="4216107"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Francisco do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4216206"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São João Batista"/>
+            <column name="codigo_ibge" valueNumeric="4216305"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São João do Itaperiú"/>
+            <column name="codigo_ibge" valueNumeric="4216354"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São João do Oeste"/>
+            <column name="codigo_ibge" valueNumeric="4216255"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São João do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4216404"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Joaquim"/>
+            <column name="codigo_ibge" valueNumeric="4216503"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São José"/>
+            <column name="codigo_ibge" valueNumeric="4216602"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São José do Cedro"/>
+            <column name="codigo_ibge" valueNumeric="4216701"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São José do Cerrito"/>
+            <column name="codigo_ibge" valueNumeric="4216800"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Lourenço do Oeste"/>
+            <column name="codigo_ibge" valueNumeric="4216909"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Ludgero"/>
+            <column name="codigo_ibge" valueNumeric="4217006"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Martinho"/>
+            <column name="codigo_ibge" valueNumeric="4217105"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Miguel da Boa Vista"/>
+            <column name="codigo_ibge" valueNumeric="4217154"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Miguel do Oeste"/>
+            <column name="codigo_ibge" valueNumeric="4217204"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="São Pedro de Alcântara"/>
+            <column name="codigo_ibge" valueNumeric="4217253"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Saudades"/>
+            <column name="codigo_ibge" valueNumeric="4217303"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Schroeder"/>
+            <column name="codigo_ibge" valueNumeric="4217402"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Seara"/>
+            <column name="codigo_ibge" valueNumeric="4217501"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Serra Alta"/>
+            <column name="codigo_ibge" valueNumeric="4217550"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Siderópolis"/>
+            <column name="codigo_ibge" valueNumeric="4217600"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Sombrio"/>
+            <column name="codigo_ibge" valueNumeric="4217709"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Sul Brasil"/>
+            <column name="codigo_ibge" valueNumeric="4217758"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Taió"/>
+            <column name="codigo_ibge" valueNumeric="4217808"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Tangará"/>
+            <column name="codigo_ibge" valueNumeric="4217907"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Tigrinhos"/>
+            <column name="codigo_ibge" valueNumeric="4217956"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Tijucas"/>
+            <column name="codigo_ibge" valueNumeric="4218004"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Timbé do Sul"/>
+            <column name="codigo_ibge" valueNumeric="4218103"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Timbó"/>
+            <column name="codigo_ibge" valueNumeric="4218202"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Timbó Grande"/>
+            <column name="codigo_ibge" valueNumeric="4218251"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Três Barras"/>
+            <column name="codigo_ibge" valueNumeric="4218301"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Treviso"/>
+            <column name="codigo_ibge" valueNumeric="4218350"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Treze de Maio"/>
+            <column name="codigo_ibge" valueNumeric="4218400"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Treze Tílias"/>
+            <column name="codigo_ibge" valueNumeric="4218509"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Trombudo Central"/>
+            <column name="codigo_ibge" valueNumeric="4218608"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Tubarão"/>
+            <column name="codigo_ibge" valueNumeric="4218707"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Tunápolis"/>
+            <column name="codigo_ibge" valueNumeric="4218756"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Turvo"/>
+            <column name="codigo_ibge" valueNumeric="4218806"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="União do Oeste"/>
+            <column name="codigo_ibge" valueNumeric="4218855"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Urubici"/>
+            <column name="codigo_ibge" valueNumeric="4218905"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Urupema"/>
+            <column name="codigo_ibge" valueNumeric="4218954"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Urussanga"/>
+            <column name="codigo_ibge" valueNumeric="4219002"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Vargeão"/>
+            <column name="codigo_ibge" valueNumeric="4219101"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Vargem"/>
+            <column name="codigo_ibge" valueNumeric="4219150"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Vargem Bonita"/>
+            <column name="codigo_ibge" valueNumeric="4219176"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Vidal Ramos"/>
+            <column name="codigo_ibge" valueNumeric="4219200"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Videira"/>
+            <column name="codigo_ibge" valueNumeric="4219309"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Vitor Meireles"/>
+            <column name="codigo_ibge" valueNumeric="4219358"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Witmarsum"/>
+            <column name="codigo_ibge" valueNumeric="4219408"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Xanxerê"/>
+            <column name="codigo_ibge" valueNumeric="4219507"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Xavantina"/>
+            <column name="codigo_ibge" valueNumeric="4219606"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Xaxim"/>
+            <column name="codigo_ibge" valueNumeric="4219705"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="cidade">
+            <column name="nome" value="Zortéa"/>
+            <column name="codigo_ibge" valueNumeric="4219853"/>
+            <column name="estado_id" valueNumeric="24"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

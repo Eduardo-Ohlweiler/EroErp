@@ -13,10 +13,6 @@ import lombok.*;
 @NoArgsConstructor
 public class Cidade extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cliente_id", nullable = false)
-    private Cliente cliente;
-
     @Column(name = "nome", nullable = false, length = 150)
     private String nome;
 

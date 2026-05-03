@@ -14,29 +14,24 @@ import java.util.Optional;
 @Repository
 public interface CidadeRepository extends JpaRepository<Cidade, Long> {
 
-    boolean existsByCodigoIbgeAndClienteId(
-            Integer codigoIbge,
-            Long    clienteId
-    );
+    boolean existsByCodigoIbge(Integer codigoIbge);
 
-    boolean existsByNomeIgnoreCaseAndEstadoIdAndClienteId(
+    boolean existsByNomeIgnoreCaseAndEstadoId(
             String nome,
-            Long   estadoId,
-            Long   clienteId
+            Long   estadoId
     );
 
     @Query("""
         SELECT c FROM Cidade c
             JOIN FETCH c.estado
-        WHERE c.cliente.id = :clienteId
-            AND (:nome       IS NULL OR LOWER(c.nome)       LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
+        WHERE
+            (:nome       IS NULL OR LOWER(c.nome)       LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
             AND (:estadoId   IS NULL OR c.estado.id         = :estadoId)
             AND (:codigoIbge IS NULL OR c.codigoIbge        = :codigoIbge)
             AND (:ativo      IS NULL OR c.ativo             = :ativo)
     """)
     Page<Cidade> findAllWithFilters(
             Pageable pageable,
-            @Param("clienteId")  Long    clienteId,
             @Param("nome")       String  nome,
             @Param("estadoId")   Long    estadoId,
             @Param("codigoIbge") Integer codigoIbge,
@@ -46,13 +41,12 @@ public interface CidadeRepository extends JpaRepository<Cidade, Long> {
     @Query("""
         SELECT c FROM Cidade c
             JOIN FETCH c.estado
-        WHERE c.cliente.id = :clienteId
-            AND c.ativo = true
+        WHERE
+            c.ativo = true
             AND (:nome IS NULL OR LOWER(c.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
         ORDER BY c.nome
     """)
     List<Cidade> findForSelect(
-            @Param("clienteId") Long   clienteId,
             @Param("nome")      String nome
     );
 
@@ -60,22 +54,18 @@ public interface CidadeRepository extends JpaRepository<Cidade, Long> {
         SELECT c FROM Cidade c
             JOIN FETCH c.estado
         WHERE c.id = :id
-            AND c.cliente.id = :clienteId
     """)
     Optional<Cidade> findByIdAndClienteId(
-            @Param("id")        Long id,
-            @Param("clienteId") Long clienteId
+            @Param("id")        Long id
     );
 
     @Query("""
         SELECT c FROM Cidade c
         WHERE LOWER(c.nome) = LOWER(:nome)
             AND c.estado.id    = :estadoId
-            AND c.cliente.id   = :clienteId
     """)
     Optional<Cidade> findByNomeAndEstadoAndCliente(
             @Param("nome")      String nome,
-            @Param("estadoId")  Long   estadoId,
-            @Param("clienteId") Long   clienteId
+            @Param("estadoId")  Long   estadoId
     );
 }

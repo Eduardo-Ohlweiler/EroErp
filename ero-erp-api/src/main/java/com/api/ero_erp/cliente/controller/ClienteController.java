@@ -105,4 +105,9 @@ public class ClienteController {
     ) {
         return clienteService.select(nome);
     }
+
+    @GetMapping("/select/{id}")
+    public ResponseEntity<Cliente> findByIdForSelect(@PathVariable Long id) {
+        return ResponseEntity.ok(clienteService.findById(id));
+    }
 }

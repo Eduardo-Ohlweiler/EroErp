@@ -42,7 +42,7 @@ public class CidadeService {
     @Transactional(readOnly = true)
     public Cidade findById(Long id) {
         Long clienteId = securityUtils.getClienteIdLogado();
-        return cidadeRepository.findByIdAndClienteId(id, clienteId)
+        return cidadeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Cidade não encontrada"));
     }
 
@@ -59,16 +59,14 @@ public class CidadeService {
             Integer codigoIbge,
             Boolean ativo
     ) {
-        Long clienteId = securityUtils.getClienteIdLogado();
         return cidadeRepository
-                .findAllWithFilters(pageable, clienteId, nome, estadoId, codigoIbge, ativo)
+                .findAllWithFilters(pageable, nome, estadoId, codigoIbge, ativo)
                 .map(cidadeMapper::toDTO);
     }
 
     @Transactional(readOnly = true)
     public List<CidadeResponseDto> findForSelect(String nome) {
-        Long clienteId = securityUtils.getClienteIdLogado();
-        return cidadeRepository.findForSelect(clienteId, nome)
+        return cidadeRepository.findForSelect(nome)
                 .stream()
                 .map(cidadeMapper::toDTO)
                 .toList();
@@ -77,21 +75,19 @@ public class CidadeService {
     @Transactional
     public CidadeResponseDto create(CidadeCreateDto dto) {
         Cliente cliente   = securityUtils.getClienteLogado();
-        Long    clienteId = cliente.getId();
         Estado  estado    = estadoService.findById(dto.estadoId());
 
-        if(cidadeRepository.existsByCodigoIbgeAndClienteId(dto.codigoIbge(), clienteId))
+        if(cidadeRepository.existsByCodigoIbge(dto.codigoIbge()))
             throw new ConflictException("Já existe uma cidade castrada com esse código IBGE, verifique!");
 
         if (!estado.getAtivo())
             throw new ConflictException("Estado selecionado está inativo, verifique!");
 
-        if (cidadeRepository.existsByNomeIgnoreCaseAndEstadoIdAndClienteId(
-                dto.nome(), dto.estadoId(), clienteId))
+        if (cidadeRepository.existsByNomeIgnoreCaseAndEstadoId(
+                dto.nome(), dto.estadoId()))
             throw new ConflictException("Já existe uma cidade com esse nome neste estado");
 
         Cidade cidade = new Cidade();
-        cidade.setCliente(cliente);
         cidade.setNome(dto.nome());
         cidade.setEstado(estado);
         cidade.setCodigoIbge(dto.codigoIbge());
@@ -103,10 +99,9 @@ public class CidadeService {
 
     @Transactional
     public CidadeResponseDto update(Long id, CidadeUpdateDto dto) {
-        Long   clienteId = securityUtils.getClienteIdLogado();
         Cidade cidade    = findById(id);
 
-        if(cidadeRepository.existsByCodigoIbgeAndClienteId(dto.codigoIbge(), clienteId))
+        if(cidadeRepository.existsByCodigoIbge(dto.codigoIbge()))
             throw new ConflictException("Já existe uma cidade castrada com esse código IBGE, verifique!");
 
         if (dto.estadoId() != null) {
@@ -118,7 +113,7 @@ public class CidadeService {
 
         if (dto.nome() != null && !dto.nome().isBlank()) {
             Long estadoId = cidade.getEstado().getId();
-            cidadeRepository.findByNomeAndEstadoAndCliente(dto.nome(), estadoId, clienteId)
+            cidadeRepository.findByNomeAndEstadoAndCliente(dto.nome(), estadoId)
                     .ifPresent(existing -> {
                         if (!existing.getId().equals(id))
                             throw new ConflictException("Já existe outra cidade com esse nome neste estado");

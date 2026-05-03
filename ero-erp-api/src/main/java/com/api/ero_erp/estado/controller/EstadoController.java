@@ -101,4 +101,10 @@ public class EstadoController {
     ) {
         return estadoService.getAll(pageable, nome, sigla, codigoIbge, ativo);
     }
+
+    @GetMapping("/select/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'ESTADO', 'ESTADO_GET')")
+    public ResponseEntity<Estado> findByIdForSelect(@PathVariable Long id) {
+        return ResponseEntity.ok(estadoService.findById(id));
+    }
 }

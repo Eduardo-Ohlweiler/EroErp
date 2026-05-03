@@ -14,5 +14,8 @@
     <include file="007-create-estado-cidade.xml"        relativeToChangelogFile="true" />
     <include file="008-insert-estados.xml"              relativeToChangelogFile="true" />
     <include file="009-insert-roles-cidade-estado.xml"  relativeToChangelogFile="true" />
-
+    <include file="010-insert-cidades-rs.xml"           relativeToChangelogFile="true" />
+    <include file="011-insert-cidades-sc.xml"           relativeToChangelogFile="true" />
+    <include file="012-insert-cidades-sp.xml"           relativeToChangelogFile="true" />
+    <include file="013-insert-cidades-rj.xml"           relativeToChangelogFile="true" />
 </databaseChangeLog>
