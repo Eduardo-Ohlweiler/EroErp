@@ -58,14 +58,14 @@ export default function UsuarioForm() {
     }
 
     async function reload(id: string) {
-    try {
-        const response = await api.get(`/usuarios/${id}`)
-        setUsuario(response.data)
-        setClienteId(String(response.data.clienteId))
-        setFormKey((prev) => prev + 1)
-    } catch {
-        showMessage("error", "Erro ao recarregar usuário")
-    }
+        try {
+            const response = await api.get(`/usuarios/${id}`)
+            setUsuario(response.data)
+            setClienteId(String(response.data.clienteId))
+            setFormKey((prev) => prev + 1)
+        } catch {
+            showMessage("error", "Erro ao recarregar usuário")
+        }
     }
 
     async function handleSubmit(data: Record<string, string>) {
@@ -108,7 +108,7 @@ export default function UsuarioForm() {
         return (
         <TPage title="Carregando..." breadcrumb={["Administração", "Usuários"]}>
             <div className="flex justify-center py-12">
-            <span className="w-6 h-6 border-2 border-(--accent) border-t-transparent rounded-full animate-spin" />
+                <span className="w-6 h-6 border-2 border-(--accent) border-t-transparent rounded-full animate-spin" />
             </div>
         </TPage>
         )
@@ -116,156 +116,157 @@ export default function UsuarioForm() {
 
     return (
         <TPage
-        title={isEdit ? "Editar Usuário" : "Novo Usuário"}
-        breadcrumb={["Administração", "Usuários", isEdit ? "Editar" : "Novo"]}
+            title={isEdit ? "Editar Usuário" : "Novo Usuário"}
+            breadcrumb={["Administração", "Usuários", isEdit ? "Editar" : "Novo"]}
         >
-        <TForm key={formKey} onSubmit={handleSubmit}>
+            <TForm key={formKey} onSubmit={handleSubmit}>
 
-            <TRow>
-                <TCol>
-                    <TEntry
-                    name="nome"
-                    label="Nome"
-                    required
-                    maxLength={255}
-                    defaultValue={usuario?.nome}
-                    />
-                </TCol>
-                <TCol>
-                    <TEntry
-                    name="email"
-                    label="E-mail"
-                    type="email"
-                    required
-                    maxLength={255}
-                    defaultValue={usuario?.email}
-                    />
-                </TCol>
-            </TRow>
-
-            <TRow>
-                <TCol>
-                    <TEntry
-                    name        ="telefone"
-                    label       ="Telefone"
-                    mask        ="celular"
-                    defaultValue={usuario?.telefone}
-                    />
-                </TCol>
-                <TCol>
-                    <TEntry
-                    name    ="senha"
-                    label   ={isEdit ? "Nova Senha (deixe vazio para manter)" : "Senha"}
-                    type    ="password"
-                    required={!isEdit}
-                    />
-                </TCol>
-            </TRow>
-
-            <TRow>
-                <TCol>
-                    <TDbCombo
-                        name        ="clienteId"
-                        label       ="Cliente"
-                        url         ="/clientes"
-                        valueField  ="id"
-                        displayField="nome"
-                        searchField ="nome"
-                        required    ={!isEdit}
-                        disabled    ={isEdit}
-                        value       ={clienteId}                 
-                        onChange    ={setClienteId} 
-                    />
-                </TCol>
-                <TCol>
-                    <TCombo
-                        name        ="ativo"
-                        label       ="Status"
-                        width       ="200px"
-                        defaultValue={usuario ? (usuario.ativo ? "true" : "false") : "true"}
-                            options ={[
-                                { value: "true",  label: "Ativo"     },
-                                { value: "false", label: "Bloqueado"  },
-                            ]}
-                    />
-                </TCol>
-            </TRow>
-
-            <TRow>
-                <TCol>
-                    <TDbCheckbox
-                    name            ="roleIds"
-                    label           ="Perfis de acesso"
-                    url             ="/roles"
-                    valueField      ="nome"
-                    labelField      ="nome"
-                    direction       ="column"
-                    defaultValues   ={usuario?.roles ?? []}
-                    />
-                </TCol>
-            </TRow>
-            
-            {isEdit && (
                 <TRow>
                     <TCol>
                         <TEntry
-                            name         ="createdById"
-                            label        ="Criado por"
-                            disabled
-                            defaultValue ={usuario?.createdByNome ?? "—"}
+                            name="nome"
+                            label="Nome"
+                            required
+                            maxLength={255}
+                            defaultValue={usuario?.nome}
                         />
                     </TCol>
                     <TCol>
                         <TEntry
-                            name         ="createdAt"
-                            label        ="Criado em"
-                            disabled
-                            width="160px"
-                            defaultValue ={usuario?.createdAt
-                                            ? new Date(usuario.createdAt).toLocaleString("pt-BR")
-                                            : "—"}
+                            name="email"
+                            label="E-mail"
+                            type="email"
+                            required
+                            maxLength={255}
+                            defaultValue={usuario?.email}
                         />
                     </TCol>
-                    <TSpace />
                 </TRow>
-            )}
 
-            {isEdit && usuario?.updatedAt && (
                 <TRow>
                     <TCol>
                         <TEntry
-                            name         ="updatedById"
-                            label        ="Alterado por"
-                            disabled
-                            defaultValue ={usuario?.updatedByNome ?? "—"}
+                            name        ="telefone"
+                            label       ="Telefone"
+                            mask        ="celular"
+                            required
+                            defaultValue={usuario?.telefone}
                         />
                     </TCol>
                     <TCol>
                         <TEntry
-                            name         ="updatedAt"
-                            label        ="Alterado em"
-                            disabled
-                            width="160px"
-                            defaultValue ={usuario?.updatedAt
-                                            ? new Date(usuario.updatedAt).toLocaleString("pt-BR")
-                                            : "—"}
+                            name    ="senha"
+                            label   ={isEdit ? "Nova Senha (deixe vazio para manter)" : "Senha"}
+                            type    ="password"
+                            required={!isEdit}
                         />
                     </TCol>
-                    <TSpace />
                 </TRow>
-            )}
 
-            <TFormFooter>
-                <TFormActionsLeft>
-                    <TButton label="Voltar" variant="cancel" onClick={() => navigate("/usuarios")} />
-                    <TButton label="Novo"   variant="new"    onClick={handleNovo} />
-                </TFormActionsLeft>
-                <TFormActionsRight>
-                    <TButton label="Salvar" variant="save" type="submit" loading={saving} />
-                </TFormActionsRight>
-            </TFormFooter>
+                <TRow>
+                    <TCol>
+                        <TDbCombo
+                            name        ="clienteId"
+                            label       ="Cliente"
+                            url         ="/clientes"
+                            valueField  ="id"
+                            displayField="nome"
+                            searchField ="nome"
+                            required    ={!isEdit}
+                            disabled    ={isEdit}
+                            value       ={clienteId}                 
+                            onChange    ={setClienteId} 
+                        />
+                    </TCol>
+                    <TCol>
+                        <TCombo
+                            name        ="ativo"
+                            label       ="Status"
+                            width       ="200px"
+                            defaultValue={usuario ? (usuario.ativo ? "true" : "false") : "true"}
+                                options ={[
+                                    { value: "true",  label: "Ativo"     },
+                                    { value: "false", label: "Bloqueado"  },
+                                ]}
+                        />
+                    </TCol>
+                </TRow>
 
-        </TForm>
+                <TRow>
+                    <TCol>
+                        <TDbCheckbox
+                            name            ="roleIds"
+                            label           ="Perfis de acesso"
+                            url             ="/roles"
+                            valueField      ="nome"
+                            labelField      ="nome"
+                            direction       ="column"
+                            defaultValues   ={usuario?.roles ?? []}
+                        />
+                    </TCol>
+                </TRow>
+                
+                {isEdit && (
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="createdById"
+                                label        ="Criado por"
+                                disabled
+                                defaultValue ={usuario?.createdByNome ?? "—"}
+                            />
+                        </TCol>
+                        <TCol>
+                            <TEntry
+                                name         ="createdAt"
+                                label        ="Criado em"
+                                disabled
+                                width="160px"
+                                defaultValue ={usuario?.createdAt
+                                                ? new Date(usuario.createdAt).toLocaleString("pt-BR")
+                                                : "—"}
+                            />
+                        </TCol>
+                        <TSpace />
+                    </TRow>
+                )}
+
+                {isEdit && usuario?.updatedAt && (
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="updatedById"
+                                label        ="Alterado por"
+                                disabled
+                                defaultValue ={usuario?.updatedByNome ?? "—"}
+                            />
+                        </TCol>
+                        <TCol>
+                            <TEntry
+                                name         ="updatedAt"
+                                label        ="Alterado em"
+                                disabled
+                                width="160px"
+                                defaultValue ={usuario?.updatedAt
+                                                ? new Date(usuario.updatedAt).toLocaleString("pt-BR")
+                                                : "—"}
+                            />
+                        </TCol>
+                        <TSpace />
+                    </TRow>
+                )}
+
+                <TFormFooter>
+                    <TFormActionsLeft>
+                        <TButton label="Voltar" variant="cancel" onClick={() => navigate("/usuarios")} />
+                        <TButton label="Novo"   variant="new"    onClick={handleNovo} />
+                    </TFormActionsLeft>
+                    <TFormActionsRight>
+                        <TButton label="Salvar" variant="save" type="submit" loading={saving} />
+                    </TFormActionsRight>
+                </TFormFooter>
+
+            </TForm>
         </TPage>
     )
 }
