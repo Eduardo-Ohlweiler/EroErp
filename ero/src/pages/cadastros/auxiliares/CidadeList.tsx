@@ -117,10 +117,6 @@ export default function CidadeList() {
         load("", "", "", "", 0);
     }
 
-    // function handlePageChange(novaPagina: number) {
-    //     setPage(novaPagina);
-    // }
-
     async function handleToggleAtivo(id: number, ativoAtual: boolean) {
         try {
             await api.patch(`/cidades/${id}`, { ativo: !ativoAtual });

@@ -32,22 +32,22 @@ export default function UsuarioForm() {
     const [usuario,  setUsuario]  = useState<Usuario | null>(null)
 
     useEffect(() => {
-    if (!currentId) {
-        setClienteId("")
-        return
-    }
+        if (!currentId) {
+            setClienteId("")
+            return
+        }
 
-    setLoading(true)
-    api.get(`/usuarios/${currentId}`)
-        .then((response) => {
-        setUsuario(response.data)
-        setClienteId(String(response.data.clienteId))
-        })
-        .catch(() => {
-        showMessage("error", "Erro ao carregar usuário")
-        navigate("/usuarios")
-        })
-        .finally(() => setLoading(false))
+        setLoading(true)
+        api.get(`/usuarios/${currentId}`)
+            .then((response) => {
+                setUsuario(response.data)
+                setClienteId(String(response.data.clienteId))
+            })
+            .catch(() => {
+                showMessage("error", "Erro ao carregar usuário")
+                navigate("/usuarios")
+            })
+            .finally(() => setLoading(false))
     }, [currentId])
 
     function handleNovo() {
