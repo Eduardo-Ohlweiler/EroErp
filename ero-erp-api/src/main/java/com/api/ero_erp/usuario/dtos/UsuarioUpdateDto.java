@@ -24,6 +24,8 @@ public record UsuarioUpdateDto(
         )
         String telefone,
 
+        Long clienteId,
+
         Boolean ativo,
 
         @Schema(

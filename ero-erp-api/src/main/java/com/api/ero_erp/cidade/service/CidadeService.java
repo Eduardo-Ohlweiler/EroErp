@@ -41,8 +41,7 @@ public class CidadeService {
 
     @Transactional(readOnly = true)
     public Cidade findById(Long id) {
-        Long clienteId = securityUtils.getClienteIdLogado();
-        return cidadeRepository.findById(id)
+        return cidadeRepository.findByIdWithEstado(id)
                 .orElseThrow(() -> new NotFoundException("Cidade não encontrada"));
     }
 
@@ -74,7 +73,6 @@ public class CidadeService {
 
     @Transactional
     public CidadeResponseDto create(CidadeCreateDto dto) {
-        Cliente cliente   = securityUtils.getClienteLogado();
         Estado  estado    = estadoService.findById(dto.estadoId());
 
         if(cidadeRepository.existsByCodigoIbge(dto.codigoIbge()))
@@ -113,7 +111,7 @@ public class CidadeService {
 
         if (dto.nome() != null && !dto.nome().isBlank()) {
             Long estadoId = cidade.getEstado().getId();
-            cidadeRepository.findByNomeAndEstadoAndCliente(dto.nome(), estadoId)
+            cidadeRepository.findByNomeAndEstado(dto.nome(), estadoId)
                     .ifPresent(existing -> {
                         if (!existing.getId().equals(id))
                             throw new ConflictException("Já existe outra cidade com esse nome neste estado");

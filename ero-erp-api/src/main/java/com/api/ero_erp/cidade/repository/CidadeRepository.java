@@ -52,20 +52,18 @@ public interface CidadeRepository extends JpaRepository<Cidade, Long> {
 
     @Query("""
         SELECT c FROM Cidade c
-            JOIN FETCH c.estado
-        WHERE c.id = :id
+        WHERE LOWER(c.nome) = LOWER(:nome)
+            AND c.estado.id    = :estadoId
     """)
-    Optional<Cidade> findByIdAndClienteId(
-            @Param("id")        Long id
+    Optional<Cidade> findByNomeAndEstado(
+            @Param("nome")      String nome,
+            @Param("estadoId")  Long   estadoId
     );
 
     @Query("""
         SELECT c FROM Cidade c
-        WHERE LOWER(c.nome) = LOWER(:nome)
-            AND c.estado.id    = :estadoId
+            JOIN FETCH c.estado
+        WHERE c.id = :id
     """)
-    Optional<Cidade> findByNomeAndEstadoAndCliente(
-            @Param("nome")      String nome,
-            @Param("estadoId")  Long   estadoId
-    );
+        Optional<Cidade> findByIdWithEstado(@Param("id") Long id);
 }

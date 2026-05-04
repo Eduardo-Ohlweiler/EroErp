@@ -135,6 +135,11 @@ public class UsuarioService {
         if (dto.ativo() != null)
             usuario.setAtivo(dto.ativo());
 
+        if(dto.clienteId() != null) {
+            Cliente cliente = this.clienteService.findById(dto.clienteId());
+            usuario.setCliente(cliente);
+        }
+
         if (dto.roleIds() != null) {
             Set<Role> roles = dto.roleIds().stream()
                     .map(nome -> roleRepository.findByNomeIgnoreCase(nome)
