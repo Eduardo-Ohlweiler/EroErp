@@ -137,7 +137,7 @@ export default function CidadeForm() {
                             searchField  ="nome"
                             width        ="50%"
                             required     ={!isEdit}
-                            disabled     ={isEdit}
+                            //disabled     ={isEdit}
                             value        ={estadoId}
                             onChange     ={setEstadoId}
                         />

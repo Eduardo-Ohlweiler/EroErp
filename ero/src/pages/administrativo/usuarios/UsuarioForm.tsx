@@ -48,6 +48,7 @@ export default function UsuarioForm() {
                 navigate("/usuarios")
             })
             .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentId])
 
     function handleNovo() {
@@ -71,12 +72,14 @@ export default function UsuarioForm() {
     async function handleSubmit(data: Record<string, string>) {
         setSaving(true)
         try {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { createdById, createdAt, updatedById, updatedAt, ...rest } = data
             const payload = {
                 ...rest,
                 ativo:   data.ativo === "true",
                 roleIds: data.roleIds ? data.roleIds.split(",") : []
             }
+            
 
             if (isEdit) {
                 await api.patch(`/usuarios/${currentId}`, payload)
@@ -168,12 +171,12 @@ export default function UsuarioForm() {
                         <TDbCombo
                             name        ="clienteId"
                             label       ="Cliente"
-                            url         ="/clientes"
+                            url         ="/clientes/select"
                             valueField  ="id"
                             displayField="nome"
                             searchField ="nome"
                             required    ={!isEdit}
-                            disabled    ={isEdit}
+                            //disabled    ={isEdit}
                             value       ={clienteId}                 
                             onChange    ={setClienteId} 
                         />
