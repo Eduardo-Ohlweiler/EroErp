@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="014-create-pessoa" author="eduardo">
+
+        <createTable tableName="pessoa">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nome" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_nascimento" type="DATE"/>
+            <column name="cpf" type="VARCHAR(11)"/>
+            <column name="rg" type="VARCHAR(20)"/>
+            <column name="cnpj" type="VARCHAR(14)"/>
+            <column name="inscricao_estadual" type="VARCHAR(50)"/>
+            <column name="inscricao_municipal" type="VARCHAR(50)"/>
+            <column name="nome_fantasia" type="VARCHAR(255)"/>
+            <column name="razao_social" type="VARCHAR(255)"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"/>
+            <column name="tipo_pessoa" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="created_by" type="BIGINT"/>
+            <column name="updated_by" type="BIGINT"/>
+        </createTable>
+
+        <!-- CHECK tipo_pessoa -->
+        <sql>
+            ALTER TABLE pessoa
+                ADD CONSTRAINT ck_pessoa_tipo
+                    CHECK (tipo_pessoa IN ('PESSOA_FISICA', 'PESSOA_JURIDICA'));
+        </sql>
+
+        <createTable tableName="pessoa_tipo_cadastro">
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_cadastro_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+                tableName="pessoa_tipo_cadastro"
+                columnNames="pessoa_id, tipo_cadastro_id"
+                constraintName="pk_pessoa_tipo_cadastro"/>
+
+        <createIndex tableName="pessoa_tipo_cadastro" indexName="idx_ptc_tipo">
+            <column name="tipo_cadastro_id"/>
+        </createIndex>
+
+        <!-- TELEFONE -->
+        <createTable tableName="telefone">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_telefone_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="principal" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <!-- EMAIL -->
+        <createTable tableName="email">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_email_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="principal" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <!-- ENDERECO -->
+        <createTable tableName="endereco">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_endereco_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cidade_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cep" type="VARCHAR(8)"/>
+            <column name="rua" type="VARCHAR(255)"/>
+            <column name="numero" type="VARCHAR(20)"/>
+            <column name="bairro" type="VARCHAR(100)"/>
+            <column name="complemento" type="VARCHAR(100)"/>
+            <column name="principal" type="BOOLEAN" defaultValueBoolean="false"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <!-- REDE SOCIAL -->
+        <createTable tableName="rede_social">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_rede_social_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="usuario" type="VARCHAR(255)"/>
+            <column name="url" type="VARCHAR(500)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="pessoa" indexName="idx_pessoa_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="telefone" indexName="idx_telefone_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <createIndex tableName="telefone" indexName="idx_telefone_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="email" indexName="idx_email_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <createIndex tableName="email" indexName="idx_email_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="endereco" indexName="idx_endereco_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <createIndex tableName="endereco" indexName="idx_endereco_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="rede_social" indexName="idx_rede_social_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <createIndex tableName="rede_social" indexName="idx_rede_social_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
