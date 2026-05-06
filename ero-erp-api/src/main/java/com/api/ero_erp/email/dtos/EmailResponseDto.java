@@ -15,17 +15,17 @@ public record EmailResponseDto(
         @Schema(description = "ID da pessoa", example = "1")
         Long pessoaId,
 
-        @Schema(description = "Nome da pessoa", example = "João da Silva")
-        String pessoaNome,
-
         @Schema(description = "ID do tipo de email", example = "2")
         Long tipoEmailId,
 
         @Schema(description = "Descrição do tipo de email", example = "Comercial")
-        String tipoEmailDescricao,
+        String tipoEmailNome,
 
         @Schema(description = "Endereço de e-mail", example = "teste@email.com")
         String email,
+
+        @Schema(description = "Observação do e-email")
+        String observacao,
 
         @Schema(description = "Indica se é o principal", example = "true")
         Boolean principal,

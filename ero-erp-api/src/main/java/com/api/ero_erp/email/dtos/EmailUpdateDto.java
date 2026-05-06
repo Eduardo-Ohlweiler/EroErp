@@ -19,6 +19,10 @@ public record EmailUpdateDto(
         @Size(max = 255, message = "Email deve ter no máximo 255 caracteres")
         String email,
 
+        @Schema(description = "Observação do e-email")
+        @Size(max = 255, message = "Observação deve ter no máximo 255 caracteres")
+        String observacao,
+
         @Schema(description = "Indica se é o email principal", example = "true")
         Boolean principal
 ) {

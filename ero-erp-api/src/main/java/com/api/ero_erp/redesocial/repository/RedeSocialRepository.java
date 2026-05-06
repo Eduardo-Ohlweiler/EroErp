@@ -10,9 +10,6 @@ import java.util.Optional;
 @Repository
 public interface RedeSocialRepository extends JpaRepository<RedeSocial, Long> {
 
-    boolean existsByPessoaIdAndClienteIdAndPrincipalTrue(Long pessoaId, Long clienteId);
-    boolean existsByPessoaIdAndClienteIdAndPrincipalTrueAndIdNot(Long pessoaId, Long clienteId, Long id);
-
     List<RedeSocial> findByPessoaIdAndClienteId(Long pessoaId, Long clienteId);
     Optional<RedeSocial> findByIdAndClienteId(Long id, Long clienteId);
 }

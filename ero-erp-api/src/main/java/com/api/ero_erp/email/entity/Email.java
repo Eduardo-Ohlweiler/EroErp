@@ -31,6 +31,9 @@ public class Email extends BaseEntity {
     @Column(name = "email", nullable = false, length = 255)
     private String email;
 
+    @Column(name = "observacao", length = 255)
+    private String observacao;
+
     @Column(name = "principal", nullable = false)
     private Boolean principal = false;
 }
