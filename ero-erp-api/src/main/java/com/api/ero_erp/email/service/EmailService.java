@@ -24,10 +24,10 @@ public class EmailService {
             EmailRepository     emailRepository,
             UsuarioService      usuarioService,
             TipoEmailService    tipoEmailService,
-            SecurityUtils    securityUtils
+            SecurityUtils       securityUtils
     ) {
-        this.emailRepository =  emailRepository;
-        this.usuarioService  =  usuarioService;
+        this.emailRepository  = emailRepository;
+        this.usuarioService   = usuarioService;
         this.tipoEmailService = tipoEmailService;
         this.securityUtils    = securityUtils;
     }
@@ -40,7 +40,7 @@ public class EmailService {
     }
 
     @Transactional(readOnly = true)
-    public EmailResponseDto findByEmailResponse(Long id) {
+    public EmailResponseDto findByIdResponse(Long id) {
         return EmailMapper.toDto(this.findById(id));
     }
 
