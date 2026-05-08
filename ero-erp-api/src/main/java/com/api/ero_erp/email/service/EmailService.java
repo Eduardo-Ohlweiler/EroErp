@@ -1,14 +1,17 @@
 package com.api.ero_erp.email.service;
 
 import com.api.ero_erp.cliente.entity.Cliente;
+import com.api.ero_erp.cliente.service.ClienteService;
 import com.api.ero_erp.config.SecurityUtils;
+import com.api.ero_erp.email.dtos.EmailCreateDto;
 import com.api.ero_erp.email.dtos.EmailResponseDto;
 import com.api.ero_erp.email.entity.Email;
 import com.api.ero_erp.email.mapper.EmailMapper;
 import com.api.ero_erp.email.repository.EmailRepository;
+import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.tipoemail.entity.TipoEmail;
 import com.api.ero_erp.tipoemail.service.TipoEmailService;
-import com.api.ero_erp.usuario.service.UsuarioService;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -16,20 +19,20 @@ import java.util.List;
 public class EmailService {
 
     private final EmailRepository   emailRepository;
-    private final UsuarioService    usuarioService;
     private final TipoEmailService  tipoEmailService;
     private final SecurityUtils     securityUtils;
+    private final ClienteService    clienteService;
 
     public EmailService(
             EmailRepository     emailRepository,
-            UsuarioService      usuarioService,
             TipoEmailService    tipoEmailService,
-            SecurityUtils       securityUtils
+            SecurityUtils       securityUtils,
+            ClienteService      clienteService
     ) {
         this.emailRepository  = emailRepository;
-        this.usuarioService   = usuarioService;
         this.tipoEmailService = tipoEmailService;
         this.securityUtils    = securityUtils;
+        this.clienteService   = clienteService;
     }
 
     @Transactional(readOnly = true)
@@ -50,5 +53,29 @@ public class EmailService {
         return EmailMapper.toDtoList(
                 this.emailRepository.findByPessoaIdAndClienteId(pessoaId, clienteId)
         );
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Email email = this.findById(id);
+        this.emailRepository.delete(email);
+    }
+
+    @Transactional
+    public EmailResponseDto create(EmailCreateDto dto) {
+
+        Cliente cliente     = this.clienteService.findById(securityUtils.getClienteIdLogado());
+        TipoEmail tipoEmail = this.tipoEmailService.findById(dto.tipoEmailId());
+        boolean principal   = Boolean.TRUE.equals(dto.principal());
+
+        if (principal && emailRepository.existsByPessoaIdAndClienteIdAndPrincipalTrue(dto.pessoaId(), cliente.getId()))
+            throw new ConflictException("Já existe um email principal para essa pessoa");
+
+        boolean existeAlgumEmail = emailRepository.existsByPessoaIdAndClienteId(dto.pessoaId(), cliente.getId());
+        if (!existeAlgumEmail)
+            principal = true;
+
+        Email email = new Email();
+
     }
 }

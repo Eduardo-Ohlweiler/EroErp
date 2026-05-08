@@ -1,6 +1,7 @@
 package com.api.ero_erp.tipocadastro.controller;
 
 import com.api.ero_erp.tipocadastro.dtos.TipoCadastroCreateDto;
+import com.api.ero_erp.tipocadastro.dtos.TipoCadastroResponseDto;
 import com.api.ero_erp.tipocadastro.dtos.TipoCadastroUpdateDto;
 import com.api.ero_erp.tipocadastro.entity.TipoCadastro;
 import com.api.ero_erp.tipocadastro.service.TipoCadastroService;
@@ -43,7 +44,7 @@ public class TipoCadastroController {
     })
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
-    public Page<TipoCadastro> getAll(
+    public Page<TipoCadastroResponseDto> getAll(
             @Parameter(description = "Paginação e ordenação")
             @PageableDefault(size = 15, sort = "nome") Pageable pageable,
 
@@ -60,7 +61,7 @@ public class TipoCadastroController {
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping("/select")
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
-    public List<TipoCadastro> select() {
+    public List<TipoCadastroResponseDto> select() {
         return service.select();
     }
 
@@ -91,7 +92,7 @@ public class TipoCadastroController {
     })
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
-    public ResponseEntity<TipoCadastro> create(
+    public ResponseEntity<TipoCadastroResponseDto> create(
             @RequestBody @Valid TipoCadastroCreateDto dto
     ) {
         return new ResponseEntity<>(service.create(dto), HttpStatus.CREATED);
@@ -108,7 +109,7 @@ public class TipoCadastroController {
     })
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN')")
-    public ResponseEntity<TipoCadastro> update(
+    public ResponseEntity<TipoCadastroResponseDto> update(
             @Parameter(description = "ID do tipo de cadastro", example = "1")
             @PathVariable Long id,
 
