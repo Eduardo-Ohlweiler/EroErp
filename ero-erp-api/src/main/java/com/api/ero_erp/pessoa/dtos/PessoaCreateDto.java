@@ -16,7 +16,7 @@ public record PessoaCreateDto(
         @Size(max = 255, message = "Nome deve ter no máximo 255 caracteres")
         String nome,
 
-        @Schema(description = "Tipo da pessoa: FISICA ou JURIDICA", example = "FISICA")
+        @Schema(description = "Tipo da pessoa: PESSOA_FISICA ou PESSOA_JURIDICA", example = "PESSOA_FISICA")
         @NotNull(message = "Tipo de pessoa é obrigatório")
         TipoPessoa tipoPessoa,
 
@@ -30,6 +30,17 @@ public record PessoaCreateDto(
         @Schema(description = "RG (somente pessoa física)", example = "1234567")
         @Size(max = 20, message = "RG deve ter no máximo 20 caracteres")
         String rg,
+
+        @Schema(description = "Número da CNH (somente pessoa física)", example = "12345678901")
+        @Size(max = 11, message = "CNH deve ter no máximo 11 caracteres")
+        String cnh,
+
+        @Schema(description = "Categoria da CNH (somente pessoa física)", example = "AB")
+        @Size(max = 5, message = "Categoria da CNH deve ter no máximo 5 caracteres")
+        String cnhCategoria,
+
+        @Schema(description = "Validade da CNH (somente pessoa física)", example = "2028-05-10")
+        LocalDate cnhValidade,
 
         @Schema(description = "CNPJ (somente pessoa jurídica, sem formatação)", example = "12345678000195")
         @Size(max = 14, message = "CNPJ deve ter no máximo 14 caracteres")

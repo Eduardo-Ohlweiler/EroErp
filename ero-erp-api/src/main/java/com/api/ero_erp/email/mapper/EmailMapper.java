@@ -13,7 +13,7 @@ public class EmailMapper {
 
         return new EmailResponseDto(
                 entity.getId(),
-                entity.getCliente()   != null ? entity.getCliente().getId()       : null,
+                //entity.getCliente()   != null ? entity.getCliente().getId()       : null,
                 entity.getPessoa()    != null ? entity.getPessoa().getId()        : null,
                 entity.getTipoEmail() != null ? entity.getTipoEmail().getId()     : null,
                 entity.getTipoEmail() != null ? entity.getTipoEmail().getNome()   : null,

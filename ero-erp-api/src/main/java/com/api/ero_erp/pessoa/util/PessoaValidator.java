@@ -65,4 +65,10 @@ public class PessoaValidator {
         String sanitized = inscricao.replaceAll("\\D", "");
         return sanitized.length() >= 5 && sanitized.length() <= 12;
     }
+
+    public static boolean validarCNH(String cnh) {
+        if (cnh == null) return false;
+        String sanitized = cnh.replaceAll("\\D", "");
+        return sanitized.length() == 11;
+    }
 }

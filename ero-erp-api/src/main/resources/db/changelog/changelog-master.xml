@@ -16,4 +16,5 @@
     <include file="009-insert-roles-cidade-estado.xml"  relativeToChangelogFile="true" />
     <include file="010-create-pessoa.xml"               relativeToChangelogFile="true" />
     <include file="011-insert-cidades.xml"              relativeToChangelogFile="true" />
+    <include file="012-alter-pessoa-add-cnh.xml"        relativeToChangelogFile="true" />
 </databaseChangeLog>

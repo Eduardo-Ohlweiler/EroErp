@@ -1,57 +1,13 @@
 package com.api.ero_erp.pessoa.mapper;
 
-import com.api.ero_erp.cliente.entity.Cliente;
-import com.api.ero_erp.pessoa.dtos.PessoaCreateDto;
 import com.api.ero_erp.pessoa.dtos.PessoaResponseDto;
-import com.api.ero_erp.pessoa.dtos.PessoaUpdateDto;
+import com.api.ero_erp.pessoa.dtos.PessoaSelectDto;
 import com.api.ero_erp.pessoa.entity.Pessoa;
-import com.api.ero_erp.tipocadastro.entity.TipoCadastro;
 import com.api.ero_erp.tipocadastro.mapper.TipoCadastroMapper;
-
-import java.util.Set;
 
 public class PessoaMapper {
 
     private PessoaMapper() {}
-
-    public static Pessoa toEntity(PessoaCreateDto dto, Cliente cliente, Set<TipoCadastro> tiposCadastro) {
-        Pessoa pessoa = new Pessoa();
-
-        pessoa.setCliente(cliente);
-        pessoa.setNome(dto.nome());
-        pessoa.setTipoPessoa(dto.tipoPessoa());
-        pessoa.setDataNascimento(dto.dataNascimento());
-        pessoa.setCpf(sanitizar(dto.cpf()));
-        pessoa.setRg(sanitizar(dto.rg()));
-        pessoa.setCnpj(sanitizar(dto.cnpj()));
-        pessoa.setInscricaoEstadual(sanitizar(dto.inscricaoEstadual()));
-        pessoa.setInscricaoMunicipal(sanitizar(dto.inscricaoMunicipal()));
-        pessoa.setNomeFantasia(dto.nomeFantasia());
-        pessoa.setRazaoSocial(dto.razaoSocial());
-
-        if (tiposCadastro != null) {
-            pessoa.getTiposCadastro().addAll(tiposCadastro);
-        }
-
-        return pessoa;
-    }
-
-    public static void updateEntity(Pessoa pessoa, PessoaUpdateDto dto, Set<TipoCadastro> tiposCadastro) {
-        pessoa.setNome(dto.nome());
-        pessoa.setDataNascimento(dto.dataNascimento());
-        pessoa.setCpf(sanitizar(dto.cpf()));
-        pessoa.setRg(sanitizar(dto.rg()));
-        pessoa.setCnpj(sanitizar(dto.cnpj()));
-        pessoa.setInscricaoEstadual(sanitizar(dto.inscricaoEstadual()));
-        pessoa.setInscricaoMunicipal(sanitizar(dto.inscricaoMunicipal()));
-        pessoa.setNomeFantasia(dto.nomeFantasia());
-        pessoa.setRazaoSocial(dto.razaoSocial());
-
-        pessoa.getTiposCadastro().clear();
-        if (tiposCadastro != null) {
-            pessoa.getTiposCadastro().addAll(tiposCadastro);
-        }
-    }
 
     public static PessoaResponseDto toDto(Pessoa pessoa) {
         return new PessoaResponseDto(
@@ -61,6 +17,9 @@ public class PessoaMapper {
                 pessoa.getDataNascimento(),
                 pessoa.getCpf(),
                 pessoa.getRg(),
+                pessoa.getCnh(),
+                pessoa.getCnhCategoria(),
+                pessoa.getCnhValidade(),
                 pessoa.getCnpj(),
                 pessoa.getInscricaoEstadual(),
                 pessoa.getInscricaoMunicipal(),
@@ -69,13 +28,21 @@ public class PessoaMapper {
                 pessoa.getAtivo(),
                 TipoCadastroMapper.toDtoSet(pessoa.getTiposCadastro()),
                 pessoa.getCreatedAt(),
-                pessoa.getUpdatedAt()
+                pessoa.getCreatedBy() != null ? pessoa.getCreatedBy().getId()   : null,
+                pessoa.getCreatedBy() != null ? pessoa.getCreatedBy().getNome() : null,
+                pessoa.getUpdatedAt(),
+                pessoa.getUpdatedBy() != null ? pessoa.getUpdatedBy().getId()   : null,
+                pessoa.getUpdatedBy() != null ? pessoa.getUpdatedBy().getNome() : null
         );
     }
 
-    // Remove caracteres não numéricos de documentos antes de persistir
-    private static String sanitizar(String valor) {
-        if (valor == null || valor.isBlank()) return null;
-        return valor.replaceAll("\\D", "");
+    public static PessoaSelectDto toSelectDto(Pessoa p) {
+        return new PessoaSelectDto(
+                p.getId(),
+                p.getNome(),
+                p.getTipoPessoa(),
+                p.getCpf(),
+                p.getCnpj()
+        );
     }
 }

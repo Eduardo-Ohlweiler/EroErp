@@ -62,6 +62,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Object> badRequest(BadRequestException e, WebRequest request){
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .erro(e.getMessage())
+                .codigo(HttpStatus.BAD_REQUEST.value())
+                .timestamp(new Date())
+                .path(request.getDescription(false)).build();
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Object> unauthorizedException(UnauthorizedException e, WebRequest request){
         ErrorResponse errorResponse = ErrorResponse.builder()

@@ -41,6 +41,15 @@ public class Pessoa extends BaseEntity {
     @Column(name = "rg", length = 20)
     private String rg;
 
+    @Column(name = "cnh", length = 11)
+    private String cnh;
+
+    @Column(name = "cnh_categoria", length = 5)
+    private String cnhCategoria;
+
+    @Column(name = "cnh_validade")
+    private LocalDate cnhValidade;
+
     @Column(name = "cnpj", length = 14)
     private String cnpj;
 

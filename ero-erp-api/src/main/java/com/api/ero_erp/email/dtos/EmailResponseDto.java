@@ -9,8 +9,8 @@ public record EmailResponseDto(
         @Schema(description = "ID do email", example = "10")
         Long id,
 
-        @Schema(description = "ID do cliente", example = "1")
-        Long clienteId,
+        //@Schema(description = "ID do cliente", example = "1")
+        //Long clienteId,
 
         @Schema(description = "ID da pessoa", example = "1")
         Long pessoaId,

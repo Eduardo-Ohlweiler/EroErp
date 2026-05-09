@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="013-insert-roles-pessoa" author="eduardo">
+
+        <insert tableName="role">
+            <column name="nome" value="PESSOA"/>
+            <column name="descricao" value="Permissão geral para Pessoa"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="PESSOA_GET"/>
+            <column name="descricao" value="Permissão para consultar Pessoas"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="PESSOA_POST"/>
+            <column name="descricao" value="Permissão para criar e editar Pessoas"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

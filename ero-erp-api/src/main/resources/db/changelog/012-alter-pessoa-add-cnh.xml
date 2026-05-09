@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="012-alter-pessoa-add-cnh" author="eduardo">
+
+        <addColumn tableName="pessoa">
+            <column name="cnh" type="VARCHAR(11)"/>
+        </addColumn>
+
+        <addColumn tableName="pessoa">
+            <column name="cnh_categoria" type="VARCHAR(5)"/>
+        </addColumn>
+
+        <addColumn tableName="pessoa">
+            <column name="cnh_validade" type="DATE"/>
+        </addColumn>
+
+    </changeSet>
+
+</databaseChangeLog>
