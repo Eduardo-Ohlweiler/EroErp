@@ -1,4 +1,4 @@
-import type { TDataGridColumn } from "../../types/TDataGridColumn"
+import type { TDataGridColumn, TDataGridMask } from "../../types/TDataGridColumn"
 
 interface           TDataGridProps<T extends object> {
   columns:          TDataGridColumn<T>[]
@@ -28,8 +28,8 @@ export function TDataGrid<T extends object>({
     right:  "text-right",
   }
 
-  function applyColumnMask(value: string, mask: TDataGridColumn["mask"]): string {
-    if (!mask || !value) 
+  function applyColumnMask(value: string, mask: TDataGridMask): string {
+    if (!mask || !value)
       return value
     const d = value.replace(/\D/g, "")
 
@@ -64,13 +64,20 @@ export function TDataGrid<T extends object>({
     }
   }
 
+  function resolveMask(row: T, col: TDataGridColumn<T>): string {
+    if (!col.field) return ""
+    const value  = String(row[col.field] ?? "")
+    if (!col.mask) return value
+    const mask = typeof col.mask === "function" ? col.mask(row) : col.mask
+    return applyColumnMask(value, mask)
+  }
+
   return (
     <div className="w-full overflow-x-auto rounded-lg border border-(--border)">
       <table className="w-full text-sm">
 
         <thead>
           <tr className="bg-(--metal-700) border-b border-(--border)">
-
             {actions && (
               <th
                 style     ={{ width: actionsWidth }}
@@ -79,7 +86,6 @@ export function TDataGrid<T extends object>({
                 Ações
               </th>
             )}
-
             {columns.map((col) => (
               <th
                 key       ={String(col.field ?? col.label)}
@@ -92,12 +98,12 @@ export function TDataGrid<T extends object>({
             ))}
           </tr>
         </thead>
-        <tbody>
 
+        <tbody>
           {loading && (
             <tr>
               <td
-                colSpan={columns.length + (actions ? 1 : 0)}
+                colSpan  ={columns.length + (actions ? 1 : 0)}
                 className="px-4 py-8 text-center text-(--text-muted)"
               >
                 <div className="flex items-center justify-center gap-2">
@@ -111,7 +117,7 @@ export function TDataGrid<T extends object>({
           {!loading && data.length === 0 && (
             <tr>
               <td
-                colSpan={columns.length + (actions ? 1 : 0)}
+                colSpan  ={columns.length + (actions ? 1 : 0)}
                 className="px-4 py-8 text-center text-(--text-muted)"
               >
                 {emptyMessage}
@@ -121,8 +127,8 @@ export function TDataGrid<T extends object>({
 
           {!loading && data.map((row, rowIndex) => (
             <tr
-              key={String(row[keyField])}
-              onClick={() => onRowClick?.(row)}
+              key      ={String(row[keyField])}
+              onClick  ={() => onRowClick?.(row)}
               className={`
                 border-b border-(--border) transition
                 ${rowIndex % 2 === 0 ? "bg-(--bg-surface)" : "bg-(--bg-base)"}
@@ -138,14 +144,17 @@ export function TDataGrid<T extends object>({
               )}
               {columns.map((col) => (
                 <td
-                  key={String(col.field ?? col.label)}
+                  key      ={String(col.field ?? col.label)}
                   className={`px-4 py-3 text-(--text-primary) ${alignClass[col.align ?? "left"]}`}
                 >
-                  {col.render
-                    ? col.render(row)
-                    : col.field
-                      ? applyColumnMask(String(row[col.field] ?? ""), col.mask)
-                      : ""
+                  {col.render 
+                      ? col.render(row, (val) => {
+                          if (!col.mask) 
+                            return val
+                          const m = typeof col.mask === "function" ? col.mask(row) : col.mask
+                          return applyColumnMask(val, m)
+                        }) 
+                      : resolveMask(row, col)
                   }
                 </td>
               ))}

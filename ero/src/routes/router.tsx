@@ -1,7 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { DashBoard }                              from "../pages/dashboard";
 import Layout                                     from "../components/Layout";
-import { PessoaList }                             from "../pages/cadastros/pessoas/PessoaList";
 import { ProdutoList }                            from "../pages/cadastros/produtos/ProdutoList";
 import { PrivateRoute }                           from "./PrivateRoute";
 import { Login }                                  from "../pages/public/auth/Login";
@@ -19,6 +18,7 @@ import TipoCadastroFormList from "../pages/administrativo/auxiliares/TipoCadastr
 import EstadoFormList from "../pages/administrativo/auxiliares/EstadoFormList";
 import CidadeList from "../pages/cadastros/auxiliares/CidadeList";
 import CidadeForm from "../pages/cadastros/auxiliares/CidadeForm";
+import PessoaList from "../pages/cadastros/pessoas/PessoaList";
 
 export function Router() {
   return (
@@ -73,7 +73,11 @@ export function Router() {
             </Route>
 
             <Route path="/" element={<DashBoard />} />
-            <Route path="/pessoas" element={<PessoaList />} />
+
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST"]} />}>
+              <Route path="/pessoas" element={<PessoaList />} />
+            </Route>
+            
             <Route path="/produtos" element={<ProdutoList />} />
           </Route>
         </Route>
