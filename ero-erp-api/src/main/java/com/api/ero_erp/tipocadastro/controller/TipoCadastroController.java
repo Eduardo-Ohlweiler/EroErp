@@ -4,6 +4,7 @@ import com.api.ero_erp.tipocadastro.dtos.TipoCadastroCreateDto;
 import com.api.ero_erp.tipocadastro.dtos.TipoCadastroResponseDto;
 import com.api.ero_erp.tipocadastro.dtos.TipoCadastroUpdateDto;
 import com.api.ero_erp.tipocadastro.entity.TipoCadastro;
+import com.api.ero_erp.tipocadastro.mapper.TipoCadastroMapper;
 import com.api.ero_erp.tipocadastro.service.TipoCadastroService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,7 +44,7 @@ public class TipoCadastroController {
             )
     })
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'TODOS')")
     public Page<TipoCadastroResponseDto> getAll(
             @Parameter(description = "Paginação e ordenação")
             @PageableDefault(size = 15, sort = "nome") Pageable pageable,
@@ -60,9 +61,15 @@ public class TipoCadastroController {
     )
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping("/select")
-    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'TODOS')")
     public List<TipoCadastroResponseDto> select() {
         return service.select();
+    }
+
+    @GetMapping("/select/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'TODOS')")
+    public TipoCadastroResponseDto findByIdForSelect(@PathVariable Long id) {
+        return TipoCadastroMapper.toDto(service.findById(id));
     }
 
     @Operation(
@@ -74,7 +81,7 @@ public class TipoCadastroController {
             @ApiResponse(responseCode = "404", description = "Não encontrado")
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'TODOS')")
     public TipoCadastro findById(
             @Parameter(description = "ID do tipo de cadastro", example = "1")
             @PathVariable Long id
