@@ -44,7 +44,7 @@ public class TipoCadastroController {
             )
     })
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'TODOS')")
+    @PreAuthorize("isAuthenticated()")
     public Page<TipoCadastroResponseDto> getAll(
             @Parameter(description = "Paginação e ordenação")
             @PageableDefault(size = 15, sort = "nome") Pageable pageable,
@@ -61,7 +61,7 @@ public class TipoCadastroController {
     )
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping("/select")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'TODOS')")
+    @PreAuthorize("isAuthenticated()")
     public List<TipoCadastroResponseDto> select() {
         return service.select();
     }
@@ -81,7 +81,7 @@ public class TipoCadastroController {
             @ApiResponse(responseCode = "404", description = "Não encontrado")
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'TODOS')")
+    @PreAuthorize("isAuthenticated()")
     public TipoCadastro findById(
             @Parameter(description = "ID do tipo de cadastro", example = "1")
             @PathVariable Long id

@@ -42,7 +42,7 @@ public class TipoEmailController {
             )
     })
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'TODOS')")
+    @PreAuthorize("isAuthenticated()")
     public Page<TipoEmail> getAll(
             @Parameter(description = "Paginação e ordenação")
             @PageableDefault(size = 15, sort = "nome") Pageable pageable,
@@ -59,7 +59,7 @@ public class TipoEmailController {
     )
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping("/select")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'TODOS')")
+    @PreAuthorize("isAuthenticated()")
     public List<TipoEmail> select() {
         return service.select();
     }
@@ -73,7 +73,7 @@ public class TipoEmailController {
             @ApiResponse(responseCode = "404", description = "Não encontrado")
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'TODOS')")
+    @PreAuthorize("isAuthenticated()")
     public TipoEmail findById(
             @Parameter(description = "ID do tipo de email", example = "1")
             @PathVariable Long id

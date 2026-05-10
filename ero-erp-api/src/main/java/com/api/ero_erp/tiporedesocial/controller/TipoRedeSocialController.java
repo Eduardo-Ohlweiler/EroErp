@@ -36,7 +36,7 @@ public class TipoRedeSocialController {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     })
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public Page<TipoRedeSocial> getAll(
             @Parameter(description = "Paginação e ordenação")
             @PageableDefault(size = 15, sort = "nome") Pageable pageable,
@@ -50,7 +50,7 @@ public class TipoRedeSocialController {
     @Operation(summary = "Listar para select", description = "Retorna lista simples de tipos de rede social (ativo = true)")
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping("/select")
-    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public List<TipoRedeSocial> select() {
         return service.select();
     }
@@ -61,7 +61,7 @@ public class TipoRedeSocialController {
             @ApiResponse(responseCode = "404", description = "Não encontrado")
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public TipoRedeSocial findById(
             @Parameter(description = "ID do tipo de rede social", example = "1")
             @PathVariable Long id

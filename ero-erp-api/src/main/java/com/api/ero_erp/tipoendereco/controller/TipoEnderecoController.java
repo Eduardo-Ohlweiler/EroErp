@@ -36,7 +36,7 @@ public class TipoEnderecoController {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     })
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public Page<TipoEndereco> getAll(
             @Parameter(description = "Paginação e ordenação")
             @PageableDefault(size = 15, sort = "nome") Pageable pageable,
@@ -50,7 +50,7 @@ public class TipoEnderecoController {
     @Operation(summary = "Listar para select", description = "Retorna lista simples de tipos de endereço (ativo = true)")
     @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping("/select")
-    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public List<TipoEndereco> select() {
         return service.select();
     }
