@@ -27,11 +27,12 @@ export const menu: MenuItem[] = [
   {
     label: "Cadastros",
     icon: FaCogs,
+    roles: ["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST"],
     children: [
       {
         label: "Pessoas",
-        path: "/pessoas",
-        icon: FaUsers
+        path:  "/pessoas",
+        icon:  FaUsers
       }
     ]
   }
