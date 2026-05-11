@@ -26,24 +26,31 @@ import { TDbCheckbox } from "../../../components/tdbcheckbox"
 
 import { TButton } from "../../../components/tbutton"
 import { TSpace } from "../../../components/tspace"
+import { TPanel } from "../../../components/tpanel"
 
 export default function PessoaForm() {
 
     const { id: idParam } = useParams()
-
     const navigate        = useNavigate()
     const { showMessage } = useMessage()
-
-    const [currentId,  setCurrentId]  = useState<string | undefined>(idParam)
-    const isEdit                       = !!currentId
-
-    const [formKey,     setFormKey]     = useState(0)
-    const [loading,     setLoading]     = useState(false)
-    const [saving,      setSaving]      = useState(false)
-
-    const [pessoa,      setPessoa]      = useState<PessoaResponse | null>(null)
-
-    const [tipoPessoa,  setTipoPessoa]  = useState<TipoPessoa>("PESSOA_FISICA")
+    const [currentId,   setCurrentId]   = useState<string | undefined>(idParam)
+    const isEdit                        = !!currentId
+    const [formKey,            setFormKey]            = useState(0)
+    const [loading,            setLoading]            = useState(false)
+    const [saving,             setSaving]             = useState(false)
+    const [pessoa,             setPessoa]             = useState<PessoaResponse | null>(null)
+    const [tipoPessoa,         setTipoPessoa]         = useState<TipoPessoa>("PESSOA_FISICA")
+    const [cpf,                setCpf]                = useState(pessoa?.cpf               ?? "")
+    const [rg,                 setRg]                 = useState(pessoa?.rg                ?? "")
+    const [cnh,                setCnh]                = useState(pessoa?.cnh               ?? "")
+    const [cnhCategoria,       setCnhCategoria]       = useState(pessoa?.cnhCategoria      ?? "")
+    const [cnhValidade,        setCnhValidade]        = useState(pessoa?.cnhValidade       ?? "")
+    const [dataNascimento,     setDataNascimento]     = useState(pessoa?.dataNascimento    ?? "")
+    const [cnpj,               setCnpj]               = useState(pessoa?.cnpj              ?? "")
+    const [inscricaoEstadual,  setInscricaoEstadual]  = useState(pessoa?.inscricaoEstadual ?? "")
+    const [inscricaoMunicipal, setInscricaoMunicipal] = useState(pessoa?.inscricaoMunicipal ?? "")
+    const [nomeFantasia,       setNomeFantasia]       = useState(pessoa?.nomeFantasia      ?? "")
+    const [razaoSocial,        setRazaoSocial]        = useState(pessoa?.razaoSocial       ?? "")
 
     useEffect(() => {
 
@@ -79,6 +86,30 @@ export default function PessoaForm() {
         setPessoa(null)
 
         setTipoPessoa("PESSOA_FISICA")
+
+        setFormKey((prev) => prev + 1)
+    }
+
+    function handleTipoPessoa(value: string) {
+        const tipo = value as TipoPessoa
+        setTipoPessoa(tipo)
+
+        if (tipo === "PESSOA_FISICA") {
+            // limpa jurídica
+            setCnpj("")
+            setInscricaoEstadual("")
+            setInscricaoMunicipal("")
+            setNomeFantasia("")
+            setRazaoSocial("")
+        } else {
+            // limpa física
+            setCpf("")
+            setRg("")
+            setCnh("")
+            setCnhCategoria("")
+            setCnhValidade("")
+            setDataNascimento("")
+        }
 
         setFormKey((prev) => prev + 1)
     }
@@ -203,28 +234,20 @@ export default function PessoaForm() {
                 <TRow>
                     <TCol>
                         <TCombo
-                            name="tipoPessoa"
-                            label="Tipo de Pessoa"
+                            name         ="tipoPessoa"
+                            label        ="Tipo de Pessoa"
                             required
-                            width="250px"
-                            defaultValue={tipoPessoa}
-                            onChange={(value) => {
-                                setTipoPessoa(value as TipoPessoa)
-                                setFormKey((prev) => prev + 1)
-                            }}
-                            options={[
-                                {
-                                    value: "PESSOA_FISICA",
-                                    label: "Pessoa Física"
-                                },
-                                {
-                                    value: "PESSOA_JURIDICA",
-                                    label: "Pessoa Jurídica"
-                                }
+                            width        ="250px"
+                            defaultValue ={tipoPessoa}
+                            onChange     ={handleTipoPessoa}
+                            options      ={[
+                                { value: "PESSOA_FISICA",   label: "Pessoa Física"   },
+                                { value: "PESSOA_JURIDICA", label: "Pessoa Jurídica" },
                             ]}
                         />
                     </TCol>
-
+                </TRow>
+                <TRow>
                     <TCol>
                         <TDbCheckbox
                             name="tiposCadastroIds"
@@ -238,8 +261,6 @@ export default function PessoaForm() {
                             }
                         />
                     </TCol>
-
-                    <TSpace />
                 </TRow>
 
                 <TRow>
@@ -249,153 +270,168 @@ export default function PessoaForm() {
                             label="Nome"
                             required
                             maxLength={255}
+                            width="60%"
                             defaultValue={pessoa?.nome}
                         />
                     </TCol>
                 </TRow>
-
-                {tipoPessoa === "PESSOA_FISICA" && (
-                    <>
-                        <TRow>
-
-                            <TCol>
-                                <TEntry
-                                    name="dataNascimento"
-                                    label="Data de Nascimento"
-                                    mask="data"
-                                    defaultValue={pessoa?.dataNascimento ?? ""}
-                                    width="180px"
-                                />
-                            </TCol>
-
-                            <TCol>
-                                <TEntry
-                                    name="cpf"
-                                    label="CPF"
-                                    mask="cpf"
-                                    maxLength={11}
-                                    defaultValue={pessoa?.cpf ?? ""}
-                                    width="180px"
-                                />
-                            </TCol>
-
-                            <TCol>
-                                <TEntry
-                                    name="rg"
-                                    label="RG"
-                                    maxLength={20}
-                                    defaultValue={pessoa?.rg ?? ""}
-                                    width="180px"
-                                />
-                            </TCol>
-
-                            <TSpace />
-
-                        </TRow>
-
-                        <TRow>
-
-                            <TCol>
-                                <TEntry
-                                    name="cnh"
-                                    label="CNH"
-                                    maxLength={11}
-                                    defaultValue={pessoa?.cnh ?? ""}
-                                    width="180px"
-                                />
-                            </TCol>
-
-                            <TCol>
-                                <TEntry
-                                    name="cnhCategoria"
-                                    label="Categoria CNH"
-                                    maxLength={5}
-                                    defaultValue={pessoa?.cnhCategoria ?? ""}
-                                    width="120px"
-                                />
-                            </TCol>
-
-                            <TCol>
-                                <TEntry
-                                    name="cnhValidade"
-                                    label="Validade CNH"
-                                    mask="data"
-                                    defaultValue={pessoa?.cnhValidade ?? ""}
-                                    width="180px"
-                                />
-                            </TCol>
-
-                            <TSpace />
-
-                        </TRow>
-                    </>
-                )}
-
-                {tipoPessoa === "PESSOA_JURIDICA" && (
-                    <>
-                        <TRow>
-
-                            <TCol>
-                                <TEntry
-                                    name="cnpj"
-                                    label="CNPJ"
-                                    mask="cnpj"
-                                    maxLength={14}
-                                    defaultValue={pessoa?.cnpj ?? ""}
-                                    width="220px"
-                                />
-                            </TCol>
-
-                            <TCol>
-                                <TEntry
-                                    name="inscricaoEstadual"
-                                    label="Inscrição Estadual"
-                                    maxLength={50}
-                                    defaultValue={pessoa?.inscricaoEstadual ?? ""}
-                                    width="220px"
-                                />
-                            </TCol>
-
-                            <TCol>
-                                <TEntry
-                                    name="inscricaoMunicipal"
-                                    label="Inscrição Municipal"
-                                    maxLength={50}
-                                    defaultValue={pessoa?.inscricaoMunicipal ?? ""}
-                                    width="220px"
-                                />
-                            </TCol>
-
-                            <TSpace />
-
-                        </TRow>
-
-                        <TRow>
-
-                            <TCol>
-                                <TEntry
-                                    name="nomeFantasia"
-                                    label="Nome Fantasia"
-                                    maxLength={255}
-                                    defaultValue={pessoa?.nomeFantasia ?? ""}
-                                />
-                            </TCol>
-
-                            <TCol>
-                                <TEntry
-                                    name="razaoSocial"
-                                    label="Razão Social"
-                                    maxLength={255}
-                                    defaultValue={pessoa?.razaoSocial ?? ""}
-                                />
-                            </TCol>
-
-                        </TRow>
-                    </>
-                )}
-
                 <TRow>
+                    <TCol>
+                        <TEntry
+                            name="dataNascimento"
+                            label="Data de Nascimento"
+                            mask="data"
+                            defaultValue={pessoa?.dataNascimento ?? ""}
+                            width="180px"
+                        />
+                    </TCol>
+                </TRow>
+                <TPanel title="Pessoa Física">
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="cpf"
+                                label        ="CPF"
+                                mask         ="cpf"
+                                disabled     ={tipoPessoa !== "PESSOA_FISICA"}
+                                defaultValue ={cpf}
+                                onChange     ={setCpf}
+                                width        ="180px"
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="rg"
+                                label        ="RG"
+                                maxLength    ={20}
+                                disabled     ={tipoPessoa !== "PESSOA_FISICA"}
+                                defaultValue ={rg}
+                                onChange     ={setRg}
+                                width        ="160px"
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="dataNascimento"
+                                label        ="Data de Nascimento"
+                                mask         ="data"
+                                disabled     ={tipoPessoa !== "PESSOA_FISICA"}
+                                defaultValue ={dataNascimento}
+                                onChange     ={setDataNascimento}
+                                width        ="180px"
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="cnh"
+                                label        ="CNH"
+                                maxLength    ={11}
+                                disabled     ={tipoPessoa !== "PESSOA_FISICA"}
+                                defaultValue ={cnh}
+                                onChange     ={setCnh}
+                                width        ="180px"
+                            />
+                        </TCol>
+                        <TCol>
+                            <TEntry
+                                name         ="cnhCategoria"
+                                label        ="Categoria CNH"
+                                maxLength    ={2}
+                                disabled     ={tipoPessoa !== "PESSOA_FISICA"}
+                                defaultValue ={cnhCategoria}
+                                onChange     ={setCnhCategoria}
+                                width        ="120px"
+                            />
+                        </TCol>
+                        <TCol>
+                            <TEntry
+                                name         ="cnhValidade"
+                                label        ="Validade CNH"
+                                mask         ="data"
+                                disabled     ={tipoPessoa !== "PESSOA_FISICA"}
+                                defaultValue ={cnhValidade}
+                                onChange     ={setCnhValidade}
+                                width        ="180px"
+                            />
+                        </TCol>
+                        <TSpace />
+                    </TRow>
+                </TPanel>
 
+                <TPanel title="Pessoa Jurídica">
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="cnpj"
+                                label        ="CNPJ"
+                                mask         ="cnpj"
+                                disabled     ={tipoPessoa !== "PESSOA_JURIDICA"}
+                                defaultValue ={cnpj}
+                                onChange     ={setCnpj}
+                                width        ="220px"
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="inscricaoEstadual"
+                                label        ="Inscrição Estadual"
+                                maxLength    ={50}
+                                width        ="220px"
+                                disabled     ={tipoPessoa !== "PESSOA_JURIDICA"}
+                                defaultValue ={inscricaoEstadual}
+                                onChange     ={setInscricaoEstadual}
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="inscricaoMunicipal"
+                                label        ="Inscrição Municipal"
+                                maxLength    ={50}
+                                width        ="220px"
+                                disabled     ={tipoPessoa !== "PESSOA_JURIDICA"}
+                                defaultValue ={inscricaoMunicipal}
+                                onChange     ={setInscricaoMunicipal}
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="razaoSocial"
+                                label        ="Razão Social"
+                                maxLength    ={255}
+                                width="60%"
+                                disabled     ={tipoPessoa !== "PESSOA_JURIDICA"}
+                                defaultValue ={razaoSocial}
+                                onChange     ={setRazaoSocial}
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="nomeFantasia"
+                                label        ="Nome Fantasia"
+                                maxLength    ={255}
+                                width="60%"
+                                disabled     ={tipoPessoa !== "PESSOA_JURIDICA"}
+                                defaultValue ={nomeFantasia}
+                                onChange     ={setNomeFantasia}
+                            />
+                        </TCol>
+                    </TRow> 
+                </TPanel>
+                <TRow>
                     <TCol>
                         <TCombo
                             name="ativo"
@@ -420,9 +456,7 @@ export default function PessoaForm() {
                             ]}
                         />
                     </TCol>
-
                     <TSpace />
-
                 </TRow>
 
                 {isEdit && (
