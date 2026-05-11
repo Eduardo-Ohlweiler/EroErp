@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog /*, FaPhone, FaTools*/ } from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList /*, FaPhone, FaTools*/ } from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -26,7 +26,7 @@ export const menu: MenuItem[] = [
   },
   {
     label: "Cadastros",
-    icon: FaCogs,
+    icon: FaClipboardList,
     roles: ["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST"],
     children: [
       {

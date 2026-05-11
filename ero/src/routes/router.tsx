@@ -19,6 +19,7 @@ import EstadoFormList from "../pages/administrativo/auxiliares/EstadoFormList";
 import CidadeList from "../pages/cadastros/auxiliares/CidadeList";
 import CidadeForm from "../pages/cadastros/auxiliares/CidadeForm";
 import PessoaList from "../pages/cadastros/pessoas/PessoaList";
+import PessoaForm from "../pages/cadastros/pessoas/PessoaForm";
 
 export function Router() {
   return (
@@ -27,7 +28,7 @@ export function Router() {
 
         {/* rotas públicas */}
         <Route element={<PublicRoute />}>
-          <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Login />} />
         </Route>
 
         {/* rotas privadas */}
@@ -65,17 +66,21 @@ export function Router() {
                 <Route path="/tipos/endereco"     element={<TipoEnderecoFormList />} />
 
             </Route>
+
+            {/*ROTAS CIDADES*/}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "CIDADE", "CIDADE_GET", "CIDADE_POST"]} />}>
-              {/*ROTAS CIDADES*/}
-              <Route path="/cidades" element={<CidadeList />} />
-              <Route path="/cidades/novo" element={<CidadeForm />} />
-              <Route path="/cidades/:id"  element={<CidadeForm />} />
+                <Route path="/cidades" element={<CidadeList />} />
+                <Route path="/cidades/novo" element={<CidadeForm />} />
+                <Route path="/cidades/:id"  element={<CidadeForm />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />
 
+            {/*ROTAS PESSOAS*/}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST"]} />}>
-              <Route path="/pessoas" element={<PessoaList />} />
+                <Route path="/pessoas" element={<PessoaList />} />
+                <Route path="/pessoas/novo" element={<PessoaForm />} />
+                <Route path="/pessoas/:id" element={<PessoaForm />} />
             </Route>
             
             <Route path="/produtos" element={<ProdutoList />} />

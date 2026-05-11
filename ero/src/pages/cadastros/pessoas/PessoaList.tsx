@@ -89,6 +89,7 @@ export default function PessoaList() {
 
     useEffect(() => {
         load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page]);
 
     async function load(
@@ -108,17 +109,17 @@ export default function PessoaList() {
                 sort: "nome"
             });
             if (nome)           
-              params.append("nome",           nome);
+                params.append("nome",           nome);
             if (cpf)            
-              params.append("cpf",            cpf);
+                params.append("cpf",            cpf);
             if (cnpj)           
-              params.append("cnpj",           cnpj);
+                params.append("cnpj",           cnpj);
             if (ativo)          
-              params.append("ativo",          ativo);
+                params.append("ativo",          ativo);
             if (tipoPessoa)     
-              params.append("tipoPessoa",     tipoPessoa);
+                params.append("tipoPessoa",     tipoPessoa);
             if (tipoCadastroId) 
-              params.append("tipoCadastroId", tipoCadastroId);
+                params.append("tipoCadastroId", tipoCadastroId);
 
             const response = await api.get(`/pessoas?${params.toString()}`);
             setData(response.data.content);
@@ -177,14 +178,14 @@ export default function PessoaList() {
         <TPage
             title      ="Pessoas"
             breadcrumb ={["Cadastros", "Pessoas"]}
-            actions    ={
-                <TButton
-                    label   ="Novo"
-                    variant ="new"
-                    type    ="button"
-                    onClick ={() => navigate("/pessoas/novo")}
-                />
-            }
+            // actions    ={
+            //     <TButton
+            //         label   ="Novo"
+            //         variant ="new"
+            //         type    ="button"
+            //         onClick ={() => navigate("/pessoas/novo")}
+            //     />
+            // }
         >
             <TForm key={resetKey} onSubmit={handleFiltrar}>
                 <TRow>
@@ -273,6 +274,12 @@ export default function PessoaList() {
                             type    ="button"
                             onClick ={handleLimpar}
                         />
+                        <TButton
+                            label   ="Novo"
+                            variant ="new"
+                            type    ="button"
+                            onClick ={() => navigate("/pessoas/novo")}
+                        />
                     </TFormActionsLeft>
                 </TFormFooter>
 
@@ -288,7 +295,10 @@ export default function PessoaList() {
                             <TButton
                                 label   =""
                                 variant ="edit"
-                                onClick ={() => navigate(`/pessoas/${row.id}`)}
+                                onClick ={(e) => {
+                                    e?.stopPropagation();
+                                    navigate(`/pessoas/${row.id}`);
+                                }}
                             />
                             <TButton
                                 label   =""
