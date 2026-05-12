@@ -12,6 +12,7 @@ interface TDbCheckboxProps {
   direction?:     "row" | "column";
   height?:        string;
   hint?:          string;
+  required?:      boolean;
   onChange?:      (values: string[]) => void;
 }
 
@@ -26,6 +27,7 @@ export function TDbCheckbox({
   direction = "column",
   height    = "200px",
   hint,
+  required,
   onChange,
 }: TDbCheckboxProps) {
 
@@ -57,7 +59,10 @@ export function TDbCheckbox({
   return (
     <div className="flex flex-col gap-1" style={direction === "column" ? { display: "inline-flex" } : undefined}>
 
-      <span className="text-sm text-(--text-secondary)">{label}</span>
+      <label className="text-sm text-(--text-secondary)">
+        {label}
+        {required && <span className="text-(--danger) ml-1">*</span>}
+      </label>
 
       <div
         className={direction === "column"
@@ -76,7 +81,7 @@ export function TDbCheckbox({
             >
               <input
                 type     ="checkbox"
-                name     ={name}
+                name     ={`${name}_visual`}
                 value    ={value}
                 checked  ={selected.includes(value)}
                 disabled ={disabled}

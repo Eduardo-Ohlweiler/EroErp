@@ -40,17 +40,17 @@ export default function PessoaForm() {
     const [saving,             setSaving]             = useState(false)
     const [pessoa,             setPessoa]             = useState<PessoaResponse | null>(null)
     const [tipoPessoa,         setTipoPessoa]         = useState<TipoPessoa>("PESSOA_FISICA")
-    const [cpf,                setCpf]                = useState(pessoa?.cpf               ?? "")
-    const [rg,                 setRg]                 = useState(pessoa?.rg                ?? "")
-    const [cnh,                setCnh]                = useState(pessoa?.cnh               ?? "")
-    const [cnhCategoria,       setCnhCategoria]       = useState(pessoa?.cnhCategoria      ?? "")
-    const [cnhValidade,        setCnhValidade]        = useState(pessoa?.cnhValidade       ?? "")
-    const [dataNascimento,     setDataNascimento]     = useState(pessoa?.dataNascimento    ?? "")
-    const [cnpj,               setCnpj]               = useState(pessoa?.cnpj              ?? "")
-    const [inscricaoEstadual,  setInscricaoEstadual]  = useState(pessoa?.inscricaoEstadual ?? "")
+    const [cpf,                setCpf]                = useState(pessoa?.cpf                ?? "")
+    const [rg,                 setRg]                 = useState(pessoa?.rg                 ?? "")
+    const [cnh,                setCnh]                = useState(pessoa?.cnh                ?? "")
+    const [cnhCategoria,       setCnhCategoria]       = useState(pessoa?.cnhCategoria       ?? "")
+    const [cnhValidade,        setCnhValidade]        = useState(pessoa?.cnhValidade        ?? "")
+    const [dataNascimento,     setDataNascimento]     = useState(pessoa?.dataNascimento     ?? "")
+    const [cnpj,               setCnpj]               = useState(pessoa?.cnpj               ?? "")
+    const [inscricaoEstadual,  setInscricaoEstadual]  = useState(pessoa?.inscricaoEstadual  ?? "")
     const [inscricaoMunicipal, setInscricaoMunicipal] = useState(pessoa?.inscricaoMunicipal ?? "")
-    const [nomeFantasia,       setNomeFantasia]       = useState(pessoa?.nomeFantasia      ?? "")
-    const [razaoSocial,        setRazaoSocial]        = useState(pessoa?.razaoSocial       ?? "")
+    const [nomeFantasia,       setNomeFantasia]       = useState(pessoa?.nomeFantasia       ?? "")
+    const [razaoSocial,        setRazaoSocial]        = useState(pessoa?.razaoSocial        ?? "")
 
     useEffect(() => {
 
@@ -59,34 +59,41 @@ export default function PessoaForm() {
             setTipoPessoa("PESSOA_FISICA")
             return
         }
-
         setLoading(true)
-
         api.get(`/pessoas/${currentId}`)
             .then((response) => {
+                const p = response.data
 
-                setPessoa(response.data)
+                setPessoa(p)
+                setTipoPessoa(p.tipoPessoa)
 
-                setTipoPessoa(response.data.tipoPessoa)
+                setCpf(p.cpf ?? "")
+                setRg(p.rg ?? "")
+                setCnh(p.cnh ?? "")
+                setCnhCategoria(p.cnhCategoria ?? "")
+                setCnhValidade(p.cnhValidade ?? "")
+                setDataNascimento(p.dataNascimento ?? "")
 
+                setCnpj(p.cnpj ?? "")
+                setInscricaoEstadual(p.inscricaoEstadual ?? "")
+                setInscricaoMunicipal(p.inscricaoMunicipal ?? "")
+                setNomeFantasia(p.nomeFantasia ?? "")
+                setRazaoSocial(p.razaoSocial ?? "")
+
+                setFormKey((prev) => prev + 1)
             })
             .catch(() => {
                 showMessage("error", "Erro ao carregar pessoa")
                 navigate("/pessoas")
             })
             .finally(() => setLoading(false))
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentId])
 
     function handleNovo() {
-
         setCurrentId(undefined)
-
         setPessoa(null)
-
         setTipoPessoa("PESSOA_FISICA")
-
         setFormKey((prev) => prev + 1)
     }
 
@@ -101,7 +108,7 @@ export default function PessoaForm() {
             setInscricaoMunicipal("")
             setNomeFantasia("")
             setRazaoSocial("")
-        } else {
+        } else if (tipo === "PESSOA_JURIDICA") {
             // limpa física
             setCpf("")
             setRg("")
@@ -110,33 +117,23 @@ export default function PessoaForm() {
             setCnhValidade("")
             setDataNascimento("")
         }
-
         setFormKey((prev) => prev + 1)
     }
 
     async function reload(id: string) {
-
         try {
-
             const response = await api.get(`/pessoas/${id}`)
-
             setPessoa(response.data)
-
             setTipoPessoa(response.data.tipoPessoa)
-
             setFormKey((prev) => prev + 1)
-
         } catch {
             showMessage("error", "Erro ao recarregar pessoa")
         }
     }
 
     async function handleSubmit(data: Record<string, string>) {
-
         setSaving(true)
-
         try {
-
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const {
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -153,9 +150,7 @@ export default function PessoaForm() {
 
             const payload = {
                 ...rest,
-
                 ativo: data.ativo === "true",
-
                 tiposCadastroIds: tiposCadastroIds
                     ? tiposCadastroIds
                         .split(",")
@@ -163,28 +158,18 @@ export default function PessoaForm() {
                         .map(Number)
                     : []
             }
-
             if (isEdit) {
-
                 await api.put(`/pessoas/${currentId}`, payload)
-
                 showMessage("success", "Pessoa atualizada com sucesso!")
-
                 await reload(currentId!)
-
             } else {
-
                 const response = await api.post("/pessoas", payload)
-
                 showMessage("success", "Pessoa cadastrada com sucesso!")
-
                 const novoId = String(response.data.id)
-
                 setCurrentId(novoId)
-
                 await reload(novoId)
             }
-
+            console.log("payload tiposCadastroIds:", payload)
         } catch (err) {
 
             if (axios.isAxiosError(err)) {
@@ -250,6 +235,7 @@ export default function PessoaForm() {
                 <TRow>
                     <TCol>
                         <TDbCheckbox
+                            required
                             name="tiposCadastroIds"
                             label="Tipos de Cadastro"
                             url="/tipos/cadastro/select"
@@ -281,7 +267,7 @@ export default function PessoaForm() {
                             name="dataNascimento"
                             label="Data de Nascimento"
                             mask="data"
-                            defaultValue={pessoa?.dataNascimento ?? ""}
+                            defaultValue={dataNascimento}
                             width="180px"
                         />
                     </TCol>
@@ -310,19 +296,6 @@ export default function PessoaForm() {
                                 defaultValue ={rg}
                                 onChange     ={setRg}
                                 width        ="160px"
-                            />
-                        </TCol>
-                    </TRow>
-                    <TRow>
-                        <TCol>
-                            <TEntry
-                                name         ="dataNascimento"
-                                label        ="Data de Nascimento"
-                                mask         ="data"
-                                disabled     ={tipoPessoa !== "PESSOA_FISICA"}
-                                defaultValue ={dataNascimento}
-                                onChange     ={setDataNascimento}
-                                width        ="180px"
                             />
                         </TCol>
                     </TRow>
