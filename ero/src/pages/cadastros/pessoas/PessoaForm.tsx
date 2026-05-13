@@ -94,6 +94,20 @@ export default function PessoaForm() {
         setCurrentId(undefined)
         setPessoa(null)
         setTipoPessoa("PESSOA_FISICA")
+
+        setCpf("")
+        setRg("")
+        setCnh("")
+        setCnhCategoria("")
+        setCnhValidade("")
+        setDataNascimento("")
+
+        setCnpj("")
+        setInscricaoEstadual("")
+        setInscricaoMunicipal("")
+        setNomeFantasia("")
+        setRazaoSocial("")
+
         setFormKey((prev) => prev + 1)
     }
 
