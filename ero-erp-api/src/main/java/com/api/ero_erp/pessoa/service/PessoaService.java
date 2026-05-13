@@ -112,6 +112,7 @@ public class PessoaService {
                 cnh, cliente.getId(), null);
 
         Set<TipoCadastro> tiposCadastro = tipoCadastroService.findAllByIds(dto.tiposCadastroIds());
+        validarTiposCadastro(tiposCadastro);
 
         Pessoa pessoa = new Pessoa();
         pessoa.setCliente(cliente);
@@ -169,6 +170,7 @@ public class PessoaService {
                 cnh, clienteId, id);
 
         Set<TipoCadastro> tiposCadastro = tipoCadastroService.findAllByIds(dto.tiposCadastroIds());
+        validarTiposCadastro(tiposCadastro);
 
         pessoa.setNome(dto.nome());
         pessoa.setTipoPessoa(dto.tipoPessoa());
@@ -221,6 +223,11 @@ public class PessoaService {
         return PessoaMapper.toDto(pessoaRepository.save(pessoa));
     }
 
+    private void validarTiposCadastro(Set<TipoCadastro> tiposCadastro) {
+        if (tiposCadastro == null || tiposCadastro.isEmpty()) {
+            throw new BadRequestException("Selecione ao menos um tipo de cadastro");
+        }
+    }
 
     private void validarCamposPorTipo(
             TipoPessoa tipoPessoa,
