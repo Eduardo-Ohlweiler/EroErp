@@ -95,14 +95,21 @@ public class PessoaService {
         Cliente cliente = clienteService.findById(securityUtils.getClienteIdLogado());
         Usuario usuario = usuarioService.findById(securityUtils.getUsuarioIdLogado());
 
-        validarCamposPorTipo(dto.tipoPessoa(), dto.cpf(), dto.rg(), dto.cnpj(),
-                dto.inscricaoEstadual(), dto.inscricaoMunicipal(),
-                dto.nomeFantasia(), dto.razaoSocial(),
-                dto.cnh(), dto.cnhCategoria(), dto.cnhValidade());
+        String cpf                = removeCaracteresEstranhos(dto.cpf());
+        String rg                 = removeCaracteresEstranhos(dto.rg());
+        String cnpj               = removeCaracteresEstranhos(dto.cnpj());
+        String cnh                = removeCaracteresEstranhos(dto.cnh());
+        String inscricaoEstadual  = removeCaracteresEstranhos(dto.inscricaoEstadual());
+        String inscricaoMunicipal = removeCaracteresEstranhos(dto.inscricaoMunicipal());
 
-        validarDocumentos(dto.cpf(), dto.rg(), dto.cnpj(),
-                dto.inscricaoEstadual(), dto.inscricaoMunicipal(),
-                dto.cnh(), cliente.getId(), null);
+        validarCamposPorTipo(dto.tipoPessoa(), cpf, rg, cnpj,
+                inscricaoEstadual, inscricaoMunicipal,
+                dto.nomeFantasia(), dto.razaoSocial(),
+                cnh, dto.cnhCategoria(), dto.cnhValidade());
+
+        validarDocumentos(cpf, rg, cnpj,
+                inscricaoEstadual, inscricaoMunicipal,
+                cnh, cliente.getId(), null);
 
         Set<TipoCadastro> tiposCadastro = tipoCadastroService.findAllByIds(dto.tiposCadastroIds());
 
@@ -110,27 +117,27 @@ public class PessoaService {
         pessoa.setCliente(cliente);
         pessoa.setNome(dto.nome());
         pessoa.setTipoPessoa(dto.tipoPessoa());
-        if(dto.dataNascimento() != null)
+        if (dto.dataNascimento() != null)
             pessoa.setDataNascimento(dto.dataNascimento());
-        if(dto.cpf() != null && !dto.cpf().isBlank())
-            pessoa.setCpf(removeCaracteresEstranhos(dto.cpf()));
-        if(dto.rg() != null && !dto.rg().isBlank())
-            pessoa.setRg(removeCaracteresEstranhos(dto.rg()));
-        if (hasValue(dto.cnh()))
-            pessoa.setCnh(removeCaracteresEstranhos(dto.cnh()));
+        if (hasValue(cpf))
+            pessoa.setCpf(cpf);
+        if (hasValue(rg))
+            pessoa.setRg(rg);
+        if (hasValue(cnh))
+            pessoa.setCnh(cnh);
         if (hasValue(dto.cnhCategoria()))
             pessoa.setCnhCategoria(dto.cnhCategoria());
         if (dto.cnhValidade() != null)
             pessoa.setCnhValidade(dto.cnhValidade());
-        if(dto.cnpj() != null && !dto.cnpj().isBlank())
-            pessoa.setCnpj(removeCaracteresEstranhos(dto.cnpj()));
-        if(dto.inscricaoEstadual() != null && !dto.inscricaoEstadual().isBlank())
-            pessoa.setInscricaoEstadual(removeCaracteresEstranhos(dto.inscricaoEstadual()));
-        if(dto.inscricaoMunicipal() != null && !dto.inscricaoMunicipal().isBlank())
-            pessoa.setInscricaoMunicipal(removeCaracteresEstranhos(dto.inscricaoMunicipal()));
-        if(dto.nomeFantasia() != null && !dto.nomeFantasia().isBlank())
+        if (hasValue(cnpj))
+            pessoa.setCnpj(cnpj);
+        if (hasValue(inscricaoEstadual))
+            pessoa.setInscricaoEstadual(inscricaoEstadual);
+        if (hasValue(inscricaoMunicipal))
+            pessoa.setInscricaoMunicipal(inscricaoMunicipal);
+        if (hasValue(dto.nomeFantasia()))
             pessoa.setNomeFantasia(dto.nomeFantasia());
-        if(dto.razaoSocial() != null && !dto.razaoSocial().isBlank())
+        if (hasValue(dto.razaoSocial()))
             pessoa.setRazaoSocial(dto.razaoSocial());
         pessoa.setCreatedBy(usuario);
         if (tiposCadastro != null)
@@ -145,40 +152,62 @@ public class PessoaService {
         Usuario usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
         Long    clienteId = pessoa.getCliente().getId();
 
-        validarCamposPorTipo(pessoa.getTipoPessoa(), dto.cpf(), dto.rg(), dto.cnpj(),
-                dto.inscricaoEstadual(), dto.inscricaoMunicipal(),
-                dto.nomeFantasia(), dto.razaoSocial(),
-                dto.cnh(), dto.cnhCategoria(), dto.cnhValidade());
+        String cpf                = removeCaracteresEstranhos(dto.cpf());
+        String rg                 = removeCaracteresEstranhos(dto.rg());
+        String cnpj               = removeCaracteresEstranhos(dto.cnpj());
+        String cnh                = removeCaracteresEstranhos(dto.cnh());
+        String inscricaoEstadual  = removeCaracteresEstranhos(dto.inscricaoEstadual());
+        String inscricaoMunicipal = removeCaracteresEstranhos(dto.inscricaoMunicipal());
 
-        validarDocumentos(dto.cpf(), dto.rg(), dto.cnpj(),
-                dto.inscricaoEstadual(), dto.inscricaoMunicipal(),
-                dto.cnh(), clienteId, id);
+        validarCamposPorTipo(dto.tipoPessoa(), cpf, rg, cnpj,
+                inscricaoEstadual, inscricaoMunicipal,
+                dto.nomeFantasia(), dto.razaoSocial(),
+                cnh, dto.cnhCategoria(), dto.cnhValidade());
+
+        validarDocumentos(cpf, rg, cnpj,
+                inscricaoEstadual, inscricaoMunicipal,
+                cnh, clienteId, id);
 
         Set<TipoCadastro> tiposCadastro = tipoCadastroService.findAllByIds(dto.tiposCadastroIds());
 
         pessoa.setNome(dto.nome());
         pessoa.setTipoPessoa(dto.tipoPessoa());
-        if(dto.dataNascimento() != null)
+        if (dto.dataNascimento() != null)
             pessoa.setDataNascimento(dto.dataNascimento());
-        if(dto.cpf() != null && !dto.cpf().isBlank())
-            pessoa.setCpf(removeCaracteresEstranhos(dto.cpf()));
-        if(dto.rg() != null && !dto.rg().isBlank())
-            pessoa.setRg(removeCaracteresEstranhos(dto.rg()));
-        if (hasValue(dto.cnh()))
-            pessoa.setCnh(removeCaracteresEstranhos(dto.cnh()));
+
+        if (dto.tipoPessoa() == TipoPessoa.PESSOA_JURIDICA) {
+            pessoa.setCpf(null);
+            pessoa.setRg(null);
+            pessoa.setCnh(null);
+            pessoa.setCnhCategoria(null);
+            pessoa.setCnhValidade(null);
+        } else if (dto.tipoPessoa() == TipoPessoa.PESSOA_FISICA) {
+            pessoa.setCnpj(null);
+            pessoa.setInscricaoEstadual(null);
+            pessoa.setInscricaoMunicipal(null);
+            pessoa.setNomeFantasia(null);
+            pessoa.setRazaoSocial(null);
+        }
+
+        if (hasValue(cpf))
+            pessoa.setCpf(cpf);
+        if (hasValue(rg))
+            pessoa.setRg(rg);
+        if (hasValue(cnh))
+            pessoa.setCnh(cnh);
         if (hasValue(dto.cnhCategoria()))
             pessoa.setCnhCategoria(dto.cnhCategoria());
         if (dto.cnhValidade() != null)
             pessoa.setCnhValidade(dto.cnhValidade());
-        if(dto.cnpj() != null && !dto.cnpj().isBlank())
-            pessoa.setCnpj(removeCaracteresEstranhos(dto.cnpj()));
-        if(dto.inscricaoEstadual() != null && !dto.inscricaoEstadual().isBlank())
-            pessoa.setInscricaoEstadual(removeCaracteresEstranhos(dto.inscricaoEstadual()));
-        if(dto.inscricaoMunicipal() != null && !dto.inscricaoMunicipal().isBlank())
-            pessoa.setInscricaoMunicipal(removeCaracteresEstranhos(dto.inscricaoMunicipal()));
-        if(dto.nomeFantasia() != null && !dto.nomeFantasia().isBlank())
+        if (hasValue(cnpj))
+            pessoa.setCnpj(cnpj);
+        if (hasValue(inscricaoEstadual))
+            pessoa.setInscricaoEstadual(inscricaoEstadual);
+        if (hasValue(inscricaoMunicipal))
+            pessoa.setInscricaoMunicipal(inscricaoMunicipal);
+        if (hasValue(dto.nomeFantasia()))
             pessoa.setNomeFantasia(dto.nomeFantasia());
-        if(dto.razaoSocial() != null && !dto.razaoSocial().isBlank())
+        if (hasValue(dto.razaoSocial()))
             pessoa.setRazaoSocial(dto.razaoSocial());
         pessoa.setUpdatedBy(usuario);
 
