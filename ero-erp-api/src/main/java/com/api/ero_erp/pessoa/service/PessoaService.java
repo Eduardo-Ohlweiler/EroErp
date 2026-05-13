@@ -172,8 +172,7 @@ public class PessoaService {
 
         pessoa.setNome(dto.nome());
         pessoa.setTipoPessoa(dto.tipoPessoa());
-        if (dto.dataNascimento() != null)
-            pessoa.setDataNascimento(dto.dataNascimento());
+        pessoa.setDataNascimento(dto.dataNascimento());
 
         if (dto.tipoPessoa() == TipoPessoa.PESSOA_JURIDICA) {
             pessoa.setCpf(null);
@@ -189,27 +188,19 @@ public class PessoaService {
             pessoa.setRazaoSocial(null);
         }
 
-        if (hasValue(cpf))
-            pessoa.setCpf(cpf);
-        if (hasValue(rg))
-            pessoa.setRg(rg);
-        if (hasValue(cnh))
-            pessoa.setCnh(cnh);
-        if (hasValue(dto.cnhCategoria()))
-            pessoa.setCnhCategoria(dto.cnhCategoria());
-        if (dto.cnhValidade() != null)
-            pessoa.setCnhValidade(dto.cnhValidade());
-        if (hasValue(cnpj))
-            pessoa.setCnpj(cnpj);
-        if (hasValue(inscricaoEstadual))
-            pessoa.setInscricaoEstadual(inscricaoEstadual);
-        if (hasValue(inscricaoMunicipal))
-            pessoa.setInscricaoMunicipal(inscricaoMunicipal);
-        if (hasValue(dto.nomeFantasia()))
-            pessoa.setNomeFantasia(dto.nomeFantasia());
-        if (hasValue(dto.razaoSocial()))
-            pessoa.setRazaoSocial(dto.razaoSocial());
+        pessoa.setCpf(cpf);
+        pessoa.setRg(rg);
+        pessoa.setCnh(cnh);
+        pessoa.setCnhCategoria(hasValue(dto.cnhCategoria()) ? dto.cnhCategoria() : null);
+        pessoa.setCnhValidade(dto.cnhValidade());
+        pessoa.setCnpj(cnpj);
+        pessoa.setInscricaoEstadual(inscricaoEstadual);
+        pessoa.setInscricaoMunicipal(inscricaoMunicipal);
+        pessoa.setNomeFantasia(hasValue(dto.nomeFantasia()) ? dto.nomeFantasia() : null);
+        pessoa.setRazaoSocial(hasValue(dto.razaoSocial()) ? dto.razaoSocial() : null);
         pessoa.setUpdatedBy(usuario);
+
+        pessoa.setAtivo(dto.ativo());
 
         pessoa.getTiposCadastro().clear();
         if (tiposCadastro != null)

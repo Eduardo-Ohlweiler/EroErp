@@ -63,5 +63,8 @@ public record PessoaUpdateDto(
         String razaoSocial,
 
         @Schema(description = "IDs dos tipos de cadastro", example = "[1, 2]")
-        Set<Long> tiposCadastroIds
+        Set<Long> tiposCadastroIds,
+
+        @Schema(description = "Definir se a pessoa esta ativa", example = "true")
+        Boolean ativo
 ) {}
