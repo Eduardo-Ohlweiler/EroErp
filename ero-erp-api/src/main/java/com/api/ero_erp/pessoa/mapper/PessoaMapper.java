@@ -1,9 +1,12 @@
 package com.api.ero_erp.pessoa.mapper;
 
+import com.api.ero_erp.email.mapper.EmailMapper;
 import com.api.ero_erp.pessoa.dtos.PessoaResponseDto;
 import com.api.ero_erp.pessoa.dtos.PessoaSelectDto;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.tipocadastro.mapper.TipoCadastroMapper;
+
+import java.util.List;
 
 public class PessoaMapper {
 
@@ -32,7 +35,10 @@ public class PessoaMapper {
                 pessoa.getCreatedBy() != null ? pessoa.getCreatedBy().getNome() : null,
                 pessoa.getUpdatedAt(),
                 pessoa.getUpdatedBy() != null ? pessoa.getUpdatedBy().getId()   : null,
-                pessoa.getUpdatedBy() != null ? pessoa.getUpdatedBy().getNome() : null
+                pessoa.getUpdatedBy() != null ? pessoa.getUpdatedBy().getNome() : null,
+                pessoa.getEmails() != null
+                        ? EmailMapper.toDtoList(pessoa.getEmails())
+                        : List.of()
         );
     }
 

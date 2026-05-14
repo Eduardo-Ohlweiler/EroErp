@@ -3,6 +3,7 @@ package com.api.ero_erp.pessoa.service;
 import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.cliente.service.ClienteService;
 import com.api.ero_erp.config.SecurityUtils;
+import com.api.ero_erp.email.service.EmailService;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
@@ -36,19 +37,22 @@ public class PessoaService {
     private final TipoCadastroService tipoCadastroService;
     private final UsuarioService      usuarioService;
     private final SecurityUtils       securityUtils;
+    private final EmailService        emailService;
 
     public PessoaService(
             PessoaRepository    pessoaRepository,
             ClienteService      clienteService,
             TipoCadastroService tipoCadastroService,
             UsuarioService      usuarioService,
-            SecurityUtils       securityUtils
+            SecurityUtils       securityUtils,
+            EmailService        emailService
     ) {
         this.pessoaRepository    = pessoaRepository;
         this.clienteService      = clienteService;
         this.tipoCadastroService = tipoCadastroService;
         this.usuarioService      = usuarioService;
         this.securityUtils       = securityUtils;
+        this.emailService        = emailService;
     }
 
     @Transactional(readOnly = true)
@@ -144,7 +148,9 @@ public class PessoaService {
         if (tiposCadastro != null)
             pessoa.getTiposCadastro().addAll(tiposCadastro);
 
-        return PessoaMapper.toDto(pessoaRepository.save(pessoa));
+        Pessoa salva = pessoaRepository.save(pessoa);
+        emailService.sincronizarEmails(salva, dto.emails(), cliente);
+        return PessoaMapper.toDto(this.findById(salva.getId()));
     }
 
     @Transactional
@@ -208,7 +214,9 @@ public class PessoaService {
         if (tiposCadastro != null)
             pessoa.getTiposCadastro().addAll(tiposCadastro);
 
-        return PessoaMapper.toDto(pessoaRepository.save(pessoa));
+        Pessoa salva = pessoaRepository.save(pessoa);
+        emailService.sincronizarEmails(salva, dto.emails(), pessoa.getCliente());
+        return this.findByIdResponse(salva.getId());
     }
 
 

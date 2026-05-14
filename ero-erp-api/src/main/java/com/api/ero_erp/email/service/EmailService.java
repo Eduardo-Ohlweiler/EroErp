@@ -4,6 +4,7 @@ import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.cliente.service.ClienteService;
 import com.api.ero_erp.config.SecurityUtils;
 import com.api.ero_erp.email.dtos.EmailCreateDto;
+import com.api.ero_erp.email.dtos.EmailItemDto;
 import com.api.ero_erp.email.dtos.EmailResponseDto;
 import com.api.ero_erp.email.entity.Email;
 import com.api.ero_erp.email.mapper.EmailMapper;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class EmailService {
@@ -25,21 +28,15 @@ public class EmailService {
     private final EmailRepository   emailRepository;
     private final TipoEmailService  tipoEmailService;
     private final SecurityUtils     securityUtils;
-    private final ClienteService    clienteService;
-    private final PessoaService     pessoaService;
 
     public EmailService(
-            EmailRepository     emailRepository,
-            TipoEmailService    tipoEmailService,
-            SecurityUtils       securityUtils,
-            ClienteService      clienteService,
-            PessoaService       pessoaService
+            EmailRepository  emailRepository,
+            TipoEmailService tipoEmailService,
+            SecurityUtils    securityUtils
     ) {
         this.emailRepository  = emailRepository;
         this.tipoEmailService = tipoEmailService;
         this.securityUtils    = securityUtils;
-        this.clienteService   = clienteService;
-        this.pessoaService    = pessoaService;
     }
 
     @Transactional(readOnly = true)
@@ -68,23 +65,60 @@ public class EmailService {
         this.emailRepository.delete(email);
     }
 
-    /*
     @Transactional
-    public EmailResponseDto create(EmailCreateDto dto) {
+    public void sincronizarEmails(Pessoa pessoa, List<EmailItemDto> dtos, Cliente cliente) {
 
-        Cliente cliente     = this.clienteService.findById(securityUtils.getClienteIdLogado());
-        TipoEmail tipoEmail = this.tipoEmailService.findById(dto.tipoEmailId());
-        boolean principal   = Boolean.TRUE.equals(dto.principal());
-        Pessoa pessoa       = pessoaService
+        if (dtos == null || dtos.isEmpty()) {
+            emailRepository.deleteAll(
+                    emailRepository.findByPessoaIdAndClienteId(pessoa.getId(), cliente.getId())
+            );
+            return;
+        }
 
-        if (principal && emailRepository.existsByPessoaIdAndClienteIdAndPrincipalTrue(dto.pessoaId(), cliente.getId()))
-            throw new ConflictException("Já existe um email principal para essa pessoa");
+        // IDs que vieram do front (só os que já existiam)
+        Set<Long> idsRecebidos = dtos.stream()
+                .filter(d -> d.id() != null)
+                .map(EmailItemDto::id)
+                .collect(Collectors.toSet());
 
-        boolean existeAlgumEmail = emailRepository.existsByPessoaIdAndClienteId(dto.pessoaId(), cliente.getId());
-        if (!existeAlgumEmail)
-            principal = true;
+        // Remove os que não vieram
+        List<Email> existentes = emailRepository.findByPessoaIdAndClienteId(pessoa.getId(), cliente.getId());
+        existentes.stream()
+                .filter(e -> !idsRecebidos.contains(e.getId()))
+                .forEach(emailRepository::delete);
 
-        Email email = new Email();
+        // Só um seja principal
+        boolean temPrincipal = dtos.stream().anyMatch(d -> Boolean.TRUE.equals(d.principal()));
 
-    }*/
+        for (int i = 0; i < dtos.size(); i++) {
+            EmailItemDto dto = dtos.get(i);
+
+            TipoEmail tipoEmail = tipoEmailService.findById(dto.tipoEmailId());
+            boolean principal   = Boolean.TRUE.equals(dto.principal());
+
+            // Se nenhum marcou principal, o primeiro vira principal
+            if (!temPrincipal && i == 0) principal = true;
+
+            if (dto.id() != null) {
+                // Atualiza existente
+                Email email = emailRepository.findByIdAndClienteId(dto.id(), cliente.getId())
+                        .orElseThrow(() -> new NotFoundException("Email não encontrado"));
+                email.setTipoEmail(tipoEmail);
+                email.setEmail(dto.email());
+                email.setObservacao(dto.observacao());
+                email.setPrincipal(principal);
+                emailRepository.save(email);
+            } else {
+                // Cria novo
+                Email email = new Email();
+                email.setCliente(cliente);
+                email.setPessoa(pessoa);
+                email.setTipoEmail(tipoEmail);
+                email.setEmail(dto.email());
+                email.setObservacao(dto.observacao());
+                email.setPrincipal(principal);
+                emailRepository.save(email);
+            }
+        }
+    }
 }

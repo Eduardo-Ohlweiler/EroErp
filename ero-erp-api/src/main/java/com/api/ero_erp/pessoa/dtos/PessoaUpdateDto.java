@@ -1,12 +1,15 @@
 package com.api.ero_erp.pessoa.dtos;
 
+import com.api.ero_erp.email.dtos.EmailItemDto;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 public record PessoaUpdateDto(
@@ -66,5 +69,8 @@ public record PessoaUpdateDto(
         Set<Long> tiposCadastroIds,
 
         @Schema(description = "Definir se a pessoa esta ativa", example = "true")
-        Boolean ativo
+        Boolean ativo,
+
+        @Schema(description = "Emails da pessoa")
+        List<@Valid EmailItemDto> emails
 ) {}

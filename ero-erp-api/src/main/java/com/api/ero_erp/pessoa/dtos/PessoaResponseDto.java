@@ -1,10 +1,12 @@
 package com.api.ero_erp.pessoa.dtos;
 
+import com.api.ero_erp.email.dtos.EmailResponseDto;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.tipocadastro.dtos.TipoCadastroResponseDto;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 public record PessoaResponseDto(
@@ -29,5 +31,6 @@ public record PessoaResponseDto(
         String                          createdByNome,
         LocalDateTime                   updatedAt,
         Long                            updatedById,
-        String                          updatedByNome
+        String                          updatedByNome,
+        List<EmailResponseDto>          emails
 ) {}

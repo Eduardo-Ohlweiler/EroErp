@@ -2,6 +2,7 @@ package com.api.ero_erp.pessoa.entity;
 
 import com.api.ero_erp.baseentity.BaseEntity;
 import com.api.ero_erp.cliente.entity.Cliente;
+import com.api.ero_erp.email.entity.Email;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.tipocadastro.entity.TipoCadastro;
 import com.api.ero_erp.usuario.entity.Usuario;
@@ -11,7 +12,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -83,6 +86,9 @@ public class Pessoa extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "tipo_cadastro_id")
     )
     private Set<TipoCadastro> tiposCadastro = new HashSet<>();
+
+    @OneToMany(mappedBy = "pessoa", fetch = FetchType.LAZY)
+    private List<Email> emails = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {

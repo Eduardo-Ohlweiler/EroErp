@@ -1,12 +1,15 @@
 package com.api.ero_erp.pessoa.dtos;
 
+import com.api.ero_erp.email.dtos.EmailItemDto;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 public record PessoaCreateDto(
@@ -63,5 +66,8 @@ public record PessoaCreateDto(
         String razaoSocial,
 
         @Schema(description = "IDs dos tipos de cadastro", example = "[1, 2]")
-        Set<Long> tiposCadastroIds
+        Set<Long> tiposCadastroIds,
+
+        @Schema(description = "Emails da pessoa")
+        List<@Valid EmailItemDto> emails
 ) {}
