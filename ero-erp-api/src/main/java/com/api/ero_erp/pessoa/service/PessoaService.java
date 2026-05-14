@@ -150,7 +150,7 @@ public class PessoaService {
 
         Pessoa salva = pessoaRepository.save(pessoa);
         emailService.sincronizarEmails(salva, dto.emails(), cliente);
-        return PessoaMapper.toDto(this.findById(salva.getId()));
+        return this.findByIdResponse(salva.getId());
     }
 
     @Transactional

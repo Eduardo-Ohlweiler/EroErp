@@ -16,10 +16,10 @@ import java.util.Optional;
 @Repository
 public interface PessoaRepository extends JpaRepository<Pessoa, Long> {
 
-    @EntityGraph(attributePaths = {
-            "emails",
-            "tiposCadastro"
-    })
+//    @EntityGraph(attributePaths = {
+//            "emails",
+//            "tiposCadastro"
+//    })
     Optional<Pessoa> findByIdAndClienteId(Long id, Long clienteId);
 
     // ─── Unicidade (create) ────────────────────────────────────────────────────
