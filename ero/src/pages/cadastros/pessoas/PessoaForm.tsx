@@ -27,14 +27,14 @@ import { TDbCheckbox } from "../../../components/tdbcheckbox"
 import { TButton } from "../../../components/tbutton"
 import { TSpace } from "../../../components/tspace"
 import { TPanel } from "../../../components/tpanel"
+import { TFieldList } from "../../../components/tfieldlist"
 
 export default function PessoaForm() {
 
     const { id: idParam } = useParams()
     const navigate        = useNavigate()
     const { showMessage } = useMessage()
-    const [currentId,   setCurrentId]   = useState<string | undefined>(idParam)
-    const isEdit                        = !!currentId
+    
     const [formKey,            setFormKey]            = useState(0)
     const [loading,            setLoading]            = useState(false)
     const [saving,             setSaving]             = useState(false)
@@ -51,6 +51,13 @@ export default function PessoaForm() {
     const [inscricaoMunicipal, setInscricaoMunicipal] = useState(pessoa?.inscricaoMunicipal ?? "")
     const [nomeFantasia,       setNomeFantasia]       = useState(pessoa?.nomeFantasia       ?? "")
     const [razaoSocial,        setRazaoSocial]        = useState(pessoa?.razaoSocial        ?? "")
+    const [tiposEmail,         setTiposEmail]         = useState<{ id: number; nome: string }[]>([])
+    const [currentId,          setCurrentId]          = useState<string | undefined>(idParam)
+    const isEdit                                      = !!currentId
+
+    useEffect(() => {
+        api.get("/tipos/email/select").then(r => setTiposEmail(r.data))
+    }, [])
 
     useEffect(() => {
 
@@ -162,15 +169,41 @@ export default function PessoaForm() {
                 ...rest
             } = data
 
+            const emailsArray: Record<string, string>[] = []
+            Object.entries(data).forEach(([key, value]) => {
+                const match = key.match(/^emails\[(\d+)\]\[(.+)\]$/)
+                if (match) {
+                    const idx   = Number(match[1])
+                    const field = match[2]
+                    if (!emailsArray[idx]) 
+                        emailsArray[idx] = {}
+
+                    emailsArray[idx][field] = value
+                }
+            })
+
+            const cleanRest = Object.fromEntries(
+                Object.entries(rest).filter(([k]) => !/^emails\[/.test(k))
+            )
+
             const payload = {
-                ...rest,
+                ...cleanRest,
                 ativo: data.ativo === "true",
                 tiposCadastroIds: tiposCadastroIds
                     ? tiposCadastroIds
                         .split(",")
                         .filter(Boolean)
                         .map(Number)
-                    : []
+                    : [],
+                emails: emailsArray
+                    .filter(e => e.email?.trim())
+                    .map(e => ({
+                        id:          e.id ? Number(e.id) : null,
+                        tipoEmailId: Number(e.tipoEmailId),
+                        email:       e.email,
+                        observacao:  e.observacao || null,
+                        principal:   e.principal === "true",
+                }))
             }
             if (isEdit) {
                 await api.put(`/pessoas/${currentId}`, payload)
@@ -217,6 +250,19 @@ export default function PessoaForm() {
                 </div>
             </TPage>
         )
+    }
+
+    function emailsParaInitialData(emails?: PessoaResponse["emails"]) {
+        if (!emails || emails.length === 0)
+            return undefined
+
+        return emails.map(e => ({
+            id:          String(e.id),
+            tipoEmailId: String(e.tipoEmailId),
+            email:       e.email,
+            observacao:  e.observacao ?? "",
+            principal:   e.principal ? "true" : "false",
+        }))
     }
 
     return (
@@ -445,6 +491,70 @@ export default function PessoaForm() {
                     </TCol>
                     <TSpace />
                 </TRow>
+
+                <TPanel title="E-mails">
+                    <TFieldList
+                        name        ="emails"
+                        initialData ={emailsParaInitialData(pessoa?.emails)}
+                        columns     ={[
+                            {
+                                label:  "ID",
+                                name:   "id",
+                                width:  "1px",
+                                render: (rowIndex, rowData) => (
+                                    <input
+                                        type         ="hidden"
+                                        name         ={`emails[${rowIndex}][id]`}
+                                        defaultValue ={rowData.id ?? ""}
+                                    />
+                                )
+                            },
+                            {
+                                label:  "Tipo",
+                                name:   "tipoEmailId",
+                                width:  "160px",
+                                render: (rowIndex, rowData) => (
+                                    <select
+                                        name         ={`emails[${rowIndex}][tipoEmailId]`}
+                                        defaultValue ={rowData.tipoEmailId ?? ""}
+                                        className    ="w-full bg-[var(--bg-input)] border border-[var(--border)]
+                                                    rounded px-2 py-1.5 text-sm text-[var(--text-primary)]
+                                                    focus:outline-none focus:border-[var(--accent)]"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {tiposEmail.map(t => (
+                                            <option key={t.id} value={t.id}>{t.nome}</option>
+                                        ))}
+                                    </select>
+                                )
+                            },
+                            {
+                                label: "E-mail",
+                                name:  "email",
+                                width: "280px",
+                            },
+                            {
+                                label: "Observação",
+                                name:  "observacao",
+                            },
+                            {
+                                label:  "Principal",
+                                name:   "principal",
+                                width:  "80px",
+                                render: (rowIndex, rowData) => (
+                                    <div className="flex justify-center">
+                                        <input
+                                            type           ="checkbox"
+                                            name           ={`emails[${rowIndex}][principal]`}
+                                            value          ="true"
+                                            defaultChecked ={rowData.principal === "true"}
+                                        />
+                                    </div>
+                                )
+                            },
+                        ]}
+                    />
+                </TPanel>
 
                 {isEdit && (
                     <TRow>
