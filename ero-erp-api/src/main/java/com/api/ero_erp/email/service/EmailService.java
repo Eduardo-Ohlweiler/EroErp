@@ -1,18 +1,14 @@
 package com.api.ero_erp.email.service;
 
 import com.api.ero_erp.cliente.entity.Cliente;
-import com.api.ero_erp.cliente.service.ClienteService;
 import com.api.ero_erp.config.SecurityUtils;
-import com.api.ero_erp.email.dtos.EmailCreateDto;
 import com.api.ero_erp.email.dtos.EmailItemDto;
 import com.api.ero_erp.email.dtos.EmailResponseDto;
 import com.api.ero_erp.email.entity.Email;
 import com.api.ero_erp.email.mapper.EmailMapper;
 import com.api.ero_erp.email.repository.EmailRepository;
-import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.pessoa.entity.Pessoa;
-import com.api.ero_erp.pessoa.service.PessoaService;
 import com.api.ero_erp.tipoemail.entity.TipoEmail;
 import com.api.ero_erp.tipoemail.service.TipoEmailService;
 import org.springframework.stereotype.Service;
@@ -107,7 +103,10 @@ public class EmailService {
                 email.setEmail(dto.email());
                 email.setObservacao(dto.observacao());
                 email.setPrincipal(principal);
-                emailRepository.save(email);
+                Email salvo = emailRepository.save(email);
+
+                pessoa.getEmails().removeIf(e -> e.getId().equals(salvo.getId()));
+                pessoa.getEmails().add(salvo);
             } else {
                 // Cria novo
                 Email email = new Email();
@@ -117,7 +116,9 @@ public class EmailService {
                 email.setEmail(dto.email());
                 email.setObservacao(dto.observacao());
                 email.setPrincipal(principal);
-                emailRepository.save(email);
+
+                Email salvo = emailRepository.save(email);
+                pessoa.getEmails().add(salvo);
             }
         }
     }
