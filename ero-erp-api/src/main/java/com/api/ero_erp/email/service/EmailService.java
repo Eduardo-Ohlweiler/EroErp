@@ -7,6 +7,7 @@ import com.api.ero_erp.email.dtos.EmailResponseDto;
 import com.api.ero_erp.email.entity.Email;
 import com.api.ero_erp.email.mapper.EmailMapper;
 import com.api.ero_erp.email.repository.EmailRepository;
+import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.tipoemail.entity.TipoEmail;
@@ -71,6 +72,12 @@ public class EmailService {
             return;
         }
 
+        long quantidadePrincipais = dtos.stream()
+                .filter(d -> Boolean.TRUE.equals(d.principal()))
+                .count();
+        if (quantidadePrincipais > 1)
+            throw new BadRequestException("Apenas um email pode ser o principal");
+
         // IDs que vieram do front (só os que já existiam)
         Set<Long> idsRecebidos = dtos.stream()
                 .filter(d -> d.id() != null)
@@ -84,7 +91,7 @@ public class EmailService {
                 .forEach(emailRepository::delete);
 
         // Só um seja principal
-        boolean temPrincipal = dtos.stream().anyMatch(d -> Boolean.TRUE.equals(d.principal()));
+        boolean temPrincipal = quantidadePrincipais == 1;
 
         for (int i = 0; i < dtos.size(); i++) {
             EmailItemDto dto = dtos.get(i);
