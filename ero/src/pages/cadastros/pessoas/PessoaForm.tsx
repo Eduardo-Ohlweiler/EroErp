@@ -155,7 +155,6 @@ export default function PessoaForm() {
     async function handleSubmit(data: Record<string, string>) {
         setSaving(true)
         try {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const {
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 createdById,
@@ -464,34 +463,6 @@ export default function PessoaForm() {
                         </TCol>
                     </TRow> 
                 </TPanel>
-                <TRow>
-                    <TCol>
-                        <TCombo
-                            name="ativo"
-                            label="Status"
-                            width="200px"
-                            defaultValue={
-                                pessoa
-                                    ? pessoa.ativo
-                                        ? "true"
-                                        : "false"
-                                    : "true"
-                            }
-                            options={[
-                                {
-                                    value: "true",
-                                    label: "Ativo"
-                                },
-                                {
-                                    value: "false",
-                                    label: "Bloqueado"
-                                }
-                            ]}
-                        />
-                    </TCol>
-                    <TSpace />
-                </TRow>
-
                 <TPanel title="E-mails">
                     <TFieldList
                         name        ="emails"
@@ -555,6 +526,33 @@ export default function PessoaForm() {
                         ]}
                     />
                 </TPanel>
+                <TRow>
+                    <TCol>
+                        <TCombo
+                            name="ativo"
+                            label="Status"
+                            width="200px"
+                            defaultValue={
+                                pessoa
+                                    ? pessoa.ativo
+                                        ? "true"
+                                        : "false"
+                                    : "true"
+                            }
+                            options={[
+                                {
+                                    value: "true",
+                                    label: "Ativo"
+                                },
+                                {
+                                    value: "false",
+                                    label: "Bloqueado"
+                                }
+                            ]}
+                        />
+                    </TCol>
+                    <TSpace />
+                </TRow>
 
                 {isEdit && (
                     <TRow>

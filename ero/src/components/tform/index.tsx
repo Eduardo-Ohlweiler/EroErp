@@ -14,7 +14,21 @@ export function TForm({ id, onSubmit, children }: TFormProps) {
     >("input, select, textarea")
     const data: Record<string, string> = {}
     inputs.forEach((el) => {
-      if (!el.name) return
+      if (!el.name) 
+        return
+
+      // Checkbox: só envia "true" se marcado, "false" se desmarcado
+      if (el instanceof HTMLInputElement && el.type === "checkbox") {
+          data[el.name] = el.checked ? el.value : "false"
+          return
+      }
+
+      // Radio: ignora se não estiver marcado
+      if (el instanceof HTMLInputElement && el.type === "radio") {
+          if (el.checked) 
+            data[el.name] = el.value
+          return
+      }
       data[el.name] = el.value
     })
     onSubmit(data)
