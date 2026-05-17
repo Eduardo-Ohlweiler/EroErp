@@ -18,7 +18,7 @@ public record TelefoneItemDto(
                 regexp = "^\\d{10,11}$",
                 message = "Telefone deve conter apenas números com DDD (10 ou 11 dígitos)"
         )
-        String telefone,
+        String numero,
 
         @Schema(description = "Observação")
         @Size(max = 255)

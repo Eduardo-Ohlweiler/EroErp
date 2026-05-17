@@ -85,7 +85,7 @@ public class TelefoneService {
                 Telefone telefone = telefoneRepository.findByIdAndClienteId(dto.id(), cliente.getId())
                         .orElseThrow(() -> new NotFoundException("Telefone não encontrado"));
                 telefone.setTipoTelefone(tipoTelefone);
-                telefone.setNumero(dto.telefone());
+                telefone.setNumero(dto.numero());
                 telefone.setObservacao(dto.observacao());
                 telefone.setPrincipal(principal);
                 Telefone salvo = telefoneRepository.save(telefone);
@@ -98,7 +98,7 @@ public class TelefoneService {
                 telefone.setCliente(cliente);
                 telefone.setPessoa(pessoa);
                 telefone.setTipoTelefone(tipoTelefone);
-                telefone.setNumero(dto.telefone());
+                telefone.setNumero(dto.numero());
                 telefone.setObservacao(dto.observacao());
                 telefone.setPrincipal(principal);
 
