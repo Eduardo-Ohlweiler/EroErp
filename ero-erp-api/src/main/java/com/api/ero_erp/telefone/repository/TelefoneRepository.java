@@ -10,9 +10,6 @@ import java.util.Optional;
 @Repository
 public interface TelefoneRepository extends JpaRepository<Telefone, Long> {
 
-    boolean existsByPessoaIdAndClienteIdAndPrincipalTrue(Long pessoaId, Long clienteId);
-    boolean existsByPessoaIdAndClienteIdAndPrincipalTrueAndIdNot(Long pessoaId, Long clienteId, Long id);
-
     List<Telefone> findByPessoaIdAndClienteId(Long pessoaId, Long clienteId);
     Optional<Telefone> findByIdAndClienteId(Long id, Long clienteId);
 }

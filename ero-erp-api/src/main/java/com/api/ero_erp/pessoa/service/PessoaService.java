@@ -16,6 +16,7 @@ import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.pessoa.mapper.PessoaMapper;
 import com.api.ero_erp.pessoa.repository.PessoaRepository;
 import com.api.ero_erp.pessoa.util.PessoaValidator;
+import com.api.ero_erp.telefone.service.TelefoneService;
 import com.api.ero_erp.tipocadastro.entity.TipoCadastro;
 import com.api.ero_erp.tipocadastro.service.TipoCadastroService;
 import com.api.ero_erp.usuario.entity.Usuario;
@@ -38,6 +39,7 @@ public class PessoaService {
     private final UsuarioService      usuarioService;
     private final SecurityUtils       securityUtils;
     private final EmailService        emailService;
+    private final TelefoneService     telefoneService;
 
     public PessoaService(
             PessoaRepository    pessoaRepository,
@@ -45,7 +47,8 @@ public class PessoaService {
             TipoCadastroService tipoCadastroService,
             UsuarioService      usuarioService,
             SecurityUtils       securityUtils,
-            EmailService        emailService
+            EmailService        emailService,
+            TelefoneService     telefoneService
     ) {
         this.pessoaRepository    = pessoaRepository;
         this.clienteService      = clienteService;
@@ -53,6 +56,7 @@ public class PessoaService {
         this.usuarioService      = usuarioService;
         this.securityUtils       = securityUtils;
         this.emailService        = emailService;
+        this.telefoneService     = telefoneService;
     }
 
     @Transactional(readOnly = true)
@@ -150,6 +154,7 @@ public class PessoaService {
 
         Pessoa salva = pessoaRepository.save(pessoa);
         emailService.sincronizarEmails(salva, dto.emails(), cliente);
+        telefoneService.sincronizarTelefones(salva, dto.telefones(), cliente);
         return this.findByIdResponse(salva.getId());
     }
 
@@ -216,9 +221,9 @@ public class PessoaService {
 
         Pessoa salva = pessoaRepository.save(pessoa);
         emailService.sincronizarEmails(salva, dto.emails(), pessoa.getCliente());
+        telefoneService.sincronizarTelefones(salva, dto.telefones(), pessoa.getCliente());
         return this.findByIdResponse(salva.getId());
     }
-
 
     @Transactional
     public PessoaResponseDto alterarAtivo(Long id, Boolean ativo) {

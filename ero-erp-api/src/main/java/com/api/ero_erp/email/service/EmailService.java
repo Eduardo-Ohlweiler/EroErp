@@ -8,6 +8,7 @@ import com.api.ero_erp.email.entity.Email;
 import com.api.ero_erp.email.mapper.EmailMapper;
 import com.api.ero_erp.email.repository.EmailRepository;
 import com.api.ero_erp.exceptions.BadRequestException;
+import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.tipoemail.entity.TipoEmail;
@@ -43,25 +44,6 @@ public class EmailService {
                 .orElseThrow(() -> new NotFoundException("Email não encontrado"));
     }
 
-    @Transactional(readOnly = true)
-    public EmailResponseDto findByIdResponse(Long id) {
-        return EmailMapper.toDto(this.findById(id));
-    }
-
-    @Transactional(readOnly = true)
-    public List<EmailResponseDto> findByPessoaIdAndClienteId(Long pessoaId) {
-        Long clienteId = securityUtils.getClienteIdLogado();
-        return EmailMapper.toDtoList(
-                this.emailRepository.findByPessoaIdAndClienteId(pessoaId, clienteId)
-        );
-    }
-
-    @Transactional
-    public void delete(Long id) {
-        Email email = this.findById(id);
-        this.emailRepository.delete(email);
-    }
-
     @Transactional
     public void sincronizarEmails(Pessoa pessoa, List<EmailItemDto> dtos, Cliente cliente) {
 
@@ -95,6 +77,16 @@ public class EmailService {
 
         for (int i = 0; i < dtos.size(); i++) {
             EmailItemDto dto = dtos.get(i);
+            Email existenteComMesmoEmail = emailRepository
+                    .findByEmailAndClienteId(dto.email(), cliente.getId())
+                    .orElse(null);
+            if (existenteComMesmoEmail != null) {
+                boolean outroRegistro = dto.id() == null || !existenteComMesmoEmail.getId().equals(dto.id());
+
+                if (outroRegistro) {
+                    throw new ConflictException("Este email já está cadastrado para outra pessoa");
+                }
+            }
 
             TipoEmail tipoEmail = tipoEmailService.findById(dto.tipoEmailId());
             boolean principal   = Boolean.TRUE.equals(dto.principal());

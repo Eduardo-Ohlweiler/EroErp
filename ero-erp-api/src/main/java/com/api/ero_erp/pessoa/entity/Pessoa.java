@@ -4,6 +4,7 @@ import com.api.ero_erp.baseentity.BaseEntity;
 import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.email.entity.Email;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
+import com.api.ero_erp.telefone.entity.Telefone;
 import com.api.ero_erp.tipocadastro.entity.TipoCadastro;
 import com.api.ero_erp.usuario.entity.Usuario;
 import jakarta.persistence.*;
@@ -89,6 +90,9 @@ public class Pessoa extends BaseEntity {
 
     @OneToMany(mappedBy = "pessoa", fetch = FetchType.LAZY)
     private List<Email> emails = new ArrayList<>();
+
+    @OneToMany(mappedBy = "pessoa", fetch = FetchType.LAZY)
+    private List<Telefone> telefones = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {

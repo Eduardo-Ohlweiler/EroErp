@@ -9,10 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface EmailRepository extends JpaRepository<Email, Long> {
-    boolean existsByPessoaIdAndClienteId(Long pessoaId, Long clienteId);
-    boolean existsByPessoaIdAndClienteIdAndPrincipalTrue(Long pessoaId, Long clienteId);
-    boolean existsByPessoaIdAndClienteIdAndPrincipalTrueAndIdNot(Long pessoaId, Long clienteId, Long id);
-
     List<Email> findByPessoaIdAndClienteId(Long pessoaId, Long clienteId);
     Optional<Email> findByIdAndClienteId(Long id, Long clienteId);
+    Optional<Email> findByEmailAndClienteId(String email, Long clienteId);
 }

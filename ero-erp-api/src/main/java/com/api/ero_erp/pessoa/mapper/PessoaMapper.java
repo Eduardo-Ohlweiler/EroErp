@@ -4,6 +4,7 @@ import com.api.ero_erp.email.mapper.EmailMapper;
 import com.api.ero_erp.pessoa.dtos.PessoaResponseDto;
 import com.api.ero_erp.pessoa.dtos.PessoaSelectDto;
 import com.api.ero_erp.pessoa.entity.Pessoa;
+import com.api.ero_erp.telefone.mapper.TelefoneMapper;
 import com.api.ero_erp.tipocadastro.mapper.TipoCadastroMapper;
 
 import java.util.List;
@@ -38,6 +39,9 @@ public class PessoaMapper {
                 pessoa.getUpdatedBy() != null ? pessoa.getUpdatedBy().getNome() : null,
                 pessoa.getEmails() != null
                         ? EmailMapper.toDtoList(pessoa.getEmails())
+                        : List.of(),
+                pessoa.getTelefones() != null
+                        ? TelefoneMapper.toDtoList(pessoa.getTelefones())
                         : List.of()
         );
     }

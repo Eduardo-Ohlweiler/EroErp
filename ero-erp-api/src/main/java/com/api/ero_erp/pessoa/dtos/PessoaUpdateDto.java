@@ -2,6 +2,7 @@ package com.api.ero_erp.pessoa.dtos;
 
 import com.api.ero_erp.email.dtos.EmailItemDto;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
+import com.api.ero_erp.telefone.dtos.TelefoneItemDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -72,5 +73,8 @@ public record PessoaUpdateDto(
         Boolean ativo,
 
         @Schema(description = "Emails da pessoa")
-        List<@Valid EmailItemDto> emails
+        List<@Valid EmailItemDto> emails,
+
+        @Schema(description = "Telefones da pessoa")
+        List<@Valid TelefoneItemDto> telefones
 ) {}
