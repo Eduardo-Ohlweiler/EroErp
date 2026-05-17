@@ -6,6 +6,7 @@ import com.api.ero_erp.role.entity.Role;
 import com.api.ero_erp.role.repository.RoleRepository;
 import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,6 +33,15 @@ public class DataSeeder implements ApplicationRunner {
         this.roleRepository    = roleRepository;
         this.passwordEncoder   = passwordEncoder;
     }
+
+    @Value("${app.superadmin.email}")
+    private String email;
+
+    @Value("${app.superadmin.password}")
+    private String password;
+
+    @Value("${app.superadmin.nome}")
+    private String nome;
 
     @Override
     @Transactional
@@ -68,9 +78,9 @@ public class DataSeeder implements ApplicationRunner {
 
         Usuario superAdmin = new Usuario();
         superAdmin.setCliente(cliente);
-        superAdmin.setNome("Ero Admin");
-        superAdmin.setEmail("ero@eroerp.com");
-        superAdmin.setSenha(passwordEncoder.encode("Admin123@"));
+        superAdmin.setNome(nome);
+        superAdmin.setEmail(email);
+        superAdmin.setSenha(passwordEncoder.encode(password));
         superAdmin.setTelefone("51992006747");
         superAdmin.setAtivo(true);
         superAdmin.setRoles(Set.of(superAdminRole));

@@ -62,3 +62,9 @@ management:
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000
+
+app:
+  superadmin:
+    email: ${SUPERADMIN_EMAIL}
+    password: ${SUPERADMIN_PASSWORD}
+    nome: ${SUPERADMIN_NAME}
