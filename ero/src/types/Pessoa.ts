@@ -18,6 +18,18 @@ export interface EmailResponse {
     updatedAt:     string | null
 }
 
+export interface TelefoneResponse {
+    id:               number,
+    pessoaId:         number,
+    tipoTelefoneId:   number,
+    tipoTelefoneNome: string,
+    numero:           string,
+    observacao:       string | null,
+    principal:        boolean,
+    createdAt:        string,
+    updatedAt:        string | null
+}
+
 export interface PessoaRequest {
     nome:                string
     tipoPessoa:          TipoPessoa
