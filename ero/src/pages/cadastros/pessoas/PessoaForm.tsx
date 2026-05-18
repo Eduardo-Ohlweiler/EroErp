@@ -65,7 +65,7 @@ export default function PessoaForm() {
             try {
                 const [tiposEmailRes, tiposTelefoneRes] = await Promise.all([
                     api.get("/tipos/email/select"),
-                    api.get("/tipo/telefone/select")
+                    api.get("/tipos/telefone/select")
                 ])
 
                 setTiposEmail(tiposEmailRes.data)
@@ -241,13 +241,13 @@ export default function PessoaForm() {
                         principal:   e.principal === "true",
                 })),
                 telefones: telefonesArray
-                    .filter(e => e.telefone?.trim())
+                    .filter(e => e.numero?.trim())
                     .map(e => ({
-                        id:          e.id ? Number(e.id) : null,
-                        tipoTelefoneId: Number(e.tipoTelefoneId),
-                        numero:       e.numero,
-                        observacao:  e.observacao || null,
-                        principal:   e.principal === "true",
+                        id:             e.id ? Number(e.id) : null,
+                        tipoTelefoneId: String(e.tipoTelefoneId),
+                        numero:         e.numero,
+                        observacao:     e.observacao ?? "",
+                        principal:      e.principal === "true",
                 }))
             }
             if (isEdit) {
@@ -309,11 +309,11 @@ export default function PessoaForm() {
             return undefined;
 
         return telefones.map(e => ({
-            id:          String(e.id),
-            tiposTelefone: String(e.tipoTelefoneId),
-            numero:       e.numero,
-            observacao:  e.observacao ?? "",
-            principal:   e.principal ? "true" : "false",
+            id:             String(e.id),
+            tipoTelefoneId: String(e.tipoTelefoneId),
+            numero:         e.numero,
+            observacao:     e.observacao ?? "",
+            principal:      e.principal ? "true" : "false",
         }))
     }
 
@@ -522,122 +522,73 @@ export default function PessoaForm() {
                         initialData ={emailsParaInitialData(pessoa?.emails)}
                         columns     ={[
                             {
-                                label:  "ID",
-                                name:   "id",
-                                width:  "1px",
-                                render: (rowIndex, rowData) => (
-                                    <input
-                                        type         ="hidden"
-                                        name         ={`emails[${rowIndex}][id]`}
-                                        defaultValue ={rowData.id ?? ""}
-                                    />
-                                )
+                                component: "hidden",
+                                label:     "ID",
+                                name:      "id",
                             },
                             {
-                                label:  "Tipo",
-                                name:   "tipoEmailId",
-                                width:  "160px",
-                                render: (rowIndex, rowData) => (
-                                    <select
-                                        name         ={`emails[${rowIndex}][tipoEmailId]`}
-                                        defaultValue ={rowData.tipoEmailId ?? ""}
-                                        className    ="w-full bg-[var(--bg-input)] border border-[var(--border)]
-                                                    rounded px-2 py-1.5 text-sm text-[var(--text-primary)]
-                                                    focus:outline-none focus:border-[var(--accent)]"
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {tiposEmail.map(t => (
-                                            <option key={t.id} value={t.id}>{t.nome}</option>
-                                        ))}
-                                    </select>
-                                )
+                                component: "combo",
+                                label:     "Tipo",
+                                name:      "tipoEmailId",
+                                width:     "160px",
+                                options:   tiposEmail.map(t => ({ value: String(t.id), label: t.nome })),
                             },
                             {
-                                label: "E-mail",
-                                name:  "email",
-                                width: "280px",
+                                component: "entry",
+                                label:     "E-mail",
+                                name:      "email",
+                                type:      "email",
+                                width:     "280px",
                             },
                             {
-                                label: "Observação",
-                                name:  "observacao",
+                                component: "entry",
+                                label:     "Observação",
+                                name:      "observacao",
                             },
                             {
-                                label:  "Principal",
-                                name:   "principal",
-                                width:  "80px",
-                                render: (rowIndex, rowData) => (
-                                    <div className="flex justify-center">
-                                        <input
-                                            type           ="checkbox"
-                                            name           ={`emails[${rowIndex}][principal]`}
-                                            value          ="true"
-                                            defaultChecked ={rowData.principal === "true"}
-                                        />
-                                    </div>
-                                )
+                                component: "checkbox",
+                                label:     "Principal",
+                                name:      "principal",
+                                width:     "80px",
                             },
                         ]}
                     />
                 </TPanel>
+
                 <TPanel title="Telefones">
                     <TFieldList
                         name        ="telefones"
                         initialData ={telefonesParaInitialData(pessoa?.telefones)}
                         columns     ={[
                             {
-                                label:  "ID",
-                                name:   "id",
-                                width:  "1px",
-                                render: (rowIndex, rowData) => (
-                                    <input
-                                        type         ="hidden"
-                                        name         ={`telefones[${rowIndex}][id]`}
-                                        defaultValue ={rowData.id ?? ""}
-                                    />
-                                )
+                                component: "hidden",
+                                label:     "ID",
+                                name:      "id",
                             },
                             {
-                                label:  "Tipo",
-                                name:   "tipoTelefoneId",
-                                width:  "160px",
-                                render: (rowIndex, rowData) => (
-                                    <select
-                                        name         ={`telefones[${rowIndex}][tipoTelefoneId]`}
-                                        defaultValue ={rowData.tipoTelefoneId ?? ""}
-                                        className    ="w-full bg-[var(--bg-input)] border border-[var(--border)]
-                                                    rounded px-2 py-1.5 text-sm text-[var(--text-primary)]
-                                                    focus:outline-none focus:border-[var(--accent)]"
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {tiposTelefone.map(t => (
-                                            <option key={t.id} value={t.id}>{t.nome}</option>
-                                        ))}
-                                    </select>
-                                )
+                                component: "combo",
+                                label:     "Tipo",
+                                name:      "tipoTelefoneId",
+                                width:     "160px",
+                                options:   tiposTelefone.map(t => ({ value: String(t.id), label: t.nome })),
                             },
                             {
-                                label: "Numero",
-                                name:  "numero",
-                                width: "280px",
+                                component: "entry",
+                                label:     "Número",
+                                name:      "numero",
+                                mask:      "celular",
+                                width:     "200px",
                             },
                             {
-                                label: "Observação",
-                                name:  "observacao",
+                                component: "entry",
+                                label:     "Observação",
+                                name:      "observacao",
                             },
                             {
-                                label:  "Principal",
-                                name:   "principal",
-                                width:  "80px",
-                                render: (rowIndex, rowData) => (
-                                    <div className="flex justify-center">
-                                        <input
-                                            type           ="checkbox"
-                                            name           ={`telefones[${rowIndex}][principal]`}
-                                            value          ="true"
-                                            defaultChecked ={rowData.principal === "true"}
-                                        />
-                                    </div>
-                                )
+                                component: "checkbox",
+                                label:     "Principal",
+                                name:      "principal",
+                                width:     "80px",
                             },
                         ]}
                     />
