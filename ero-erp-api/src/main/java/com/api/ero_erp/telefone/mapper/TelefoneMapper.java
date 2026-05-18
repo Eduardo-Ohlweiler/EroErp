@@ -1,6 +1,5 @@
 package com.api.ero_erp.telefone.mapper;
 
-import com.api.ero_erp.email.mapper.EmailMapper;
 import com.api.ero_erp.telefone.dtos.TelefoneResponseDto;
 import com.api.ero_erp.telefone.entity.Telefone;
 
