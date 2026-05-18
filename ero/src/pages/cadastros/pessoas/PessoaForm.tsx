@@ -52,11 +52,31 @@ export default function PessoaForm() {
     const [nomeFantasia,       setNomeFantasia]       = useState(pessoa?.nomeFantasia       ?? "")
     const [razaoSocial,        setRazaoSocial]        = useState(pessoa?.razaoSocial        ?? "")
     const [tiposEmail,         setTiposEmail]         = useState<{ id: number; nome: string }[]>([])
+    const [tiposTelefone,      setTiposTelefone]      = useState<{ id: number; nome: string }[]>([])
     const [currentId,          setCurrentId]          = useState<string | undefined>(idParam)
     const isEdit                                      = !!currentId
 
+    //useEffect(() => {
+    //    api.get("/tipos/email/select").then(r => setTiposEmail(r.data))
+    //}, [])
+
     useEffect(() => {
-        api.get("/tipos/email/select").then(r => setTiposEmail(r.data))
+        const loadInitialData = async () => {
+            try {
+                const [tiposEmailRes, tiposTelefoneRes] = await Promise.all([
+                    api.get("/tipos/email/select"),
+                    api.get("/tipo/telefone/select")
+                ])
+
+                setTiposEmail(tiposEmailRes.data)
+                setTiposTelefone(tiposTelefoneRes.data)
+
+            } catch {
+                showMessage("error", "Erro ao carregar dados auxiliares")
+            }
+        }
+
+        loadInitialData()
     }, [])
 
     useEffect(() => {
@@ -181,12 +201,29 @@ export default function PessoaForm() {
                 }
             })
 
+            const telefonesArray: Record<string, string>[] = []
+            Object.entries(data).forEach(([key, value]) => {
+                const match = key.match(/^telefones\[(\d+)\]\[(.+)\]$/)
+                if(match) {
+                    const idx = Number(match[1])
+                    const field = match[2]
+                    if (!telefonesArray[idx])
+                        telefonesArray[idx] = {}
+                    telefonesArray[idx][field] = value
+                }    
+            })
+
             const cleanRest = Object.fromEntries(
                 Object.entries(rest).filter(([k]) => !/^emails\[/.test(k))
             )
 
+            const cleanRestTelefone = Object.fromEntries(
+                Object.entries(rest).filter(([k]) => !/^telefones\[/.test(k))
+            )
+
             const payload = {
                 ...cleanRest,
+                ...cleanRestTelefone,
                 ativo: data.ativo === "true",
                 tiposCadastroIds: tiposCadastroIds
                     ? tiposCadastroIds
@@ -200,6 +237,15 @@ export default function PessoaForm() {
                         id:          e.id ? Number(e.id) : null,
                         tipoEmailId: Number(e.tipoEmailId),
                         email:       e.email,
+                        observacao:  e.observacao || null,
+                        principal:   e.principal === "true",
+                })),
+                telefones: telefonesArray
+                    .filter(e => e.telefone?.trim())
+                    .map(e => ({
+                        id:          e.id ? Number(e.id) : null,
+                        tipoTelefoneId: Number(e.tipoTelefoneId),
+                        numero:       e.numero,
                         observacao:  e.observacao || null,
                         principal:   e.principal === "true",
                 }))
@@ -219,21 +265,15 @@ export default function PessoaForm() {
         } catch (err) {
 
             if (axios.isAxiosError(err)) {
-
                 const errData = err.response?.data as ErrorResponse
-
                 showMessage(
                     "error",
                     errData?.erro ?? "Erro ao salvar pessoa"
                 )
-
             } else {
-
                 showMessage("error", "Erro inesperado ao salvar pessoa")
             }
-
         } finally {
-
             setSaving(false)
         }
     }
@@ -259,6 +299,19 @@ export default function PessoaForm() {
             id:          String(e.id),
             tipoEmailId: String(e.tipoEmailId),
             email:       e.email,
+            observacao:  e.observacao ?? "",
+            principal:   e.principal ? "true" : "false",
+        }))
+    }
+
+    function telefonesParaInitialData(telefones?: PessoaResponse["telefones"]){
+        if (!telefones || telefones.length === 0)
+            return undefined;
+
+        return telefones.map(e => ({
+            id:          String(e.id),
+            tiposTelefone: String(e.tipoTelefoneId),
+            numero:       e.numero,
             observacao:  e.observacao ?? "",
             principal:   e.principal ? "true" : "false",
         }))
@@ -517,6 +570,69 @@ export default function PessoaForm() {
                                         <input
                                             type           ="checkbox"
                                             name           ={`emails[${rowIndex}][principal]`}
+                                            value          ="true"
+                                            defaultChecked ={rowData.principal === "true"}
+                                        />
+                                    </div>
+                                )
+                            },
+                        ]}
+                    />
+                </TPanel>
+                <TPanel title="Telefones">
+                    <TFieldList
+                        name        ="telefones"
+                        initialData ={telefonesParaInitialData(pessoa?.telefones)}
+                        columns     ={[
+                            {
+                                label:  "ID",
+                                name:   "id",
+                                width:  "1px",
+                                render: (rowIndex, rowData) => (
+                                    <input
+                                        type         ="hidden"
+                                        name         ={`telefones[${rowIndex}][id]`}
+                                        defaultValue ={rowData.id ?? ""}
+                                    />
+                                )
+                            },
+                            {
+                                label:  "Tipo",
+                                name:   "tipoTelefoneId",
+                                width:  "160px",
+                                render: (rowIndex, rowData) => (
+                                    <select
+                                        name         ={`telefones[${rowIndex}][tipoTelefoneId]`}
+                                        defaultValue ={rowData.tipoTelefoneId ?? ""}
+                                        className    ="w-full bg-[var(--bg-input)] border border-[var(--border)]
+                                                    rounded px-2 py-1.5 text-sm text-[var(--text-primary)]
+                                                    focus:outline-none focus:border-[var(--accent)]"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {tiposTelefone.map(t => (
+                                            <option key={t.id} value={t.id}>{t.nome}</option>
+                                        ))}
+                                    </select>
+                                )
+                            },
+                            {
+                                label: "Numero",
+                                name:  "numero",
+                                width: "280px",
+                            },
+                            {
+                                label: "Observação",
+                                name:  "observacao",
+                            },
+                            {
+                                label:  "Principal",
+                                name:   "principal",
+                                width:  "80px",
+                                render: (rowIndex, rowData) => (
+                                    <div className="flex justify-center">
+                                        <input
+                                            type           ="checkbox"
+                                            name           ={`telefones[${rowIndex}][principal]`}
                                             value          ="true"
                                             defaultChecked ={rowData.principal === "true"}
                                         />

@@ -52,6 +52,7 @@ export interface PessoaResponse extends PessoaRequest {
     ativo:          boolean
     tiposCadastro:  TipoCadastro[]
     emails:         EmailResponse[]
+    telefones:      TelefoneResponse[]
     createdAt:      string
     createdById:    number | null
     createdByNome:  string | null
