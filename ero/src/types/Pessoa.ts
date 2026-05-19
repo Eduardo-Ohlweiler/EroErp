@@ -6,6 +6,14 @@ export interface TipoCadastro {
     ativo: boolean
 }
 
+export interface CidadeItem {
+    id:     number
+    nome:   string
+    estado: {
+        sigla: string
+    }
+}
+
 export interface EmailResponse {
     id:            number
     pessoaId:      number
@@ -42,6 +50,26 @@ export interface RedeSocialResponse {
     updatedAt:          string | null
 }
 
+export interface EnderecoResponse {
+    id:               number
+    pessoaId:         number
+    tipoEnderecoId:   number
+    tipoEnderecoNome: string
+    cidadeId:         number
+    cidadeNome:       string
+    estadoId:         number
+    estadoNome:       string
+    estadoSigla:      string
+    cep:              string | null
+    rua:              string | null
+    numero:           string | null
+    bairro:           string | null
+    complemento:      string | null
+    principal:        boolean
+    createdAt:        string
+    updatedAt:        string | null
+}
+
 export interface PessoaRequest {
     nome:                string
     tipoPessoa:          TipoPessoa
@@ -66,6 +94,7 @@ export interface PessoaResponse extends PessoaRequest {
     emails:         EmailResponse[]
     telefones:      TelefoneResponse[]
     redesSociais:   RedeSocialResponse[]
+    enderecos:      EnderecoResponse[]
     createdAt:      string
     createdById:    number | null
     createdByNome:  string | null

@@ -7,7 +7,7 @@ import { api } from "../../../services/api"
 import { useMessage } from "../../../hooks/useMessage"
 
 import type { ErrorResponse } from "../../../types/ErrorResponse"
-import type { PessoaResponse, TipoPessoa } from "../../../types/Pessoa"
+import type { CidadeItem, PessoaResponse, TipoPessoa } from "../../../types/Pessoa"
 
 import { TPage } from "../../../components/tpage"
 import {
@@ -28,6 +28,7 @@ import { TButton } from "../../../components/tbutton"
 import { TSpace } from "../../../components/tspace"
 import { TPanel } from "../../../components/tpanel"
 import { TFieldList } from "../../../components/tfieldlist"
+import { TUniqueSearch } from "../../../components/tuniquesearch"
 
 export default function PessoaForm() {
 
@@ -54,6 +55,7 @@ export default function PessoaForm() {
     const [tiposEmail,         setTiposEmail]         = useState<{ id: number; nome: string }[]>([])
     const [tiposTelefone,      setTiposTelefone]      = useState<{ id: number; nome: string }[]>([])
     const [tiposRedeSocial,    setTiposRedeSocial]    = useState<{ id: number; nome: string }[]>([])
+    const [tiposEndereco,      setTiposEndereco]      = useState<{ id: number; nome: string }[]>([])
     const [currentId,          setCurrentId]          = useState<string | undefined>(idParam)
     const isEdit                                      = !!currentId
 
@@ -64,15 +66,17 @@ export default function PessoaForm() {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const [tiposEmailRes, tiposTelefoneRes, tiposRedeSocialRes] = await Promise.all([
+                const [tiposEmailRes, tiposTelefoneRes, tiposRedeSocialRes, tiposEnderecoRes] = await Promise.all([
                     api.get("/tipos/email/select"),
                     api.get("/tipos/telefone/select"),
                     api.get("/tipos/redesocial/select"),
+                    api.get("/tipos/endereco/select")
                 ])
 
                 setTiposEmail(tiposEmailRes.data)
                 setTiposTelefone(tiposTelefoneRes.data)
                 setTiposRedeSocial(tiposRedeSocialRes.data)
+                setTiposEndereco(tiposEnderecoRes.data)
 
             } catch {
                 showMessage("error", "Erro ao carregar dados auxiliares")
@@ -209,12 +213,14 @@ export default function PessoaForm() {
             const emailsArray       = parseArray(data, "emails")
             const telefonesArray    = parseArray(data, "telefones")
             const redesSociaisArray = parseArray(data, "redesSociais")
+            const enderecosArray    = parseArray(data, "enderecos")
 
             const cleanRest = Object.fromEntries(
                 Object.entries(rest).filter(([k]) =>
-                    !/^emails\[/.test(k)      &&
-                    !/^telefones\[/.test(k)   &&
-                    !/^redesSociais\[/.test(k)
+                    !/^emails\[/.test(k)       &&
+                    !/^telefones\[/.test(k)    &&
+                    !/^redesSociais\[/.test(k) &&
+                    !/^enderecos\[/.test(k)
                 )
             )
 
@@ -253,6 +259,19 @@ export default function PessoaForm() {
                         usuario:          r.usuario    || null,
                         url:              r.url        || null,
                         observacao:       r.observacao || null,
+                })),
+                enderecos: enderecosArray
+                    .filter(e => e.cidadeId && e.rua?.trim())
+                    .map(e => ({
+                        id:             e.id ? Number(e.id) : null,
+                        tipoEnderecoId: Number(e.tipoEnderecoId),
+                        cidadeId:       Number(e.cidadeId),
+                        cep:            e.cep         || null,
+                        rua:            e.rua         || null,
+                        numero:         e.numero      || null,
+                        bairro:         e.bairro      || null,
+                        complemento:    e.complemento || null,
+                        principal:      e.principal   === "true",
                 })),
             }
             if (isEdit) {
@@ -329,6 +348,23 @@ export default function PessoaForm() {
             usuario:          r.usuario    ?? "",
             url:              r.url        ?? "",
             observacao:       r.observacao ?? "",
+        }))
+    }
+
+    function enderecosParaInitialData(enderecos?: PessoaResponse["enderecos"]) {
+        if (!enderecos?.length) 
+            return undefined
+        return enderecos.map(e => ({
+            id:             String(e.id),
+            tipoEnderecoId: String(e.tipoEnderecoId),
+            cidadeId:       String(e.cidadeId),
+            cidadeNome:     `${e.cidadeNome} - ${e.estadoSigla}`,
+            cep:            e.cep         ?? "",
+            rua:            e.rua         ?? "",
+            numero:         e.numero      ?? "",
+            bairro:         e.bairro      ?? "",
+            complemento:    e.complemento ?? "",
+            principal:      e.principal ? "true" : "false",
         }))
     }
 
@@ -636,6 +672,54 @@ export default function PessoaForm() {
                                 label: "Observação", 
                                 name: "observacao"        
                             },
+                        ]}
+                    />
+                </TPanel>
+                <TPanel title="Endereços">
+                    <TFieldList
+                        name        ="enderecos"
+                        initialData ={enderecosParaInitialData(pessoa?.enderecos)}
+                        columns     ={[
+                            { component: "hidden", label: "ID",        name: "id"             },
+                            { component: "hidden", label: "Cidade ID", name: "cidadeId"       },
+                            {
+                                component: "combo",
+                                label:     "Tipo",
+                                name:      "tipoEnderecoId",
+                                width:     "100px",
+                                options:   tiposEndereco.map(t => ({ value: String(t.id), label: t.nome })),
+                            },
+                            {
+                                component: "custom",
+                                label:     "Cidade",
+                                name:      "cidadeNome",
+                                width:     "200px",
+                                render:    (rowIndex, rowData, onChange) => (
+                                    <TUniqueSearch
+                                        name           ={`enderecos[${rowIndex}][cidadeNome]`}
+                                        label          =""
+                                        url            ="/cidades/select"
+                                        valueField     ="id"
+                                        displayField   ={(item) => {
+                                            const cidade = item as unknown as CidadeItem
+                                            return `${cidade.nome} - ${cidade.estado?.sigla ?? ""}`
+                                        }}
+                                        searchField    ="nome"
+                                        placeholder    ="Buscar cidade..."
+                                        minLength      ={2}
+                                        width          ="100%"
+                                        defaultValue   ={rowData.cidadeId   || undefined}
+                                        defaultDisplay ={rowData.cidadeNome || undefined}
+                                        onChange       ={(value) => onChange("cidadeId", value)}
+                                    />
+                                ),
+                            },
+                            { component: "entry",    label: "CEP",         name: "cep",         mask: "cep",  width: "90px" },
+                            { component: "entry",    label: "Rua",         name: "rua",         width: "220px" },
+                            { component: "entry",    label: "Número",      name: "numero",      width: "90px"  },
+                            { component: "entry",    label: "Bairro",      name: "bairro",      width: "160px" },
+                            { component: "entry",    label: "Complemento", name: "complemento", width: "160px" },
+                            { component: "checkbox", label: "Principal",   name: "principal",   width: "80px"  },
                         ]}
                     />
                 </TPanel>
