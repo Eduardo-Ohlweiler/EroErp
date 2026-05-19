@@ -4,6 +4,7 @@ import com.api.ero_erp.email.mapper.EmailMapper;
 import com.api.ero_erp.pessoa.dtos.PessoaResponseDto;
 import com.api.ero_erp.pessoa.dtos.PessoaSelectDto;
 import com.api.ero_erp.pessoa.entity.Pessoa;
+import com.api.ero_erp.redesocial.mapper.RedeSocialMapper;
 import com.api.ero_erp.telefone.mapper.TelefoneMapper;
 import com.api.ero_erp.tipocadastro.mapper.TipoCadastroMapper;
 
@@ -42,6 +43,9 @@ public class PessoaMapper {
                         : List.of(),
                 pessoa.getTelefones() != null
                         ? TelefoneMapper.toDtoList(pessoa.getTelefones())
+                        : List.of(),
+                pessoa.getRedesSociais() != null
+                        ? RedeSocialMapper.toDtoList(pessoa.getRedesSociais())
                         : List.of()
         );
     }

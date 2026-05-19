@@ -16,6 +16,7 @@ import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.pessoa.mapper.PessoaMapper;
 import com.api.ero_erp.pessoa.repository.PessoaRepository;
 import com.api.ero_erp.pessoa.util.PessoaValidator;
+import com.api.ero_erp.redesocial.service.RedeSocialService;
 import com.api.ero_erp.telefone.service.TelefoneService;
 import com.api.ero_erp.tipocadastro.entity.TipoCadastro;
 import com.api.ero_erp.tipocadastro.service.TipoCadastroService;
@@ -40,6 +41,7 @@ public class PessoaService {
     private final SecurityUtils       securityUtils;
     private final EmailService        emailService;
     private final TelefoneService     telefoneService;
+    private final RedeSocialService   redeSocialService;
 
     public PessoaService(
             PessoaRepository    pessoaRepository,
@@ -48,7 +50,8 @@ public class PessoaService {
             UsuarioService      usuarioService,
             SecurityUtils       securityUtils,
             EmailService        emailService,
-            TelefoneService     telefoneService
+            TelefoneService     telefoneService,
+            RedeSocialService   redeSocialService
     ) {
         this.pessoaRepository    = pessoaRepository;
         this.clienteService      = clienteService;
@@ -57,6 +60,7 @@ public class PessoaService {
         this.securityUtils       = securityUtils;
         this.emailService        = emailService;
         this.telefoneService     = telefoneService;
+        this.redeSocialService   = redeSocialService;
     }
 
     @Transactional(readOnly = true)
@@ -153,8 +157,11 @@ public class PessoaService {
             pessoa.getTiposCadastro().addAll(tiposCadastro);
 
         Pessoa salva = pessoaRepository.save(pessoa);
-        emailService.sincronizarEmails(salva, dto.emails(), cliente);
-        telefoneService.sincronizarTelefones(salva, dto.telefones(), cliente);
+
+        emailService.sincronizarEmails(salva,            dto.emails(),       cliente);
+        telefoneService.sincronizarTelefones(salva,      dto.telefones(),    cliente);
+        redeSocialService.sincronizarRedesSociais(salva, dto.redesSociais(), cliente);
+
         return this.findByIdResponse(salva.getId());
     }
 
@@ -220,8 +227,11 @@ public class PessoaService {
             pessoa.getTiposCadastro().addAll(tiposCadastro);
 
         Pessoa salva = pessoaRepository.save(pessoa);
-        emailService.sincronizarEmails(salva, dto.emails(), pessoa.getCliente());
-        telefoneService.sincronizarTelefones(salva, dto.telefones(), pessoa.getCliente());
+
+        emailService.sincronizarEmails(salva,            dto.emails(),       pessoa.getCliente());
+        telefoneService.sincronizarTelefones(salva,      dto.telefones(),    pessoa.getCliente());
+        redeSocialService.sincronizarRedesSociais(salva, dto.redesSociais(), pessoa.getCliente());
+
         return this.findByIdResponse(salva.getId());
     }
 

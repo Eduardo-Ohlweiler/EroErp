@@ -2,6 +2,7 @@ package com.api.ero_erp.pessoa.dtos;
 
 import com.api.ero_erp.email.dtos.EmailItemDto;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
+import com.api.ero_erp.redesocial.dtos.RedeSocialItemDto;
 import com.api.ero_erp.telefone.dtos.TelefoneItemDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -76,5 +77,8 @@ public record PessoaUpdateDto(
         List<@Valid EmailItemDto> emails,
 
         @Schema(description = "Telefones da pessoa")
-        List<@Valid TelefoneItemDto> telefones
+        List<@Valid TelefoneItemDto> telefones,
+
+        @Schema(description = "Redes sociais da pessoa")
+        List<@Valid RedeSocialItemDto> redesSociais
 ) {}
