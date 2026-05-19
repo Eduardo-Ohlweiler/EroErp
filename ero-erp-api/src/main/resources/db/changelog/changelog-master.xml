@@ -19,4 +19,5 @@
     <include file="012-alter-pessoa-add-cnh.xml"        relativeToChangelogFile="true" />
     <include file="013-insert-roles-pessoa.xml"         relativeToChangelogFile="true" />
     <include file="014-create-extension-unaccent.xml"   relativeToChangelogFile="true" />
+    <include file="015-create-tipo-emitente-enum.xml"   relativeToChangelogFile="true" />
 </databaseChangeLog>

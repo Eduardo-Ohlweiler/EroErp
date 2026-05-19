@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="015-create-tipo-emitente-enum" author="eduardo">
+        <sql>
+            CREATE TYPE tipo_emitente AS ENUM ('MATRIZ', 'FILIAL', 'AUTONOMO');
+        </sql>
+        <rollback>
+            DROP TYPE tipo_emitente;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="015-create-table-emitente" author="eduardo">
+        <createTable tableName="emitente">
+
+            <column name="id" type="SERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="cliente_id" type="INTEGER">
+                <constraints nullable="false"
+                             foreignKeyName="fk_emitente_cliente"
+                             references="cliente(id)"/>
+            </column>
+
+            <column name="pessoa_id" type="INTEGER">
+                <constraints nullable="false"
+                             unique="true"
+                             uniqueConstraintName="uq_emitente_pessoa"
+                             foreignKeyName="fk_emitente_pessoa"
+                             references="pessoa(id)"/>
+            </column>
+
+            <column name="tipo" type="tipo_emitente">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_matriz_id" type="INTEGER">
+                <constraints nullable="true"
+                             foreignKeyName="fk_emitente_pessoa_matriz"
+                             references="pessoa(id)"/>
+            </column>
+
+            <column name="cor" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="bloqueado" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="emitente"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Garante que filial sempre tenha pessoa_matriz_id preenchida -->
+    <changeSet id="015-add-check-emitente-filial" author="eduardo">
+        <sql>
+            ALTER TABLE emitente
+            ADD CONSTRAINT chk_emitente_filial_matriz
+            CHECK (
+            tipo != 'FILIAL' OR pessoa_matriz_id IS NOT NULL
+            );
+        </sql>
+        <rollback>
+            ALTER TABLE emitente DROP CONSTRAINT chk_emitente_filial_matriz;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
