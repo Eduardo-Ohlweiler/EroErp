@@ -25,7 +25,12 @@ public interface CidadeRepository extends JpaRepository<Cidade, Long> {
         SELECT c FROM Cidade c
             JOIN FETCH c.estado
         WHERE
-            (:nome       IS NULL OR LOWER(c.nome)       LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
+            (
+                :nome IS NULL OR
+                LOWER(function('unaccent', c.nome))
+                LIKE
+                LOWER(function('unaccent', CONCAT('%', CAST(:nome AS string), '%')))
+            )
             AND (:estadoId   IS NULL OR c.estado.id         = :estadoId)
             AND (:codigoIbge IS NULL OR c.codigoIbge        = :codigoIbge)
             AND (:ativo      IS NULL OR c.ativo             = :ativo)
@@ -43,7 +48,12 @@ public interface CidadeRepository extends JpaRepository<Cidade, Long> {
             JOIN FETCH c.estado
         WHERE
             c.ativo = true
-            AND (:nome IS NULL OR LOWER(c.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
+            AND (
+                :nome IS NULL OR
+                LOWER(function('unaccent', c.nome))
+                LIKE
+                LOWER(function('unaccent', CONCAT('%', CAST(:nome AS string), '%')))
+            )
         ORDER BY c.nome
     """)
     List<Cidade> findForSelect(

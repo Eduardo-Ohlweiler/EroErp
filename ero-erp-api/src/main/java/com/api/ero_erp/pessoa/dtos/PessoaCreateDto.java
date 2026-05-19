@@ -1,6 +1,7 @@
 package com.api.ero_erp.pessoa.dtos;
 
 import com.api.ero_erp.email.dtos.EmailItemDto;
+import com.api.ero_erp.endereco.dtos.EnderecoItemDto;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.redesocial.dtos.RedeSocialItemDto;
 import com.api.ero_erp.telefone.dtos.TelefoneItemDto;
@@ -77,5 +78,8 @@ public record PessoaCreateDto(
         List<@Valid TelefoneItemDto> telefones,
 
         @Schema(description = "Redes sociais da pessoa")
-        List<@Valid RedeSocialItemDto> redesSociais
+        List<@Valid RedeSocialItemDto> redesSociais,
+
+        @Schema(description = "Endereços da pessoa")
+        List<@Valid EnderecoItemDto> enderecos
 ) {}

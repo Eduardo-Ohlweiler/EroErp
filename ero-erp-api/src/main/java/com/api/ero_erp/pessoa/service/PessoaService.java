@@ -4,6 +4,7 @@ import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.cliente.service.ClienteService;
 import com.api.ero_erp.config.SecurityUtils;
 import com.api.ero_erp.email.service.EmailService;
+import com.api.ero_erp.endereco.service.EnderecoService;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
@@ -42,6 +43,7 @@ public class PessoaService {
     private final EmailService        emailService;
     private final TelefoneService     telefoneService;
     private final RedeSocialService   redeSocialService;
+    private final EnderecoService     enderecoService;
 
     public PessoaService(
             PessoaRepository    pessoaRepository,
@@ -51,7 +53,8 @@ public class PessoaService {
             SecurityUtils       securityUtils,
             EmailService        emailService,
             TelefoneService     telefoneService,
-            RedeSocialService   redeSocialService
+            RedeSocialService   redeSocialService,
+            EnderecoService     enderecoService
     ) {
         this.pessoaRepository    = pessoaRepository;
         this.clienteService      = clienteService;
@@ -61,6 +64,7 @@ public class PessoaService {
         this.emailService        = emailService;
         this.telefoneService     = telefoneService;
         this.redeSocialService   = redeSocialService;
+        this.enderecoService     = enderecoService;
     }
 
     @Transactional(readOnly = true)
@@ -161,6 +165,7 @@ public class PessoaService {
         emailService.sincronizarEmails(salva,            dto.emails(),       cliente);
         telefoneService.sincronizarTelefones(salva,      dto.telefones(),    cliente);
         redeSocialService.sincronizarRedesSociais(salva, dto.redesSociais(), cliente);
+        enderecoService.sincronizarEnderecos(salva,      dto.enderecos(),    cliente);
 
         return this.findByIdResponse(salva.getId());
     }
@@ -231,6 +236,7 @@ public class PessoaService {
         emailService.sincronizarEmails(salva,            dto.emails(),       pessoa.getCliente());
         telefoneService.sincronizarTelefones(salva,      dto.telefones(),    pessoa.getCliente());
         redeSocialService.sincronizarRedesSociais(salva, dto.redesSociais(), pessoa.getCliente());
+        enderecoService.sincronizarEnderecos(salva,      dto.enderecos(),    pessoa.getCliente());
 
         return this.findByIdResponse(salva.getId());
     }
