@@ -30,6 +30,18 @@ export interface TelefoneResponse {
     updatedAt:        string | null
 }
 
+export interface RedeSocialResponse {
+    id:                 number
+    pessoaId:           number
+    tipoRedeSocialId:   number
+    tipoRedeSocialNome: string
+    usuario:            string | null
+    url:                string | null
+    observacao:         string | null
+    createdAt:          string
+    updatedAt:          string | null
+}
+
 export interface PessoaRequest {
     nome:                string
     tipoPessoa:          TipoPessoa
@@ -53,6 +65,7 @@ export interface PessoaResponse extends PessoaRequest {
     tiposCadastro:  TipoCadastro[]
     emails:         EmailResponse[]
     telefones:      TelefoneResponse[]
+    redesSociais:   RedeSocialResponse[]
     createdAt:      string
     createdById:    number | null
     createdByNome:  string | null

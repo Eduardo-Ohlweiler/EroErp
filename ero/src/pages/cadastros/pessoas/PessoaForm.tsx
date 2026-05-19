@@ -53,6 +53,7 @@ export default function PessoaForm() {
     const [razaoSocial,        setRazaoSocial]        = useState(pessoa?.razaoSocial        ?? "")
     const [tiposEmail,         setTiposEmail]         = useState<{ id: number; nome: string }[]>([])
     const [tiposTelefone,      setTiposTelefone]      = useState<{ id: number; nome: string }[]>([])
+    const [tiposRedeSocial,    setTiposRedeSocial]    = useState<{ id: number; nome: string }[]>([])
     const [currentId,          setCurrentId]          = useState<string | undefined>(idParam)
     const isEdit                                      = !!currentId
 
@@ -63,20 +64,22 @@ export default function PessoaForm() {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const [tiposEmailRes, tiposTelefoneRes] = await Promise.all([
+                const [tiposEmailRes, tiposTelefoneRes, tiposRedeSocialRes] = await Promise.all([
                     api.get("/tipos/email/select"),
-                    api.get("/tipos/telefone/select")
+                    api.get("/tipos/telefone/select"),
+                    api.get("/tipos/redesocial/select"),
                 ])
 
                 setTiposEmail(tiposEmailRes.data)
                 setTiposTelefone(tiposTelefoneRes.data)
+                setTiposRedeSocial(tiposRedeSocialRes.data)
 
             } catch {
                 showMessage("error", "Erro ao carregar dados auxiliares")
             }
         }
-
         loadInitialData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
@@ -172,6 +175,21 @@ export default function PessoaForm() {
         }
     }
 
+    function parseArray(data: Record<string, string>, prefix: string) {
+        const result: Record<string, string>[] = []
+        Object.entries(data).forEach(([key, value]) => {
+            const match = key.match(new RegExp(`^${prefix}\\[(\\d+)\\]\\[(.+)\\]$`))
+            if (match) {
+                const idx   = Number(match[1])
+                const field = match[2]
+                if (!result[idx]) 
+                    result[idx] = {}
+                result[idx][field] = value
+            }
+        })
+        return result
+    }
+
     async function handleSubmit(data: Record<string, string>) {
         setSaving(true)
         try {
@@ -188,42 +206,20 @@ export default function PessoaForm() {
                 ...rest
             } = data
 
-            const emailsArray: Record<string, string>[] = []
-            Object.entries(data).forEach(([key, value]) => {
-                const match = key.match(/^emails\[(\d+)\]\[(.+)\]$/)
-                if (match) {
-                    const idx   = Number(match[1])
-                    const field = match[2]
-                    if (!emailsArray[idx]) 
-                        emailsArray[idx] = {}
-
-                    emailsArray[idx][field] = value
-                }
-            })
-
-            const telefonesArray: Record<string, string>[] = []
-            Object.entries(data).forEach(([key, value]) => {
-                const match = key.match(/^telefones\[(\d+)\]\[(.+)\]$/)
-                if(match) {
-                    const idx = Number(match[1])
-                    const field = match[2]
-                    if (!telefonesArray[idx])
-                        telefonesArray[idx] = {}
-                    telefonesArray[idx][field] = value
-                }    
-            })
+            const emailsArray       = parseArray(data, "emails")
+            const telefonesArray    = parseArray(data, "telefones")
+            const redesSociaisArray = parseArray(data, "redesSociais")
 
             const cleanRest = Object.fromEntries(
-                Object.entries(rest).filter(([k]) => !/^emails\[/.test(k))
-            )
-
-            const cleanRestTelefone = Object.fromEntries(
-                Object.entries(rest).filter(([k]) => !/^telefones\[/.test(k))
+                Object.entries(rest).filter(([k]) =>
+                    !/^emails\[/.test(k)      &&
+                    !/^telefones\[/.test(k)   &&
+                    !/^redesSociais\[/.test(k)
+                )
             )
 
             const payload = {
-                ...cleanRest,
-                ...cleanRestTelefone,
+                ...cleanRest,                
                 ativo: data.ativo === "true",
                 tiposCadastroIds: tiposCadastroIds
                     ? tiposCadastroIds
@@ -248,7 +244,16 @@ export default function PessoaForm() {
                         numero:         e.numero,
                         observacao:     e.observacao ?? "",
                         principal:      e.principal === "true",
-                }))
+                })),
+                redesSociais: redesSociaisArray
+                    .filter(r => r.usuario?.trim() || r.url?.trim())
+                    .map(r => ({
+                        id:               r.id ? Number(r.id) : null,
+                        tipoRedeSocialId: Number(r.tipoRedeSocialId),
+                        usuario:          r.usuario    || null,
+                        url:              r.url        || null,
+                        observacao:       r.observacao || null,
+                })),
             }
             if (isEdit) {
                 await api.put(`/pessoas/${currentId}`, payload)
@@ -294,7 +299,6 @@ export default function PessoaForm() {
     function emailsParaInitialData(emails?: PessoaResponse["emails"]) {
         if (!emails || emails.length === 0)
             return undefined
-
         return emails.map(e => ({
             id:          String(e.id),
             tipoEmailId: String(e.tipoEmailId),
@@ -307,7 +311,6 @@ export default function PessoaForm() {
     function telefonesParaInitialData(telefones?: PessoaResponse["telefones"]){
         if (!telefones || telefones.length === 0)
             return undefined;
-
         return telefones.map(e => ({
             id:             String(e.id),
             tipoTelefoneId: String(e.tipoTelefoneId),
@@ -317,17 +320,27 @@ export default function PessoaForm() {
         }))
     }
 
+    function redesSociaisParaInitialData(redes?: PessoaResponse["redesSociais"]) {
+        if (!redes?.length) 
+            return undefined
+        return redes.map(r => ({
+            id:               String(r.id),
+            tipoRedeSocialId: String(r.tipoRedeSocialId),
+            usuario:          r.usuario    ?? "",
+            url:              r.url        ?? "",
+            observacao:       r.observacao ?? "",
+        }))
+    }
+
     return (
         <TPage
             title={isEdit ? "Editar Pessoa" : "Nova Pessoa"}
             breadcrumb={["Cadastros", "Pessoas", isEdit ? "Editar" : "Novo"]}
         >
-
             <TForm
                 key={formKey}
                 onSubmit={handleSubmit}
             >
-
                 <TRow>
                     <TCol>
                         <TCombo
@@ -360,7 +373,6 @@ export default function PessoaForm() {
                         />
                     </TCol>
                 </TRow>
-
                 <TRow>
                     <TCol>
                         <TEntry
@@ -448,7 +460,6 @@ export default function PessoaForm() {
                         <TSpace />
                     </TRow>
                 </TPanel>
-
                 <TPanel title="Pessoa Jurídica">
                     <TRow>
                         <TCol>
@@ -538,7 +549,7 @@ export default function PessoaForm() {
                                 label:     "E-mail",
                                 name:      "email",
                                 type:      "email",
-                                width:     "280px",
+                                width:     "400px",
                             },
                             {
                                 component: "entry",
@@ -554,7 +565,6 @@ export default function PessoaForm() {
                         ]}
                     />
                 </TPanel>
-
                 <TPanel title="Telefones">
                     <TFieldList
                         name        ="telefones"
@@ -593,6 +603,42 @@ export default function PessoaForm() {
                         ]}
                     />
                 </TPanel>
+                <TPanel title="Redes Sociais">
+                    <TFieldList
+                        name        ="redesSociais"
+                        initialData ={redesSociaisParaInitialData(pessoa?.redesSociais)}
+                        columns     ={[
+                            { 
+                                component:  "hidden", 
+                                label:      "ID",         
+                                name:       "id"                
+                            },
+                            { 
+                                component: "combo",  
+                                label: "Tipo",       
+                                name: "tipoRedeSocialId",  
+                                width: "160px",
+                                options: tiposRedeSocial.map(t => ({ value: String(t.id), label: t.nome })) 
+                            },
+                            { 
+                                component: "entry",  
+                                label: "Usuário",    
+                                name: "usuario",           
+                                width: "250px" 
+                            },
+                            { 
+                                component: "entry",  
+                                label: "URL",        
+                                name: "url"               
+                            },
+                            { 
+                                component: "entry",  
+                                label: "Observação", 
+                                name: "observacao"        
+                            },
+                        ]}
+                    />
+                </TPanel>
                 <TRow>
                     <TCol>
                         <TCombo
@@ -620,10 +666,8 @@ export default function PessoaForm() {
                     </TCol>
                     <TSpace />
                 </TRow>
-
                 {isEdit && (
                     <TRow>
-
                         <TCol>
                             <TEntry
                                 name="createdById"
@@ -632,7 +676,6 @@ export default function PessoaForm() {
                                 defaultValue={pessoa?.createdByNome ?? "—"}
                             />
                         </TCol>
-
                         <TCol>
                             <TEntry
                                 name="createdAt"
@@ -647,15 +690,11 @@ export default function PessoaForm() {
                                 }
                             />
                         </TCol>
-
                         <TSpace />
-
                     </TRow>
                 )}
-
                 {isEdit && pessoa?.updatedAt && (
                     <TRow>
-
                         <TCol>
                             <TEntry
                                 name="updatedById"
@@ -664,7 +703,6 @@ export default function PessoaForm() {
                                 defaultValue={pessoa?.updatedByNome ?? "—"}
                             />
                         </TCol>
-
                         <TCol>
                             <TEntry
                                 name="updatedAt"
@@ -679,45 +717,32 @@ export default function PessoaForm() {
                                 }
                             />
                         </TCol>
-
                         <TSpace />
-
                     </TRow>
                 )}
-
                 <TFormFooter>
-
                     <TFormActionsLeft>
-
                         <TButton
                             label="Voltar"
                             variant="cancel"
                             onClick={() => navigate("/pessoas")}
                         />
-
                         <TButton
                             label="Novo"
                             variant="new"
                             onClick={handleNovo}
                         />
-
                     </TFormActionsLeft>
-
                     <TFormActionsRight>
-
                         <TButton
                             label="Salvar"
                             variant="save"
                             type="submit"
                             loading={saving}
                         />
-
                     </TFormActionsRight>
-
                 </TFormFooter>
-
             </TForm>
-
         </TPage>
     )
 }
