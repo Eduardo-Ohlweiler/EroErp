@@ -54,6 +54,7 @@ export default function TipoEnderecoFormList() {
 
     useEffect(() => {
         loadGrid();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page]);
     
     async function loadGrid(pagina = page) {

@@ -5,9 +5,9 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="015-create-tipo-emitente-enum" author="eduardo">
+    <changeSet id="015-create-enum-tipo-emitente" author="eduardo">
         <sql>
-            CREATE TYPE tipo_emitente AS ENUM ('MATRIZ', 'FILIAL', 'AUTONOMO');
+            CREATE TYPE tipo_emitente AS ENUM ('MATRIZ', 'FILIAL');
         </sql>
         <rollback>
             DROP TYPE tipo_emitente;
@@ -15,19 +15,21 @@
     </changeSet>
 
     <changeSet id="015-create-table-emitente" author="eduardo">
+
         <createTable tableName="emitente">
 
-            <column name="id" type="SERIAL">
+            <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
 
-            <column name="cliente_id" type="INTEGER">
+            <column name="cliente_id" type="BIGINT">
                 <constraints nullable="false"
                              foreignKeyName="fk_emitente_cliente"
                              references="cliente(id)"/>
             </column>
 
-            <column name="pessoa_id" type="INTEGER">
+            <!-- Uma pessoa só pode ser emitente uma única vez -->
+            <column name="pessoa_id" type="BIGINT">
                 <constraints nullable="false"
                              unique="true"
                              uniqueConstraintName="uq_emitente_pessoa"
@@ -39,7 +41,8 @@
                 <constraints nullable="false"/>
             </column>
 
-            <column name="pessoa_matriz_id" type="INTEGER">
+            <!-- Preenchido apenas quando tipo = FILIAL -->
+            <column name="pessoa_matriz_id" type="BIGINT">
                 <constraints nullable="true"
                              foreignKeyName="fk_emitente_pessoa_matriz"
                              references="pessoa(id)"/>
@@ -53,25 +56,26 @@
                 <constraints nullable="false"/>
             </column>
 
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMP"/>
+
         </createTable>
 
-        <rollback>
-            <dropTable tableName="emitente"/>
-        </rollback>
-    </changeSet>
+        <createIndex tableName="emitente" indexName="idx_emitente_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
 
-    <!-- Garante que filial sempre tenha pessoa_matriz_id preenchida -->
-    <changeSet id="015-add-check-emitente-filial" author="eduardo">
-        <sql>
-            ALTER TABLE emitente
-            ADD CONSTRAINT chk_emitente_filial_matriz
-            CHECK (
-            tipo != 'FILIAL' OR pessoa_matriz_id IS NOT NULL
-            );
-        </sql>
+        <createIndex tableName="emitente" indexName="idx_emitente_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
         <rollback>
-            ALTER TABLE emitente DROP CONSTRAINT chk_emitente_filial_matriz;
+            DROP TABLE emitente;
         </rollback>
+
     </changeSet>
 
 </databaseChangeLog>

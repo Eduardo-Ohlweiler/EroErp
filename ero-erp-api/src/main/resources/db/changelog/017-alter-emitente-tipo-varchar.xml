@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="017-alter-emitente-tipo-varchar" author="eduardo">
+        <sql>
+            ALTER TABLE emitente
+            ALTER COLUMN tipo TYPE VARCHAR(30)
+                USING tipo::VARCHAR;
+        </sql>
+        <sql>
+            DROP TYPE tipo_emitente;
+        </sql>
+        <rollback>
+            <sql>CREATE TYPE tipo_emitente AS ENUM ('MATRIZ', 'FILIAL');</sql>
+            <sql>
+                ALTER TABLE emitente
+                ALTER COLUMN tipo TYPE tipo_emitente
+                USING tipo::tipo_emitente;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

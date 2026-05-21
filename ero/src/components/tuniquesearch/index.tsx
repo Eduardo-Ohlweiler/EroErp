@@ -162,15 +162,15 @@ export function TUniqueSearch({
                     placeholder={placeholder}
                     disabled={disabled}
                     className="w-full bg-(--bg-input) border border-(--border)
-                               rounded-md px-3 py-2 pr-8 text-sm
-                               text-(--text-primary)
-                               placeholder-(--text-muted)
-                               focus:outline-none
-                               focus:border-(--accent)
-                               focus:ring-1
-                               focus:ring-(--accent)
-                               disabled:opacity-50
-                               disabled:cursor-not-allowed transition"
+                                rounded-md px-3 py-2 pr-8 text-sm
+                                text-(--text-primary)
+                                placeholder-(--text-muted)
+                                focus:outline-none
+                                focus:border-(--accent)
+                                focus:ring-1
+                                focus:ring-(--accent)
+                                disabled:opacity-50
+                                disabled:cursor-not-allowed transition"
                 />
 
                 {search && !disabled && (
@@ -178,8 +178,8 @@ export function TUniqueSearch({
                         type="button"
                         onClick={handleClear}
                         className="absolute right-2 top-1/2 -translate-y-1/2
-                                   text-(--text-muted)
-                                   hover:text-(--text-primary)"
+                                    text-(--text-muted)
+                                    hover:text-(--text-primary)"
                     >
                         ✕
                     </button>
@@ -190,9 +190,9 @@ export function TUniqueSearch({
                 <div
                     style={dropdownStyle}
                     className="bg-(--bg-surface)
-                               border border-(--border)
-                               rounded-md shadow-xl
-                               max-h-48 overflow-y-auto"
+                                border border-(--border)
+                                rounded-md shadow-xl
+                                max-h-48 overflow-y-auto"
                 >
                     {loading && (
                         <div className="px-3 py-2 text-sm text-(--text-muted)">
@@ -212,8 +212,8 @@ export function TUniqueSearch({
                             type="button"
                             onMouseDown={() => handleSelect(opt)}
                             className="w-full text-left px-3 py-2 text-sm
-                                       text-(--text-primary)
-                                       hover:bg-(--bg-hover)"
+                                        text-(--text-primary)
+                                        hover:bg-(--bg-hover)"
                         >
                             {getDisplay(opt)}
                         </button>

@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList /*, FaPhone, FaTools*/ } from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice /*, FaPhone, FaTools*/ } from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -33,6 +33,11 @@ export const menu: MenuItem[] = [
         label: "Pessoas",
         path:  "/pessoas",
         icon:  FaUsers
+      },
+      {
+        label: "Emitentes",
+        path: "/emitentes",
+        icon: FaFileInvoice
       }
     ]
   }

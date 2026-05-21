@@ -1,7 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { DashBoard }                              from "../pages/dashboard";
 import Layout                                     from "../components/Layout";
-import { ProdutoList }                            from "../pages/cadastros/produtos/ProdutoList";
 import { PrivateRoute }                           from "./PrivateRoute";
 import { Login }                                  from "../pages/public/auth/Login";
 import { PublicRoute }                            from "./PublicRoute";
@@ -20,6 +19,7 @@ import CidadeList from "../pages/cadastros/auxiliares/CidadeList";
 import CidadeForm from "../pages/cadastros/auxiliares/CidadeForm";
 import PessoaList from "../pages/cadastros/pessoas/PessoaList";
 import PessoaForm from "../pages/cadastros/pessoas/PessoaForm";
+import EmitenteFormList from "../pages/cadastros/emitente/EmitenteFormList";
 
 export function Router() {
   return (
@@ -74,7 +74,10 @@ export function Router() {
                 <Route path="/cidades/:id"  element={<CidadeForm />} />
             </Route>
 
-            <Route path="/" element={<DashBoard />} />
+            {/*ROTAS EMITENTES*/}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "EMITENTE", "EMITENTE_GET"]} />}>
+                <Route path="/emitentes" element={<EmitenteFormList />} />
+            </Route>
 
             {/*ROTAS PESSOAS*/}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST"]} />}>
@@ -82,8 +85,9 @@ export function Router() {
                 <Route path="/pessoas/novo" element={<PessoaForm />} />
                 <Route path="/pessoas/:id" element={<PessoaForm />} />
             </Route>
+
+            <Route path="/" element={<DashBoard />} />
             
-            <Route path="/produtos" element={<ProdutoList />} />
           </Route>
         </Route>
 

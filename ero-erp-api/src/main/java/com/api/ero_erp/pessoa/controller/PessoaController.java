@@ -4,6 +4,7 @@ import com.api.ero_erp.pessoa.dtos.PessoaCreateDto;
 import com.api.ero_erp.pessoa.dtos.PessoaResponseDto;
 import com.api.ero_erp.pessoa.dtos.PessoaSelectDto;
 import com.api.ero_erp.pessoa.dtos.PessoaUpdateDto;
+import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.pessoa.service.PessoaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,11 +61,24 @@ public class PessoaController {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     })
     @GetMapping("/select")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PESSOA', 'PESSOA_GET')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PessoaSelectDto>> select(
             @Parameter(description = "Filtrar por nome") @RequestParam(required = false) String nome
     ) {
         return ResponseEntity.ok(pessoaService.select(nome));
+    }
+
+    @Operation(summary = "Select de pessoas", description = "Retorna lista simplificada de pessoas ativas para uso em combos")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
+    })
+    @GetMapping("/select/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PessoaResponseDto> selectById(
+            @Parameter(description = "ID da pessoa", example = "1")
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(pessoaService.findByIdResponse(id));
     }
 
     @Operation(summary = "Buscar pessoa por ID", description = "Retorna uma pessoa pelo ID")
