@@ -593,7 +593,7 @@ export default function CompromissoCalendario() {
     return (
         <div
         className="
-                    flex flex-col h-full min-h-[500px] gap-0
+                    flex flex-col h-full min-h-125 gap-0
                     bg-(--bg-surface)
                     border border-(--border)
                     rounded-lg overflow-hidden

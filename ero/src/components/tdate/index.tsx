@@ -60,9 +60,9 @@ export function TDate({
     return (
         <div className="flex flex-col gap-1 relative" style={{ width }} ref={ref}>
 
-        <label className="text-sm text-[var(--text-secondary)]">
+        <label className="text-sm text-(--text-secondary)">
             {label}
-            {required && <span className="text-[var(--danger)] ml-1">*</span>}
+            {required && <span className="text-(--danger) ml-1">*</span>}
         </label>
 
         <input type="hidden" name={name} value={selected ? formatValue(selected) : ""} />
@@ -75,20 +75,20 @@ export function TDate({
             placeholder ="dd/mm/aaaa"
             disabled    ={disabled}
             onClick     ={() => !disabled && setOpen((p) => !p)}
-            className   ="w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-md
-                px-3 py-2 pr-8 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]
-                focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]
+            className   ="w-full bg-(--bg-input) border border-(--border) rounded-md
+                px-3 py-2 pr-8 text-sm text-(--text-primary) placeholder-(--text-muted)
+                focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent)
                 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm pointer-events-none">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-(--text-muted) text-sm pointer-events-none">
             📅
             </span>
             {selected && !disabled && (
             <button
                 type      ="button"
                 onClick   ={(e) => { e.stopPropagation(); setSelected(null); onChange?.("") }}
-                className ="absolute right-7 top-1/2 -translate-y-1/2 text-[var(--text-muted)]
-                hover:text-[var(--text-primary)] transition text-xs"
+                className ="absolute right-7 top-1/2 -translate-y-1/2 text-(--text-muted)
+                hover:text-(--text-primary) transition text-xs"
             >
                 ✕
             </button>
@@ -96,26 +96,26 @@ export function TDate({
         </div>
 
         {open && (
-            <div className="absolute top-full left-0 mt-1 bg-[var(--bg-surface)] border border-[var(--border)]
-            rounded-lg shadow-xl z-50 p-3 w-[280px]">
+            <div className="absolute top-full left-0 mt-1 bg-(--bg-surface) border border-(--border)
+            rounded-lg shadow-xl z-50 p-3 w-70">
 
             <div className="flex items-center justify-between mb-3">
                 <button type="button" onClick={prevMonth}
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2 py-1 transition">
+                className="text-(--text-muted) hover:text-(--text-primary) px-2 py-1 transition">
                 ‹
                 </button>
-                <span className="text-sm font-medium text-[var(--text-primary)]">
+                <span className="text-sm font-medium text-(--text-primary)">
                 {MESES[month]} {year}
                 </span>
                 <button type="button" onClick={nextMonth}
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2 py-1 transition">
+                className="text-(--text-muted) hover:text-(--text-primary) px-2 py-1 transition">
                 ›
                 </button>
             </div>
 
             <div className="grid grid-cols-7 mb-1">
                 {DIAS_SEMANA.map((d) => (
-                <div key={d} className="text-center text-xs text-[var(--text-muted)] py-1">{d}</div>
+                <div key={d} className="text-center text-xs text-(--text-muted) py-1">{d}</div>
                 ))}
             </div>
 
@@ -137,10 +137,10 @@ export function TDate({
                     onClick   ={() => handleSelect(day)}
                     className ={`text-center text-sm py-1 rounded-md transition
                         ${isSelected
-                        ? "bg-[var(--accent)] text-[var(--text-inverse)]"
+                        ? "bg-(--accent) text-(--text-inverse)"
                         : isToday
-                            ? "border border-[var(--accent)] text-[var(--accent)]"
-                            : "text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                            ? "border border-(--accent) text-(--accent)"
+                            : "text-(--text-primary) hover:bg-(--bg-hover)"
                         }`}
                     >
                     {day}
@@ -152,7 +152,7 @@ export function TDate({
             </div>
         )}
 
-        {hint && <p className="text-xs text-[var(--text-muted)]">{hint}</p>}
+        {hint && <p className="text-xs text-(--text-muted)">{hint}</p>}
         </div>
     )
 }

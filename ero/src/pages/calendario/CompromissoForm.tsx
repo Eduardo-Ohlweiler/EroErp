@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import axios from "axios"
 import { useMessage } from "../../hooks/useMessage"
+import { useQuestion } from "../../hooks/useQuestion"
 import { api } from "../../services/api"
 import type { ErrorResponse } from "../../types/ErrorResponse"
 import { TPage } from "../../components/tpage"
@@ -14,8 +15,8 @@ import { TSpace } from "../../components/tspace"
 import { TPanel } from "../../components/tpanel"
 import { TButton } from "../../components/tbutton"
 import { TWindow } from "../../components/twindow"
-
-// ─── tipos ────────────────────────────────────────────────────────────────────
+import { TDateTime } from "../../components/tdatetime"
+import { TText } from "../../components/ttext"
 
 type TipoRecorrencia =
     | "DIARIO" | "SEMANAL" | "QUINZENAL"
@@ -47,8 +48,6 @@ interface CompromissoResponse {
 
 interface PessoaSelect { id: number; nome: string }
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
-
 /** "2025-06-10T09:00:00" → "2025-06-10T09:00" (input datetime-local) */
 function toInputDT(iso: string | null | undefined) {
     if (!iso) return ""
@@ -78,13 +77,12 @@ const RECORRENCIA_OPTIONS = [
     { value: "ANUAL",      label: "Anual"      },
 ]
 
-// ─── componente ───────────────────────────────────────────────────────────────
-
 export default function CompromissoForm() {
     const { id: idParam }      = useParams()
     const [searchParams]       = useSearchParams()
     const navigate             = useNavigate()
     const { showMessage }      = useMessage()
+    const { ask }              = useQuestion()
 
     const [formKey,        setFormKey]        = useState(0)
     const [loading,        setLoading]        = useState(false)
@@ -103,7 +101,6 @@ export default function CompromissoForm() {
     const isEdit   = !!currentId
     const isClosed = !!(compromisso?.cancelado || compromisso?.concluido)
 
-    // data pré-preenchida vinda do calendário (?data=2025-06-10T09:00:00)
     const dataParam = searchParams.get("data")
 
     // ── carrega pessoas ──
@@ -113,7 +110,6 @@ export default function CompromissoForm() {
             .catch(() => showMessage("error", "Erro ao carregar pessoas"))
     }, []) // eslint-disable-line
 
-    // ── carrega compromisso no edit ──
     useEffect(() => {
         if (!currentId) {
             setCompromisso(null)
@@ -148,7 +144,6 @@ export default function CompromissoForm() {
         setFormKey(k => k + 1)
     }
 
-    // ── submit ────────────────────────────────────────────────────────────────
     async function handleSubmit(data: Record<string, string>) {
         setSaving(true)
         try {
@@ -191,7 +186,6 @@ export default function CompromissoForm() {
         }
     }
 
-    // ── cancelar ──────────────────────────────────────────────────────────────
     async function handleCancelar() {
         setCanceling(true)
         try {
@@ -210,9 +204,14 @@ export default function CompromissoForm() {
         }
     }
 
-    // ── concluir ──────────────────────────────────────────────────────────────
     async function handleConcluir() {
-        if (!window.confirm("Marcar este compromisso como concluído?")) return
+        ask("Marcar este compromisso como concluído?", [
+            { label: "Cancelar",  variant: "cancel",  onClick: () => {} },
+            { label: "Concluir",  variant: "confirm", onClick: () => executarConcluir() },
+        ])
+    }
+
+    async function executarConcluir() {
         setConcluding(true)
         try {
             await api.patch(`/compromissos/${currentId}/concluir`)
@@ -227,8 +226,6 @@ export default function CompromissoForm() {
             setConcluding(false)
         }
     }
-
-    // ── loading ───────────────────────────────────────────────────────────────
     if (loading) {
         return (
             <TPage title="Carregando..." breadcrumb={["Agenda", "Compromissos"]}>
@@ -260,10 +257,7 @@ export default function CompromissoForm() {
                     ✔ Compromisso concluído
                 </div>
             )}
-
             <TForm key={formKey} onSubmit={handleSubmit}>
-
-                {/* ── linha 1: título + cor ── */}
                 <TRow>
                     <TCol>
                         <TEntry
@@ -271,11 +265,28 @@ export default function CompromissoForm() {
                             label        ="Título (*)"
                             required
                             maxLength    ={255}
-                            width        ="100%"
+                            width        ="50%"
                             defaultValue ={compromisso?.titulo}
                             disabled     ={isClosed}
                         />
                     </TCol>
+                </TRow>
+                <TRow>
+                    <TCol>
+                        <TCombo
+                            name         ="pessoaId"
+                            label        ="Pessoa"
+                            width        ="50%"
+                            disabled     ={isClosed}
+                            defaultValue ={compromisso?.pessoaId ? String(compromisso.pessoaId) : ""}
+                            options      ={[
+                                { value: "", label: "— Nenhuma —" },
+                                ...pessoas.map(p => ({ value: String(p.id), label: p.nome }))
+                            ]}
+                        />
+                    </TCol>
+                </TRow>
+                <TRow>
                     <TCol>
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-medium text-(--text-primary)">Cor</label>
@@ -290,101 +301,62 @@ export default function CompromissoForm() {
                         </div>
                     </TCol>
                 </TRow>
-
-                {/* ── pessoa ── */}
-                <TRow>
-                    <TCol>
-                        <TCombo
-                            name         ="pessoaId"
-                            label        ="Pessoa"
-                            width        ="360px"
-                            disabled     ={isClosed}
-                            defaultValue ={compromisso?.pessoaId ? String(compromisso.pessoaId) : ""}
-                            options      ={[
-                                { value: "", label: "— Nenhuma —" },
-                                ...pessoas.map(p => ({ value: String(p.id), label: p.nome }))
-                            ]}
-                        />
-                    </TCol>
-                    <TSpace />
-                </TRow>
-
-                {/* ── horário ── */}
                 <TPanel title="Horário">
                     <TRow>
                         <TCol>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-sm font-medium text-(--text-primary)">
-                                    Início (*)
-                                </label>
-                                <input
-                                    type         ="datetime-local"
-                                    name         ="inicio"
-                                    required
-                                    disabled     ={isClosed}
-                                    defaultValue ={
-                                        compromisso
-                                            ? toInputDT(compromisso.inicio)
-                                            : dataParam
-                                                ? toInputDT(dataParam)
-                                                : defaultDT(0)
-                                    }
-                                    className    ="border border-(--border) rounded px-3 py-1.5 text-sm
-                                                    bg-(--bg-surface) text-(--text-primary)
-                                                    focus:outline-none focus:ring-1 focus:ring-(--accent)
-                                                    disabled:opacity-50 w-full max-w-xs"
-                                />
-                            </div>
+                            <TDateTime
+                                name         ="inicio"
+                                label        ="Início (*)"
+                                required
+                                disabled     ={isClosed}
+                                width        ="260px"
+                                defaultValue ={
+                                    compromisso
+                                        ? toInputDT(compromisso.inicio)
+                                        : dataParam
+                                            ? toInputDT(dataParam)
+                                            : defaultDT(0)
+                                }
+                            />
                         </TCol>
                         <TCol>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-sm font-medium text-(--text-primary)">
-                                    Fim (*)
-                                </label>
-                                <input
-                                    type         ="datetime-local"
-                                    name         ="fim"
-                                    required
-                                    disabled     ={isClosed}
-                                    defaultValue ={
-                                        compromisso
-                                            ? toInputDT(compromisso.fim)
-                                            : dataParam
-                                                ? toInputDT(dataParam.substring(0,11) + String(Number(dataParam.substring(11,13))+1).padStart(2,"0") + dataParam.substring(13))
-                                                : defaultDT(1)
-                                    }
-                                    className    ="border border-(--border) rounded px-3 py-1.5 text-sm
-                                                    bg-(--bg-surface) text-(--text-primary)
-                                                    focus:outline-none focus:ring-1 focus:ring-(--accent)
-                                                    disabled:opacity-50 w-full max-w-xs"
-                                />
-                            </div>
+                            <TDateTime
+                                name         ="fim"
+                                label        ="Fim (*)"
+                                required
+                                disabled     ={isClosed}
+                                width        ="260px"
+                                defaultValue ={
+                                    compromisso
+                                        ? toInputDT(compromisso.fim)
+                                        : dataParam
+                                            ? toInputDT(
+                                                dataParam.substring(0, 11) +
+                                                String(Number(dataParam.substring(11, 13)) + 1).padStart(2, "0") +
+                                                dataParam.substring(13)
+                                                )
+                                            : defaultDT(1)
+                                }
+                            />
                         </TCol>
+                        <TSpace />
                     </TRow>
                 </TPanel>
-
-                {/* ── descrição ── */}
                 <TRow>
                     <TCol>
-                        <div className="flex flex-col gap-1 w-full">
-                            <label className="text-sm font-medium text-(--text-primary)">Descrição</label>
-                            <textarea
-                                name         ="descricao"
-                                rows         ={3}
-                                maxLength    ={2000}
-                                disabled     ={isClosed}
-                                defaultValue ={compromisso?.descricao ?? ""}
-                                placeholder  ="Detalhes do compromisso..."
-                                className    ="border border-(--border) rounded px-3 py-2 text-sm
-                                                bg-(--bg-surface) text-(--text-primary) resize-y
-                                                focus:outline-none focus:ring-1 focus:ring-(--accent)
-                                                disabled:opacity-50 w-full"
-                            />
-                        </div>
+                        <TText
+                            name         ="descricao"
+                            label        ="Descrição"
+                            placeholder  ="Detalhes do compromisso..."
+                            maxLength    ={2000}
+                            disabled     ={isClosed}
+                            defaultValue ={compromisso?.descricao ?? ""}
+                            width        ="50%"
+                            height       ="100px"
+                            resize       ="vertical"
+                        />
                     </TCol>
                 </TRow>
-
-                {/* ── recorrência ── */}
                 {(!isEdit || compromisso?.recorrenciaSimNao) && (
                     <TPanel title="Recorrência">
                         {!isEdit && (
