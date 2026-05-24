@@ -22,4 +22,5 @@
     <include file="015-create-enum-tipo-emitente.xml"   relativeToChangelogFile="true" />
     <include file="016-insert-roles-emitente.xml"       relativeToChangelogFile="true" />
     <include file="017-alter-emitente-tipo-varchar.xml" relativeToChangelogFile="true" />
+    <include file="018-create-compromisso.xml"          relativeToChangelogFile="true" />
 </databaseChangeLog>

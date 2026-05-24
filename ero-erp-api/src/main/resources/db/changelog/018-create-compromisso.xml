@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="018-create-compromisso" author="eduardo">
+
+        <createTable tableName="compromisso">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="usuario_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_id" type="BIGINT"/>
+
+            <column name="titulo" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="descricao" type="VARCHAR(2000)"/>
+
+            <column name="cor" type="VARCHAR(50)" defaultValue="#3a87ad">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="inicio" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="fim" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Status -->
+            <column name="cancelado" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="concluido" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="motivo_cancelamento" type="VARCHAR(500)"/>
+
+            <column name="recorrencia_sim_nao" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Recorrência: enum DIARIO | SEMANAL | QUINZENAL | MENSAL | TRIMESTRAL | SEMESTRAL | ANUAL -->
+            <column name="tipo_recorrencia" type="VARCHAR(20)"/>
+
+            <column name="quantidade_recorrencia" type="INT"/>
+
+            <column name="compromisso_pai_id" type="BIGINT"/>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="updated_by" type="BIGINT"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="compromisso"
+                baseColumnNames="cliente_id"
+                referencedTableName="cliente"
+                referencedColumnNames="id"
+                constraintName="fk_compromisso_cliente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="compromisso"
+                baseColumnNames="usuario_id"
+                referencedTableName="usuario"
+                referencedColumnNames="id"
+                constraintName="fk_compromisso_usuario"/>
+
+        <addForeignKeyConstraint
+                baseTableName="compromisso"
+                baseColumnNames="pessoa_id"
+                referencedTableName="pessoa"
+                referencedColumnNames="id"
+                constraintName="fk_compromisso_pessoa"/>
+
+        <addForeignKeyConstraint
+                baseTableName="compromisso"
+                baseColumnNames="compromisso_pai_id"
+                referencedTableName="compromisso"
+                referencedColumnNames="id"
+                constraintName="fk_compromisso_pai"/>
+
+        <createIndex tableName="compromisso" indexName="idx_compromisso_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="compromisso" indexName="idx_compromisso_periodo">
+            <column name="cliente_id"/>
+            <column name="inicio"/>
+            <column name="fim"/>
+        </createIndex>
+
+        <createIndex tableName="compromisso" indexName="idx_compromisso_usuario">
+            <column name="usuario_id"/>
+        </createIndex>
+
+        <createIndex tableName="compromisso" indexName="idx_compromisso_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <createIndex tableName="compromisso" indexName="idx_compromisso_pai">
+            <column name="compromisso_pai_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
