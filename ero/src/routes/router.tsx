@@ -13,13 +13,15 @@ import UsuarioList                                from "../pages/administrativo/
 import TipoEmailFormList                          from "../pages/administrativo/auxiliares/TipoEmailFormList";
 import TipoRedeSocialFormList                     from "../pages/administrativo/auxiliares/TipoRedeSocialFormList";
 import TipoEnderecoFormList                       from "../pages/administrativo/auxiliares/TipoEnderecoFormList";
-import TipoCadastroFormList from "../pages/administrativo/auxiliares/TipoCadastroFormList";
-import EstadoFormList from "../pages/administrativo/auxiliares/EstadoFormList";
-import CidadeList from "../pages/cadastros/auxiliares/CidadeList";
-import CidadeForm from "../pages/cadastros/auxiliares/CidadeForm";
-import PessoaList from "../pages/cadastros/pessoas/PessoaList";
-import PessoaForm from "../pages/cadastros/pessoas/PessoaForm";
-import EmitenteFormList from "../pages/cadastros/emitente/EmitenteFormList";
+import TipoCadastroFormList                       from "../pages/administrativo/auxiliares/TipoCadastroFormList";
+import EstadoFormList                             from "../pages/administrativo/auxiliares/EstadoFormList";
+import CidadeList                                 from "../pages/cadastros/auxiliares/CidadeList";
+import CidadeForm                                 from "../pages/cadastros/auxiliares/CidadeForm";
+import PessoaList                                 from "../pages/cadastros/pessoas/PessoaList";
+import PessoaForm                                 from "../pages/cadastros/pessoas/PessoaForm";
+import EmitenteFormList                           from "../pages/cadastros/emitente/EmitenteFormList";
+import CompromissoCalendario                      from "../pages/calendario/CompromissoCalendario";
+import CompromissoForm                            from "../pages/calendario/CompromissoForm";
 
 export function Router() {
   return (
@@ -28,66 +30,59 @@ export function Router() {
 
         {/* rotas públicas */}
         <Route element={<PublicRoute />}>
-            <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
         </Route>
 
         {/* rotas privadas */}
         <Route element={<PrivateRoute />}>
           <Route element={<Layout />}>
-            
-            {/* rotas só para SUPERADMIN */}
+
+            {/* ── SUPERADMIN ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN"]} />}>
-                {/*ROTAS CLIENTES*/}
-                <Route path="/clientes"           element={<ClienteList />} />
-                <Route path="/clientes/novo"      element={<ClienteForm />} />
-                <Route path="/clientes/:id"       element={<ClienteForm />} />
-                
-                {/*ROTAS USUARIOS*/}
-                <Route path="/usuarios"           element={<UsuarioList />} />
-                <Route path="/usuarios/novo"      element={<UsuarioForm />} />
-                <Route path="/usuarios/:id"       element={<UsuarioForm />} />
+              <Route path="/clientes"         element={<ClienteList />} />
+              <Route path="/clientes/novo"    element={<ClienteForm />} />
+              <Route path="/clientes/:id"     element={<ClienteForm />} />
 
-                {/*ROTAS ESTADOS*/}
-                <Route path="/estados"            element={<EstadoFormList />} />
-                
-                {/*ROTAS TIPO TELEFONE*/}
-                <Route path="/tipos/telefone"     element={<TipoTelefoneFormList />} />
+              <Route path="/usuarios"         element={<UsuarioList />} />
+              <Route path="/usuarios/novo"    element={<UsuarioForm />} />
+              <Route path="/usuarios/:id"     element={<UsuarioForm />} />
 
-                {/*ROTAS TIPO TELEFONE*/}
-                <Route path="/tipos/cadastro"     element={<TipoCadastroFormList />} />
-
-                {/*ROTAS TIPO EMAIL*/}
-                <Route path="/tipos/email"        element={<TipoEmailFormList />} />
-
-                {/*ROTAS TIPO REDE SOCIAL*/}
-                <Route path="/tipos/redesocial"   element={<TipoRedeSocialFormList />} />
-
-                {/*ROTAS TIPO ENDERECO*/}
-                <Route path="/tipos/endereco"     element={<TipoEnderecoFormList />} />
-
+              <Route path="/estados"          element={<EstadoFormList />} />
+              <Route path="/tipos/telefone"   element={<TipoTelefoneFormList />} />
+              <Route path="/tipos/cadastro"   element={<TipoCadastroFormList />} />
+              <Route path="/tipos/email"      element={<TipoEmailFormList />} />
+              <Route path="/tipos/redesocial" element={<TipoRedeSocialFormList />} />
+              <Route path="/tipos/endereco"   element={<TipoEnderecoFormList />} />
             </Route>
 
-            {/*ROTAS CIDADES*/}
+            {/* ── CIDADES ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "CIDADE", "CIDADE_GET", "CIDADE_POST"]} />}>
-                <Route path="/cidades" element={<CidadeList />} />
-                <Route path="/cidades/novo" element={<CidadeForm />} />
-                <Route path="/cidades/:id"  element={<CidadeForm />} />
+              <Route path="/cidades"      element={<CidadeList />} />
+              <Route path="/cidades/novo" element={<CidadeForm />} />
+              <Route path="/cidades/:id"  element={<CidadeForm />} />
             </Route>
 
-            {/*ROTAS EMITENTES*/}
+            {/* ── EMITENTES ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "EMITENTE", "EMITENTE_GET"]} />}>
-                <Route path="/emitentes" element={<EmitenteFormList />} />
+              <Route path="/emitentes" element={<EmitenteFormList />} />
             </Route>
 
-            {/*ROTAS PESSOAS*/}
+            {/* ── PESSOAS ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST"]} />}>
-                <Route path="/pessoas" element={<PessoaList />} />
-                <Route path="/pessoas/novo" element={<PessoaForm />} />
-                <Route path="/pessoas/:id" element={<PessoaForm />} />
+              <Route path="/pessoas"      element={<PessoaList />} />
+              <Route path="/pessoas/novo" element={<PessoaForm />} />
+              <Route path="/pessoas/:id"  element={<PessoaForm />} />
+            </Route>
+
+            {/* ── AGENDA ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "AGENDA", "COMPROMISSO"]} />}>
+              <Route path="/agenda"              element={<CompromissoCalendario />} />
+              <Route path="/compromissos/novo"   element={<CompromissoForm />} />
+              <Route path="/compromissos/:id"    element={<CompromissoForm />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />
-            
+
           </Route>
         </Route>
 

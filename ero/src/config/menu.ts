@@ -1,5 +1,6 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice /*, FaPhone, FaTools*/ } from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, /*, FaPhone, FaTools*/ 
+FaCalendarAlt} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -23,6 +24,18 @@ export const menu: MenuItem[] = [
         ]
       }
     ]
+  },
+  {
+    label: "Agenda",
+    icon:  FaCalendarAlt,
+    roles: ["SUPERADMIN", "ADMIN", "AGENDA", "COMPROMISSO", "COMPROMISSO_GET"],
+    children: [
+      {
+        label: "Calendário",
+        path:  "/agenda",
+        icon:  FaCalendarAlt,
+      },
+    ],
   },
   {
     label: "Cadastros",
