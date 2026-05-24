@@ -22,20 +22,27 @@ public class CompromissoMapper {
                 c.getRecorrenciaSimNao(),
                 c.getTipoRecorrencia(),
                 c.getQuantidadeRecorrencia(),
-                c.getCompromissoPai() != null ? c.getCompromissoPai().getId() : null,
+                c.getCompromissoPai()  != null ? c.getCompromissoPai().getId()            : null,
 
+                // emitente
+                c.getEmitente()        != null ? c.getEmitente().getId()                  : null,
+                c.getEmitente()        != null ? c.getEmitente().getPessoa().getNome()    : null,
+
+                // usuário
                 c.getUsuario().getId(),
                 c.getUsuario().getNome(),
 
-                c.getPessoa() != null ? c.getPessoa().getId()   : null,
-                c.getPessoa() != null ? c.getPessoa().getNome() : null,
+                // pessoa
+                c.getPessoa()          != null ? c.getPessoa().getId()                    : null,
+                c.getPessoa()          != null ? c.getPessoa().getNome()                  : null,
 
+                // auditoria
                 c.getCreatedAt(),
-                c.getCreatedBy() != null ? c.getCreatedBy().getId()   : null,
-                c.getCreatedBy() != null ? c.getCreatedBy().getNome() : null,
+                c.getCreatedBy()       != null ? c.getCreatedBy().getId()                 : null,
+                c.getCreatedBy()       != null ? c.getCreatedBy().getNome()               : null,
                 c.getUpdatedAt(),
-                c.getUpdatedBy() != null ? c.getUpdatedBy().getId()   : null,
-                c.getUpdatedBy() != null ? c.getUpdatedBy().getNome() : null
+                c.getUpdatedBy()       != null ? c.getUpdatedBy().getId()                 : null,
+                c.getUpdatedBy()       != null ? c.getUpdatedBy().getNome()               : null
         );
     }
 
@@ -48,9 +55,11 @@ public class CompromissoMapper {
                 c.getFim(),
                 c.getCancelado(),
                 c.getConcluido(),
-                c.getPessoa() != null ? c.getPessoa().getNome() : null,
+                c.getEmitente()  != null ? c.getEmitente().getId()              : null,
+                c.getEmitente()  != null ? c.getEmitente().getPessoa().getNome() : null,
+                c.getPessoa()    != null ? c.getPessoa().getNome()               : null,
                 c.getTipoRecorrencia(),
-                c.getCompromissoPai() != null ? c.getCompromissoPai().getId() : null
+                c.getCompromissoPai() != null ? c.getCompromissoPai().getId()   : null
         );
     }
 }

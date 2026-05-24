@@ -20,10 +20,6 @@ public class Emitente extends BaseEntity {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    /**
-     * Uma pessoa só pode estar vinculada a um único emitente.
-     * Garantido por unique constraint no banco + validação no service.
-     */
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "pessoa_id", nullable = false, unique = true)
     private Pessoa pessoa;

@@ -3,6 +3,7 @@ package com.api.ero_erp.compromisso.entity;
 import com.api.ero_erp.baseentity.BaseEntity;
 import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.compromisso.enums.TipoRecorrencia;
+import com.api.ero_erp.emitente.entity.Emitente;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.usuario.entity.Usuario;
 import jakarta.persistence.*;
@@ -22,6 +23,10 @@ public class Compromisso extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "emitente_id")
+    private Emitente emitente;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "usuario_id", nullable = false)

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="019-insert-emitente-column-on-compromisso" author="eduardo">
+
+        <addColumn tableName="compromisso">
+            <column name="emitente_id" type="BIGINT"/>
+        </addColumn>
+
+        <addForeignKeyConstraint
+                baseTableName        ="compromisso"
+                baseColumnNames      ="emitente_id"
+                referencedTableName  ="emitente"
+                referencedColumnNames="id"
+                constraintName       ="fk_compromisso_emitente"/>
+
+        <createIndex tableName="compromisso" indexName="idx_compromisso_emitente">
+            <column name="emitente_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -62,6 +62,8 @@ public class CompromissoController {
             @PageableDefault(size = 20, sort = "inicio") Pageable pageable,
             @Parameter(description = "Filtrar por título")
             @RequestParam(required = false) String titulo,
+            @Parameter(description = "Filtrar por emitente")
+            @RequestParam(required = false) Long emitenteId,
             @Parameter(description = "Filtrar por ID da pessoa")
             @RequestParam(required = false) Long pessoaId,
             @Parameter(description = "Filtrar por ID do usuário responsável")
@@ -78,7 +80,7 @@ public class CompromissoController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim
     ) {
         return ResponseEntity.ok(
-                compromissoService.getAll(pageable, titulo, pessoaId, usuarioId,
+                compromissoService.getAll(pageable, titulo, emitenteId, pessoaId, usuarioId,
                         cancelado, concluido, inicio, fim)
         );
     }

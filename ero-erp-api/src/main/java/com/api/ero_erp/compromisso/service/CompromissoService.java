@@ -11,6 +11,8 @@ import com.api.ero_erp.compromisso.enums.TipoRecorrencia;
 import com.api.ero_erp.compromisso.mapper.CompromissoMapper;
 import com.api.ero_erp.compromisso.repository.CompromissoRepository;
 import com.api.ero_erp.config.SecurityUtils;
+import com.api.ero_erp.emitente.entity.Emitente;
+import com.api.ero_erp.emitente.service.EmitenteService;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
@@ -33,6 +35,7 @@ public class CompromissoService {
 
     private final CompromissoRepository compromissoRepository;
     private final ClienteService        clienteService;
+    private final EmitenteService       emitenteService;
     private final UsuarioService        usuarioService;
     private final PessoaService         pessoaService;
     private final SecurityUtils         securityUtils;
@@ -40,12 +43,14 @@ public class CompromissoService {
     public CompromissoService(
             CompromissoRepository compromissoRepository,
             ClienteService        clienteService,
+            EmitenteService       emitenteService,
             UsuarioService        usuarioService,
             PessoaService         pessoaService,
             SecurityUtils         securityUtils
     ) {
         this.compromissoRepository = compromissoRepository;
         this.clienteService        = clienteService;
+        this.emitenteService       = emitenteService;
         this.usuarioService        = usuarioService;
         this.pessoaService         = pessoaService;
         this.securityUtils         = securityUtils;
@@ -67,6 +72,7 @@ public class CompromissoService {
     public Page<CompromissoResponseDto> getAll(
             Pageable      pageable,
             String        titulo,
+            Long          emitente_id,
             Long          pessoaId,
             Long          usuarioId,
             Boolean       cancelado,
@@ -76,8 +82,8 @@ public class CompromissoService {
     ) {
         Long clienteId = securityUtils.getClienteIdLogado();
         return compromissoRepository
-                .findAllWithFilters(pageable, clienteId, titulo, pessoaId,
-                        usuarioId, cancelado, concluido, inicio, fim)
+                .findAllWithFilters(pageable, clienteId, titulo,  emitente_id,
+                        pessoaId, usuarioId, cancelado, concluido, inicio, fim)
                 .map(CompromissoMapper::toDto);
     }
 
@@ -103,12 +109,13 @@ public class CompromissoService {
         if (temRecorrencia)
             validarRecorrencia(dto.tipoRecorrencia(), dto.quantidadeRecorrencia());
 
-        Pessoa pessoa = resolverPessoa(dto.pessoaId());
+        Pessoa pessoa     = resolverPessoa(dto.pessoaId());
+        Emitente emitente = resolverEmitente(dto.emitenteId());
 
         Compromisso pai = buildCompromisso(
                 dto.titulo(), dto.descricao(), dto.cor(),
                 dto.inicio(), dto.fim(),
-                cliente, usuario, pessoa,
+                cliente, usuario, emitente, pessoa,
                 temRecorrencia,
                 temRecorrencia ? dto.tipoRecorrencia()       : null,
                 temRecorrencia ? dto.quantidadeRecorrencia() : null,
@@ -141,7 +148,7 @@ public class CompromissoService {
                 Compromisso filho = buildCompromisso(
                         dto.titulo(), dto.descricao(), dto.cor(),
                         inicioRec, fimRec,
-                        cliente, usuario, pessoa,
+                        cliente, usuario, emitente, pessoa,
                         true,
                         dto.tipoRecorrencia(),
                         dto.quantidadeRecorrencia(),
@@ -160,6 +167,7 @@ public class CompromissoService {
         Long        clienteId   = securityUtils.getClienteIdLogado();
         Compromisso compromisso = findById(id);
         Usuario     usuario     = usuarioService.findById(securityUtils.getUsuarioIdLogado());
+        Emitente emitente       = resolverEmitente(dto.emitenteId());
 
         if (Boolean.TRUE.equals(compromisso.getCancelado()))
             throw new BadRequestException("Não é possível editar um compromisso cancelado");
@@ -176,6 +184,7 @@ public class CompromissoService {
         compromisso.setCor(dto.cor() != null ? dto.cor() : "#3a87ad");
         compromisso.setInicio(dto.inicio());
         compromisso.setFim(dto.fim());
+        compromisso.setEmitente(emitente);
         compromisso.setPessoa(pessoa);
         compromisso.setUpdatedBy(usuario);
         return CompromissoMapper.toDto(compromissoRepository.save(compromisso));
@@ -247,6 +256,7 @@ public class CompromissoService {
             LocalDateTime   fim,
             Cliente         cliente,
             Usuario         usuario,
+            Emitente        emitente,
             Pessoa          pessoa,
             boolean         recorrenciaSimNao,
             TipoRecorrencia tipoRecorrencia,
@@ -256,6 +266,7 @@ public class CompromissoService {
         Compromisso c = new Compromisso();
         c.setCliente(cliente);
         c.setUsuario(usuario);
+        c.setEmitente(emitente);
         c.setPessoa(pessoa);
         c.setTitulo(titulo);
         c.setDescricao(descricao);
@@ -276,6 +287,12 @@ public class CompromissoService {
         if (pessoaId == null)
             return null;
         return pessoaService.findById(pessoaId);
+    }
+
+    private Emitente resolverEmitente(Long emitenteId) {
+        if (emitenteId == null)
+            return null;
+        return emitenteService.findById(emitenteId);
     }
 
     private void validarHorario(LocalDateTime inicio, LocalDateTime fim) {

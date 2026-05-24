@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 
 public record CompromissoUpdateDto(
 
+        @Schema(description = "ID do emitente (empresa) vinculado — opcional")
+        Long emitenteId,
+
         @Schema(description = "Título do compromisso", example = "Reunião de planejamento")
         @NotBlank(message = "Título é obrigatório")
         @Size(max = 255, message = "Título deve ter no máximo 255 caracteres")

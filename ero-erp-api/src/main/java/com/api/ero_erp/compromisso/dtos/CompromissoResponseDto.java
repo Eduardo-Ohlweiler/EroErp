@@ -19,11 +19,15 @@ public record CompromissoResponseDto(
         Integer         quantidadeRecorrencia,
         Long            compromissoPaiId,
 
+        // Emitente (empresa) — opcional
+        Long            emitenteId,
+        String          emitenteNome,
+
         // Usuário responsável
         Long            usuarioId,
         String          usuarioNome,
 
-        // Pessoa vinculada (opcional)
+        // Pessoa vinculada — opcional
         Long            pessoaId,
         String          pessoaNome,
 
