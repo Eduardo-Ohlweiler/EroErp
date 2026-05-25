@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
 import { useMessage } from "../../hooks/useMessage";
 
-// ─── tipos ────────────────────────────────────────────────────────────────────
-
 type TipoRecorrencia =
     | "DIARIO"
     | "SEMANAL"
@@ -28,8 +26,6 @@ interface Evento {
     tipoRecorrencia: TipoRecorrencia | null;
     compromissoPaiId: number | null;
 }
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
 
 function isoToDate(iso: string) {
     return new Date(iso);
@@ -273,9 +269,6 @@ export default function CompromissoCalendario() {
         navigate(`/compromissos/novo?data=${formatISOLocal(day)}`);
     }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // MÊS (Ajustado para ocupar 100% da altura disponível)
-    // ────────────────────────────────────────────────────────────────────────
     function renderMonth() {
         const today = new Date();
         const firstDay = startOfMonth(current);
@@ -297,7 +290,6 @@ export default function CompromissoCalendario() {
         cells.push(addDays(cells[cells.length - 1], 1));
         }
 
-        // Calcula dinamicamente quantas linhas o mês terá (5 ou 6) para equilibrar a altura
         const totalRows = cells.length / 7;
 
         return (
@@ -397,9 +389,6 @@ export default function CompromissoCalendario() {
         );
     }
 
-  // ────────────────────────────────────────────────────────────────────────
-  // SEMANA (Ajustado com Scroll Interno Funcional)
-  // ────────────────────────────────────────────────────────────────────────
     function renderWeek() {
         const today = new Date();
         const start = startOfWeek(current);
@@ -436,7 +425,6 @@ export default function CompromissoCalendario() {
             })}
             </div>
 
-            {/* corpo com scroll real */}
             <div className="flex-1 overflow-y-auto min-h-0 custom-viewport-scroll">
             <div
                 className="grid relative"
@@ -503,9 +491,6 @@ export default function CompromissoCalendario() {
         );
     }
 
-  // ────────────────────────────────────────────────────────────────────────
-  // DIA (Ajustado com Scroll Interno Funcional)
-  // ────────────────────────────────────────────────────────────────────────
     function renderDay() {
         const hours = Array.from({ length: 24 }, (_, i) => i);
         const today = new Date();
@@ -532,7 +517,7 @@ export default function CompromissoCalendario() {
             </div>
             </div>
 
-            {/* horas com scroll real */}
+            {/* horas com scroll */}
             <div className="flex-1 overflow-y-auto min-h-0 custom-viewport-scroll">
             <div className="grid" style={{ gridTemplateColumns: "56px 1fr" }}>
                 {hours.map((hour) => {
@@ -629,7 +614,6 @@ export default function CompromissoCalendario() {
             )}
             </div>
 
-            {/* direita */}
             <div className="flex items-center gap-2">
             <div className="flex rounded border border-(--border) overflow-hidden text-sm">
                 {(["month", "week", "day"] as ViewMode[]).map((v) => (
@@ -656,7 +640,6 @@ export default function CompromissoCalendario() {
             </div>
         </div>
 
-        {/* conteúdo que se adapta */}
         <div className="flex-1 min-h-0 bg-(--bg-surface)">
             {view === "month" && renderMonth()}
             {view === "week" && renderWeek()}
