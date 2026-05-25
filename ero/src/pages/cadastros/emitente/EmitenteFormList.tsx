@@ -21,9 +21,6 @@ import { TDataGrid }                            from "../../../components/tdatag
 import { TDataGridFooter }                      from "../../../components/tdatagridfooter";
 import { TColor } from "../../../components/tcolor";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 function formatarCPF(cpf: string): string {
     return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 }
@@ -46,9 +43,6 @@ function displayPessoa(item: Record<string, unknown>): string {
     return `${p.nome} (${doc})`;
 }
 
-// ---------------------------------------------------------------------------
-// Colunas da grid
-// ---------------------------------------------------------------------------
 const columns: TDataGridColumn<EmitenteResponse>[] = [
     { label: "ID",        field: "id",              width: "60px",  align: "center" },
     { label: "Pessoa",    field: "pessoaNome" },
@@ -97,9 +91,6 @@ const columns: TDataGridColumn<EmitenteResponse>[] = [
     },
 ];
 
-// ---------------------------------------------------------------------------
-// Componente
-// ---------------------------------------------------------------------------
 export default function EmitenteFormList() {
 
     const { showMessage }                               = useMessage();
@@ -109,14 +100,12 @@ export default function EmitenteFormList() {
     const [saving,              setSaving]              = useState(false);
     const [currentId,           setCurrentId]           = useState<number | null>(null);
 
-    // campos controlados
     const [pessoaId,            setPessoaId]            = useState("");
     const [tipo,                setTipo]                = useState<"MATRIZ" | "FILIAL">("MATRIZ");
     const [pessoaMatrizId,      setPessoaMatrizId]      = useState("");
     const [cor,                 setCor]                 = useState("#3B82F6");
     const [bloqueado,           setBloqueado]           = useState("false");
 
-    // grid
     const [data,                setData]                = useState<EmitenteResponse[]>([]);
     const [loading,             setLoading]             = useState(false);
     const [page,                setPage]                = useState(0);
@@ -129,9 +118,6 @@ export default function EmitenteFormList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page]);
 
-    // -----------------------------------------------------------------------
-    // Grid
-    // -----------------------------------------------------------------------
     async function loadGrid(pagina = page) {
         setLoading(true);
         try {
@@ -151,9 +137,6 @@ export default function EmitenteFormList() {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Handlers
-    // -----------------------------------------------------------------------
     function handleClear() {
         setCurrentId(null);
         setPessoaId("");
@@ -245,9 +228,6 @@ export default function EmitenteFormList() {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Render
-    // -----------------------------------------------------------------------
     return (
         <TPage
             title      ="Emitentes"
@@ -255,7 +235,6 @@ export default function EmitenteFormList() {
         >
             <TForm key={formKey} onSubmit={handleSubmit}>
 
-                {/* Pessoa */}
                 <TRow>
                     <TCol>
                         <TDbCombo

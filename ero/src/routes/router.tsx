@@ -74,8 +74,8 @@ export function Router() {
               <Route path="/pessoas/:id"  element={<PessoaForm />} />
             </Route>
 
-            {/* ── AGENDA ── */}
-            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "AGENDA", "COMPROMISSO"]} />}>
+            {/* ── COMPRIMISSO ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "COMPROMISSO"]} />}>
               <Route path="/agenda"              element={<CompromissoCalendario />} />
               <Route path="/compromissos/novo"   element={<CompromissoForm />} />
               <Route path="/compromissos/:id"    element={<CompromissoForm />} />

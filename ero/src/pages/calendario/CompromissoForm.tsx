@@ -17,34 +17,8 @@ import { TButton } from "../../components/tbutton"
 import { TWindow } from "../../components/twindow"
 import { TDateTime } from "../../components/tdatetime"
 import { TText } from "../../components/ttext"
-
-type TipoRecorrencia =
-    | "DIARIO" | "SEMANAL" | "QUINZENAL"
-    | "MENSAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL"
-
-interface CompromissoResponse {
-    id:                    number
-    titulo:                string
-    descricao:             string | null
-    cor:                   string
-    inicio:                string
-    fim:                   string
-    cancelado:             boolean
-    concluido:             boolean
-    motivoCancelamento:    string | null
-    recorrenciaSimNao:     boolean
-    tipoRecorrencia:       TipoRecorrencia | null
-    quantidadeRecorrencia: number | null
-    compromissoPaiId:      number | null
-    usuarioId:             number
-    usuarioNome:           string
-    pessoaId:              number | null
-    pessoaNome:            string | null
-    createdAt:             string
-    createdByNome:         string | null
-    updatedAt:             string | null
-    updatedByNome:         string | null
-}
+import type { CompromissoResponse } from "../../types/Compromisso"
+import { TDbCombo } from "../../components/tdbcombo"
 
 interface PessoaSelect { id: number; nome: string }
 
@@ -65,6 +39,28 @@ function defaultDT(offsetHours = 0) {
     d.setHours(d.getHours() + offsetHours, 0, 0, 0)
     const pad = (n: number) => String(n).padStart(2, "0")
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:00`
+}
+
+function formatarDocumento(documento: string | null): string {
+    if (!documento) return "—"
+
+    const numeros = documento.replace(/\D/g, "")
+
+    if (numeros.length === 11) {
+        return numeros.replace(
+            /(\d{3})(\d{3})(\d{3})(\d{2})/,
+            "$1.$2.$3-$4"
+        )
+    }
+
+    if (numeros.length === 14) {
+        return numeros.replace(
+            /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+            "$1.$2.$3/$4-$5"
+        )
+    }
+
+    return documento
 }
 
 const RECORRENCIA_OPTIONS = [
@@ -90,6 +86,7 @@ export default function CompromissoForm() {
     const [compromisso,    setCompromisso]    = useState<CompromissoResponse | null>(null)
     const [currentId,      setCurrentId]      = useState<string | undefined>(idParam)
     const [pessoas,        setPessoas]        = useState<PessoaSelect[]>([])
+    const [emitenteId,     setEmitenteId]     = useState("")
     const [temRecorrencia, setTemRecorrencia] = useState(false)
 
     // modal cancelamento
@@ -122,6 +119,11 @@ export default function CompromissoForm() {
                 setCompromisso(r.data)
                 setTemRecorrencia(r.data.recorrenciaSimNao)
                 setFormKey(k => k + 1)
+                setEmitenteId(
+                    r.data.emitenteId
+                        ? String(r.data.emitenteId)
+                        : ""
+                )  
             })
             .catch(() => {
                 showMessage("error", "Erro ao carregar compromisso")
@@ -129,6 +131,17 @@ export default function CompromissoForm() {
             })
             .finally(() => setLoading(false))
     }, [currentId]) // eslint-disable-line
+
+    const displayEmitente = (item: Record<string, unknown>) => {
+        const pessoaNome        = String(item.pessoaNome ?? "")
+        const pessoaDocumento   = item.pessoaDocumento
+                ? String(item.pessoaDocumento)
+                : ""
+        const pessoaExibe = pessoaDocumento
+            ? `${pessoaNome}  (${pessoaDocumento})`
+            : pessoaNome    
+        return pessoaNome + ` (${formatarDocumento(pessoaExibe)})`
+    }
 
     function handleNovo() {
         setCurrentId(undefined)
@@ -154,6 +167,9 @@ export default function CompromissoForm() {
                 inicio:                fromInputDT(data.inicio),
                 fim:                   fromInputDT(data.fim),
                 pessoaId:              data.pessoaId ? Number(data.pessoaId) : null,
+                emitenteId:            emitenteId
+                                ? Number(emitenteId)
+                                : null,
                 recorrenciaSimNao:     temRecorrencia,
                 tipoRecorrencia:       temRecorrencia && data.tipoRecorrencia
                                             ? data.tipoRecorrencia : null,
@@ -258,6 +274,23 @@ export default function CompromissoForm() {
                 </div>
             )}
             <TForm key={formKey} onSubmit={handleSubmit}>
+                <TRow>
+                    <TCol>
+                        <TDbCombo
+                            name         ="emitenteId"
+                            label        ="Emitente (CPF / CNPJ)"
+                            url          ="/emitentes/select"
+                            valueField   ="id"
+                            displayField ={displayEmitente}
+                            searchField  ="pessoaNome"
+                            placeholder  ="Selecione o emitente..."
+                            required
+                            width        ="60%"
+                            value        ={emitenteId}
+                            onChange     ={(val) => setEmitenteId(val)}
+                        />
+                    </TCol>
+                </TRow>
                 <TRow>
                     <TCol>
                         <TEntry

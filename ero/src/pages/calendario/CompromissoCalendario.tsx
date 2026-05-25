@@ -2,30 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
 import { useMessage } from "../../hooks/useMessage";
-
-type TipoRecorrencia =
-    | "DIARIO"
-    | "SEMANAL"
-    | "QUINZENAL"
-    | "MENSAL"
-    | "TRIMESTRAL"
-    | "SEMESTRAL"
-    | "ANUAL";
+import type { Evento } from "../../types/Compromisso";
 
 type ViewMode = "month" | "week" | "day";
-
-interface Evento {
-    id: number;
-    titulo: string;
-    cor: string;
-    inicio: string;
-    fim: string;
-    cancelado: boolean;
-    concluido: boolean;
-    pessoaNome: string | null;
-    tipoRecorrencia: TipoRecorrencia | null;
-    compromissoPaiId: number | null;
-}
 
 function isoToDate(iso: string) {
     return new Date(iso);

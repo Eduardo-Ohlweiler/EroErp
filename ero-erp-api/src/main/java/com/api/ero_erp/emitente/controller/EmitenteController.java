@@ -59,6 +59,15 @@ public class EmitenteController {
     ) {
         return emitenteService.select(nome);
     }
+    @Operation(
+            summary = "Busca emitente por id para seletores",
+            description = "Exemplo: /emitentes/select/1"
+    )
+    @GetMapping("/select/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'EMITENTE', 'EMITENTE_GET')")
+    public EmitenteResponseDto selectById(@PathVariable Long id) {
+        return emitenteService.findByIdResponse(id);
+    }
 
     @Operation(summary = "Busca emitente por id")
     @GetMapping("/{id}")

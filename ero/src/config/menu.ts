@@ -28,7 +28,7 @@ export const menu: MenuItem[] = [
   {
     label: "Agenda",
     icon:  FaCalendarAlt,
-    roles: ["SUPERADMIN", "ADMIN", "AGENDA", "COMPROMISSO", "COMPROMISSO_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO"],
     children: [
       {
         label: "Calendário",
