@@ -1,10 +1,10 @@
-import { useRef } from "react"
+import { useRef, useState } from "react"
 
 interface TColorProps {
-    name: string
-    label?: string
-    value?: string
-    width?: string
+    name:      string
+    label?:    string
+    value?:    string
+    width?:    string
     required?: boolean
     disabled?: boolean
     onChange?: (value: string) => void
@@ -13,8 +13,8 @@ interface TColorProps {
 export function TColor({
     name,
     label,
-    value = "#3B82F6",
-    width = "160px",
+    value    = "#3B82F6",
+    width    = "160px",
     required = false,
     disabled = false,
     onChange
@@ -23,7 +23,7 @@ export function TColor({
     const inputRef = useRef<HTMLInputElement>(null)
 
     function openPicker() {
-        inputRef.current?.click()
+        if (!disabled) inputRef.current?.click()
     }
 
     return (
@@ -37,27 +37,32 @@ export function TColor({
 
             <div className="flex items-center gap-2">
                 <input
-                    ref={inputRef}
-                    type="color"
-                    value={value}
-                    onChange={(e) => onChange?.(e.target.value)}
-                    className="hidden"
-                />
+    ref      ={inputRef}
+    type     ="color"
+    value    ={value}
+    onChange ={(e) => onChange?.(e.target.value)}
+    onBlur   ={(e) => onChange?.(e.target.value)}
+    className="absolute opacity-0 w-0 h-0 pointer-events-none"
+/>
 
                 <input
-                    type="text"
-                    name={name}
-                    value={value}
+                    type      ="text"
+                    name      ={name}
+                    value     ={value}
                     readOnly
-                    className="flex-1 px-2 py-2 text-sm border rounded bg-white border-(--border)"
+                    onClick   ={openPicker}
+                    disabled  ={disabled}
+                    className ="flex-1 px-2 py-2 text-sm border rounded bg-white border-(--border)
+                                cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
-                    type="button"
-                    onClick={openPicker}
-                    disabled={disabled}
-                    className="w-8 h-8 rounded border border-(--border) shrink-0 cursor-pointer"
-                    style={{ backgroundColor: value }}
-                    title={value}
+                    type      ="button"
+                    onClick   ={openPicker}
+                    disabled  ={disabled}
+                    className ="w-8 h-8 rounded border border-(--border) shrink-0 cursor-pointer
+                                disabled:opacity-50 disabled:cursor-not-allowed"
+                    style     ={{ backgroundColor: value }}
+                    title     ={value}
                 />
             </div>
         </div>

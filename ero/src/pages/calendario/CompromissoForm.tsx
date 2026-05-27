@@ -19,6 +19,7 @@ import { TDateTime } from "../../components/tdatetime"
 import { TText } from "../../components/ttext"
 import type { CompromissoResponse } from "../../types/Compromisso"
 import { TDbCombo } from "../../components/tdbcombo"
+import { TColor } from "../../components/tcolor"
 
 interface PessoaSelect { id: number; nome: string }
 
@@ -88,6 +89,7 @@ export default function CompromissoForm() {
     const [pessoas,        setPessoas]        = useState<PessoaSelect[]>([])
     const [emitenteId,     setEmitenteId]     = useState("")
     const [temRecorrencia, setTemRecorrencia] = useState(false)
+    const [cor,            setCor]            = useState<string | undefined>()
 
     // modal cancelamento
     const [cancelModal,  setCancelModal]  = useState(false)
@@ -124,6 +126,7 @@ export default function CompromissoForm() {
                         ? String(r.data.emitenteId)
                         : ""
                 )  
+                setCor(r.data.cor ?? "#3a87ad")
             })
             .catch(() => {
                 showMessage("error", "Erro ao carregar compromisso")
@@ -287,7 +290,10 @@ export default function CompromissoForm() {
                             required
                             width        ="60%"
                             value        ={emitenteId}
-                            onChange     ={(val) => setEmitenteId(val)}
+                            onChange={(val, item) => {
+                                setEmitenteId(val)
+                                if (item) setCor(String(item.cor ?? ""))
+                            }}
                         />
                     </TCol>
                 </TRow>
@@ -321,17 +327,13 @@ export default function CompromissoForm() {
                 </TRow>
                 <TRow>
                     <TCol>
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-(--text-primary)">Cor</label>
-                            <input
-                                type         ="color"
-                                name         ="cor"
-                                defaultValue ={compromisso?.cor ?? "#3a87ad"}
-                                disabled     ={isClosed}
-                                className    ="h-9 w-14 cursor-pointer rounded border border-(--border)
-                                                bg-(--bg-surface) p-0.5 disabled:opacity-50"
-                            />
-                        </div>
+                        <TColor
+                            name     ="cor"
+                            label    ="Cor"
+                            value    ={cor || "#3a87ad"}
+                            disabled ={isClosed}
+                            onChange ={setCor}
+                        />
                     </TCol>
                 </TRow>
                 <TPanel title="Horário">
