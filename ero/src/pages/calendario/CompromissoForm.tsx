@@ -21,7 +21,6 @@ import type { CompromissoResponse } from "../../types/Compromisso"
 import { TDbCombo } from "../../components/tdbcombo"
 import { TColor } from "../../components/tcolor"
 
-interface PessoaSelect { id: number; nome: string }
 
 /** "2025-06-10T09:00:00" → "2025-06-10T09:00" (input datetime-local) */
 function toInputDT(iso: string | null | undefined) {
@@ -86,8 +85,8 @@ export default function CompromissoForm() {
     const [saving,         setSaving]         = useState(false)
     const [compromisso,    setCompromisso]    = useState<CompromissoResponse | null>(null)
     const [currentId,      setCurrentId]      = useState<string | undefined>(idParam)
-    const [pessoas,        setPessoas]        = useState<PessoaSelect[]>([])
     const [emitenteId,     setEmitenteId]     = useState("")
+    const [pessoaId, setPessoaId] = useState("")
     const [temRecorrencia, setTemRecorrencia] = useState(false)
     const [cor,            setCor]            = useState<string | undefined>()
 
@@ -101,13 +100,6 @@ export default function CompromissoForm() {
     const isClosed = !!(compromisso?.cancelado || compromisso?.concluido)
 
     const dataParam = searchParams.get("data")
-
-    // ── carrega pessoas ──
-    useEffect(() => {
-        api.get<PessoaSelect[]>("/pessoas/select")
-            .then(r => setPessoas(r.data))
-            .catch(() => showMessage("error", "Erro ao carregar pessoas"))
-    }, []) // eslint-disable-line
 
     useEffect(() => {
         if (!currentId) {
@@ -126,6 +118,9 @@ export default function CompromissoForm() {
                         ? String(r.data.emitenteId)
                         : ""
                 )  
+                setPessoaId(r.data.pessoaId ? String(
+                    r.data.pessoaId) : ""
+                )
                 setCor(r.data.cor ?? "#3a87ad")
             })
             .catch(() => {
@@ -146,10 +141,22 @@ export default function CompromissoForm() {
         return pessoaNome + ` (${formatarDocumento(pessoaExibe)})`
     }
 
+    const displayPessoa = (item: Record<string, unknown>) => {
+        const nome      = String(item.nome ?? "")
+        const cpf       = item.cpf  ? String(item.cpf)  : null
+        const cnpj      = item.cnpj ? String(item.cnpj) : null
+        const documento = cpf ?? cnpj ?? null
+        return documento
+            ? `${nome}  (${formatarDocumento(documento)})`
+            : nome
+    }
+
     function handleNovo() {
         setCurrentId(undefined)
         setCompromisso(null)
         setTemRecorrencia(false)
+        setPessoaId("")
+        setEmitenteId("")
         setFormKey(k => k + 1)
     }
 
@@ -288,7 +295,7 @@ export default function CompromissoForm() {
                             searchField  ="pessoaNome"
                             placeholder  ="Selecione o emitente..."
                             required
-                            width        ="60%"
+                            width        ="100%"
                             value        ={emitenteId}
                             onChange={(val, item) => {
                                 setEmitenteId(val)
@@ -296,6 +303,7 @@ export default function CompromissoForm() {
                             }}
                         />
                     </TCol>
+                    <TSpace />
                 </TRow>
                 <TRow>
                     <TCol>
@@ -304,26 +312,30 @@ export default function CompromissoForm() {
                             label        ="Título (*)"
                             required
                             maxLength    ={255}
-                            width        ="50%"
+                            width        ="100%"
                             defaultValue ={compromisso?.titulo}
                             disabled     ={isClosed}
                         />
                     </TCol>
+                    <TSpace />
                 </TRow>
                 <TRow>
                     <TCol>
-                        <TCombo
+                        <TDbCombo
                             name         ="pessoaId"
                             label        ="Pessoa"
-                            width        ="50%"
+                            url          ="/pessoas/select"
+                            valueField   ="id"
+                            displayField ={displayPessoa}
+                            searchField  ="nome"
+                            placeholder  ="Selecione a pessoa..."
+                            width        ="100%"
                             disabled     ={isClosed}
-                            defaultValue ={compromisso?.pessoaId ? String(compromisso.pessoaId) : ""}
-                            options      ={[
-                                { value: "", label: "— Nenhuma —" },
-                                ...pessoas.map(p => ({ value: String(p.id), label: p.nome }))
-                            ]}
+                            value        ={pessoaId}
+                            onChange     ={(val) => setPessoaId(val)}
                         />
                     </TCol>
+                    <TSpace />
                 </TRow>
                 <TRow>
                     <TCol>
@@ -386,11 +398,12 @@ export default function CompromissoForm() {
                             maxLength    ={2000}
                             disabled     ={isClosed}
                             defaultValue ={compromisso?.descricao ?? ""}
-                            width        ="50%"
+                            width        ="100%"
                             height       ="100px"
                             resize       ="vertical"
                         />
-                    </TCol>
+                    </TCol>,
+                    <TSpace />
                 </TRow>
                 {(!isEdit || compromisso?.recorrenciaSimNao) && (
                     <TPanel title="Recorrência">

@@ -42,9 +42,9 @@ export function TCombo({
         disabled      ={disabled}
         defaultValue  ={defaultValue ?? ""}
         onChange      ={(e) => onChange?.(e.target.value)}
-        className     ="w-full bg-(--bg-input) border border-(--border) rounded-md px-3 py-2 text-sm text-(--text-primary)
-                        focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent)
-                        disabled:opacity-50 disabled:cursor-not-allowed transition"
+        className="w-full h-9.5 bg-(--bg-input) border border-(--border) rounded-md px-3 py-2 text-sm text-(--text-primary)
+            focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent)
+            disabled:opacity-50 disabled:cursor-not-allowed transition"
       >
         <option value="" disabled className="text-(--text-muted)">
           {placeholder}

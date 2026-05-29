@@ -207,13 +207,13 @@ export function TEntry({
         maxLength   ={maxLength}
         value       ={displayValue}
         onChange    ={handleChange}
-        className={`w-full border rounded-md px-3 py-2 text-sm
-                      focus:outline-none focus:ring-1 transition
-                      disabled:cursor-not-allowed
-                      ${disabled
-                        ? "bg-(--metal-200) border-(--border) text-(--text-muted) focus:border-(--border) focus:ring-0"
-                        : "bg-(--bg-input) border-(--border) text-(--text-primary) placeholder-(--text-muted) focus:border-(--accent) focus:ring-(--accent)"
-                  }`}
+        className={`w-full h-9.5 border rounded-md px-3 text-sm leading-9.5
+              focus:outline-none focus:ring-1 transition
+              disabled:cursor-not-allowed
+              ${disabled
+                ? "bg-(--metal-200) border-(--border) text-(--text-muted) focus:border-(--border) focus:ring-0"
+                : "bg-(--bg-input) border-(--border) text-(--text-primary) placeholder-(--text-muted) focus:border-(--accent) focus:ring-(--accent)"
+            }`}
       />
 
       {/* envia o valor correto para o backend */}

@@ -154,7 +154,7 @@ export function TDbCombo({
         value ={value ?? ""}
       />
 
-      <div className="relative">
+      <div className="relative h-9.5">
         <input
           type        ="text"
           value       ={search}
@@ -163,10 +163,10 @@ export function TDbCombo({
           onBlur      ={() => setTimeout(() => setOpen(false), 200)}
           placeholder ={minLength > 0 ? `Digite ${minLength}+ caracteres...` : placeholder}
           disabled    ={disabled}
-          className   ="w-full bg-(--bg-input) border border-(--border) rounded-md px-3 py-2 pr-8 text-sm
-                        text-(--text-primary) placeholder-(--text-muted)
-                        focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent)
-                        disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="w-full h-full bg-(--bg-input) border border-(--border) rounded-md px-3 py-2 pr-8 text-sm
+                text-(--text-primary) placeholder-(--text-muted)
+                focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent)
+                disabled:opacity-50 disabled:cursor-not-allowed transition"
         />
 
         {search && !disabled && (
