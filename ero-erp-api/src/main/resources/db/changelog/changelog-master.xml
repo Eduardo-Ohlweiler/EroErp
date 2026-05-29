@@ -24,4 +24,6 @@
     <include file="017-alter-emitente-tipo-varchar.xml"             relativeToChangelogFile="true" />
     <include file="018-create-compromisso.xml"                      relativeToChangelogFile="true" />
     <include file="019-insert-emitente-column-on-compromisso.xml"   relativeToChangelogFile="true" />
+    <include file="020-create-whatsapp-config-global.xml"           relativeToChangelogFile="true" />
+    <include file="021-create-whatsapp-config-usuario.xml"          relativeToChangelogFile="true" />
 </databaseChangeLog>

@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, /*, FaPhone, FaTools*/ 
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaMobileAlt, /*, FaPhone, FaTools*/
 FaCalendarAlt} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
@@ -8,8 +8,9 @@ export const menu: MenuItem[] = [
     icon: FaUserShield,
     roles: ["SUPERADMIN"],
     children: [
-      { label: "Clientes",  path: "/clientes",  icon: FaUsers },
-      { label: "Usuários",  path: "/usuarios",  icon: FaUsers },
+      { label: "Clientes",        path: "/clientes",               icon: FaUsers },
+      { label: "Usuários",        path: "/usuarios",               icon: FaUsers },
+      { label: "Config. WhatsApp", path: "/whatsapp/config-global", icon: FaCog   },
       {
         label: "Auxiliares",
         icon: FaCogs,
@@ -36,6 +37,14 @@ export const menu: MenuItem[] = [
         icon:  FaCalendarAlt,
       },
     ],
+  },
+  {
+    label: "WhatsApp",
+    icon:  FaWhatsapp,
+    roles: ["SUPERADMIN", "ADMIN"],
+    children: [
+      { label: "Instâncias", path: "/whatsapp/instancias", icon: FaMobileAlt },
+    ]
   },
   {
     label: "Cadastros",

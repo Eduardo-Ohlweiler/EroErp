@@ -22,6 +22,9 @@ import PessoaForm                                 from "../pages/cadastros/pesso
 import EmitenteFormList                           from "../pages/cadastros/emitente/EmitenteFormList";
 import CompromissoCalendario                      from "../pages/calendario/CompromissoCalendario";
 import CompromissoForm                            from "../pages/calendario/CompromissoForm";
+import WhatsappConfigGlobalForm                   from "../pages/administrativo/whatsapp/WhatsappConfigGlobalForm";
+import WhatsappInstanciaList                      from "../pages/administrativo/whatsapp/instancias/WhatsappInstanciaList";
+import WhatsappInstanciaForm                      from "../pages/administrativo/whatsapp/instancias/WhatsappInstanciaForm";
 
 export function Router() {
   return (
@@ -46,6 +49,8 @@ export function Router() {
               <Route path="/usuarios"         element={<UsuarioList />} />
               <Route path="/usuarios/novo"    element={<UsuarioForm />} />
               <Route path="/usuarios/:id"     element={<UsuarioForm />} />
+
+              <Route path="/whatsapp/config-global" element={<WhatsappConfigGlobalForm />} />
 
               <Route path="/estados"          element={<EstadoFormList />} />
               <Route path="/tipos/telefone"   element={<TipoTelefoneFormList />} />
@@ -72,6 +77,13 @@ export function Router() {
               <Route path="/pessoas"      element={<PessoaList />} />
               <Route path="/pessoas/novo" element={<PessoaForm />} />
               <Route path="/pessoas/:id"  element={<PessoaForm />} />
+            </Route>
+
+            {/* ── WHATSAPP INSTÂNCIAS ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
+              <Route path="/whatsapp/instancias"      element={<WhatsappInstanciaList />} />
+              <Route path="/whatsapp/instancias/novo"  element={<WhatsappInstanciaForm />} />
+              <Route path="/whatsapp/instancias/:id"   element={<WhatsappInstanciaForm />} />
             </Route>
 
             {/* ── COMPRIMISSO ── */}
