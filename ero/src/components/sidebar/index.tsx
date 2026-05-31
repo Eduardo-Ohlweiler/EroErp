@@ -92,7 +92,7 @@ export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
               <div
                 onMouseEnter={() => handleMouseEnter(item.label)}
                 onMouseLeave={() => handleMouseLeave()}
-                className="absolute left-full top-0 ml-2 bg-(--bg-sidebar) border border-(--border) rounded-md shadow-xl p-2 min-w-[220px] z-50"
+                className="absolute left-full top-0 ml-2 bg-(--bg-sidebar) border border-(--border) rounded-md shadow-xl p-2 min-w-55 z-50"
               >
                 {item.children.map((child) => {
                   const ChildIcon = child.icon

@@ -188,23 +188,29 @@ export default function CompromissoCalendario() {
         };
     }, []);
 
-    function navPrev() {
+    function navNext() {
         setCurrent((prev) => {
-        const d = new Date(prev);
-        if (view === "month") d.setMonth(d.getMonth() - 1);
-        if (view === "week") d.setDate(d.getDate() - 7);
-        if (view === "day") d.setDate(d.getDate() - 1);
-        return d;
+            const d = new Date(prev);
+            if (view === "month") {
+                d.setDate(1); // ← adiciona isso antes do setMonth
+                d.setMonth(d.getMonth() + 1);
+            }
+            if (view === "week") d.setDate(d.getDate() + 7);
+            if (view === "day") d.setDate(d.getDate() + 1);
+            return d;
         });
     }
 
-    function navNext() {
+    function navPrev() {
         setCurrent((prev) => {
-        const d = new Date(prev);
-        if (view === "month") d.setMonth(d.getMonth() + 1);
-        if (view === "week") d.setDate(d.getDate() + 7);
-        if (view === "day") d.setDate(d.getDate() + 1);
-        return d;
+            const d = new Date(prev);
+            if (view === "month") {
+                d.setDate(1); // ← e aqui também
+                d.setMonth(d.getMonth() - 1);
+            }
+            if (view === "week") d.setDate(d.getDate() - 7);
+            if (view === "day") d.setDate(d.getDate() - 1);
+            return d;
         });
     }
 
