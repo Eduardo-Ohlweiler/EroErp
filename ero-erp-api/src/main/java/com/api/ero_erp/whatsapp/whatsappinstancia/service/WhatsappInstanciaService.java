@@ -80,7 +80,7 @@ public class WhatsappInstanciaService {
     @Transactional(readOnly = true)
     public List<WhatsappInstanciaResponseDto> getAll() {
         Long clienteId = securityUtils.getClienteIdLogado();
-        return whatsappInstanciaRepository.findByClienteIdAndAtivoTrue(clienteId)
+        return whatsappInstanciaRepository.findByClienteId(clienteId)
                 .stream()
                 .map(WhatsappInstanciaMapper::toDto)
                 .toList();

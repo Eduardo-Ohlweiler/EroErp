@@ -5,10 +5,12 @@ import { useAuth } from "../../hooks/useAuth"
 import type { MenuItem } from "../../types/MenuItem"
 
 interface SideBarProps {
-  collapsed: boolean
+  collapsed:        boolean
+  collapsedDesktop: boolean
+  onClose:          () => void
 }
 
-export default function Sidebar({ collapsed }: SideBarProps) {
+export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
 
   const location              = useLocation()
   const { hasRole }           = useAuth()
@@ -58,20 +60,20 @@ export default function Sidebar({ collapsed }: SideBarProps) {
           <div
             key={item.label}
             className="relative"
-            onMouseEnter={() => collapsed && handleMouseEnter(item.label)}
-            onMouseLeave={() => collapsed && handleMouseLeave()}
+            onMouseEnter={() => collapsedDesktop && handleMouseEnter(item.label)}
+            onMouseLeave={() => collapsedDesktop && handleMouseLeave()}
           >
             <button
-              onClick={() => !collapsed && toggle(item.label)}
-              title={collapsed ? item.label : ""}
+              onClick={() => !collapsedDesktop && toggle(item.label)}
+              title={collapsedDesktop ? item.label : ""}
               className={`flex items-center justify-between w-full px-3 py-2 text-sm rounded-md transition
                 text-(--text-sidebar) hover:text-(--text-sidebar-active) hover:bg-(--bg-hover) ${padding}`}
             >
               <div className="flex items-center gap-3">
                 {Icon && <Icon size={18} />}
-                {!collapsed && item.label}
+                {!collapsedDesktop && item.label}
               </div>
-              {!collapsed && (
+              {!collapsedDesktop && (
                 <span className={`text-xs transition-transform ${open[item.label] ? "rotate-90" : ""}`}>
                   &gt;
                 </span>
@@ -79,17 +81,18 @@ export default function Sidebar({ collapsed }: SideBarProps) {
             </button>
 
             {/* submenu normal */}
-            {!collapsed && open[item.label] && (
+            {!collapsedDesktop && open[item.label] && (
               <div className="mt-1 space-y-1 border-l border-(--border) ml-3 pl-3">
                 {renderMenu(item.children, level + 1)}
               </div>
             )}
 
-            {collapsed && hovered === item.label && (
+            {/* flyout quando recolhido no desktop */}
+            {collapsedDesktop && hovered === item.label && (
               <div
                 onMouseEnter={() => handleMouseEnter(item.label)}
                 onMouseLeave={() => handleMouseLeave()}
-                className="absolute left-full top-0 ml-2 bg-(--bg-sidebar) border border-(--border) rounded-md shadow-xl p-2 min-w-220px z-50"
+                className="absolute left-full top-0 ml-2 bg-(--bg-sidebar) border border-(--border) rounded-md shadow-xl p-2 min-w-[220px] z-50"
               >
                 {item.children.map((child) => {
                   const ChildIcon = child.icon
@@ -143,12 +146,12 @@ export default function Sidebar({ collapsed }: SideBarProps) {
           <div
             key={item.label}
             className="relative"
-            onMouseEnter={() => collapsed && handleMouseEnter(item.label)}
-            onMouseLeave={() => collapsed && handleMouseLeave()}
+            onMouseEnter={() => collapsedDesktop && handleMouseEnter(item.label)}
+            onMouseLeave={() => collapsedDesktop && handleMouseLeave()}
           >
             <Link
               to={item.path}
-              title={collapsed ? item.label : ""}
+              title={collapsedDesktop ? item.label : ""}
               className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition ${padding}
                 ${active
                   ? "bg-(--accent) text-(--text-inverse)"
@@ -156,10 +159,11 @@ export default function Sidebar({ collapsed }: SideBarProps) {
                 }`}
             >
               {Icon && <Icon size={18} />}
-              {!collapsed && item.label}
+              {!collapsedDesktop && item.label}
             </Link>
 
-            {collapsed && hovered === item.label && (
+            {/* tooltip quando recolhido no desktop */}
+            {collapsedDesktop && hovered === item.label && (
               <div
                 onMouseEnter={() => handleMouseEnter(item.label)}
                 onMouseLeave={() => handleMouseLeave()}
@@ -178,22 +182,33 @@ export default function Sidebar({ collapsed }: SideBarProps) {
 
   return (
     <aside
-      className={`${collapsed ? "w-16" : "w-64"} 
-        bg-(--bg-sidebar) text-(--text-sidebar) min-h-screen flex flex-col 
-        border-r border-(--border-strong) transition-all duration-300`}
+      className={`
+        ${collapsedDesktop ? "w-16" : "w-64"}
+        bg-(--bg-sidebar) text-(--text-sidebar) h-full flex flex-col
+        border-r border-(--border-strong) transition-all duration-300
+      `}
     >
       {/* LOGO */}
-      <div className="px-4 py-5 text-lg font-semibold tracking-wide border-b border-(--border-strong) text-(--text-inverse) flex justify-center">
-        {collapsed ? "Ero" : "EroErp"}
+      <div className="px-4 py-5 text-lg font-semibold tracking-wide border-b border-(--border-strong) text-(--text-inverse) flex items-center justify-between">
+        <span>{collapsedDesktop ? "Ero" : "EroErp"}</span>
+
+        {/* botão fechar — só aparece no mobile */}
+        <button
+          onClick={onClose}
+          className="sm:hidden text-(--text-inverse) hover:opacity-70 transition text-lg leading-none"
+          aria-label="Fechar menu"
+        >
+          ✕
+        </button>
       </div>
 
       {/* MENU */}
-      <nav className="flex-1 p-3 space-y-1 overflow-visible">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-visible">
         {renderMenu(menu)}
       </nav>
 
       {/* FOOTER */}
-      {!collapsed && (
+      {!collapsedDesktop && (
         <div className="flex justify-center p-4 text-xs text-(--text-muted) border-t border-(--border-strong)">
           EroErp
         </div>

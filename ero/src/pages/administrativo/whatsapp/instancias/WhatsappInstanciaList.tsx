@@ -14,21 +14,28 @@ import { TEntry } from "../../../../components/tentry"
 import { TDataGrid } from "../../../../components/tdatagrid"
 
 const columns: TDataGridColumn<WhatsappInstancia>[] = [
-  { label: "ID",            field: "id",           width: "60px",  align: "center" },
-  { label: "Nome",          field: "nome" },
-  { label: "Instance Name", field: "instanceName" },
-  { label: "Timezone",      field: "timezone",     width: "200px" },
+  { label: "ID",            field: "id",           width: "5%",  align: "center" },
+  { label: "Nome",          field: "nome",         width: "20%", align: "left" },
+  { label: "Usuário",       field: "usuarioNome",  width: "20%", align: "left" },
+  { 
+    label: "Número",        
+    field: "usuarioTelefone",       
+    width: "10%",
+    mask: "celular"
+  },
+  { label: "Instance Name", field: "instanceName", width: "15%" },
+  { label: "Timezone",      field: "timezone",     width: "10%" },
   {
     label: "Antecedência",
     field: "antecedenciaMinutos",
-    width: "130px",
+    width: "10%",
     align: "center",
     render: (row) => <span>{row.antecedenciaMinutos} min</span>,
   },
   {
     label: "Status",
     field: "ativo",
-    width: "100px",
+    width: "10%",
     align: "center",
     render: (row) => (
       <span
@@ -54,6 +61,7 @@ export default function WhatsappInstanciaList() {
 
   useEffect(() => {
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function load(nome = filtroNome) {

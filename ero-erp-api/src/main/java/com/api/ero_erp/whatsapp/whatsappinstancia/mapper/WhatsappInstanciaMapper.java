@@ -10,9 +10,10 @@ public class WhatsappInstanciaMapper {
         if (entity == null) return null;
         return new WhatsappInstanciaResponseDto(
                 entity.getId(),
-                entity.getCliente() != null ? entity.getCliente().getId()   : null,
-                entity.getUsuario() != null ? entity.getUsuario().getId()   : null,
-                entity.getUsuario() != null ? entity.getUsuario().getNome() : null,
+                entity.getCliente() != null ? entity.getCliente().getId()       : null,
+                entity.getUsuario() != null ? entity.getUsuario().getId()       : null,
+                entity.getUsuario() != null ? entity.getUsuario().getNome()     : null,
+                entity.getUsuario() != null ? entity.getUsuario().getTelefone() : null,
                 entity.getNome(),
                 entity.getInstanceName(),
                 entity.getToken(),

@@ -16,4 +16,5 @@ public interface WhatsappInstanciaRepository extends JpaRepository<WhatsappInsta
     Optional<WhatsappInstancia> findByIdAndClienteId(Long id, Long clienteId);
 
     List<WhatsappInstancia> findByClienteIdAndAtivoTrue(Long clienteId);
+    List<WhatsappInstancia> findByClienteId(Long clienteId);
 }

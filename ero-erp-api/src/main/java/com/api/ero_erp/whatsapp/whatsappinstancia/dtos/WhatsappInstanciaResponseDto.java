@@ -17,6 +17,9 @@ public record WhatsappInstanciaResponseDto(
         @Schema(description = "Nome do usuário", example = "Eduardo")
         String usuarioNome,
 
+        @Schema(description = "Numero de telefone do usuário", example = "Eduardo")
+        String usuarioTelefone,
+
         @Schema(description = "Nome amigável da instância", example = "Comercial")
         String nome,
 

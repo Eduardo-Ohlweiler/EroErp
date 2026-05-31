@@ -73,15 +73,18 @@ export function TDataGrid<T extends object>({
   }
 
   return (
-    <div className="w-full overflow-x-auto rounded-lg border border-(--border)">
-      <table className="w-full text-sm">
+    // ← wrapper externo garante que o scroll horizontal fique contido na página
+    <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-(--border)">
+      {/* ← min-w garante que a tabela não colapse abaixo de 400px em mobile */}
+      <table className="w-full min-w-100 text-sm">
 
         <thead>
           <tr className="bg-(--metal-700) border-b border-(--border)">
             {actions && (
               <th
                 style     ={{ width: actionsWidth }}
-                className ="px-4 py-3 font-medium text-(--text-inverse) text-center"
+                // ← whitespace-nowrap evita que "Ações" quebre em duas linhas
+                className ="px-3 py-3 font-medium text-(--text-inverse) text-center whitespace-nowrap"
               >
                 Ações
               </th>
@@ -90,7 +93,8 @@ export function TDataGrid<T extends object>({
               <th
                 key       ={String(col.field ?? col.label)}
                 style     ={{ width: col.width }}
-                className ={`px-4 py-3 font-medium text-(--text-inverse)
+                // ← whitespace-nowrap nos headers evita quebras indesejadas
+                className ={`px-3 py-3 font-medium text-(--text-inverse) whitespace-nowrap
                   ${alignClass[col.align ?? "left"]}`}
               >
                 {col.label}
@@ -136,8 +140,9 @@ export function TDataGrid<T extends object>({
               `}
             >
               {actions && (
-                <td className="px-4 py-3 text-center">
-                  <div className="flex items-center justify-center gap-2">
+                <td className="px-3 py-3 text-center">
+                  {/* ← flex-nowrap evita que os botões de ação quebrem linha */}
+                  <div className="flex items-center justify-center gap-2 flex-nowrap">
                     {actions(row)}
                   </div>
                 </td>
@@ -145,7 +150,8 @@ export function TDataGrid<T extends object>({
               {columns.map((col) => (
                 <td
                   key      ={String(col.field ?? col.label)}
-                  className={`px-4 py-3 text-(--text-primary) ${alignClass[col.align ?? "left"]}`}
+                  // ← max-w + truncate evita que texto longo estoure a célula
+                  className={`px-3 py-3 text-(--text-primary) max-w-50 truncate ${alignClass[col.align ?? "left"]}`}
                 >
                   {col.render 
                       ? col.render(row, (val) => {
