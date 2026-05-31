@@ -13,6 +13,7 @@ import { TEntry } from "../../../../components/tentry"
 import { TCombo } from "../../../../components/tcombo"
 import { TButton } from "../../../../components/tbutton"
 import { TSpace } from "../../../../components/tspace"
+import { TDbCombo } from "../../../../components/tdbcombo"
 
 export default function WhatsappInstanciaForm() {
   const { id: idParam } = useParams()
@@ -23,6 +24,7 @@ export default function WhatsappInstanciaForm() {
   const isEdit                      = !!currentId
 
   const [formKey,    setFormKey]    = useState(0)
+  const [usuarioId,  setUsuarioId]  = useState("")
   const [loading,    setLoading]    = useState(false)
   const [saving,     setSaving]     = useState(false)
   const [instancia,  setInstancia]  = useState<WhatsappInstancia | null>(null)
@@ -32,7 +34,10 @@ export default function WhatsappInstanciaForm() {
 
     setLoading(true)
     api.get(`/whatsapp/instancias/${currentId}`)
-      .then((response) => setInstancia(response.data))
+      .then((response) => {
+        setInstancia(response.data)
+        setUsuarioId(String(response.data.usuarioId))
+    })
       .catch(() => {
         showMessage("error", "Erro ao carregar instância")
         navigate("/whatsapp/instancias")
@@ -44,6 +49,7 @@ export default function WhatsappInstanciaForm() {
   function handleNovo() {
     setCurrentId(undefined)
     setInstancia(null)
+    setUsuarioId("")
     setFormKey((prev) => prev + 1)
   }
 
@@ -121,7 +127,6 @@ export default function WhatsappInstanciaForm() {
             />
           </TCol>
         </TRow>
-
         <TRow>
           <TCol>
             <TEntry
@@ -136,7 +141,22 @@ export default function WhatsappInstanciaForm() {
             />
           </TCol>
         </TRow>
-
+        <TRow>
+          <TCol>
+              <TDbCombo
+                  name         ="usuarioId"
+                  label        ="Usuário"
+                  url          ="/usuarios/select"
+                  valueField   ="id"
+                  displayField ="nome"
+                  searchField  ="nome"
+                  placeholder  ="Selecione o usuário..."
+                  width        ="60%"
+                  value        ={usuarioId}
+                  onChange     ={(val) => setUsuarioId(val)}
+              />
+          </TCol>
+      </TRow>
         <TRow>
           <TCol>
             <TEntry
@@ -148,7 +168,6 @@ export default function WhatsappInstanciaForm() {
             />
           </TCol>
         </TRow>
-
         <TRow>
           <TCol>
             <TEntry
@@ -156,19 +175,20 @@ export default function WhatsappInstanciaForm() {
               label        ="Fuso horário"
               maxLength    ={50}
               defaultValue ={instancia?.timezone ?? "America/Sao_Paulo"}
-              width        ="250px"
+              width        ="200px"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TEntry
               name         ="antecedenciaMinutos"
               label        ="Antecedência (minutos)"
               defaultValue ={String(instancia?.antecedenciaMinutos ?? 60)}
-              width        ="180px"
+              width        ="200px"
             />
           </TCol>
         </TRow>
-
         <TRow>
           <TCol>
             <TCombo

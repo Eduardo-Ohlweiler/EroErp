@@ -11,6 +11,12 @@ public record WhatsappInstanciaResponseDto(
         @Schema(description = "ID do cliente", example = "1")
         Long clienteId,
 
+        @Schema(description = "ID do usuário", example = "1")
+        Long usuarioId,
+
+        @Schema(description = "Nome do usuário", example = "Eduardo")
+        String usuarioNome,
+
         @Schema(description = "Nome amigável da instância", example = "Comercial")
         String nome,
 

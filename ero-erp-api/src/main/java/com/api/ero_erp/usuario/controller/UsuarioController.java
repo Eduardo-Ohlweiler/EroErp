@@ -5,6 +5,7 @@ import com.api.ero_erp.usuario.dtos.UsuarioResponseDto;
 import com.api.ero_erp.usuario.dtos.UsuarioUpdateDto;
 import com.api.ero_erp.usuario.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -64,6 +65,19 @@ public class UsuarioController {
             @RequestParam(required = false) String nome
     ) {
         return usuarioService.select(clienteId, nome);
+    }
+
+    @Operation(summary = "Select de usuarios", description = "Retorna usuario selecionado no combo")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Retornada com sucesso")
+    })
+    @GetMapping("/select/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UsuarioResponseDto> selectById(
+            @Parameter(description = "ID do usuario", example = "1")
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(usuarioService.findByIdResponse(id));
     }
 
     @Operation(summary = "Busca usuário por id")

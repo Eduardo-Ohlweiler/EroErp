@@ -52,9 +52,12 @@ public class WhatsappConfigGlobalService {
     public WhatsappConfigGlobalResponseDto update(Long id, WhatsappConfigGlobalUpdateDto dto) {
         WhatsappConfigGlobal config = this.findById(id);
 
-        if (dto.apiUrl() != null && !dto.apiUrl().isBlank()) config.setApiUrl(dto.apiUrl());
-        if (dto.apiKey() != null && !dto.apiKey().isBlank()) config.setApiKey(dto.apiKey());
-        if (dto.ativo() != null)                             config.setAtivo(dto.ativo());
+        if (dto.apiUrl() != null && !dto.apiUrl().isBlank())
+            config.setApiUrl(dto.apiUrl());
+        if (dto.apiKey() != null && !dto.apiKey().isBlank())
+            config.setApiKey(dto.apiKey());
+        if (dto.ativo() != null)
+            config.setAtivo(dto.ativo());
 
         return WhatsappConfigGlobalMapper.toDto(whatsappConfigGlobalRepository.save(config));
     }

@@ -10,9 +10,10 @@ import java.util.Optional;
 @Repository
 public interface WhatsappInstanciaRepository extends JpaRepository<WhatsappInstancia, Long> {
 
-    Optional<WhatsappInstancia> findByIdAndClienteId(Long id, Long clienteId);
-
+    boolean existsByUsuarioIdAndClienteId(Long usuarioId, Long clienteId);
     boolean existsByInstanceNameAndClienteId(String instanceName, Long clienteId);
+
+    Optional<WhatsappInstancia> findByIdAndClienteId(Long id, Long clienteId);
 
     List<WhatsappInstancia> findByClienteIdAndAtivoTrue(Long clienteId);
 }

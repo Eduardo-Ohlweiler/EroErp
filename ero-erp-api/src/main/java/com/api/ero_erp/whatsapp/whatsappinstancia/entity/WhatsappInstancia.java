@@ -2,6 +2,7 @@ package com.api.ero_erp.whatsapp.whatsappinstancia.entity;
 
 import com.api.ero_erp.baseentity.BaseEntity;
 import com.api.ero_erp.cliente.entity.Cliente;
+import com.api.ero_erp.usuario.entity.Usuario;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,10 @@ public class WhatsappInstancia extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
     @Column(name = "nome", length = 100, nullable = false)
     private String nome;

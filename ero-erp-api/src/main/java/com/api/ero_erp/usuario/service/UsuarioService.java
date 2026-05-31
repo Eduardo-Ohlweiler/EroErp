@@ -2,6 +2,7 @@ package com.api.ero_erp.usuario.service;
 
 import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.cliente.service.ClienteService;
+import com.api.ero_erp.config.SecurityUtils;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.role.entity.Role;
@@ -32,19 +33,22 @@ public class UsuarioService {
     private final RoleRepository    roleRepository;
     private final UsuarioMapper     usuarioMapper;
     private final PasswordEncoder   passwordEncoder;
+    private final SecurityUtils     securityUtils;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
             ClienteService    clienteService,
             RoleRepository    roleRepository,
             UsuarioMapper     usuarioMapper,
-            PasswordEncoder   passwordEncoder
+            PasswordEncoder   passwordEncoder,
+            SecurityUtils     securityUtils
     ) {
         this.usuarioRepository = usuarioRepository;
         this.clienteService    = clienteService;
         this.roleRepository    = roleRepository;
         this.usuarioMapper     = usuarioMapper;
         this.passwordEncoder   = passwordEncoder;
+        this.securityUtils     = securityUtils;
     }
 
     @Transactional(readOnly = true)
@@ -64,6 +68,12 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public Usuario findById(Long id) {
         return usuarioRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado, verifique!"));
+    }
+
+    public Usuario findByIdAndClienteId(Long id) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        return usuarioRepository.findByIdAndClienteId(id, clienteId)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado, verifique!"));
     }
 

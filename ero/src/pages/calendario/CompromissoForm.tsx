@@ -86,7 +86,7 @@ export default function CompromissoForm() {
     const [compromisso,    setCompromisso]    = useState<CompromissoResponse | null>(null)
     const [currentId,      setCurrentId]      = useState<string | undefined>(idParam)
     const [emitenteId,     setEmitenteId]     = useState("")
-    const [pessoaId, setPessoaId] = useState("")
+    const [pessoaId, setPessoaId]             = useState("")
     const [temRecorrencia, setTemRecorrencia] = useState(false)
     const [cor,            setCor]            = useState<string | undefined>()
 

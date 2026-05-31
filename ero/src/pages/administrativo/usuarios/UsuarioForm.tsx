@@ -123,54 +123,12 @@ export default function UsuarioForm() {
             breadcrumb={["Administração", "Usuários", isEdit ? "Editar" : "Novo"]}
         >
             <TForm key={formKey} onSubmit={handleSubmit}>
-
-                <TRow>
-                    <TCol>
-                        <TEntry
-                            name="nome"
-                            label="Nome"
-                            required
-                            maxLength={255}
-                            defaultValue={usuario?.nome}
-                        />
-                    </TCol>
-                    <TCol>
-                        <TEntry
-                            name="email"
-                            label="E-mail"
-                            type="email"
-                            required
-                            maxLength={255}
-                            defaultValue={usuario?.email}
-                        />
-                    </TCol>
-                </TRow>
-
-                <TRow>
-                    <TCol>
-                        <TEntry
-                            name        ="telefone"
-                            label       ="Telefone"
-                            mask        ="celular"
-                            required
-                            defaultValue={usuario?.telefone}
-                        />
-                    </TCol>
-                    <TCol>
-                        <TEntry
-                            name    ="senha"
-                            label   ={isEdit ? "Nova Senha (deixe vazio para manter)" : "Senha"}
-                            type    ="password"
-                            required={!isEdit}
-                        />
-                    </TCol>
-                </TRow>
-
                 <TRow>
                     <TCol>
                         <TDbCombo
                             name        ="clienteId"
                             label       ="Cliente"
+                            width       ="60%"
                             url         ="/clientes/select"
                             valueField  ="id"
                             displayField="nome"
@@ -181,6 +139,56 @@ export default function UsuarioForm() {
                             onChange    ={setClienteId} 
                         />
                     </TCol>
+                </TRow>
+                <TRow>
+                    <TCol>
+                        <TEntry
+                            name     ="nome"
+                            label    ="Nome"
+                            required
+                            width    ="60%"
+                            maxLength={255}
+                            defaultValue={usuario?.nome}
+                        />
+                    </TCol>
+                </TRow>
+                <TRow>
+                    <TCol>
+                        <TEntry
+                            name     ="email"
+                            label    ="E-mail"
+                            type     ="email"
+                            width    ="60%"
+                            required
+                            maxLength={255}
+                            defaultValue={usuario?.email}
+                        />
+                    </TCol>
+                </TRow>
+                <TRow>
+                    <TCol>
+                        <TEntry
+                            name        ="telefone"
+                            label       ="Telefone"
+                            mask        ="celular"
+                            width       ="200px"
+                            required
+                            defaultValue={usuario?.telefone}
+                        />
+                    </TCol>
+                </TRow>
+                <TRow>
+                    <TCol>
+                        <TEntry
+                            name    ="senha"
+                            label   ={isEdit ? "Nova Senha (deixe vazio para manter)" : "Senha"}
+                            type    ="password"
+                            width   ="200px"
+                            required={!isEdit}
+                        />
+                    </TCol>
+                </TRow>
+                <TRow>
                     <TCol>
                         <TCombo
                             name        ="ativo"

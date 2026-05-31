@@ -61,12 +61,14 @@ export function TDbCombo({
         setSearch((prev) => (prev !== label ? label : prev))
       })
       .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
 
   useEffect(() => {
     if (minLength === 0) {
       buscar("", false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function buscar(valor: string, abrirDropdown = true) {

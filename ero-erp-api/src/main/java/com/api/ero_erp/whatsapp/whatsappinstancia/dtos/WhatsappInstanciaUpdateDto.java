@@ -6,6 +6,9 @@ public record WhatsappInstanciaUpdateDto(
         @Schema(description = "Nome amigável da instância", example = "Comercial")
         String nome,
 
+        @Schema(description = "ID do usuário vinculado à instância", example = "1")
+        Long usuarioId,
+
         @Schema(description = "Token de autenticação da instância na Evolution API", example = "abc123token")
         String token,
 

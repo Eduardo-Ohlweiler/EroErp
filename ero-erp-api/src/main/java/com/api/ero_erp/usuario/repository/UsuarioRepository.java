@@ -14,6 +14,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    Optional<Usuario> findByIdAndClienteId(Long id, Long clienteId);
+
     @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.roles WHERE LOWER(u.email) = LOWER(:email)")
     Optional<Usuario> findByEmailIgnoreCase(String email);
 

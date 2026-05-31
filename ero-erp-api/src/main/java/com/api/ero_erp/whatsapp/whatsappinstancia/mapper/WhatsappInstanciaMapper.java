@@ -4,15 +4,15 @@ import com.api.ero_erp.whatsapp.whatsappinstancia.dtos.WhatsappInstanciaResponse
 import com.api.ero_erp.whatsapp.whatsappinstancia.entity.WhatsappInstancia;
 
 public class WhatsappInstanciaMapper {
-
     private WhatsappInstanciaMapper() {}
 
     public static WhatsappInstanciaResponseDto toDto(WhatsappInstancia entity) {
         if (entity == null) return null;
-
         return new WhatsappInstanciaResponseDto(
                 entity.getId(),
-                entity.getCliente() != null ? entity.getCliente().getId() : null,
+                entity.getCliente() != null ? entity.getCliente().getId()   : null,
+                entity.getUsuario() != null ? entity.getUsuario().getId()   : null,
+                entity.getUsuario() != null ? entity.getUsuario().getNome() : null,
                 entity.getNome(),
                 entity.getInstanceName(),
                 entity.getToken(),

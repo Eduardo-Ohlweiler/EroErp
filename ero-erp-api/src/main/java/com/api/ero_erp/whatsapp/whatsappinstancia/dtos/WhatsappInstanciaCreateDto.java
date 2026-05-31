@@ -2,11 +2,16 @@ package com.api.ero_erp.whatsapp.whatsappinstancia.dtos;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record WhatsappInstanciaCreateDto(
         @Schema(description = "Nome amigável da instância", example = "Comercial")
         @NotBlank(message = "Nome é obrigatório")
         String nome,
+
+        @Schema(description = "ID do usuário vinculado à instância", example = "1")
+        @NotNull(message = "Usuário é obrigatório")
+        Long usuarioId,
 
         @Schema(description = "Nome da instância na Evolution API", example = "minha-empresa-comercial")
         @NotBlank(message = "Instance name é obrigatório")

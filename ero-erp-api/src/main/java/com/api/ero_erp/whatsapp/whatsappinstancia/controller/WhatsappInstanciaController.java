@@ -29,7 +29,7 @@ public class WhatsappInstanciaController {
 
     @Operation(
             summary = "Lista as instâncias ativas do cliente",
-            description = "Exemplo: /whatsapp/instancias"
+            description = "Retorna todas as instâncias ativas vinculadas ao cliente logado"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
@@ -41,16 +41,28 @@ public class WhatsappInstanciaController {
         return whatsappInstanciaService.getAll();
     }
 
-    @Operation(summary = "Busca instância por id")
+    @Operation(
+            summary = "Busca instância por ID",
+            description = "Retorna os dados de uma instância específica vinculada ao cliente logado"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Instância encontrada"),
+            @ApiResponse(responseCode = "404", description = "Instância não encontrada"),
+            @ApiResponse(responseCode = "401", description = "Não autorizado")
+    })
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<WhatsappInstanciaResponseDto> findById(@PathVariable Long id) {
         return ResponseEntity.ok(whatsappInstanciaService.findByIdResponse(id));
     }
 
-    @Operation(summary = "Cria uma nova instância do WhatsApp para o cliente")
+    @Operation(
+            summary = "Cria uma nova instância do WhatsApp",
+            description = "Cria uma instância vinculada a um usuário do cliente. Cada usuário pode ter apenas uma instância."
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Instância criada com sucesso"),
+            @ApiResponse(responseCode = "409", description = "Usuário já possui uma instância ou instanceName duplicado"),
             @ApiResponse(responseCode = "401", description = "Não autorizado")
     })
     @PostMapping
@@ -59,17 +71,34 @@ public class WhatsappInstanciaController {
         return new ResponseEntity<>(whatsappInstanciaService.create(dto), HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Atualiza a instância do WhatsApp")
+    @Operation(
+            summary = "Atualiza uma instância do WhatsApp",
+            description = "Atualiza os dados de uma instância. Se o usuário for alterado, valida se o novo usuário já possui instância."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Instância atualizada com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Instância não encontrada"),
+            @ApiResponse(responseCode = "409", description = "Novo usuário já possui uma instância configurada"),
+            @ApiResponse(responseCode = "401", description = "Não autorizado")
+    })
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<WhatsappInstanciaResponseDto> update(
-            @PathVariable       Long                      id,
+            @PathVariable Long id,
             @Valid @RequestBody WhatsappInstanciaUpdateDto dto
     ) {
         return ResponseEntity.ok(whatsappInstanciaService.update(id, dto));
     }
 
-    @Operation(summary = "Deleta a instância do WhatsApp")
+    @Operation(
+            summary = "Deleta uma instância do WhatsApp",
+            description = "Remove permanentemente a instância vinculada ao cliente logado"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Instância deletada com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Instância não encontrada"),
+            @ApiResponse(responseCode = "401", description = "Não autorizado")
+    })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
