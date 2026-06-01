@@ -24,6 +24,7 @@ export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
 
   function isActive(path?: string) {
     if (!path) return false
+    if (path === "/") return location.pathname === "/"
     return location.pathname.startsWith(path)
   }
 

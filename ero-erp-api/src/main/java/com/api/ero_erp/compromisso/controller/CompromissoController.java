@@ -2,6 +2,7 @@ package com.api.ero_erp.compromisso.controller;
 
 import com.api.ero_erp.compromisso.dtos.CompromissoCalendarioDto;
 import com.api.ero_erp.compromisso.dtos.CompromissoCreateDto;
+import com.api.ero_erp.compromisso.dtos.CompromissoDashboardDto;
 import com.api.ero_erp.compromisso.dtos.CompromissoResponseDto;
 import com.api.ero_erp.compromisso.dtos.CompromissoUpdateDto;
 import com.api.ero_erp.compromisso.service.CompromissoService;
@@ -33,6 +34,13 @@ public class CompromissoController {
 
     public CompromissoController(CompromissoService compromissoService) {
         this.compromissoService = compromissoService;
+    }
+
+    @Operation(summary = "Dashboard de compromissos")
+    @GetMapping("/dashboard")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<CompromissoDashboardDto> getDashboard() {
+        return ResponseEntity.ok(compromissoService.getDashboard());
     }
 
     @Operation(

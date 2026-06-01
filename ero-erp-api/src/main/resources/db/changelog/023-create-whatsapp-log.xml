@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="023-create-whatsapp-log" author="system">
+        <createTable tableName="whatsapp_log">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="compromisso_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="usuario_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pessoa_id" type="BIGINT"/>
+            <column name="status" type="VARCHAR(20)" defaultValue="PENDENTE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="phone_cliente" type="VARCHAR(30)"/>
+            <column name="enviado_em" type="TIMESTAMP"/>
+            <column name="erro" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="whatsapp_log"
+            baseColumnNames="cliente_id"
+            constraintName="fk_whatsapp_log_cliente"
+            referencedTableName="cliente"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="whatsapp_log"
+            baseColumnNames="compromisso_id"
+            constraintName="fk_whatsapp_log_compromisso"
+            referencedTableName="compromisso"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="whatsapp_log"
+            baseColumnNames="usuario_id"
+            constraintName="fk_whatsapp_log_usuario"
+            referencedTableName="usuario"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="whatsapp_log"
+            baseColumnNames="pessoa_id"
+            constraintName="fk_whatsapp_log_pessoa"
+            referencedTableName="pessoa"
+            referencedColumnNames="id"
+            onDelete="SET NULL"/>
+
+        <createIndex tableName="whatsapp_log" indexName="idx_whatsapp_log_status">
+            <column name="status"/>
+        </createIndex>
+        <createIndex tableName="whatsapp_log" indexName="idx_whatsapp_log_compromisso_id">
+            <column name="compromisso_id"/>
+        </createIndex>
+        <createIndex tableName="whatsapp_log" indexName="idx_whatsapp_log_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

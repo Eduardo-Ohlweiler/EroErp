@@ -1,8 +1,13 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaMobileAlt, /*, FaPhone, FaTools*/
-FaCalendarAlt} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaMobileAlt, FaCalendarAlt, FaCommentDots, FaTachometerAlt /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
+  {
+    label: "Dashboard",
+    icon:  FaTachometerAlt,
+    path:  "/",
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO"],
+  },
   {
     label: "Administração",
     icon: FaUserShield,
@@ -35,6 +40,13 @@ export const menu: MenuItem[] = [
         label: "Calendário",
         path:  "/agenda",
         icon:  FaCalendarAlt,
+      },
+      {
+        label: "Auxiliares",
+        icon:  FaCogs,
+        children: [
+          { label: "Config. de Mensagens", path: "/agenda/configuracao-mensagem", icon: FaCommentDots },
+        ],
       },
     ],
   },

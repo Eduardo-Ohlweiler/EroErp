@@ -163,4 +163,66 @@ public interface CompromissoRepository extends JpaRepository<Compromisso, Long> 
 
     // ─── Filhos de uma série ──────────────────────────────────────────────────
     List<Compromisso> findByCompromissoPaiIdOrderByInicio(Long compromissoPaiId);
+
+    // ─── Dashboard: contagens ─────────────────────────────────────────────────
+    long countByClienteIdAndCanceladoFalseAndConcluidoFalse(Long clienteId);
+    long countByClienteIdAndCanceladoTrue(Long clienteId);
+    long countByClienteIdAndConcluidoTrue(Long clienteId);
+
+    @Query("""
+        SELECT COUNT(c) FROM Compromisso c
+        WHERE c.cliente.id = :clienteId
+          AND c.cancelado  = false
+          AND c.inicio    >= :inicio
+          AND c.inicio     < :fim
+        """)
+    long countNoPeriodo(
+            @Param("clienteId") Long          clienteId,
+            @Param("inicio")    LocalDateTime inicio,
+            @Param("fim")       LocalDateTime fim
+    );
+
+    // ─── Dashboard: próximos hoje ─────────────────────────────────────────────
+    @Query("""
+        SELECT c FROM Compromisso c
+            LEFT JOIN FETCH c.pessoa p
+        WHERE c.cliente.id = :clienteId
+          AND c.cancelado  = false
+          AND c.concluido  = false
+          AND c.inicio    >= :agora
+          AND c.inicio     < :fimDia
+        ORDER BY c.inicio
+        """)
+    List<Compromisso> findProximosHoje(
+            @Param("clienteId") Long          clienteId,
+            @Param("agora")     LocalDateTime agora,
+            @Param("fimDia")    LocalDateTime fimDia
+    );
+
+    // ─── Dashboard: top pessoas ───────────────────────────────────────────────
+    @Query("""
+        SELECT c.pessoa.nome, COUNT(c)
+        FROM Compromisso c
+        WHERE c.cliente.id  = :clienteId
+          AND c.cancelado   = false
+          AND c.pessoa      IS NOT NULL
+        GROUP BY c.pessoa.nome
+        ORDER BY COUNT(c) DESC
+        """)
+    List<Object[]> findTopPessoas(@Param("clienteId") Long clienteId, Pageable pageable);
+
+    // ─── Dashboard: compromissos no período (leve, só id+inicio) ─────────────
+    @Query("""
+        SELECT c.inicio FROM Compromisso c
+        WHERE c.cliente.id = :clienteId
+          AND c.cancelado  = false
+          AND c.inicio    >= :inicio
+          AND c.inicio     < :fim
+        ORDER BY c.inicio
+        """)
+    List<LocalDateTime> findIniciosNoPeriodo(
+            @Param("clienteId") Long          clienteId,
+            @Param("inicio")    LocalDateTime inicio,
+            @Param("fim")       LocalDateTime fim
+    );
 }

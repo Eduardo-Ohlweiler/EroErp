@@ -2,6 +2,7 @@ package com.api.ero_erp.tipotelefone.service;
 
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.exceptions.UnauthorizedException;
 import com.api.ero_erp.tipotelefone.dtos.TipoTelefoneCreateDto;
 import com.api.ero_erp.tipotelefone.dtos.TipoTelefoneUpdateDto;
 import com.api.ero_erp.tipotelefone.entity.TipoTelefone;
@@ -53,6 +54,8 @@ public class TipoTelefoneService {
 
     @Transactional
     public TipoTelefone update(Long id, TipoTelefoneUpdateDto dto) {
+        if (id.equals(1L) || id.equals(2L) || id.equals(3L))
+            throw new UnauthorizedException("Sem permissão para editar esse tipo de telefone");
         TipoTelefone tipo = findById(id);
 
         if (dto.nome() != null && !dto.nome().isBlank()) {

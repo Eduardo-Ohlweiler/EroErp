@@ -18,35 +18,47 @@ import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.pessoa.service.PessoaService;
+import com.api.ero_erp.compromisso.dtos.CompromissoDashboardDto;
 import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.service.UsuarioService;
+import com.api.ero_erp.whatsapp.service.WhatsappNotificationService;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CompromissoService {
 
-    private final CompromissoRepository compromissoRepository;
-    private final ClienteService        clienteService;
-    private final EmitenteService       emitenteService;
-    private final UsuarioService        usuarioService;
-    private final PessoaService         pessoaService;
-    private final SecurityUtils         securityUtils;
+    private final CompromissoRepository       compromissoRepository;
+    private final ClienteService              clienteService;
+    private final EmitenteService             emitenteService;
+    private final UsuarioService              usuarioService;
+    private final PessoaService               pessoaService;
+    private final SecurityUtils               securityUtils;
+    private final WhatsappNotificationService notificationService;
 
     public CompromissoService(
-            CompromissoRepository compromissoRepository,
-            ClienteService        clienteService,
-            EmitenteService       emitenteService,
-            UsuarioService        usuarioService,
-            PessoaService         pessoaService,
-            SecurityUtils         securityUtils
+            CompromissoRepository       compromissoRepository,
+            ClienteService              clienteService,
+            EmitenteService             emitenteService,
+            UsuarioService              usuarioService,
+            PessoaService               pessoaService,
+            SecurityUtils               securityUtils,
+            WhatsappNotificationService notificationService
     ) {
         this.compromissoRepository = compromissoRepository;
         this.clienteService        = clienteService;
@@ -54,6 +66,7 @@ public class CompromissoService {
         this.usuarioService        = usuarioService;
         this.pessoaService         = pessoaService;
         this.securityUtils         = securityUtils;
+        this.notificationService   = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -126,6 +139,8 @@ public class CompromissoService {
         pai.setCompromissoPai(pai);
         compromissoRepository.save(pai);
 
+        notificationService.notificarCriacao(pai);
+
         List<CompromissoResponseDto> result = new ArrayList<>();
         result.add(CompromissoMapper.toDto(pai));
 
@@ -155,6 +170,7 @@ public class CompromissoService {
                         pai
                 );
                 compromissoRepository.save(filho);
+                notificationService.notificarCriacao(filho);
                 result.add(CompromissoMapper.toDto(filho));
             }
         }
@@ -204,7 +220,9 @@ public class CompromissoService {
         compromisso.setMotivoCancelamento(motivo);
         compromisso.setUpdatedBy(usuario);
 
-        return CompromissoMapper.toDto(compromissoRepository.save(compromisso));
+        Compromisso salvo = compromissoRepository.save(compromisso);
+        notificationService.notificarCancelamento(salvo);
+        return CompromissoMapper.toDto(salvo);
     }
 
     @Transactional
@@ -220,7 +238,9 @@ public class CompromissoService {
         compromisso.setConcluido(true);
         compromisso.setUpdatedBy(usuario);
 
-        return CompromissoMapper.toDto(compromissoRepository.save(compromisso));
+        Compromisso salvo = compromissoRepository.save(compromisso);
+        notificationService.notificarConclusao(salvo);
+        return CompromissoMapper.toDto(salvo);
     }
 
     @Transactional
@@ -246,6 +266,97 @@ public class CompromissoService {
         }
 
         compromissoRepository.delete(compromisso);
+    }
+
+    @Transactional(readOnly = true)
+    public CompromissoDashboardDto getDashboard() {
+        Long          clienteId  = securityUtils.getClienteIdLogado();
+        LocalDateTime agora      = LocalDateTime.now();
+        LocalDateTime inicioDia  = agora.toLocalDate().atStartOfDay();
+        LocalDateTime fimDia     = inicioDia.plusDays(1);
+        LocalDateTime inicioSemana = inicioDia.with(DayOfWeek.MONDAY);
+        LocalDateTime fimSemana    = inicioSemana.plusDays(7);
+
+        // ── KPIs ──────────────────────────────────────────────────────────────
+        long totalAgendados  = compromissoRepository.countByClienteIdAndCanceladoFalseAndConcluidoFalse(clienteId);
+        long totalCancelados = compromissoRepository.countByClienteIdAndCanceladoTrue(clienteId);
+        long totalConcluidos = compromissoRepository.countByClienteIdAndConcluidoTrue(clienteId);
+        long totalHoje       = compromissoRepository.countNoPeriodo(clienteId, inicioDia, fimDia);
+        long totalSemana     = compromissoRepository.countNoPeriodo(clienteId, inicioSemana, fimSemana);
+
+        // ── Próximos hoje ─────────────────────────────────────────────────────
+        DateTimeFormatter fmtHora = DateTimeFormatter.ofPattern("HH:mm");
+
+        List<CompromissoDashboardDto.ProximoDto> proximosHoje = compromissoRepository
+                .findProximosHoje(clienteId, agora, fimDia)
+                .stream()
+                .limit(8)
+                .map(c -> new CompromissoDashboardDto.ProximoDto(
+                        c.getId(),
+                        c.getTitulo(),
+                        c.getInicio().format(fmtHora),
+                        c.getFim()   .format(fmtHora),
+                        c.getPessoa() != null ? c.getPessoa().getNome() : null
+                ))
+                .toList();
+
+        // ── Top 5 pessoas ─────────────────────────────────────────────────────
+        List<CompromissoDashboardDto.PorPessoaDto> topPessoas = compromissoRepository
+                .findTopPessoas(clienteId, PageRequest.of(0, 5))
+                .stream()
+                .map(row -> new CompromissoDashboardDto.PorPessoaDto(
+                        (String) row[0],
+                        ((Number) row[1]).longValue()
+                ))
+                .toList();
+
+        // ── Últimos 7 dias ────────────────────────────────────────────────────
+        LocalDateTime seteDiasAtras = inicioDia.minusDays(6);
+        List<LocalDateTime> inicios7dias = compromissoRepository
+                .findIniciosNoPeriodo(clienteId, seteDiasAtras, fimDia);
+
+        Map<LocalDate, Long> contPorDia = inicios7dias.stream()
+                .collect(Collectors.groupingBy(LocalDateTime::toLocalDate, Collectors.counting()));
+
+        List<CompromissoDashboardDto.PorDiaDto> ultimosSeteDias = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate dia   = agora.toLocalDate().minusDays(i);
+            String diaSemana = dia.getDayOfWeek()
+                    .getDisplayName(TextStyle.SHORT, new Locale("pt", "BR"));
+            ultimosSeteDias.add(new CompromissoDashboardDto.PorDiaDto(
+                    capitalizar(diaSemana),
+                    dia.format(DateTimeFormatter.ofPattern("dd/MM")),
+                    contPorDia.getOrDefault(dia, 0L)
+            ));
+        }
+
+        // ── Distribuição por horário (últimos 30 dias) ────────────────────────
+        List<LocalDateTime> inicios30dias = compromissoRepository
+                .findIniciosNoPeriodo(clienteId, agora.minusDays(30), fimDia);
+
+        Map<Integer, Long> contPorHora = inicios30dias.stream()
+                .collect(Collectors.groupingBy(
+                        dt -> dt.getHour(),
+                        LinkedHashMap::new,
+                        Collectors.counting()
+                ));
+
+        List<CompromissoDashboardDto.PorHoraDto> distribuicaoHorario = contPorHora.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> new CompromissoDashboardDto.PorHoraDto(e.getKey(), e.getValue()))
+                .toList();
+
+        return new CompromissoDashboardDto(
+                totalAgendados, totalCancelados, totalConcluidos,
+                totalHoje, totalSemana,
+                proximosHoje, topPessoas, ultimosSeteDias, distribuicaoHorario
+        );
+    }
+
+    private static String capitalizar(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private Compromisso buildCompromisso(

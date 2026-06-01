@@ -26,4 +26,6 @@
     <include file="019-insert-emitente-column-on-compromisso.xml"   relativeToChangelogFile="true" />
     <include file="020-create-whatsapp-config-global.xml"           relativeToChangelogFile="true" />
     <include file="021-create-whatsapp-config-usuario.xml"          relativeToChangelogFile="true" />
+    <include file="022-create-configuracao-mensagem.xml"            relativeToChangelogFile="true" />
+    <include file="023-create-whatsapp-log.xml"                     relativeToChangelogFile="true" />
 </databaseChangeLog>

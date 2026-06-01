@@ -24,7 +24,8 @@ import CompromissoCalendario                      from "../pages/calendario/Comp
 import CompromissoForm                            from "../pages/calendario/CompromissoForm";
 import WhatsappConfigGlobalForm                   from "../pages/administrativo/whatsapp/WhatsappConfigGlobalForm";
 import WhatsappInstanciaList                      from "../pages/administrativo/whatsapp/instancias/WhatsappInstanciaList";
-import WhatsappInstanciaForm                      from "../pages/administrativo/whatsapp/instancias/WhatsappInstanciaForm";
+import WhatsappInstanciaForm                      from "../pages/administrativo/whatsapp/instancias/WhatsappInstanciaForm"
+import ConfiguracaoMensagemForm                   from "../pages/agenda/auxiliares/ConfiguracaoMensagemForm";
 
 export function Router() {
   return (
@@ -88,9 +89,10 @@ export function Router() {
 
             {/* ── COMPRIMISSO ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "COMPROMISSO"]} />}>
-              <Route path="/agenda"              element={<CompromissoCalendario />} />
-              <Route path="/compromissos/novo"   element={<CompromissoForm />} />
-              <Route path="/compromissos/:id"    element={<CompromissoForm />} />
+              <Route path="/agenda"                          element={<CompromissoCalendario />} />
+              <Route path="/compromissos/novo"               element={<CompromissoForm />} />
+              <Route path="/compromissos/:id"                element={<CompromissoForm />} />
+              <Route path="/agenda/configuracao-mensagem"    element={<ConfiguracaoMensagemForm />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />
