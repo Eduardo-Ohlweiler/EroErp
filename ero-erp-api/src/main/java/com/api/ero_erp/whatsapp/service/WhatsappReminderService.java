@@ -116,7 +116,8 @@ public class WhatsappReminderService {
                 .findByUsuarioId(entrada.getUsuario().getId())
                 .orElse(null);
 
-        String pessoaNome = entrada.getPessoa() != null ? entrada.getPessoa().getNome() : null;
+        String pessoaNome    = entrada.getPessoa() != null ? entrada.getPessoa().getNome() : null;
+        String localEmitente = messageBuilder.resolverEnderecoEmitente(compromisso); // ← novo
 
         var ctx = new WhatsappMessageBuilder.Contexto(
                 entrada.getUsuario().getNome(),
@@ -124,7 +125,8 @@ public class WhatsappReminderService {
                 compromisso.getInicio(),
                 compromisso.getFim(),
                 pessoaNome,
-                null
+                null,
+                localEmitente  // ← novo
         );
 
         String telefoneUsuario = entrada.getUsuario().getTelefone();

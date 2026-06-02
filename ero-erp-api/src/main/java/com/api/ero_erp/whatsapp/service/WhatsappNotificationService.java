@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class WhatsappNotificationService {
 
@@ -42,6 +44,33 @@ public class WhatsappNotificationService {
         this.configuracaoMensagemService = configuracaoMensagemService;
         this.whatsappLogService         = whatsappLogService;
         this.telefoneRepository         = telefoneRepository;
+    }
+
+    public void notificarCriacaoRecorrente(List<Compromisso> compromissos) {
+        if (compromissos == null || compromissos.isEmpty()) return;
+
+        Compromisso primeiro = compromissos.get(0);
+        String phoneCliente  = resolverPhoneCliente(primeiro);
+
+        try {
+            whatsappLogService.criarPendente(primeiro, phoneCliente);
+        } catch (Exception e) {
+            log.warn("Falha ao criar log para compromisso {}: {}", primeiro.getId(), e.getMessage());
+        }
+
+        try {
+            ConfiguracaoMensagem config = configuracaoMensagemService
+                    .findByUsuarioId(primeiro.getUsuario().getId()).orElse(null);
+
+            String mensagemUsuario  = messageBuilder.mensagemUsuarioCriacaoRecorrente(compromissos);
+            String mensagemCliente  = phoneCliente != null
+                    ? messageBuilder.mensagemClienteCriacaoRecorrente(compromissos, config)
+                    : null;
+
+            enviarParaUsuarioECliente(primeiro, mensagemUsuario, mensagemCliente, phoneCliente);
+        } catch (Exception e) {
+            log.warn("Falha na notificação recorrente do compromisso {}: {}", primeiro.getId(), e.getMessage());
+        }
     }
 
     public void notificarCriacao(Compromisso compromisso) {
@@ -162,14 +191,16 @@ public class WhatsappNotificationService {
     }
 
     private WhatsappMessageBuilder.Contexto buildContexto(Compromisso compromisso, String motivo) {
-        String pessoaNome = compromisso.getPessoa() != null ? compromisso.getPessoa().getNome() : null;
+        String pessoaNome    = compromisso.getPessoa()   != null ? compromisso.getPessoa().getNome() : null;
+        String localEmitente = messageBuilder.resolverEnderecoEmitente(compromisso);
         return new WhatsappMessageBuilder.Contexto(
                 compromisso.getUsuario().getNome(),
                 compromisso.getTitulo(),
                 compromisso.getInicio(),
                 compromisso.getFim(),
                 pessoaNome,
-                motivo
+                motivo,
+                localEmitente
         );
     }
 

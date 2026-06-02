@@ -3,12 +3,6 @@ import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, F
 
 export const menu: MenuItem[] = [
   {
-    label: "Dashboard",
-    icon:  FaTachometerAlt,
-    path:  "/",
-    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO"],
-  },
-  {
     label: "Administração",
     icon: FaUserShield,
     roles: ["SUPERADMIN"],
@@ -17,7 +11,7 @@ export const menu: MenuItem[] = [
       { label: "Usuários",        path: "/usuarios",               icon: FaUsers },
       { label: "Config. WhatsApp", path: "/whatsapp/config-global", icon: FaCog   },
       {
-        label: "Auxiliares",
+        label: "Auxiliar administrativo",
         icon: FaCogs,
         children: [
           { label: "Cidades",                 path: "/cidades",           icon: FaCog },
@@ -42,7 +36,7 @@ export const menu: MenuItem[] = [
         icon:  FaCalendarAlt,
       },
       {
-        label: "Auxiliares",
+        label: "Auxiliar agenda",
         icon:  FaCogs,
         children: [
           { label: "Config. de Mensagens", path: "/agenda/configuracao-mensagem", icon: FaCommentDots },
@@ -74,5 +68,11 @@ export const menu: MenuItem[] = [
         icon: FaFileInvoice
       }
     ]
+  },
+  {
+    label: "Dashboard",
+    icon:  FaTachometerAlt,
+    path:  "/",
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO"],
   }
 ]

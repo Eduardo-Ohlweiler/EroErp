@@ -1,10 +1,13 @@
 package com.api.ero_erp.whatsapp.service;
 
+import com.api.ero_erp.compromisso.entity.Compromisso;
 import com.api.ero_erp.configuracaomensagem.entity.ConfiguracaoMensagem;
+import com.api.ero_erp.endereco.entity.Endereco;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Component
 public class WhatsappMessageBuilder {
@@ -18,15 +21,56 @@ public class WhatsappMessageBuilder {
             LocalDateTime inicio,
             LocalDateTime fim,
             String        pessoaNome,
-            String        motivo
+            String        motivo,
+            String        localEmitente
     ) {}
-
-    // ---- Agendamento (compromisso criado) ----
 
     public String mensagemUsuarioCriacao(Contexto ctx) {
         var sb = new StringBuilder();
         sb.append("Olá ").append(ctx.usuarioNome()).append(", um novo compromisso foi agendado!\n\n");
         appendDetalhes(sb, ctx);
+        return sb.toString().trim();
+    }
+
+    public String mensagemUsuarioCriacaoRecorrente(List<Compromisso> compromissos) {
+        Compromisso primeiro = compromissos.get(0);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("📅 *").append(primeiro.getTitulo()).append("* — ").append(compromissos.size()).append(" ocorrências agendadas:\n\n");
+
+        for (int i = 0; i < compromissos.size(); i++) {
+            Compromisso c = compromissos.get(i);
+            sb.append(i + 1).append(". ")
+                    .append(c.getInicio().format(fmt))
+                    .append(" até ")
+                    .append(c.getFim().format(DateTimeFormatter.ofPattern("HH:mm")))
+                    .append("\n");
+        }
+        return sb.toString();
+    }
+
+    public String mensagemClienteCriacaoRecorrente(List<Compromisso> compromissos, ConfiguracaoMensagem config) {
+        Compromisso primeiro = compromissos.get(0);
+        var sb               = new StringBuilder();
+
+        appendCabecalho(sb, config != null ? config.getCabecalhoAgendamento() : null);
+        sb.append("📅 ").append(primeiro.getTitulo()).append("\n");
+        sb.append(compromissos.size()).append(" ocorrências agendadas:\n\n");
+
+        for (int i = 0; i < compromissos.size(); i++) {
+            Compromisso c = compromissos.get(i);
+            sb.append(i + 1).append(". ")
+                    .append(c.getInicio().format(DATA_HORA))
+                    .append(" - ")
+                    .append(c.getFim().format(HORA))
+                    .append("\n");
+        }
+        if (primeiro.getPessoa() != null && primeiro.getPessoa().getNome() != null)
+            sb.append("\n👤 ").append(primeiro.getPessoa().getNome());
+
+        appendRodape(sb, config != null ? config.getRodapeAgendamento() : null);
+
         return sb.toString().trim();
     }
 
@@ -37,8 +81,6 @@ public class WhatsappMessageBuilder {
         appendRodape(sb, config != null ? config.getRodapeAgendamento() : null);
         return sb.toString().trim();
     }
-
-    // ---- Lembrete (próximo do horário) ----
 
     public String mensagemUsuarioLembrete(Contexto ctx) {
         var sb = new StringBuilder();
@@ -54,8 +96,6 @@ public class WhatsappMessageBuilder {
         appendRodape(sb, config != null ? config.getRodapeLembrete() : null);
         return sb.toString().trim();
     }
-
-    // ---- Cancelamento ----
 
     public String mensagemUsuarioCancelamento(Contexto ctx) {
         var sb = new StringBuilder();
@@ -78,8 +118,6 @@ public class WhatsappMessageBuilder {
         return sb.toString().trim();
     }
 
-    // ---- Conclusão ----
-
     public String mensagemUsuarioConclusao(Contexto ctx) {
         var sb = new StringBuilder();
         sb.append("Olá ").append(ctx.usuarioNome()).append(", compromisso concluído!\n\n");
@@ -96,22 +134,24 @@ public class WhatsappMessageBuilder {
         return sb.toString().trim();
     }
 
-    // ---- Helpers internos ----
-
     private void appendDetalhes(StringBuilder sb, Contexto ctx) {
-        sb.append("📌 ").append(ctx.titulo()).append("\n");
-        sb.append("📅 ").append(ctx.inicio().format(DATA_HORA));
+        sb.append("📋 ").append(ctx.titulo()).append("\n");
+        sb.append("🕐 ").append(ctx.inicio().format(DATA_HORA));
         if (ctx.fim() != null)
             sb.append(" - ").append(ctx.fim().format(HORA));
+        if (ctx.localEmitente() != null && !ctx.localEmitente().isBlank())
+            sb.append("\n📍 ").append(ctx.localEmitente());
         if (ctx.pessoaNome() != null && !ctx.pessoaNome().isBlank())
             sb.append("\n👤 ").append(ctx.pessoaNome());
     }
 
     private void appendDetalhesCliente(StringBuilder sb, Contexto ctx) {
-        sb.append("📌 ").append(ctx.titulo()).append("\n");
-        sb.append("📅 ").append(ctx.inicio().format(DATA_HORA));
+        sb.append("📋 ").append(ctx.titulo()).append("\n");
+        sb.append("🕐 ").append(ctx.inicio().format(DATA_HORA));
         if (ctx.fim() != null)
             sb.append(" - ").append(ctx.fim().format(HORA));
+        if (ctx.localEmitente() != null && !ctx.localEmitente().isBlank())
+            sb.append("\n📍 ").append(ctx.localEmitente());
         sb.append("\n");
     }
 
@@ -123,5 +163,35 @@ public class WhatsappMessageBuilder {
     private void appendRodape(StringBuilder sb, String rodape) {
         if (rodape != null && !rodape.isBlank())
             sb.append("\n\n").append(rodape);
+    }
+
+    public String resolverEnderecoEmitente(Compromisso compromisso) {
+        if (compromisso.getEmitente() == null)
+            return null;
+
+        List<Endereco> enderecos = compromisso.getEmitente().getPessoa().getEnderecos();
+        if (enderecos == null || enderecos.isEmpty())
+            return null;
+
+        Endereco endereco = enderecos.stream()
+                .filter(e -> Boolean.TRUE.equals(e.getPrincipal()))
+                .findFirst()
+                .orElse(enderecos.get(0));
+
+        StringBuilder sb = new StringBuilder();
+        if (endereco.getRua()    != null)
+            sb.append(endereco.getRua());
+        if (endereco.getNumero() != null)
+            sb.append(", ").append(endereco.getNumero());
+        if (endereco.getBairro() != null)
+            sb.append(" - ").append(endereco.getBairro());
+        if (endereco.getComplemento() != null && !endereco.getComplemento().isBlank())
+            sb.append(" (").append(endereco.getComplemento()).append(")");
+        if (endereco.getCidade() != null) {
+            sb.append(", ").append(endereco.getCidade().getNome());
+            if (endereco.getCidade().getEstado() != null)
+                sb.append("/").append(endereco.getCidade().getEstado().getSigla());
+        }
+        return sb.toString().isBlank() ? null : sb.toString();
     }
 }

@@ -1,69 +1,48 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../services/api";
 
 interface TDbCheckboxProps {
-  name:           string;
-  label:          string;
-  url:            string;
-  valueField:     string;
-  labelField:     string;
-  defaultValues?: string[];
-  disabled?:      boolean;
-  direction?:     "row" | "column";
-  height?:        string;
-  hint?:          string;
-  required?:      boolean;
-  onChange?:      (values: string[]) => void;
+  name:      string;
+  label:     string;
+  url:       string;
+  valueField: string;
+  labelField: string;
+  values:    string[];                    // ← controlado, sem default
+  disabled?: boolean;
+  direction?: "row" | "column";
+  height?:   string;
+  hint?:     string;
+  required?: boolean;
+  onChange:  (values: string[]) => void; // ← obrigatório
 }
 
 export function TDbCheckbox({
-  name,
-  label,
-  url,
-  valueField,
-  labelField,
-  defaultValues = [],
-  disabled,
-  direction = "column",
-  height    = "200px",
-  hint,
-  required,
-  onChange,
+  name, label, url, valueField, labelField,
+  values, disabled, direction = "column",
+  height = "200px", hint, required, onChange,
 }: TDbCheckboxProps) {
 
-  const [options,  setOptions]  = useState<Record<string, unknown>[]>([])
-  const [selected, setSelected] = useState<string[]>([])
-
-  useEffect(() => {
-    setSelected(defaultValues)
-  }, [defaultValues])
+  const [options, setOptions] = useState<Record<string, unknown>[]>([])
 
   useEffect(() => {
     api.get(url)
-      .then((response) => {
-        const data = response.data
+      .then((r) => {
+        const data = r.data
         setOptions(Array.isArray(data) ? data : data.content ?? [])
       })
       .catch(() => setOptions([]))
   }, [url])
 
   function handleChange(value: string, checked: boolean) {
-    const next = checked
-      ? [...selected, value]
-      : selected.filter((v) => v !== value)
-
-    setSelected(next)
-    onChange?.(next)
+    onChange(checked ? [...values, value] : values.filter((v) => v !== value))
   }
 
   return (
     <div className="flex flex-col gap-1" style={direction === "column" ? { display: "inline-flex" } : undefined}>
-
       <label className="text-sm text-(--text-secondary)">
         {label}
         {required && <span className="text-(--danger) ml-1">*</span>}
       </label>
-
       <div
         className={direction === "column"
           ? "ml-3 overflow-y-auto pr-2 border border-(--border) rounded-md p-2"
@@ -75,17 +54,17 @@ export function TDbCheckbox({
           const value = String(opt[valueField])
           return (
             <label
-              key       ={value}
-              className ={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary) mb-2
+              key={value}
+              className={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary) mb-2
                 ${disabled ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
             >
               <input
-                type     ="checkbox"
-                name     ={`${name}_visual`}
-                value    ={value}
-                checked  ={selected.includes(value)}
-                disabled ={disabled}
-                onChange ={(e) => handleChange(value, e.target.checked)}
+                type="checkbox"
+                name={`${name}_visual`}
+                value={value}
+                checked={values.includes(value)}
+                disabled={disabled}
+                onChange={(e) => handleChange(value, e.target.checked)}
                 className="w-4 h-4 cursor-pointer accent-(--accent)"
               />
               {String(opt[labelField])}
@@ -93,15 +72,8 @@ export function TDbCheckbox({
           )
         })}
       </div>
-
-      <input
-        type ="hidden"
-        name ={name}
-        value={selected.join(",")}
-      />
-
+      <input type="hidden" name={name} value={values.join(",")} />
       {hint && <p className="text-xs text-(--text-muted)">{hint}</p>}
-
     </div>
   )
 }

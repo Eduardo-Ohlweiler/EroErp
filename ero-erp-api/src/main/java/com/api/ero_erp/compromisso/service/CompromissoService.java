@@ -122,7 +122,7 @@ public class CompromissoService {
         if (temRecorrencia)
             validarRecorrencia(dto.tipoRecorrencia(), dto.quantidadeRecorrencia());
 
-        Pessoa pessoa     = resolverPessoa(dto.pessoaId());
+        Pessoa   pessoa   = resolverPessoa(dto.pessoaId());
         Emitente emitente = resolverEmitente(dto.emitenteId());
 
         Compromisso pai = buildCompromisso(
@@ -135,13 +135,12 @@ public class CompromissoService {
                 null
         );
         compromissoRepository.save(pai);
-
         pai.setCompromissoPai(pai);
         compromissoRepository.save(pai);
 
-        notificationService.notificarCriacao(pai);
-
+        List<Compromisso>        todos  = new ArrayList<>();
         List<CompromissoResponseDto> result = new ArrayList<>();
+        todos.add(pai);
         result.add(CompromissoMapper.toDto(pai));
 
         if (temRecorrencia
@@ -170,10 +169,15 @@ public class CompromissoService {
                         pai
                 );
                 compromissoRepository.save(filho);
-                notificationService.notificarCriacao(filho);
+                todos.add(filho);
                 result.add(CompromissoMapper.toDto(filho));
             }
         }
+
+        if (todos.size() > 1)
+            notificationService.notificarCriacaoRecorrente(todos);
+        else
+            notificationService.notificarCriacao(pai);
 
         return result;
     }

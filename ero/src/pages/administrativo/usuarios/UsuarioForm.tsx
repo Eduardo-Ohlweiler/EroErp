@@ -29,6 +29,7 @@ export default function UsuarioForm() {
     const [formKey,  setFormKey]  = useState(0)
     const [loading,  setLoading]  = useState(false)
     const [saving,   setSaving]   = useState(false)
+    const [roleIds,  setRoleIds]  = useState<string[]>([])
     const [usuario,  setUsuario]  = useState<Usuario | null>(null)
 
     useEffect(() => {
@@ -41,6 +42,7 @@ export default function UsuarioForm() {
         api.get(`/usuarios/${currentId}`)
             .then((response) => {
                 setUsuario(response.data)
+                setRoleIds(response.data.roles ?? [])
                 setClienteId(String(response.data.clienteId))
             })
             .catch(() => {
@@ -55,6 +57,7 @@ export default function UsuarioForm() {
         setCurrentId(undefined)
         setUsuario(null)
         setClienteId("")
+        setRoleIds([])
         setFormKey((prev) => prev + 1)
     }
 
@@ -63,6 +66,7 @@ export default function UsuarioForm() {
             const response = await api.get(`/usuarios/${id}`)
             setUsuario(response.data)
             setClienteId(String(response.data.clienteId))
+            setRoleIds(response.data.roles ?? [])
             setFormKey((prev) => prev + 1)
         } catch {
             showMessage("error", "Erro ao recarregar usuário")
@@ -206,13 +210,14 @@ export default function UsuarioForm() {
                 <TRow>
                     <TCol>
                         <TDbCheckbox
-                            name            ="roleIds"
-                            label           ="Perfis de acesso"
-                            url             ="/roles"
-                            valueField      ="nome"
-                            labelField      ="nome"
-                            direction       ="column"
-                            defaultValues   ={usuario?.roles ?? []}
+                            name="roleIds"
+                            label="Perfis de acesso"
+                            url="/roles"
+                            valueField="nome"
+                            labelField="nome"
+                            direction="column"
+                            values={roleIds}
+                            onChange={setRoleIds}
                         />
                     </TCol>
                 </TRow>

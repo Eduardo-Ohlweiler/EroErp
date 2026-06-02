@@ -56,6 +56,7 @@ export default function PessoaForm() {
     const [tiposTelefone,      setTiposTelefone]      = useState<{ id: number; nome: string }[]>([])
     const [tiposRedeSocial,    setTiposRedeSocial]    = useState<{ id: number; nome: string }[]>([])
     const [tiposEndereco,      setTiposEndereco]      = useState<{ id: number; nome: string }[]>([])
+    const [tiposCadastroIds,   setTiposCadastroIds]   = useState<string[]>([])
     const [currentId,          setCurrentId]          = useState<string | undefined>(idParam)
     const isEdit                                      = !!currentId
 
@@ -100,7 +101,7 @@ export default function PessoaForm() {
 
                 setPessoa(p)
                 setTipoPessoa(p.tipoPessoa)
-
+                setTiposCadastroIds(p.tiposCadastro?.map((tc: { id: number }) => String(tc.id)) ?? [])
                 setCpf(p.cpf ?? "")
                 setRg(p.rg ?? "")
                 setCnh(p.cnh ?? "")
@@ -141,6 +142,7 @@ export default function PessoaForm() {
         setInscricaoMunicipal("")
         setNomeFantasia("")
         setRazaoSocial("")
+        setTiposCadastroIds([])
 
         setFormKey((prev) => prev + 1)
     }
@@ -173,6 +175,7 @@ export default function PessoaForm() {
             const response = await api.get(`/pessoas/${id}`)
             setPessoa(response.data)
             setTipoPessoa(response.data.tipoPessoa)
+            setTiposCadastroIds(response.data.tiposCadastro?.map((tc: { id: number }) => String(tc.id)) ?? [])
             setFormKey((prev) => prev + 1)
         } catch {
             showMessage("error", "Erro ao recarregar pessoa")
@@ -396,16 +399,14 @@ export default function PessoaForm() {
                 <TRow>
                     <TCol>
                         <TDbCheckbox
-                            required
                             name="tiposCadastroIds"
                             label="Tipos de Cadastro"
                             url="/tipos/cadastro/select"
                             valueField="id"
                             labelField="nome"
                             direction="column"
-                            defaultValues={
-                                pessoa?.tiposCadastro?.map((tc) => String(tc.id)) ?? []
-                            }
+                            values={tiposCadastroIds}
+                            onChange={setTiposCadastroIds}
                         />
                     </TCol>
                 </TRow>
