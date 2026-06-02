@@ -1,26 +1,24 @@
 import { useState, useEffect }                        from "react"
-import { api }                                        from "../../../services/api"
+import { api }                                        from "../../../../services/api"
 import axios                                          from "axios"
-import type { SubgrupoResponse }                      from "../../../types/Produto"
-import type { TDataGridColumn }                       from "../../../types/TDataGridColumn"
-import type { ErrorResponse }                         from "../../../types/ErrorResponse"
-import { TPage }                                      from "../../../components/tpage"
-import { TForm, TFormActionsLeft, TFormFooter }       from "../../../components/tform"
-import { TRow }                                       from "../../../components/trow"
-import { TCol }                                       from "../../../components/tcol"
-import { TEntry }                                     from "../../../components/tentry"
-import { TCombo }                                     from "../../../components/tcombo"
-import { TDbCombo }                                   from "../../../components/tdbcombo"
-import { TButton }                                    from "../../../components/tbutton"
-import { TDataGrid }                                  from "../../../components/tdatagrid"
-import { TDataGridFooter }                            from "../../../components/tdatagridfooter"
-import { useMessage }                                 from "../../../hooks/useMessage"
-import { useQuestion }                                from "../../../hooks/useQuestion"
+import type { MarcaResponse }                         from "../../../../types/Produto"
+import type { TDataGridColumn }                       from "../../../../types/TDataGridColumn"
+import type { ErrorResponse }                         from "../../../../types/ErrorResponse"
+import { TPage }                                      from "../../../../components/tpage"
+import { TForm, TFormActionsLeft, TFormFooter }       from "../../../../components/tform"
+import { TRow }                                       from "../../../../components/trow"
+import { TCol }                                       from "../../../../components/tcol"
+import { TEntry }                                     from "../../../../components/tentry"
+import { TCombo }                                     from "../../../../components/tcombo"
+import { TButton }                                    from "../../../../components/tbutton"
+import { TDataGrid }                                  from "../../../../components/tdatagrid"
+import { TDataGridFooter }                            from "../../../../components/tdatagridfooter"
+import { useMessage }                                 from "../../../../hooks/useMessage"
+import { useQuestion }                                from "../../../../hooks/useQuestion"
 
-const columns: TDataGridColumn<SubgrupoResponse>[] = [
-  { label: "ID",       field: "id",       width: "60px", align: "center" },
-  { label: "Grupo",    field: "grupoNome", width: "200px" },
-  { label: "Nome",     field: "nome" },
+const columns: TDataGridColumn<MarcaResponse>[] = [
+  { label: "ID",   field: "id",   width: "60px", align: "center" },
+  { label: "Nome", field: "nome" },
   {
     label: "Status", width: "100px", align: "center",
     render: (row) => (
@@ -32,18 +30,17 @@ const columns: TDataGridColumn<SubgrupoResponse>[] = [
   }
 ]
 
-export default function SubgrupoFormList() {
+export default function MarcaFormList() {
   const { showMessage } = useMessage()
   const { ask }         = useQuestion()
 
   const [formKey,   setFormKey]   = useState(0)
   const [saving,    setSaving]    = useState(false)
   const [currentId, setCurrentId] = useState<number | null>(null)
-  const [grupoId,   setGrupoId]   = useState("")
   const [nome,      setNome]      = useState("")
   const [ativo,     setAtivo]     = useState("true")
 
-  const [data,          setData]          = useState<SubgrupoResponse[]>([])
+  const [data,          setData]          = useState<MarcaResponse[]>([])
   const [loading,       setLoading]       = useState(false)
   const [page,          setPage]          = useState(0)
   const [totalPages,    setTotalPages]    = useState(0)
@@ -56,12 +53,12 @@ export default function SubgrupoFormList() {
     setLoading(true)
     try {
       const params = new URLSearchParams({ page: String(pagina), size: String(pageSize), sort: "nome" })
-      const res = await api.get(`/subgrupos?${params.toString()}`)
+      const res = await api.get(`/marcas?${params.toString()}`)
       setData(res.data.content ?? [])
       setTotalPages(res.data.totalPages ?? 1)
       setTotalElements(res.data.totalElements ?? 0)
     } catch {
-      showMessage("error", "Erro ao carregar subgrupos")
+      showMessage("error", "Erro ao carregar marcas")
     } finally {
       setLoading(false)
     }
@@ -69,15 +66,13 @@ export default function SubgrupoFormList() {
 
   function handleClear() {
     setCurrentId(null)
-    setGrupoId("")
     setNome("")
     setAtivo("true")
     setFormKey((p) => p + 1)
   }
 
-  function handleEdit(row: SubgrupoResponse) {
+  function handleEdit(row: MarcaResponse) {
     setCurrentId(row.id)
-    setGrupoId(String(row.grupoId))
     setNome(row.nome)
     setAtivo(row.ativo ? "true" : "false")
     setFormKey((p) => p + 1)
@@ -85,25 +80,15 @@ export default function SubgrupoFormList() {
   }
 
   async function handleSubmit(formData: Record<string, string>) {
-    if (!formData.grupoId) {
-      showMessage("error", "Selecione o grupo")
-      return
-    }
     setSaving(true)
     try {
+      const payload = { nome: formData.nome, ativo: formData.ativo === "true" }
       if (currentId) {
-        await api.put(`/subgrupos/${currentId}`, {
-          grupoId: Number(formData.grupoId),
-          nome:    formData.nome,
-          ativo:   formData.ativo === "true"
-        })
-        showMessage("success", "Subgrupo atualizado com sucesso!")
+        await api.put(`/marcas/${currentId}`, payload)
+        showMessage("success", "Marca atualizada com sucesso!")
       } else {
-        await api.post("/subgrupos", {
-          grupoId: Number(formData.grupoId),
-          nome:    formData.nome
-        })
-        showMessage("success", "Subgrupo cadastrado com sucesso!")
+        await api.post("/marcas", { nome: formData.nome })
+        showMessage("success", "Marca cadastrada com sucesso!")
       }
       handleClear()
       loadGrid(0)
@@ -111,7 +96,7 @@ export default function SubgrupoFormList() {
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const e = err.response?.data as ErrorResponse
-        showMessage("error", e?.erro ?? "Erro ao salvar subgrupo")
+        showMessage("error", e?.erro ?? "Erro ao salvar marca")
       } else {
         showMessage("error", "Erro inesperado")
       }
@@ -120,36 +105,19 @@ export default function SubgrupoFormList() {
     }
   }
 
-  async function handleToggleAtivo(row: SubgrupoResponse) {
+  async function handleToggleAtivo(row: MarcaResponse) {
     try {
-      await api.put(`/subgrupos/${row.id}`, { grupoId: row.grupoId, nome: row.nome, ativo: !row.ativo })
-      showMessage("success", row.ativo ? "Subgrupo inativado!" : "Subgrupo ativado!")
+      await api.put(`/marcas/${row.id}`, { nome: row.nome, ativo: !row.ativo })
+      showMessage("success", row.ativo ? "Marca inativada!" : "Marca ativada!")
       loadGrid()
     } catch {
-      showMessage("error", "Erro ao atualizar subgrupo")
+      showMessage("error", "Erro ao atualizar marca")
     }
   }
 
   return (
-    <TPage title="Subgrupos de Produto" breadcrumb={["Cadastros", "Auxiliar Produto", "Subgrupos"]}>
+    <TPage title="Marcas de Produto" breadcrumb={["Cadastros", "Auxiliar Produto", "Marcas"]}>
       <TForm key={formKey} onSubmit={handleSubmit}>
-        <TRow>
-          <TCol>
-            <TDbCombo
-              name         ="grupoId"
-              label        ="Grupo"
-              url          ="/grupos"
-              valueField   ="id"
-              displayField ="nome"
-              searchField  ="nome"
-              placeholder  ="Selecione o grupo..."
-              required
-              width        ="60%"
-              value        ={grupoId}
-              onChange     ={(val) => setGrupoId(val)}
-            />
-          </TCol>
-        </TRow>
         <TRow>
           <TCol>
             <TEntry
@@ -194,7 +162,7 @@ export default function SubgrupoFormList() {
         data         ={data}
         keyField     ="id"
         loading      ={loading}
-        emptyMessage ="Nenhum subgrupo encontrado"
+        emptyMessage ="Nenhuma marca encontrada"
         actionsWidth ="160px"
         actions      ={(row) => (
           <>
@@ -206,7 +174,7 @@ export default function SubgrupoFormList() {
               onClick ={(e) => {
                 e?.stopPropagation()
                 ask(
-                  `Deseja ${row.ativo ? "inativar" : "ativar"} o subgrupo "${row.nome}"?`,
+                  `Deseja ${row.ativo ? "inativar" : "ativar"} a marca "${row.nome}"?`,
                   [
                     { label: "Cancelar", variant: "cancel",  onClick: () => {} },
                     {

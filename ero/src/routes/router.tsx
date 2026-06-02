@@ -31,12 +31,12 @@ import UnidadeMedidaList                          from "../pages/administrativo/
 import NcmList                                    from "../pages/administrativo/auxiliares/NcmList";
 import OrigemProdutoList                          from "../pages/administrativo/auxiliares/OrigemProdutoList";
 import CestList                                   from "../pages/administrativo/auxiliares/CestList";
-import GrupoFormList                              from "../pages/produtos/auxiliar/GrupoFormList";
-import SubgrupoFormList                           from "../pages/produtos/auxiliar/SubgrupoFormList";
-import CategoriaFormList                          from "../pages/produtos/auxiliar/CategoriaFormList";
-import MarcaFormList                              from "../pages/produtos/auxiliar/MarcaFormList";
-import ProdutoList                                from "../pages/produtos/ProdutoList";
-import ProdutoForm                                from "../pages/produtos/ProdutoForm";
+import GrupoFormList                              from "../pages/cadastros/produtos/auxiliar/GrupoFormList";
+import SubgrupoFormList                           from "../pages/cadastros/produtos/auxiliar/SubgrupoFormList";
+import CategoriaFormList                          from "../pages/cadastros/produtos/auxiliar/CategoriaFormList";
+import MarcaFormList                              from "../pages/cadastros/produtos/auxiliar/MarcaFormList";
+import ProdutoList                                from "../pages/cadastros/produtos/ProdutoList";
+import ProdutoForm                                from "../pages/cadastros/produtos/ProdutoForm";
 
 export function Router() {
   return (
