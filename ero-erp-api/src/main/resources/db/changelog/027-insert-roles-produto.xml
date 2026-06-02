@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="027-insert-roles-produto" author="eduardo">
+
+        <insert tableName="role">
+            <column name="nome" value="PRODUTO"/>
+            <column name="descricao" value="Permissão geral para produto"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="PRODUTO_GET"/>
+            <column name="descricao" value="Permissão para consultar produtos"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="GRUPO"/>
+            <column name="descricao" value="Permissão geral para grupo de produto"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="GRUPO_GET"/>
+            <column name="descricao" value="Permissão para consultar grupos"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="SUBGRUPO"/>
+            <column name="descricao" value="Permissão geral para subgrupo de produto"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="SUBGRUPO_GET"/>
+            <column name="descricao" value="Permissão para consultar subgrupos"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="CATEGORIA"/>
+            <column name="descricao" value="Permissão geral para categoria de produto"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="CATEGORIA_GET"/>
+            <column name="descricao" value="Permissão para consultar categorias"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="MARCA"/>
+            <column name="descricao" value="Permissão geral para marca de produto"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="MARCA_GET"/>
+            <column name="descricao" value="Permissão para consultar marcas"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

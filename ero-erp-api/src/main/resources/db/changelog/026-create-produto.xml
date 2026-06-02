@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="026-create-produto" author="eduardo">
+        <createTable tableName="produto">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_produto_cliente" references="cliente(id)"/>
+            </column>
+            <column name="codigo" type="INTEGER"/>
+            <column name="codigo_ean" type="VARCHAR(14)"/>
+            <column name="codigo_gtin" type="VARCHAR(14)"/>
+            <column name="nome" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descricao" type="VARCHAR(255)"/>
+            <column name="bloqueado" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_produto_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_produto_tipo_produto" references="tipo_produto(id)"/>
+            </column>
+            <column name="subgrupo_id" type="BIGINT">
+                <constraints foreignKeyName="fk_produto_subgrupo" references="subgrupo(id)"/>
+            </column>
+            <column name="categoria_id" type="BIGINT">
+                <constraints foreignKeyName="fk_produto_categoria" references="categoria(id)"/>
+            </column>
+            <column name="marca_id" type="BIGINT">
+                <constraints foreignKeyName="fk_produto_marca" references="marca(id)"/>
+            </column>
+            <column name="unidade_medida_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_produto_unidade_medida" references="unidade_medida(id)"/>
+            </column>
+            <column name="fornecedor_pessoa_id" type="BIGINT">
+                <constraints foreignKeyName="fk_produto_fornecedor_pessoa" references="pessoa(id)"/>
+            </column>
+            <column name="custo" type="NUMERIC(15,2)" defaultValueNumeric="0"/>
+            <column name="ncm_id" type="BIGINT">
+                <constraints foreignKeyName="fk_produto_ncm" references="ncm(id)"/>
+            </column>
+            <column name="origem_produto_id" type="BIGINT">
+                <constraints foreignKeyName="fk_produto_origem_produto" references="origem_produto(id)"/>
+            </column>
+            <column name="cest_id" type="BIGINT">
+                <constraints foreignKeyName="fk_produto_cest" references="cest(id)"/>
+            </column>
+            <column name="substituicao_tributaria" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints foreignKeyName="fk_produto_created_by" references="usuario(id)"/>
+            </column>
+            <column name="updated_by" type="BIGINT">
+                <constraints foreignKeyName="fk_produto_updated_by" references="usuario(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="produto" indexName="idx_produto_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+        <createIndex tableName="produto" indexName="idx_produto_tipo_produto_id">
+            <column name="tipo_produto_id"/>
+        </createIndex>
+        <createIndex tableName="produto" indexName="idx_produto_nome">
+            <column name="cliente_id"/>
+            <column name="nome"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="025-insert-tipo-produto" author="eduardo">
+        <insert tableName="tipo_produto">
+            <column name="nome" value="Produto"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="tipo_produto">
+            <column name="nome" value="Serviço"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="025-insert-unidade-medida" author="eduardo">
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="UN"/>
+            <column name="descricao" value="Unidade"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="KG"/>
+            <column name="descricao" value="Quilograma"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="G"/>
+            <column name="descricao" value="Grama"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="LT"/>
+            <column name="descricao" value="Litro"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="ML"/>
+            <column name="descricao" value="Mililitro"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="CX"/>
+            <column name="descricao" value="Caixa"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="PC"/>
+            <column name="descricao" value="Peça"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="MT"/>
+            <column name="descricao" value="Metro"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="M2"/>
+            <column name="descricao" value="Metro Quadrado"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="M3"/>
+            <column name="descricao" value="Metro Cúbico"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="H"/>
+            <column name="descricao" value="Hora"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+        <insert tableName="unidade_medida">
+            <column name="sigla" value="SV"/>
+            <column name="descricao" value="Serviço"/>
+            <column name="created_at" valueDate="now()"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="025-insert-ncm" author="eduardo">
+        <insert tableName="ncm"><column name="codigo" value="22011000"/><column name="descricao" value="Águas minerais naturais"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="22021000"/><column name="descricao" value="Refrigerantes e águas adicionadas de açúcar"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="22030000"/><column name="descricao" value="Cervejas de malte"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="15079011"/><column name="descricao" value="Óleo de soja refinado"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="17019900"/><column name="descricao" value="Açúcar refinado"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="19053100"/><column name="descricao" value="Biscoitos doces"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="30049099"/><column name="descricao" value="Medicamentos não especificados"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="30021590"/><column name="descricao" value="Vacinas para medicina humana"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="33030010"/><column name="descricao" value="Perfumes"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="33051000"/><column name="descricao" value="Xampus"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="33049990"/><column name="descricao" value="Outros produtos de beleza ou maquiagem"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="33072010"/><column name="descricao" value="Desodorantes"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="34022000"/><column name="descricao" value="Detergentes"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="34011190"/><column name="descricao" value="Sabões em barra"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="40111000"/><column name="descricao" value="Pneus novos para automóveis"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="87082999"/><column name="descricao" value="Peças para carrocerias"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="27101932"/><column name="descricao" value="Gasolina automotiva"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="25232990"/><column name="descricao" value="Cimento Portland"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="73089090"/><column name="descricao" value="Estruturas metálicas"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="85171231"/><column name="descricao" value="Telefones celulares"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="ncm"><column name="codigo" value="85287200"/><column name="descricao" value="Televisores"/><column name="created_at" valueDate="now()"/></insert>
+    </changeSet>
+
+    <changeSet id="025-insert-origem-produto" author="eduardo">
+        <insert tableName="origem_produto"><column name="codigo" value="0"/><column name="descricao" value="Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="origem_produto"><column name="codigo" value="1"/><column name="descricao" value="Estrangeira - Importação direta"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="origem_produto"><column name="codigo" value="2"/><column name="descricao" value="Estrangeira - Adquirida no mercado interno"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="origem_produto"><column name="codigo" value="3"/><column name="descricao" value="Nacional - Conteúdo de Importação superior a 40% e inferior ou igual a 70%"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="origem_produto"><column name="codigo" value="4"/><column name="descricao" value="Nacional - Produção conforme processos produtivos básicos"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="origem_produto"><column name="codigo" value="5"/><column name="descricao" value="Nacional - Conteúdo de Importação inferior ou igual a 40%"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="origem_produto"><column name="codigo" value="6"/><column name="descricao" value="Estrangeira - Importação direta sem similar nacional"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="origem_produto"><column name="codigo" value="7"/><column name="descricao" value="Estrangeira - Adquirida no mercado interno sem similar nacional"/><column name="created_at" valueDate="now()"/></insert>
+        <insert tableName="origem_produto"><column name="codigo" value="8"/><column name="descricao" value="Nacional - Conteúdo de Importação superior a 70%"/><column name="created_at" valueDate="now()"/></insert>
+    </changeSet>
+
+</databaseChangeLog>

@@ -37,17 +37,18 @@ public class WhatsappNotificationService {
             WhatsappLogService             whatsappLogService,
             TelefoneRepository             telefoneRepository
     ) {
-        this.evolutionClient            = evolutionClient;
-        this.messageBuilder             = messageBuilder;
-        this.instanciaRepository        = instanciaRepository;
-        this.configGlobalRepository     = configGlobalRepository;
+        this.evolutionClient             = evolutionClient;
+        this.messageBuilder              = messageBuilder;
+        this.instanciaRepository         = instanciaRepository;
+        this.configGlobalRepository      = configGlobalRepository;
         this.configuracaoMensagemService = configuracaoMensagemService;
-        this.whatsappLogService         = whatsappLogService;
-        this.telefoneRepository         = telefoneRepository;
+        this.whatsappLogService          = whatsappLogService;
+        this.telefoneRepository          = telefoneRepository;
     }
 
     public void notificarCriacaoRecorrente(List<Compromisso> compromissos) {
-        if (compromissos == null || compromissos.isEmpty()) return;
+        if (compromissos == null || compromissos.isEmpty())
+            return;
 
         Compromisso primeiro = compromissos.get(0);
         String phoneCliente  = resolverPhoneCliente(primeiro);

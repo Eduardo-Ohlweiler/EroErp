@@ -174,6 +174,7 @@ public class CompromissoService {
             }
         }
 
+
         if (todos.size() > 1)
             notificationService.notificarCriacaoRecorrente(todos);
         else

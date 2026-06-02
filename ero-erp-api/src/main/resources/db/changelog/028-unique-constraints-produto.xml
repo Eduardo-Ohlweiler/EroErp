@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Por-cliente: nome único por cliente -->
+    <changeSet id="028-unique-grupo-nome-cliente" author="eduardo">
+        <addUniqueConstraint
+            tableName      ="grupo"
+            columnNames    ="cliente_id, nome"
+            constraintName ="uq_grupo_cliente_nome"/>
+    </changeSet>
+
+    <!-- Por-cliente: nome único por cliente + grupo -->
+    <changeSet id="028-unique-subgrupo-nome-cliente-grupo" author="eduardo">
+        <addUniqueConstraint
+            tableName      ="subgrupo"
+            columnNames    ="cliente_id, grupo_id, nome"
+            constraintName ="uq_subgrupo_cliente_grupo_nome"/>
+    </changeSet>
+
+    <!-- Por-cliente: nome único por cliente -->
+    <changeSet id="028-unique-categoria-nome-cliente" author="eduardo">
+        <addUniqueConstraint
+            tableName      ="categoria"
+            columnNames    ="cliente_id, nome"
+            constraintName ="uq_categoria_cliente_nome"/>
+    </changeSet>
+
+    <!-- Por-cliente: nome único por cliente -->
+    <changeSet id="028-unique-marca-nome-cliente" author="eduardo">
+        <addUniqueConstraint
+            tableName      ="marca"
+            columnNames    ="cliente_id, nome"
+            constraintName ="uq_marca_cliente_nome"/>
+    </changeSet>
+
+    <!--
+        Globais: já possuem UNIQUE no DDL (024):
+          ncm.codigo          → constraintName criado pelo Liquibase
+          origem_produto.codigo
+          cest.codigo
+        Tipo produto e unidade medida são tabelas semente sem endpoint de criação,
+        portanto não precisam de constraint adicional aqui.
+    -->
+
+</databaseChangeLog>

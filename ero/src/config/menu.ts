@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaMobileAlt, FaCalendarAlt, FaCommentDots, FaTachometerAlt /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaMobileAlt, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -21,6 +21,17 @@ export const menu: MenuItem[] = [
           { label: "Tipos de Endereço",       path: "/tipos/endereco",    icon: FaCog },
           { label: "Tipos de Redes sociais",  path: "/tipos/redesocial",  icon: FaCog },
           { label: "Tipos de Telefone",       path: "/tipos/telefone",    icon: FaCog }
+        ]
+      },
+      {
+        label: "Tabelas Produto",
+        icon: FaBoxOpen,
+        children: [
+          { label: "Tipos de Produto",    path: "/tabelas/tipo-produto",    icon: FaCog },
+          { label: "Unidades de Medida",  path: "/tabelas/unidade-medida",  icon: FaCog },
+          { label: "NCM",                 path: "/tabelas/ncm",             icon: FaCog },
+          { label: "Origens de Produto",  path: "/tabelas/origem-produto",  icon: FaCog },
+          { label: "CEST",                path: "/tabelas/cest",            icon: FaCog }
         ]
       }
     ]
@@ -55,7 +66,7 @@ export const menu: MenuItem[] = [
   {
     label: "Cadastros",
     icon: FaClipboardList,
-    roles: ["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST"],
+    roles: ["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST", "PRODUTO", "PRODUTO_GET"],
     children: [
       {
         label: "Pessoas",
@@ -66,6 +77,23 @@ export const menu: MenuItem[] = [
         label: "Emitentes",
         path: "/emitentes",
         icon: FaFileInvoice
+      },
+      {
+        label: "Produtos",
+        path:  "/produtos",
+        icon:  FaBoxOpen,
+        roles: ["SUPERADMIN", "ADMIN", "PRODUTO", "PRODUTO_GET"]
+      },
+      {
+        label: "Auxiliar Produto",
+        icon:  FaTag,
+        roles: ["SUPERADMIN", "ADMIN", "PRODUTO", "PRODUTO_GET", "GRUPO", "GRUPO_GET", "CATEGORIA", "CATEGORIA_GET", "MARCA", "MARCA_GET"],
+        children: [
+          { label: "Grupos",     path: "/produtos/grupos",     icon: FaCog },
+          { label: "Subgrupos",  path: "/produtos/subgrupos",  icon: FaCog },
+          { label: "Categorias", path: "/produtos/categorias", icon: FaCog },
+          { label: "Marcas",     path: "/produtos/marcas",     icon: FaCog }
+        ]
       }
     ]
   },

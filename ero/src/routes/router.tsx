@@ -26,6 +26,17 @@ import WhatsappConfigGlobalForm                   from "../pages/administrativo/
 import WhatsappInstanciaList                      from "../pages/administrativo/whatsapp/instancias/WhatsappInstanciaList";
 import WhatsappInstanciaForm                      from "../pages/administrativo/whatsapp/instancias/WhatsappInstanciaForm"
 import ConfiguracaoMensagemForm                   from "../pages/agenda/auxiliares/ConfiguracaoMensagemForm";
+import TipoProdutoList                            from "../pages/administrativo/auxiliares/TipoProdutoList";
+import UnidadeMedidaList                          from "../pages/administrativo/auxiliares/UnidadeMedidaList";
+import NcmList                                    from "../pages/administrativo/auxiliares/NcmList";
+import OrigemProdutoList                          from "../pages/administrativo/auxiliares/OrigemProdutoList";
+import CestList                                   from "../pages/administrativo/auxiliares/CestList";
+import GrupoFormList                              from "../pages/produtos/auxiliar/GrupoFormList";
+import SubgrupoFormList                           from "../pages/produtos/auxiliar/SubgrupoFormList";
+import CategoriaFormList                          from "../pages/produtos/auxiliar/CategoriaFormList";
+import MarcaFormList                              from "../pages/produtos/auxiliar/MarcaFormList";
+import ProdutoList                                from "../pages/produtos/ProdutoList";
+import ProdutoForm                                from "../pages/produtos/ProdutoForm";
 
 export function Router() {
   return (
@@ -59,6 +70,12 @@ export function Router() {
               <Route path="/tipos/email"      element={<TipoEmailFormList />} />
               <Route path="/tipos/redesocial" element={<TipoRedeSocialFormList />} />
               <Route path="/tipos/endereco"   element={<TipoEnderecoFormList />} />
+
+              <Route path="/tabelas/tipo-produto"   element={<TipoProdutoList />} />
+              <Route path="/tabelas/unidade-medida" element={<UnidadeMedidaList />} />
+              <Route path="/tabelas/ncm"            element={<NcmList />} />
+              <Route path="/tabelas/origem-produto" element={<OrigemProdutoList />} />
+              <Route path="/tabelas/cest"           element={<CestList />} />
             </Route>
 
             {/* ── CIDADES ── */}
@@ -85,6 +102,21 @@ export function Router() {
               <Route path="/whatsapp/instancias"      element={<WhatsappInstanciaList />} />
               <Route path="/whatsapp/instancias/novo"  element={<WhatsappInstanciaForm />} />
               <Route path="/whatsapp/instancias/:id"   element={<WhatsappInstanciaForm />} />
+            </Route>
+
+            {/* ── PRODUTOS ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "PRODUTO", "PRODUTO_GET"]} />}>
+              <Route path="/produtos"      element={<ProdutoList />} />
+              <Route path="/produtos/novo" element={<ProdutoForm />} />
+              <Route path="/produtos/:id"  element={<ProdutoForm />} />
+            </Route>
+
+            {/* ── AUXILIAR PRODUTO ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "GRUPO", "GRUPO_GET", "PRODUTO", "PRODUTO_GET"]} />}>
+              <Route path="/produtos/grupos"     element={<GrupoFormList />} />
+              <Route path="/produtos/subgrupos"  element={<SubgrupoFormList />} />
+              <Route path="/produtos/categorias" element={<CategoriaFormList />} />
+              <Route path="/produtos/marcas"     element={<MarcaFormList />} />
             </Route>
 
             {/* ── COMPRIMISSO ── */}

@@ -28,4 +28,10 @@
     <include file="021-create-whatsapp-config-usuario.xml"          relativeToChangelogFile="true" />
     <include file="022-create-configuracao-mensagem.xml"            relativeToChangelogFile="true" />
     <include file="023-create-whatsapp-log.xml"                     relativeToChangelogFile="true" />
+    <include file="024-create-produto-auxiliares.xml"               relativeToChangelogFile="true" />
+    <include file="025-insert-produto-auxiliares.xml"               relativeToChangelogFile="true" />
+    <include file="026-create-produto.xml"                          relativeToChangelogFile="true" />
+    <include file="027-insert-roles-produto.xml"                    relativeToChangelogFile="true" />
+    <include file="028-unique-constraints-produto.xml"              relativeToChangelogFile="true" />
+    <include file="029-alter-ncm-cest-add-ativo.xml"               relativeToChangelogFile="true" />
 </databaseChangeLog>
