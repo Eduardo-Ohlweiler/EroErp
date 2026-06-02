@@ -34,4 +34,6 @@
     <include file="027-insert-roles-produto.xml"                    relativeToChangelogFile="true" />
     <include file="028-unique-constraints-produto.xml"              relativeToChangelogFile="true" />
     <include file="029-alter-ncm-cest-add-ativo.xml"               relativeToChangelogFile="true" />
+    <include file="030-insert-ncm-data.xml"                       relativeToChangelogFile="true" />
+    <include file="031-insert-cest-data.xml"                      relativeToChangelogFile="true" />
 </databaseChangeLog>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="030-cleanup-ncm-cest" author="eduardo">
+        <comment>Remove os 21 NCMs de exemplo inseridos em 025 antes do insert completo</comment>
+        <delete tableName="cest"/>
+        <delete tableName="ncm"/>
+    </changeSet>
+
+    <changeSet id="030-insert-ncm-data" author="eduardo">
+        <comment>10.515 NCMs da tabela oficial Siscomex/Receita Federal (atualizada 02/06/2026)</comment>
+        <sqlFile path="ncm-inserts.sql"
+                 relativeToChangelogFile="true"
+                 encoding="UTF-8"
+                 splitStatements="true"
+                 stripComments="true"/>
+        <rollback>
+            <sql>DELETE FROM cest; DELETE FROM ncm;</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
