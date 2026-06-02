@@ -12,11 +12,12 @@ interface SideBarProps {
 
 export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
 
-  const location              = useLocation()
-  const { hasRole }           = useAuth()
-  const [open, setOpen]       = useState<Record<string, boolean>>({})
-  const [hovered, setHovered] = useState<string | null>(null)
-  const closeTimeout          = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const location                  = useLocation()
+  const { hasRole }               = useAuth()
+  const [open, setOpen]           = useState<Record<string, boolean>>({})
+  const [hovered, setHovered]     = useState<string | null>(null)
+  const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number } | null>(null)
+  const closeTimeout              = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function toggle(label: string) {
     setOpen((prev) => ({ ...prev, [label]: !prev[label] }))
@@ -28,13 +29,23 @@ export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
     return location.pathname.startsWith(path)
   }
 
-  function handleMouseEnter(label: string) {
+  function handleMouseEnter(label: string, e: React.MouseEvent<HTMLElement>) {
     if (closeTimeout.current) clearTimeout(closeTimeout.current)
     setHovered(label)
+    const rect = e.currentTarget.getBoundingClientRect()
+    // sem gap (0px) para o mouse não "cair no vazio" entre o item e o flyout
+    setFlyoutPos({ top: rect.top, left: rect.right })
+  }
+
+  function keepOpen() {
+    if (closeTimeout.current) clearTimeout(closeTimeout.current)
   }
 
   function handleMouseLeave() {
-    closeTimeout.current = setTimeout(() => setHovered(null), 400)
+    closeTimeout.current = setTimeout(() => {
+      setHovered(null)
+      setFlyoutPos(null)
+    }, 150)
   }
 
   function temAcesso(item: MenuItem): boolean {
@@ -61,7 +72,7 @@ export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
           <div
             key={item.label}
             className="relative"
-            onMouseEnter={() => collapsedDesktop && handleMouseEnter(item.label)}
+            onMouseEnter={(e) => collapsedDesktop && handleMouseEnter(item.label, e)}
             onMouseLeave={() => collapsedDesktop && handleMouseLeave()}
           >
             <button
@@ -89,52 +100,61 @@ export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
             )}
 
             {/* flyout quando recolhido no desktop */}
-            {collapsedDesktop && hovered === item.label && (
+            {collapsedDesktop && hovered === item.label && flyoutPos && (
               <div
-                onMouseEnter={() => handleMouseEnter(item.label)}
-                onMouseLeave={() => handleMouseLeave()}
-                className="absolute left-full top-0 ml-2 bg-(--bg-sidebar) border border-(--border) rounded-md shadow-xl p-2 min-w-55 z-50"
+                onMouseEnter={keepOpen}
+                onMouseLeave={handleMouseLeave}
+                style={{
+                  position: "fixed",
+                  top: flyoutPos.top,
+                  left: flyoutPos.left,
+                  // faixa invisível de 8px à esquerda cobre o gap entre sidebar e flyout
+                  paddingLeft: "8px",
+                }}
+                className="z-50"
               >
-                {item.children.map((child) => {
-                  const ChildIcon = child.icon
+                <div className="bg-(--bg-sidebar) border border-(--border) rounded-md shadow-xl p-2 min-w-55">
+                  {item.children.map((child) => {
+                    const ChildIcon = child.icon
 
-                  if (child.children && child.children.length > 0) {
-                    return (
-                      <div key={child.label} className="border-t border-(--border) mt-1 pt-1">
-                        <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--text-sidebar-active)">
-                          {ChildIcon && <ChildIcon size={16} />}
-                          {child.label}
+                    if (child.children && child.children.length > 0) {
+                      return (
+                        <div key={child.label} className="border-t border-(--border) mt-1 pt-1">
+                          <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-(--text-inverse)">
+                            {ChildIcon && <ChildIcon size={16} />}
+                            {child.label}
+                          </div>
+                          {child.children.map((sub) => {
+                            const SubIcon = sub.icon
+                            return (
+                              <Link
+                                key={sub.label}
+                                to={sub.path || "#"}
+                                className="flex items-center gap-3 px-6 py-2 text-sm rounded-md
+                                  text-(--text-sidebar) hover:text-(--text-sidebar-active) hover:bg-(--bg-hover)"
+                              >
+                                {SubIcon && <SubIcon size={14} />}
+                                {sub.label}
+                              </Link>
+                            )
+                          })}
                         </div>
-                        {child.children.map((sub) => {
-                          const SubIcon = sub.icon
-                          return (
-                            <Link
-                              key={sub.label}
-                              to={sub.path || "#"}
-                              className="flex items-center gap-3 px-6 py-2 text-sm rounded-md
-                                text-(--text-sidebar) hover:text-(--text-sidebar-active) hover:bg-(--bg-hover)"
-                            >
-                              {SubIcon && <SubIcon size={14} />}
-                              {sub.label}
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    )
-                  }
+                      )
+                    }
 
-                  return (
-                    <Link
-                      key={child.label}
-                      to={child.path || "#"}
-                      className="flex items-center gap-3 px-3 py-2 text-sm rounded-md
-                        text-(--text-sidebar) hover:text-(--text-sidebar-active) hover:bg-(--bg-hover)"
-                    >
-                      {ChildIcon && <ChildIcon size={16} />}
-                      {child.label}
-                    </Link>
-                  )
-                })}
+                    return (
+                      <Link
+                        key={child.label}
+                        to={child.path || "#"}
+                        className="flex items-center gap-3 px-3 py-2 text-sm rounded-md
+                          text-(--text-sidebar) hover:text-(--text-sidebar-active) hover:bg-(--bg-hover)"
+                      >
+                        {ChildIcon && <ChildIcon size={16} />}
+                        {child.label}
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -147,7 +167,7 @@ export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
           <div
             key={item.label}
             className="relative"
-            onMouseEnter={() => collapsedDesktop && handleMouseEnter(item.label)}
+            onMouseEnter={(e) => collapsedDesktop && handleMouseEnter(item.label, e)}
             onMouseLeave={() => collapsedDesktop && handleMouseLeave()}
           >
             <Link
@@ -164,13 +184,21 @@ export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
             </Link>
 
             {/* tooltip quando recolhido no desktop */}
-            {collapsedDesktop && hovered === item.label && (
+            {collapsedDesktop && hovered === item.label && flyoutPos && (
               <div
-                onMouseEnter={() => handleMouseEnter(item.label)}
-                onMouseLeave={() => handleMouseLeave()}
-                className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-(--bg-sidebar) border border-(--border) rounded-md px-3 py-2 text-sm text-(--text-sidebar-active) shadow-lg whitespace-nowrap z-50"
+                onMouseEnter={keepOpen}
+                onMouseLeave={handleMouseLeave}
+                style={{
+                  position: "fixed",
+                  top: flyoutPos.top,
+                  left: flyoutPos.left,
+                  paddingLeft: "8px",
+                }}
+                className="z-50"
               >
-                {item.label}
+                <div className="bg-(--bg-sidebar) border border-(--border) rounded-md px-3 py-2 text-sm text-(--text-sidebar-active) shadow-lg whitespace-nowrap">
+                  {item.label}
+                </div>
               </div>
             )}
           </div>
