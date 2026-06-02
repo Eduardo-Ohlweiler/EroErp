@@ -13,6 +13,7 @@ import { TCombo }                                           from "../../../compo
 import { TDbCombo }                                         from "../../../components/tdbcombo"
 import { TButton }                                          from "../../../components/tbutton"
 import { useMessage }                                       from "../../../hooks/useMessage"
+import { TSpace } from "../../../components/tspace"
 
 function displayUnidade(item: Record<string, unknown>): string {
   return `${item.sigla} — ${item.descricao}`
@@ -26,28 +27,28 @@ function displayOrigem(item: Record<string, unknown>): string {
   return `${item.codigo} — ${item.descricao}`
 }
 
+function displaySubgrupo(item: Record<string, unknown>): string {
+  return `${item.grupoNome} — ${item.nome}`
+}
+
 export default function ProdutoForm() {
   const { id }          = useParams<{ id: string }>()
   const navigate        = useNavigate()
   const { showMessage } = useMessage()
   const isEdit          = Boolean(id)
 
-  const [saving,  setSaving]  = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [formKey, setFormKey] = useState(0)
-
-  // campos controlados para TdbCombo
-  const [tipoProdutoId,        setTipoProdutoId]        = useState("")
-  const [unidadeMedidaId,      setUnidadeMedidaId]      = useState("")
-  const [subgrupoId,           setSubgrupoId]           = useState("")
-  const [categoriaId,          setCategoriaId]          = useState("")
-  const [marcaId,              setMarcaId]              = useState("")
-  const [fornecedorPessoaId,   setFornecedorPessoaId]   = useState("")
-  const [ncmId,                setNcmId]                = useState("")
-  const [origemProdutoId,      setOrigemProdutoId]      = useState("")
-  const [cestId,               setCestId]               = useState("")
-
-  // campos simples
+  const [saving,                setSaving]                = useState(false)
+  const [loading,               setLoading]               = useState(false)
+  const [formKey,               setFormKey]               = useState(0)
+  const [tipoProdutoId,         setTipoProdutoId]         = useState("")
+  const [unidadeMedidaId,       setUnidadeMedidaId]       = useState("")
+  const [subgrupoId,            setSubgrupoId]            = useState("")
+  const [categoriaId,           setCategoriaId]           = useState("")
+  const [marcaId,               setMarcaId]               = useState("")
+  const [fornecedorPessoaId,    setFornecedorPessoaId]    = useState("")
+  const [ncmId,                 setNcmId]                 = useState("")
+  const [origemProdutoId,       setOrigemProdutoId]       = useState("")
+  const [cestId,                setCestId]                = useState("")
   const [codigo,                setCodigo]                = useState("")
   const [codigoEan,             setCodigoEan]             = useState("")
   const [codigoGtin,            setCodigoGtin]            = useState("")
@@ -59,6 +60,7 @@ export default function ProdutoForm() {
 
   useEffect(() => {
     if (isEdit) loadProduto()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   async function loadProduto() {
@@ -109,7 +111,7 @@ export default function ProdutoForm() {
       const payload = {
         codigo:                formData.codigo    ? Number(formData.codigo) : null,
         codigoEan:             formData.codigoEan || null,
-        codigoGtin:            formData.codigoGtin || null,
+        codigoGtin:            formData.codigoGtin|| null,
         nome:                  formData.nome,
         descricao:             formData.descricao || null,
         bloqueado:             formData.bloqueado === "true",
@@ -119,10 +121,10 @@ export default function ProdutoForm() {
         marcaId:               marcaId     ? Number(marcaId)     : null,
         unidadeMedidaId:       Number(unidadeMedidaId),
         fornecedorPessoaId:    fornecedorPessoaId ? Number(fornecedorPessoaId) : null,
-        custo:                 formData.custo ? Number(formData.custo) : null,
-        ncmId:                 ncmId           ? Number(ncmId)           : null,
-        origemProdutoId:       origemProdutoId ? Number(origemProdutoId) : null,
-        cestId:                cestId          ? Number(cestId)          : null,
+        custo:                 formData.custo     ? Number(formData.custo)     : null,
+        ncmId:                 ncmId              ? Number(ncmId)              : null,
+        origemProdutoId:       origemProdutoId    ? Number(origemProdutoId)    : null,
+        cestId:                cestId             ? Number(cestId)             : null,
         substituicaoTributaria: formData.substituicaoTributaria === "true"
       }
 
@@ -158,16 +160,6 @@ export default function ProdutoForm() {
         {/* ── Identificação ── */}
         <TRow>
           <TCol>
-            <TEntry
-              name         ="nome"
-              label        ="Nome"
-              required
-              maxLength    ={150}
-              defaultValue ={nome}
-              width        ="50%"
-            />
-          </TCol>
-          <TCol>
             <TDbCombo
               name         ="tipoProdutoId"
               label        ="Tipo de Produto"
@@ -177,11 +169,36 @@ export default function ProdutoForm() {
               searchField  ="nome"
               placeholder  ="Selecione..."
               required
-              width        ="220px"
+              width        ="300px"
               value        ={tipoProdutoId}
               onChange     ={(val) => setTipoProdutoId(val)}
             />
           </TCol>
+        </TRow>
+        <TRow>
+          <TCol>
+            <TEntry
+              name         ="nome"
+              label        ="Nome"
+              required
+              maxLength    ={150}
+              defaultValue ={nome}
+              width        ="50%"
+            />
+          </TCol>
+        </TRow>
+        <TRow>
+          <TCol>
+            <TEntry
+              name         ="descricao"
+              label        ="Descrição"
+              maxLength    ={255}
+              defaultValue ={descricao}
+              width        ="50%"
+            />
+          </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="unidadeMedidaId"
@@ -192,31 +209,31 @@ export default function ProdutoForm() {
               searchField  ="busca"
               placeholder  ="Selecione..."
               required
-              width        ="240px"
+              width        ="300px"
               value        ={unidadeMedidaId}
               onChange     ={(val) => setUnidadeMedidaId(val)}
             />
           </TCol>
         </TRow>
-
-        {/* ── Códigos ── */}
         <TRow>
           <TCol>
             <TEntry
               name         ="codigo"
               label        ="Código interno"
-              type         ="number"
+              mask         ="numero"
               defaultValue ={codigo}
-              width        ="160px"
+              width        ="300px"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TEntry
               name         ="codigoEan"
               label        ="EAN"
               maxLength    ={14}
               defaultValue ={codigoEan}
-              width        ="180px"
+              width        ="300px"
             />
           </TCol>
           <TCol>
@@ -225,12 +242,11 @@ export default function ProdutoForm() {
               label        ="GTIN"
               maxLength    ={14}
               defaultValue ={codigoGtin}
-              width        ="180px"
+              width        ="300px"
             />
           </TCol>
+          <TSpace />
         </TRow>
-
-        {/* ── Classificação ── */}
         <TRow>
           <TCol>
             <TDbCombo
@@ -238,14 +254,16 @@ export default function ProdutoForm() {
               label        ="Subgrupo"
               url          ="/subgrupos"
               valueField   ="id"
-              displayField ="nome"
+              displayField ={displaySubgrupo}
               searchField  ="nome"
               placeholder  ="Selecione..."
-              width        ="240px"
+              width        ="300px"
               value        ={subgrupoId}
               onChange     ={(val) => setSubgrupoId(val)}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="categoriaId"
@@ -255,11 +273,13 @@ export default function ProdutoForm() {
               displayField ="nome"
               searchField  ="nome"
               placeholder  ="Selecione..."
-              width        ="220px"
+              width        ="300px"
               value        ={categoriaId}
               onChange     ={(val) => setCategoriaId(val)}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="marcaId"
@@ -269,14 +289,12 @@ export default function ProdutoForm() {
               displayField ="nome"
               searchField  ="nome"
               placeholder  ="Selecione..."
-              width        ="200px"
+              width        ="300px"
               value        ={marcaId}
               onChange     ={(val) => setMarcaId(val)}
             />
           </TCol>
         </TRow>
-
-        {/* ── Comercial ── */}
         <TRow>
           <TCol>
             <TEntry
@@ -287,6 +305,8 @@ export default function ProdutoForm() {
               width        ="160px"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="fornecedorPessoaId"
@@ -296,14 +316,13 @@ export default function ProdutoForm() {
               displayField ="nome"
               searchField  ="nome"
               placeholder  ="Selecione..."
-              width        ="320px"
+              width        ="50%"
               value        ={fornecedorPessoaId}
               onChange     ={(val) => setFornecedorPessoaId(val)}
             />
           </TCol>
         </TRow>
 
-        {/* ── Fiscal ── */}
         <TRow>
           <TCol>
             <TDbCombo
@@ -315,11 +334,13 @@ export default function ProdutoForm() {
               searchField  ="busca"
               placeholder  ="Digite para buscar..."
               minLength    ={2}
-              width        ="320px"
+              width        ="300px"
               value        ={ncmId}
               onChange     ={(val) => setNcmId(val)}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="origemProdutoId"
@@ -333,6 +354,8 @@ export default function ProdutoForm() {
               onChange     ={(val) => setOrigemProdutoId(val)}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="cestId"
@@ -343,7 +366,7 @@ export default function ProdutoForm() {
               searchField  ="busca"
               placeholder  ="Digite para buscar..."
               minLength    ={2}
-              width        ="280px"
+              width        ="300px"
               value        ={cestId}
               onChange     ={(val) => setCestId(val)}
             />
@@ -356,7 +379,7 @@ export default function ProdutoForm() {
             <TCombo
               name         ="substituicaoTributaria"
               label        ="Substituição Tributária"
-              width        ="220px"
+              width        ="300px"
               defaultValue ={substituicaoTributaria}
               onChange     ={setSubstituicaoTributaria}
               options      ={[
@@ -365,13 +388,14 @@ export default function ProdutoForm() {
               ]}
             />
           </TCol>
-
+        </TRow>
+        <TRow>
           {isEdit && (
             <TCol>
               <TCombo
                 name         ="bloqueado"
                 label        ="Status"
-                width        ="180px"
+                width        ="300px"
                 defaultValue ={bloqueado}
                 onChange     ={setBloqueado}
                 options      ={[
@@ -381,19 +405,6 @@ export default function ProdutoForm() {
               />
             </TCol>
           )}
-        </TRow>
-
-        {/* ── Descrição ── */}
-        <TRow>
-          <TCol>
-            <TEntry
-              name         ="descricao"
-              label        ="Descrição"
-              maxLength    ={255}
-              defaultValue ={descricao}
-              width        ="100%"
-            />
-          </TCol>
         </TRow>
 
         <TFormFooter>

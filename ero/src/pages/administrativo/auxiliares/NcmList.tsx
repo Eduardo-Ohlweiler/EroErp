@@ -34,13 +34,12 @@ export default function NcmList() {
   const { showMessage } = useMessage()
   const { ask }         = useQuestion()
 
-  const [formKey,   setFormKey]   = useState(0)
-  const [saving,    setSaving]    = useState(false)
-  const [currentId, setCurrentId] = useState<number | null>(null)
-  const [codigo,    setCodigo]    = useState("")
-  const [descricao, setDescricao] = useState("")
-  const [ativo,     setAtivo]     = useState(true)
-
+  const [formKey,       setFormKey]       = useState(0)
+  const [saving,        setSaving]        = useState(false)
+  const [currentId,     setCurrentId]     = useState<number | null>(null)
+  const [codigo,        setCodigo]        = useState("")
+  const [descricao,     setDescricao]     = useState("")
+  const [ativo,         setAtivo]         = useState(true)
   const [data,          setData]          = useState<NcmResponse[]>([])
   const [loading,       setLoading]       = useState(false)
   const [page,          setPage]          = useState(0)
@@ -49,13 +48,19 @@ export default function NcmList() {
   const [filtroAtivo,   setFiltroAtivo]   = useState("")
   const pageSize = 15
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadGrid() }, [page])
 
   async function loadGrid(busca = filtroAtivo, pagina = page) {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ page: String(pagina), size: String(pageSize), sort: "codigo" })
-      if (busca) params.append("busca", busca)
+      const params = new URLSearchParams({ 
+        page: String(pagina), 
+        size: String(pageSize), 
+        sort: "codigo" 
+      })
+      if (busca) 
+        params.append("busca", busca)
       const res = await api.get(`/ncm?${params.toString()}`)
       setData(res.data.content ?? [])
       setTotalPages(res.data.totalPages ?? 1)
@@ -88,7 +93,7 @@ export default function NcmList() {
     setSaving(true)
     try {
       const payload = {
-        codigo:   formData.codigo.trim(),
+        codigo:    formData.codigo.trim(),
         descricao: formData.descricao,
         ativo
       }
@@ -168,6 +173,8 @@ export default function NcmList() {
               width        ="160px"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TEntry
               name         ="descricao"

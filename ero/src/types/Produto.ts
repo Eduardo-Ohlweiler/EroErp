@@ -87,7 +87,7 @@ export interface ProdutoResponse {
 
   subgrupoId:             number | null
   subgrupoNome:           string | null
-
+  grupoNome:             string | null
   categoriaId:            number | null
   categoriaNome:          string | null
 

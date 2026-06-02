@@ -18,6 +18,7 @@ public record ProdutoResponseDto(
 
         Long          subgrupoId,
         String        subgrupoNome,
+        String        grupoNome,
 
         Long          categoriaId,
         String        categoriaNome,

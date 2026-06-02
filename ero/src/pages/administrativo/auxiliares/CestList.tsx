@@ -40,14 +40,13 @@ export default function CestList() {
   const { showMessage } = useMessage()
   const { ask }         = useQuestion()
 
-  const [formKey,   setFormKey]   = useState(0)
-  const [saving,    setSaving]    = useState(false)
-  const [currentId, setCurrentId] = useState<number | null>(null)
-  const [codigo,    setCodigo]    = useState("")
-  const [descricao, setDescricao] = useState("")
-  const [ncmId,     setNcmId]     = useState("")
-  const [ativo,     setAtivo]     = useState(true)
-
+  const [formKey,       setFormKey]       = useState(0)
+  const [saving,        setSaving]        = useState(false)
+  const [currentId,     setCurrentId]     = useState<number | null>(null)
+  const [codigo,        setCodigo]        = useState("")
+  const [descricao,     setDescricao]     = useState("")
+  const [ncmId,         setNcmId]         = useState("")
+  const [ativo,         setAtivo]         = useState(true)
   const [data,          setData]          = useState<CestResponse[]>([])
   const [loading,       setLoading]       = useState(false)
   const [page,          setPage]          = useState(0)
@@ -56,13 +55,20 @@ export default function CestList() {
   const [filtroAtivo,   setFiltroAtivo]   = useState("")
   const pageSize = 15
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadGrid() }, [page])
 
   async function loadGrid(busca = filtroAtivo, pagina = page) {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ page: String(pagina), size: String(pageSize), sort: "codigo" })
-      if (busca) params.append("busca", busca)
+      const params = new URLSearchParams({ 
+        page: String(pagina), 
+        size: String(pageSize), 
+        sort: "codigo" })
+
+      if (busca) 
+        params.append("busca", busca)
+      
       const res = await api.get(`/cest?${params.toString()}`)
       setData(res.data.content ?? [])
       setTotalPages(res.data.totalPages ?? 1)
@@ -187,6 +193,8 @@ export default function CestList() {
               width        ="160px"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TEntry
               name         ="descricao"
@@ -197,6 +205,8 @@ export default function CestList() {
               width        ="50%"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="ncmId"
@@ -208,7 +218,7 @@ export default function CestList() {
               placeholder  ="Digite para buscar..."
               required
               minLength    ={2}
-              width        ="280px"
+              width        ="50%"
               value        ={ncmId}
               onChange     ={(val) => setNcmId(val)}
             />
@@ -226,7 +236,7 @@ export default function CestList() {
       <TForm onSubmit={handleFiltrar}>
         <TRow>
           <TCol>
-            <TEntry name="busca" label="Buscar por código ou descrição" placeholder="Filtrar..." width="60%" />
+            <TEntry name="busca" label="Buscar por código ou descrição" placeholder="Filtrar..." width="50%" />
           </TCol>
         </TRow>
         <TFormFooter>

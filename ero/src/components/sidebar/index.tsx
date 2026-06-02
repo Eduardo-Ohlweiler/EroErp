@@ -184,7 +184,7 @@ export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
   return (
     <aside
       className={`
-        ${collapsedDesktop ? "w-16" : "w-64"}
+        ${collapsedDesktop ? "w-16" : "w-80"}
         bg-(--bg-sidebar) text-(--text-sidebar) h-full flex flex-col
         border-r border-(--border-strong) transition-all duration-300
       `}

@@ -17,7 +17,7 @@ import { useMessage }                                 from "../../../hooks/useMe
 import { useQuestion }                                from "../../../hooks/useQuestion"
 
 const columns: TDataGridColumn<ProdutoResponse>[] = [
-  { label: "ID",      field: "id",              width: "60px",  align: "center" },
+  { label: "ID",      field: "id",               width: "60px",  align: "center" },
   { label: "Cód.",    field: "codigo",           width: "80px",  align: "center",
     render: (row) => <span>{row.codigo ?? "—"}</span> },
   { label: "Nome",    field: "nome" },
@@ -49,14 +49,14 @@ export default function ProdutoList() {
   const [filtroCategoriaId,   setFiltroCategoriaId]   = useState("")
   const [filtroMarcaId,       setFiltroMarcaId]       = useState("")
   const [filtroBloqueado,     setFiltroBloqueado]     = useState("")
-
-  const [data,          setData]          = useState<ProdutoResponse[]>([])
-  const [loading,       setLoading]       = useState(false)
-  const [page,          setPage]          = useState(0)
-  const [totalPages,    setTotalPages]    = useState(0)
-  const [totalElements, setTotalElements] = useState(0)
+  const [data,                setData]                = useState<ProdutoResponse[]>([])
+  const [loading,             setLoading]             = useState(false)
+  const [page,                setPage]                = useState(0)
+  const [totalPages,          setTotalPages]          = useState(0)
+  const [totalElements,       setTotalElements]       = useState(0)
   const pageSize = 15
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [page])
 
   async function load(
@@ -119,7 +119,7 @@ export default function ProdutoList() {
         codigoGtin:            row.codigoGtin,
         nome:                  row.nome,
         descricao:             row.descricao,
-        bloqueado:             !row.bloqueado,
+        bloqueado:            !row.bloqueado,
         tipoProdutoId:         row.tipoProdutoId,
         subgrupoId:            row.subgrupoId,
         categoriaId:           row.categoriaId,
@@ -130,7 +130,7 @@ export default function ProdutoList() {
         ncmId:                 row.ncmId,
         origemProdutoId:       row.origemProdutoId,
         cestId:                row.cestId,
-        substituicaoTributaria: row.substituicaoTributaria
+        substituicaoTributaria:row.substituicaoTributaria
       })
       showMessage("success", row.bloqueado ? "Produto desbloqueado!" : "Produto bloqueado!")
       load()
@@ -148,10 +148,12 @@ export default function ProdutoList() {
               name        ="nome"
               label       ="Nome"
               placeholder ="Filtrar por nome..."
-              width       ="40%"
+              width       ="50%"
               defaultValue={filtroNome}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="tipoProdutoId"
@@ -161,11 +163,13 @@ export default function ProdutoList() {
               displayField ="nome"
               searchField  ="nome"
               placeholder  ="Todos..."
-              width        ="180px"
+              width        ="300px"
               value        ={filtroTipoProdutoId}
               onChange     ={(val) => setFiltroTipoProdutoId(val)}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="categoriaId"
@@ -175,11 +179,13 @@ export default function ProdutoList() {
               displayField ="nome"
               searchField  ="nome"
               placeholder  ="Todas..."
-              width        ="200px"
+              width        ="300px"
               value        ={filtroCategoriaId}
               onChange     ={(val) => setFiltroCategoriaId(val)}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="marcaId"
@@ -189,11 +195,13 @@ export default function ProdutoList() {
               displayField ="nome"
               searchField  ="nome"
               placeholder  ="Todas..."
-              width        ="180px"
+              width        ="300px"
               value        ={filtroMarcaId}
               onChange     ={(val) => setFiltroMarcaId(val)}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TCombo
               name        ="bloqueado"
