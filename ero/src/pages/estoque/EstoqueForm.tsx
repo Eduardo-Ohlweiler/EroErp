@@ -28,7 +28,7 @@ export default function EstoqueForm() {
   const [quantidade,        setQuantidade]        = useState("")
   const [quantidadeMinima,  setQuantidadeMinima]  = useState("")
   const [precoVenda,        setPrecoVenda]        = useState("")
-  const [motivo,            setMotivo]            = useState("")
+  //const [motivo,            setMotivo]            = useState("")
   const [bloqueado,         setBloqueado]         = useState("false")
 
   useEffect(() => {
@@ -156,7 +156,7 @@ export default function EstoqueForm() {
                   name         ="motivo"
                   label        ="Motivo / Observação"
                   maxLength    ={255}
-                  defaultValue ={motivo}
+                  //defaultValue ={motivo}
                   width        ="50%"
                 />
               </TCol>

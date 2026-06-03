@@ -99,7 +99,7 @@ export function DashBoard() {
             {alertas.length > 0 && (
                 <div className="rounded-xl border border-amber-400 bg-amber-50 dark:bg-amber-950/30 p-4 mb-6">
                     <SectionTitle>
-                        <span className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                        <span className="flex items-center gap-2 text-amber-600 dark:border-amber-800">
                             <FaExclamationTriangle /> Alertas de Estoque — quantidade mínima atingida
                             <span className="ml-1 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                                 {alertas.length}
@@ -119,7 +119,7 @@ export function DashBoard() {
                                                 dark:border-amber-800 bg-white dark:bg-amber-950/50
                                                 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition text-left w-full"
                                 >
-                                    <div className={`mt-0.5 w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0
+                                    <div className={`mt-0.5 w-7 h-7 rounded-md flex items-center justify-center shrink-0
                                         ${critico ? "bg-red-500" : "bg-amber-500"}`}>
                                         <FaBoxOpen className="w-3.5 h-3.5 text-white" />
                                     </div>

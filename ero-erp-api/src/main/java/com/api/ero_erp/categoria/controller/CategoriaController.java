@@ -41,11 +41,18 @@ public class CategoriaController {
 
     @Operation(summary = "Lista categorias ativas para selects")
     @GetMapping("/select")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CATEGORIA', 'CATEGORIA_GET', 'PRODUTO', 'PRODUTO_GET')")
+    @PreAuthorize("isAuthenticated()")
     public List<CategoriaResponseDto> select(
             @RequestParam(required = false) String nome
     ) {
         return categoriaService.select(nome);
+    }
+
+    @Operation(summary = "Busca categoria por id por select")
+    @GetMapping("/select/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<CategoriaResponseDto> selectById(@PathVariable Long id) {
+        return ResponseEntity.ok(categoriaService.findByIdResponse(id));
     }
 
     @Operation(summary = "Busca categoria por id")

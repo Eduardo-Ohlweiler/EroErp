@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaMobileAlt, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -49,17 +49,6 @@ export const menu: MenuItem[] = [
         roles: ["SUPERADMIN", "ADMIN", "PRODUTO", "PRODUTO_GET"]
       },
       {
-        label: "Auxiliar Produto",
-        icon:  FaTag,
-        roles: ["SUPERADMIN", "ADMIN", "PRODUTO", "PRODUTO_GET", "GRUPO", "GRUPO_GET", "CATEGORIA", "CATEGORIA_GET", "MARCA", "MARCA_GET"],
-        children: [
-          { label: "Grupos",     path: "/produtos/grupos",     icon: FaCog },
-          { label: "Subgrupos",  path: "/produtos/subgrupos",  icon: FaCog },
-          { label: "Categorias", path: "/produtos/categorias", icon: FaCog },
-          { label: "Marcas",     path: "/produtos/marcas",     icon: FaCog }
-        ]
-      },
-      {
         label: "Estoque",
         icon:  FaWarehouse,
         roles: ["SUPERADMIN", "ADMIN", "ESTOQUE", "ESTOQUE_GET", "ESTOQUE_AJUSTE", "ESTOQUE_TRANSFERENCIA"],
@@ -82,6 +71,17 @@ export const menu: MenuItem[] = [
             icon:  FaExchangeAlt,
             roles: ["SUPERADMIN", "ADMIN", "ESTOQUE", "ESTOQUE_TRANSFERENCIA"],
           },
+        ]
+      },
+      {
+        label: "Auxiliar Produto",
+        icon:  FaTag,
+        roles: ["SUPERADMIN", "ADMIN", "PRODUTO", "PRODUTO_GET", "GRUPO", "GRUPO_GET", "CATEGORIA", "CATEGORIA_GET", "MARCA", "MARCA_GET"],
+        children: [
+          { label: "Grupos",     path: "/produtos/grupos",     icon: FaCog },
+          { label: "Subgrupos",  path: "/produtos/subgrupos",  icon: FaCog },
+          { label: "Categorias", path: "/produtos/categorias", icon: FaCog },
+          { label: "Marcas",     path: "/produtos/marcas",     icon: FaCog }
         ]
       },
     ]
