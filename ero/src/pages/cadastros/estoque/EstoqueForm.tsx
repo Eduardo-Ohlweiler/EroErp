@@ -1,18 +1,18 @@
 import { useState, useEffect }                              from "react"
 import { useNavigate, useParams }                           from "react-router-dom"
-import { api }                                              from "../../services/api"
+import { api }                                              from "../../../services/api"
 import axios                                                from "axios"
-import type { EstoqueResponse }                             from "../../types/Estoque"
-import type { ErrorResponse }                               from "../../types/ErrorResponse"
-import { TPage }                                            from "../../components/tpage"
-import { TForm, TFormActionsLeft, TFormFooter }             from "../../components/tform"
-import { TRow }                                             from "../../components/trow"
-import { TCol }                                             from "../../components/tcol"
-import { TEntry }                                           from "../../components/tentry"
-import { TCombo }                                           from "../../components/tcombo"
-import { TDbCombo }                                         from "../../components/tdbcombo"
-import { TButton }                                          from "../../components/tbutton"
-import { useMessage }                                       from "../../hooks/useMessage"
+import type { EstoqueResponse }                             from "../../../types/Estoque"
+import type { ErrorResponse }                               from "../../../types/ErrorResponse"
+import { TPage }                                            from "../../../components/tpage"
+import { TForm, TFormActionsLeft, TFormFooter }             from "../../../components/tform"
+import { TRow }                                             from "../../../components/trow"
+import { TCol }                                             from "../../../components/tcol"
+import { TEntry }                                           from "../../../components/tentry"
+import { TCombo }                                           from "../../../components/tcombo"
+import { TDbCombo }                                         from "../../../components/tdbcombo"
+import { TButton }                                          from "../../../components/tbutton"
+import { useMessage }                                       from "../../../hooks/useMessage"
 
 export default function EstoqueForm() {
   const { id }          = useParams<{ id: string }>()
@@ -174,6 +174,8 @@ export default function EstoqueForm() {
               width        ="200px"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TEntry
               name         ="quantidadeMinima"

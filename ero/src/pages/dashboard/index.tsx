@@ -3,7 +3,7 @@ import { useNavigate }                                from "react-router-dom"
 import { api }                                        from "../../services/api"
 import { useMessage }                                 from "../../hooks/useMessage"
 import type { CompromissoDashboard, PorDiaDto,
-              PorHoraDto, PorPessoaDto }              from "../../types/CompromissoDashboard"
+                PorHoraDto, PorPessoaDto }              from "../../types/CompromissoDashboard"
 import type { EstoqueAlertaResponse }                 from "../../types/Estoque"
 import { TPage }                                      from "../../components/tpage"
 import {
@@ -19,7 +19,7 @@ function Bar({ value, max, color = "bg-(--accent)" }: { value: number; max: numb
     return (
         <div className="flex-1 h-3 bg-(--border) rounded-full overflow-hidden">
             <div className={`h-full ${color} rounded-full transition-all duration-500`}
-                 style={{ width: `${pct}%` }} />
+                    style={{ width: `${pct}%` }} />
         </div>
     )
 }
@@ -34,7 +34,7 @@ function KpiCard({
     color:    string
 }) {
     return (
-        <div className="flex-1 min-w-[140px] rounded-xl border border-(--border)
+        <div className="flex-1 min-w-35 rounded-xl border border-(--border)
                         bg-(--bg-surface) p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
                 <p className="text-xs font-medium text-(--text-muted) uppercase tracking-wide">{label}</p>

@@ -344,7 +344,7 @@ export default function ProdutoForm() {
               searchField  ="busca"
               placeholder  ="Digite para buscar..."
               minLength    ={2}
-              width        ="300px"
+              width        ="50%"
               value        ={ncmId}
               onChange     ={(val) => setNcmId(val)}
             />
@@ -359,7 +359,7 @@ export default function ProdutoForm() {
               valueField   ="id"
               displayField ={displayOrigem}
               placeholder  ="Selecione..."
-              width        ="300px"
+              width        ="50%"
               value        ={origemProdutoId}
               onChange     ={(val) => setOrigemProdutoId(val)}
             />
@@ -376,7 +376,7 @@ export default function ProdutoForm() {
               searchField  ="busca"
               placeholder  ="Digite para buscar..."
               minLength    ={2}
-              width        ="300px"
+              width        ="50%"
               value        ={cestId}
               onChange     ={(val) => setCestId(val)}
             />
@@ -389,7 +389,7 @@ export default function ProdutoForm() {
             <TCombo
               name         ="baixarEstoque"
               label        ="Baixar Estoque"
-              width        ="300px"
+              width        ="160px"
               defaultValue ={baixarEstoque}
               disabled     ={tipoProdutoNome.toLowerCase() === "serviço"}
               onChange     ={setBaixarEstoque}
@@ -405,7 +405,7 @@ export default function ProdutoForm() {
             <TCombo
               name         ="substituicaoTributaria"
               label        ="Substituição Tributária"
-              width        ="300px"
+              width        ="160px"
               defaultValue ={substituicaoTributaria}
               onChange     ={setSubstituicaoTributaria}
               options      ={[
@@ -421,7 +421,7 @@ export default function ProdutoForm() {
               <TCombo
                 name         ="bloqueado"
                 label        ="Status"
-                width        ="300px"
+                width        ="160px"
                 defaultValue ={bloqueado}
                 onChange     ={setBloqueado}
                 options      ={[
