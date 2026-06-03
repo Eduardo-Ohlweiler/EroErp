@@ -757,6 +757,7 @@ export default function PessoaForm() {
                             { label: "Rua",         field: "rua" },
                             { label: "Nº",          field: "numero", width: "70px" },
                             { label: "Bairro",      field: "bairro" },
+                            { label: "Complemento", field: "complemento" },
                             {
                                 label:  "Principal",
                                 width:  "90px",
