@@ -19,7 +19,9 @@ public class CorsConfig {
                 "http://localhost:5173",
                 "http://localhost:4173",
                 "https://eroapi.vps8958.panel.icontainer.net",
-                "https://ero.eroerp.vps8958.panel.icontainer.net"
+                "https://www.eroapi.vps8958.panel.icontainer.net",
+                "https://eroerp.vps8958.panel.icontainer.net",
+                "https://www.eroerp.vps8958.panel.icontainer.net"
         ));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
