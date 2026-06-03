@@ -18,7 +18,7 @@ public class CorsConfig {
         corsConfiguration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:4173",
-                "https://eroteste.eroerp.vps8958.panel.icontainer.net",
+                "https://eroapi.vps8958.panel.icontainer.net",
                 "https://ero.eroerp.vps8958.panel.icontainer.net"
         ));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
