@@ -41,6 +41,7 @@ export default function ProdutoForm() {
   const [loading,               setLoading]               = useState(false)
   const [formKey,               setFormKey]               = useState(0)
   const [tipoProdutoId,         setTipoProdutoId]         = useState("")
+  const [tipoProdutoNome,       setTipoProdutoNome]       = useState("")
   const [unidadeMedidaId,       setUnidadeMedidaId]       = useState("")
   const [subgrupoId,            setSubgrupoId]            = useState("")
   const [categoriaId,           setCategoriaId]           = useState("")
@@ -57,6 +58,7 @@ export default function ProdutoForm() {
   const [custo,                 setCusto]                 = useState("")
   const [bloqueado,             setBloqueado]             = useState("false")
   const [substituicaoTributaria,setSubstituicaoTributaria]= useState("false")
+  const [baixarEstoque,         setBaixarEstoque]         = useState("true")
 
   useEffect(() => {
     if (isEdit) loadProduto()
@@ -77,8 +79,10 @@ export default function ProdutoForm() {
       setCusto(p.custo != null ? String(p.custo) : "")
       setBloqueado(p.bloqueado ? "true" : "false")
       setSubstituicaoTributaria(p.substituicaoTributaria ? "true" : "false")
+      setBaixarEstoque(p.baixarEstoque ? "true" : "false")
 
       setTipoProdutoId(String(p.tipoProdutoId))
+      setTipoProdutoNome(p.tipoProdutoNome)
       setUnidadeMedidaId(String(p.unidadeMedidaId))
       if (p.subgrupoId)         setSubgrupoId(String(p.subgrupoId))
       if (p.categoriaId)        setCategoriaId(String(p.categoriaId))
@@ -125,7 +129,8 @@ export default function ProdutoForm() {
         ncmId:                 ncmId              ? Number(ncmId)              : null,
         origemProdutoId:       origemProdutoId    ? Number(origemProdutoId)    : null,
         cestId:                cestId             ? Number(cestId)             : null,
-        substituicaoTributaria: formData.substituicaoTributaria === "true"
+        substituicaoTributaria: formData.substituicaoTributaria === "true",
+        baixarEstoque:          baixarEstoque === "true"
       }
 
       if (isEdit) {
@@ -171,7 +176,12 @@ export default function ProdutoForm() {
               required
               width        ="300px"
               value        ={tipoProdutoId}
-              onChange     ={(val) => setTipoProdutoId(val)}
+              onChange     ={(val, item) => {
+                setTipoProdutoId(val)
+                const nome = String(item?.nome ?? "")
+                setTipoProdutoNome(nome)
+                if (nome.toLowerCase() === "serviço") setBaixarEstoque("false")
+              }}
             />
           </TCol>
         </TRow>
@@ -373,7 +383,23 @@ export default function ProdutoForm() {
           </TCol>
         </TRow>
 
-        {/* ── Tributário ── */}
+        {/* ── Estoque / Tributário ── */}
+        <TRow>
+          <TCol>
+            <TCombo
+              name         ="baixarEstoque"
+              label        ="Baixar Estoque"
+              width        ="300px"
+              defaultValue ={baixarEstoque}
+              disabled     ={tipoProdutoNome.toLowerCase() === "serviço"}
+              onChange     ={setBaixarEstoque}
+              options      ={[
+                { value: "true",  label: "Sim" },
+                { value: "false", label: "Não" },
+              ]}
+            />
+          </TCol>
+        </TRow>
         <TRow>
           <TCol>
             <TCombo

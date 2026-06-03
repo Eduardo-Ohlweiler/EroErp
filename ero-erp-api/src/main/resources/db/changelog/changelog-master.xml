@@ -39,4 +39,5 @@
     <include file="032-create-estoque.xml"                        relativeToChangelogFile="true" />
     <include file="033-insert-roles-estoque.xml"                  relativeToChangelogFile="true" />
     <include file="034-alter-estoque-add-quantidade-minima.xml"  relativeToChangelogFile="true" />
+    <include file="035-alter-produto-add-baixar-estoque.xml"    relativeToChangelogFile="true" />
 </databaseChangeLog>
