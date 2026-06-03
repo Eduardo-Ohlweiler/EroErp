@@ -36,4 +36,7 @@
     <include file="029-alter-ncm-cest-add-ativo.xml"               relativeToChangelogFile="true" />
     <include file="030-insert-ncm-data.xml"                       relativeToChangelogFile="true" />
     <include file="031-insert-cest-data.xml"                      relativeToChangelogFile="true" />
+    <include file="032-create-estoque.xml"                        relativeToChangelogFile="true" />
+    <include file="033-insert-roles-estoque.xml"                  relativeToChangelogFile="true" />
+    <include file="034-alter-estoque-add-quantidade-minima.xml"  relativeToChangelogFile="true" />
 </databaseChangeLog>

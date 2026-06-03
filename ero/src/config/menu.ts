@@ -1,40 +1,12 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaMobileAlt, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaMobileAlt, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
-    label: "Administração",
-    icon: FaUserShield,
-    roles: ["SUPERADMIN"],
-    children: [
-      { label: "Clientes",        path: "/clientes",               icon: FaUsers },
-      { label: "Usuários",        path: "/usuarios",               icon: FaUsers },
-      { label: "Config. WhatsApp", path: "/whatsapp/config-global", icon: FaCog   },
-      {
-        label: "Auxiliar administrativo",
-        icon: FaCogs,
-        children: [
-          { label: "Cidades",                 path: "/cidades",           icon: FaCog },
-          { label: "Estados",                 path: "/estados",           icon: FaCog },
-          { label: "Tipos de Cadastros",      path: "/tipos/cadastro",    icon: FaCog },
-          { label: "Tipos de Email",          path: "/tipos/email",       icon: FaCog },
-          { label: "Tipos de Endereço",       path: "/tipos/endereco",    icon: FaCog },
-          { label: "Tipos de Redes sociais",  path: "/tipos/redesocial",  icon: FaCog },
-          { label: "Tipos de Telefone",       path: "/tipos/telefone",    icon: FaCog }
-        ]
-      },
-      {
-        label: "Tabelas Produto",
-        icon: FaBoxOpen,
-        children: [
-          { label: "Tipos de Produto",    path: "/tabelas/tipo-produto",    icon: FaCog },
-          { label: "Unidades de Medida",  path: "/tabelas/unidade-medida",  icon: FaCog },
-          { label: "NCM",                 path: "/tabelas/ncm",             icon: FaCog },
-          { label: "Origens de Produto",  path: "/tabelas/origem-produto",  icon: FaCog },
-          { label: "CEST",                path: "/tabelas/cest",            icon: FaCog }
-        ]
-      }
-    ]
+    label: "Dashboard",
+    icon:  FaTachometerAlt,
+    path:  "/",
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET"],
   },
   {
     label: "Agenda",
@@ -56,17 +28,9 @@ export const menu: MenuItem[] = [
     ],
   },
   {
-    label: "WhatsApp",
-    icon:  FaWhatsapp,
-    roles: ["SUPERADMIN", "ADMIN"],
-    children: [
-      { label: "Instâncias", path: "/whatsapp/instancias", icon: FaMobileAlt },
-    ]
-  },
-  {
     label: "Cadastros",
     icon: FaClipboardList,
-    roles: ["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST", "PRODUTO", "PRODUTO_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST", "PRODUTO", "PRODUTO_GET", "ESTOQUE", "ESTOQUE_GET", "ESTOQUE_AJUSTE", "ESTOQUE_TRANSFERENCIA"],
     children: [
       {
         label: "Pessoas",
@@ -94,13 +58,74 @@ export const menu: MenuItem[] = [
           { label: "Categorias", path: "/produtos/categorias", icon: FaCog },
           { label: "Marcas",     path: "/produtos/marcas",     icon: FaCog }
         ]
-      }
+      },
+      {
+        label: "Estoque",
+        icon:  FaWarehouse,
+        roles: ["SUPERADMIN", "ADMIN", "ESTOQUE", "ESTOQUE_GET", "ESTOQUE_AJUSTE", "ESTOQUE_TRANSFERENCIA"],
+        children: [
+          {
+            label: "Estoque",
+            path:  "/estoque",
+            icon:  FaBoxOpen,
+            roles: ["SUPERADMIN", "ADMIN", "ESTOQUE", "ESTOQUE_GET"],
+          },
+          {
+            label: "Ajuste de Estoque",
+            path:  "/estoque/ajustes",
+            icon:  FaSlidersH,
+            roles: ["SUPERADMIN", "ADMIN", "ESTOQUE", "ESTOQUE_AJUSTE"],
+          },
+          {
+            label: "Transferência de Estoque",
+            path:  "/estoque/transferencias",
+            icon:  FaExchangeAlt,
+            roles: ["SUPERADMIN", "ADMIN", "ESTOQUE", "ESTOQUE_TRANSFERENCIA"],
+          },
+        ]
+      },
     ]
   },
   {
-    label: "Dashboard",
-    icon:  FaTachometerAlt,
-    path:  "/",
-    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO"],
-  }
+    label: "Integrações",
+    icon:  FaPlug,
+    roles: ["SUPERADMIN", "ADMIN"],
+    children: [
+      { label: "WhatsApp — Instâncias", path: "/whatsapp/instancias", icon: FaWhatsapp },
+    ]
+  },
+  {
+    label: "Administração",
+    icon: FaUserShield,
+    roles: ["SUPERADMIN"],
+    children: [
+      { label: "Clientes",          path: "/clientes",               icon: FaUsers },
+      { label: "Usuários",          path: "/usuarios",               icon: FaUsers },
+      { label: "Config. WhatsApp",  path: "/whatsapp/config-global", icon: FaWhatsapp },
+      {
+        label: "Auxiliar administrativo",
+        icon: FaCogs,
+        children: [
+          { label: "Cidades",                path: "/cidades",           icon: FaCog },
+          { label: "Estados",                path: "/estados",           icon: FaCog },
+          { label: "Tipos de Cadastros",     path: "/tipos/cadastro",    icon: FaCog },
+          { label: "Tipos de Email",         path: "/tipos/email",       icon: FaCog },
+          { label: "Tipos de Endereço",      path: "/tipos/endereco",    icon: FaCog },
+          { label: "Tipos de Redes sociais", path: "/tipos/redesocial",  icon: FaCog },
+          { label: "Tipos de Telefone",      path: "/tipos/telefone",    icon: FaCog }
+        ]
+      },
+      {
+        label: "Tabelas Produto",
+        icon: FaBoxOpen,
+        children: [
+          { label: "Tipos de Produto",   path: "/tabelas/tipo-produto",   icon: FaCog },
+          { label: "Unidades de Medida", path: "/tabelas/unidade-medida", icon: FaCog },
+          { label: "NCM",                path: "/tabelas/ncm",            icon: FaCog },
+          { label: "Origens de Produto", path: "/tabelas/origem-produto", icon: FaCog },
+          { label: "CEST",               path: "/tabelas/cest",           icon: FaCog }
+        ]
+      }
+    ]
+  },
 ]

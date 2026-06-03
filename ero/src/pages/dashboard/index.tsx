@@ -4,10 +4,12 @@ import { api }                                        from "../../services/api"
 import { useMessage }                                 from "../../hooks/useMessage"
 import type { CompromissoDashboard, PorDiaDto,
               PorHoraDto, PorPessoaDto }              from "../../types/CompromissoDashboard"
+import type { EstoqueAlertaResponse }                 from "../../types/Estoque"
 import { TPage }                                      from "../../components/tpage"
 import {
     FaCalendarCheck, FaCalendarTimes, FaCheckCircle,
-    FaCalendarDay, FaCalendarWeek, FaUser, FaClock
+    FaCalendarDay, FaCalendarWeek, FaUser, FaClock,
+    FaExclamationTriangle, FaBoxOpen
 } from "react-icons/fa"
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -61,12 +63,17 @@ export function DashBoard() {
     const { showMessage }      = useMessage()
     const [data,    setData]   = useState<CompromissoDashboard | null>(null)
     const [loading, setLoading] = useState(true)
+    const [alertas, setAlertas] = useState<EstoqueAlertaResponse[]>([])
 
     useEffect(() => {
         api.get<CompromissoDashboard>("/compromissos/dashboard")
             .then((r) => setData(r.data))
             .catch(() => showMessage("error", "Erro ao carregar dashboard"))
             .finally(() => setLoading(false))
+
+        api.get<EstoqueAlertaResponse[]>("/estoque/alertas")
+            .then((r) => setAlertas(r.data ?? []))
+            .catch(() => { /* silencioso: usuário pode não ter permissão */ })
     }, []) // eslint-disable-line
 
     if (loading) {
@@ -87,6 +94,63 @@ export function DashBoard() {
 
     return (
         <TPage title="Dashboard" breadcrumb={["Dashboard"]}>
+
+            {/* ── ALERTAS DE ESTOQUE ───────────────────────────────────────── */}
+            {alertas.length > 0 && (
+                <div className="rounded-xl border border-amber-400 bg-amber-50 dark:bg-amber-950/30 p-4 mb-6">
+                    <SectionTitle>
+                        <span className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                            <FaExclamationTriangle /> Alertas de Estoque — quantidade mínima atingida
+                            <span className="ml-1 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                {alertas.length}
+                            </span>
+                        </span>
+                    </SectionTitle>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {alertas.map((a) => {
+                            const critico = a.quantidade <= 0
+                            return (
+                                <button
+                                    key       ={a.estoqueId}
+                                    type      ="button"
+                                    onClick   ={() => navigate(`/estoque/${a.estoqueId}`)}
+                                    className ="flex items-start gap-3 p-3 rounded-lg border border-amber-200
+                                                dark:border-amber-800 bg-white dark:bg-amber-950/50
+                                                hover:bg-amber-100 dark:hover:bg-amber-900/40 transition text-left w-full"
+                                >
+                                    <div className={`mt-0.5 w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0
+                                        ${critico ? "bg-red-500" : "bg-amber-500"}`}>
+                                        <FaBoxOpen className="w-3.5 h-3.5 text-white" />
+                                    </div>
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="text-sm font-medium text-(--text-primary) truncate">
+                                            {a.produtoNome}
+                                        </span>
+                                        <span className="text-xs text-(--text-muted) truncate">
+                                            {a.emitenteNome}
+                                        </span>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded
+                                                ${critico
+                                                    ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                                                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"}`}>
+                                                {critico ? "Sem estoque" : "Estoque baixo"}
+                                            </span>
+                                            <span className="text-xs text-(--text-muted)">
+                                                {Number(a.quantidade).toLocaleString("pt-BR", { minimumFractionDigits: 3 })}
+                                                {" "}{a.unidadeMedidaSigla}
+                                                {" / mín "}
+                                                {Number(a.quantidadeMinima).toLocaleString("pt-BR", { minimumFractionDigits: 3 })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* ── KPIs ─────────────────────────────────────────────────────── */}
             <div className="flex flex-wrap gap-3 mb-6">

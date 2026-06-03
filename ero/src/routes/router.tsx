@@ -37,6 +37,13 @@ import CategoriaFormList                          from "../pages/cadastros/produ
 import MarcaFormList                              from "../pages/cadastros/produtos/auxiliar/MarcaFormList";
 import ProdutoList                                from "../pages/cadastros/produtos/ProdutoList";
 import ProdutoForm                                from "../pages/cadastros/produtos/ProdutoForm";
+import EstoqueList                                from "../pages/estoque/EstoqueList";
+import EstoqueForm                                from "../pages/estoque/EstoqueForm";
+import AjusteList                                 from "../pages/estoque/AjusteList";
+import AjusteForm                                 from "../pages/estoque/AjusteForm";
+import TransferenciaList                          from "../pages/estoque/TransferenciaList";
+import TransferenciaForm                          from "../pages/estoque/TransferenciaForm";
+import MovimentacaoList                           from "../pages/estoque/MovimentacaoList";
 
 export function Router() {
   return (
@@ -117,6 +124,22 @@ export function Router() {
               <Route path="/produtos/subgrupos"  element={<SubgrupoFormList />} />
               <Route path="/produtos/categorias" element={<CategoriaFormList />} />
               <Route path="/produtos/marcas"     element={<MarcaFormList />} />
+            </Route>
+
+            {/* ── ESTOQUE ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "ESTOQUE", "ESTOQUE_GET"]} />}>
+              <Route path="/estoque"                          element={<EstoqueList />} />
+              <Route path="/estoque/novo"                     element={<EstoqueForm />} />
+              <Route path="/estoque/:id"                      element={<EstoqueForm />} />
+              <Route path="/estoque/movimentacoes"            element={<MovimentacaoList />} />
+            </Route>
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "ESTOQUE", "ESTOQUE_GET", "ESTOQUE_AJUSTE"]} />}>
+              <Route path="/estoque/ajustes"                  element={<AjusteList />} />
+              <Route path="/estoque/ajustes/novo"             element={<AjusteForm />} />
+            </Route>
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "ESTOQUE", "ESTOQUE_GET", "ESTOQUE_TRANSFERENCIA"]} />}>
+              <Route path="/estoque/transferencias"           element={<TransferenciaList />} />
+              <Route path="/estoque/transferencias/nova"      element={<TransferenciaForm />} />
             </Route>
 
             {/* ── COMPRIMISSO ── */}

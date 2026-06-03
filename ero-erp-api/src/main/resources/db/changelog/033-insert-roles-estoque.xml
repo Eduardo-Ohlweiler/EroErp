@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="033-insert-roles-estoque" author="eduardo">
+
+        <insert tableName="role">
+            <column name="nome" value="ESTOQUE"/>
+            <column name="descricao" value="Permissão geral para estoque"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="ESTOQUE_GET"/>
+            <column name="descricao" value="Permissão para consultar estoque"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="ESTOQUE_AJUSTE"/>
+            <column name="descricao" value="Permissão para realizar ajustes de estoque"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="ESTOQUE_TRANSFERENCIA"/>
+            <column name="descricao" value="Permissão para realizar transferências de estoque"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>
