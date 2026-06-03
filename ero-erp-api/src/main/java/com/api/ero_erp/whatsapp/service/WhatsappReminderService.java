@@ -82,11 +82,9 @@ public class WhatsappReminderService {
 
             if (instancia == null || !Boolean.TRUE.equals(instancia.getAtivo())) return;
 
-            ZoneId       timezone         = ZoneId.of(instancia.getTimezone());
+            ZoneId        timezone        = ZoneId.of(instancia.getTimezone());
             ZonedDateTime agora           = ZonedDateTime.now(timezone);
-            ZonedDateTime inicioDoEvento  = compromisso.getInicio()
-                    .atZone(ZoneId.systemDefault())
-                    .withZoneSameInstant(timezone);
+            ZonedDateTime inicioDoEvento  = compromisso.getInicio().atZone(timezone);
 
             long diferencaMinutos = (inicioDoEvento.toEpochSecond() - agora.toEpochSecond()) / 60;
 
