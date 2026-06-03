@@ -28,7 +28,41 @@ import { TButton } from "../../../components/tbutton"
 import { TSpace } from "../../../components/tspace"
 import { TPanel } from "../../../components/tpanel"
 import { TFieldList } from "../../../components/tfieldlist"
+import { TWindow } from "../../../components/twindow"
+import { TDataGrid } from "../../../components/tdatagrid"
+import type { TDataGridColumn } from "../../../types/TDataGridColumn"
 import { TUniqueSearch } from "../../../components/tuniquesearch"
+
+type EnderecoLocal = {
+    _tempId:        string
+    id:             string
+    tipoEnderecoId: string
+    cidadeId:       string
+    cidadeNome:     string
+    cep:            string
+    rua:            string
+    numero:         string
+    bairro:         string
+    complemento:    string
+    principal:      string
+}
+
+function enderecosParaState(enderecos?: PessoaResponse["enderecos"]): EnderecoLocal[] {
+    if (!enderecos?.length) return []
+    return enderecos.map(e => ({
+        _tempId:        String(e.id),
+        id:             String(e.id),
+        tipoEnderecoId: String(e.tipoEnderecoId),
+        cidadeId:       String(e.cidadeId),
+        cidadeNome:     `${e.cidadeNome} - ${e.estadoSigla}`,
+        cep:            e.cep         ?? "",
+        rua:            e.rua         ?? "",
+        numero:         e.numero      ?? "",
+        bairro:         e.bairro      ?? "",
+        complemento:    e.complemento ?? "",
+        principal:      e.principal ? "true" : "false",
+    }))
+}
 
 export default function PessoaForm() {
 
@@ -59,6 +93,12 @@ export default function PessoaForm() {
     const [tiposCadastroIds,   setTiposCadastroIds]   = useState<string[]>([])
     const [currentId,          setCurrentId]          = useState<string | undefined>(idParam)
     const isEdit                                      = !!currentId
+
+    const [enderecos,          setEnderecos]          = useState<EnderecoLocal[]>([])
+    const [enderecoWindowOpen, setEnderecoWindowOpen] = useState(false)
+    const [editandoEndereco,   setEditandoEndereco]   = useState<EnderecoLocal | null>(null)
+    const [cidadeIdWindow,     setCidadeIdWindow]      = useState("")
+    const [cidadeNomeWindow,   setCidadeNomeWindow]    = useState("")
 
     //useEffect(() => {
     //    api.get("/tipos/email/select").then(r => setTiposEmail(r.data))
@@ -116,6 +156,7 @@ export default function PessoaForm() {
                 setRazaoSocial(p.razaoSocial ?? "")
 
                 setFormKey((prev) => prev + 1)
+                setEnderecos(enderecosParaState(p.enderecos))
             })
             .catch(() => {
                 showMessage("error", "Erro ao carregar pessoa")
@@ -143,6 +184,7 @@ export default function PessoaForm() {
         setNomeFantasia("")
         setRazaoSocial("")
         setTiposCadastroIds([])
+        setEnderecos([])
 
         setFormKey((prev) => prev + 1)
     }
@@ -216,7 +258,6 @@ export default function PessoaForm() {
             const emailsArray       = parseArray(data, "emails")
             const telefonesArray    = parseArray(data, "telefones")
             const redesSociaisArray = parseArray(data, "redesSociais")
-            const enderecosArray    = parseArray(data, "enderecos")
 
             const cleanRest = Object.fromEntries(
                 Object.entries(rest).filter(([k]) =>
@@ -263,7 +304,7 @@ export default function PessoaForm() {
                         url:              r.url        || null,
                         observacao:       r.observacao || null,
                 })),
-                enderecos: enderecosArray
+                enderecos: enderecos
                     .filter(e => e.cidadeId && e.rua?.trim())
                     .map(e => ({
                         id:             e.id ? Number(e.id) : null,
@@ -275,7 +316,7 @@ export default function PessoaForm() {
                         bairro:         e.bairro      || null,
                         complemento:    e.complemento || null,
                         principal:      e.principal   === "true",
-                })),
+                    })),
             }
             if (isEdit) {
                 await api.put(`/pessoas/${currentId}`, payload)
@@ -303,6 +344,46 @@ export default function PessoaForm() {
         } finally {
             setSaving(false)
         }
+    }
+
+    function handleAbrirNovoEndereco() {
+        setEditandoEndereco(null)
+        setCidadeIdWindow("")
+        setCidadeNomeWindow("")
+        setEnderecoWindowOpen(true)
+    }
+
+    function handleAbrirEditarEndereco(e: EnderecoLocal) {
+        setEditandoEndereco(e)
+        setCidadeIdWindow(e.cidadeId)
+        setCidadeNomeWindow(e.cidadeNome)
+        setEnderecoWindowOpen(true)
+    }
+
+    function handleSalvarEndereco(data: Record<string, string>) {
+        const novo: EnderecoLocal = {
+            _tempId:        editandoEndereco?._tempId ?? crypto.randomUUID(),
+            id:             editandoEndereco?.id      ?? "",
+            tipoEnderecoId: data.tipoEnderecoId       ?? "",
+            cidadeId:       cidadeIdWindow,
+            cidadeNome:     cidadeNomeWindow,
+            cep:            data.cep                  ?? "",
+            rua:            data.rua                  ?? "",
+            numero:         data.numero               ?? "",
+            bairro:         data.bairro               ?? "",
+            complemento:    data.complemento          ?? "",
+            principal:      data.principal === "true" ? "true" : "false",
+        }
+        setEnderecos(prev =>
+            editandoEndereco
+                ? prev.map(e => e._tempId === editandoEndereco._tempId ? novo : e)
+                : [...prev, novo]
+        )
+        setEnderecoWindowOpen(false)
+    }
+
+    function handleRemoverEndereco(tempId: string) {
+        setEnderecos(prev => prev.filter(e => e._tempId !== tempId))
     }
 
     if (loading) {
@@ -351,23 +432,6 @@ export default function PessoaForm() {
             usuario:          r.usuario    ?? "",
             url:              r.url        ?? "",
             observacao:       r.observacao ?? "",
-        }))
-    }
-
-    function enderecosParaInitialData(enderecos?: PessoaResponse["enderecos"]) {
-        if (!enderecos?.length) 
-            return undefined
-        return enderecos.map(e => ({
-            id:             String(e.id),
-            tipoEnderecoId: String(e.tipoEnderecoId),
-            cidadeId:       String(e.cidadeId),
-            cidadeNome:     `${e.cidadeNome} - ${e.estadoSigla}`,
-            cep:            e.cep         ?? "",
-            rua:            e.rua         ?? "",
-            numero:         e.numero      ?? "",
-            bairro:         e.bairro      ?? "",
-            complemento:    e.complemento ?? "",
-            principal:      e.principal ? "true" : "false",
         }))
     }
 
@@ -676,54 +740,45 @@ export default function PessoaForm() {
                         ]}
                     />
                 </TPanel>
-                <TPanel title="Endereços">
-                    <TFieldList
-                        name        ="enderecos"
-                        initialData ={enderecosParaInitialData(pessoa?.enderecos)}
-                        columns     ={[
-                            { component: "hidden", label: "ID",        name: "id"             },
-                            { component: "hidden", label: "Cidade ID", name: "cidadeId"       },
+                <TDataGrid<EnderecoLocal>
+                        keyField     ="_tempId"
+                        data         ={enderecos}
+                        emptyMessage ="Nenhum endereço cadastrado"
+                        onAdd        ={handleAbrirNovoEndereco}
+                        actionsWidth ="100px"
+                        columns      ={[
                             {
-                                component: "combo",
-                                label:     "Tipo",
-                                name:      "tipoEnderecoId",
-                                width:     "100px",
-                                options:   tiposEndereco.map(t => ({ value: String(t.id), label: t.nome })),
+                                label:  "Tipo",
+                                width:  "130px",
+                                render: (row) => tiposEndereco.find(t => String(t.id) === row.tipoEnderecoId)?.nome ?? "—",
                             },
+                            { label: "Cidade",      field: "cidadeNome" },
+                            { label: "CEP",         field: "cep",    width: "110px" },
+                            { label: "Rua",         field: "rua" },
+                            { label: "Nº",          field: "numero", width: "70px" },
+                            { label: "Bairro",      field: "bairro" },
                             {
-                                component: "custom",
-                                label:     "Cidade",
-                                name:      "cidadeNome",
-                                width:     "200px",
-                                render:    (rowIndex, rowData, onChange) => (
-                                    <TUniqueSearch
-                                        name           ={`enderecos[${rowIndex}][cidadeNome]`}
-                                        label          =""
-                                        url            ="/cidades/select"
-                                        valueField     ="id"
-                                        displayField   ={(item) => {
-                                            const cidade = item as unknown as CidadeItem
-                                            return `${cidade.nome} - ${cidade.estado?.sigla ?? ""}`
-                                        }}
-                                        searchField    ="nome"
-                                        placeholder    ="Buscar cidade..."
-                                        minLength      ={2}
-                                        width          ="100%"
-                                        defaultValue   ={rowData.cidadeId   || undefined}
-                                        defaultDisplay ={rowData.cidadeNome || undefined}
-                                        onChange       ={(value) => onChange("cidadeId", value)}
-                                    />
-                                ),
+                                label:  "Principal",
+                                width:  "90px",
+                                align:  "center",
+                                render: (row) => row.principal === "true" ? "✓" : "",
                             },
-                            { component: "entry",    label: "CEP",         name: "cep",         mask: "cep",  width: "90px" },
-                            { component: "entry",    label: "Rua",         name: "rua",         width: "220px" },
-                            { component: "entry",    label: "Número",      name: "numero",      width: "90px"  },
-                            { component: "entry",    label: "Bairro",      name: "bairro",      width: "160px" },
-                            { component: "entry",    label: "Complemento", name: "complemento", width: "160px" },
-                            { component: "checkbox", label: "Principal",   name: "principal",   width: "80px"  },
-                        ]}
+                        ] as TDataGridColumn<EnderecoLocal>[]}
+                        actions={(row) => (
+                            <>
+                                <TButton
+                                    label   =""
+                                    variant ="edit"
+                                    onClick ={(e) => { e?.stopPropagation(); handleAbrirEditarEndereco(row) }}
+                                />
+                                <TButton
+                                    label   =""
+                                    variant ="delete"
+                                    onClick ={(e) => { e?.stopPropagation(); handleRemoverEndereco(row._tempId) }}
+                                />
+                            </>
+                        )}
                     />
-                </TPanel>
                 <TRow>
                     <TCol>
                         <TCombo
@@ -828,6 +883,145 @@ export default function PessoaForm() {
                     </TFormActionsRight>
                 </TFormFooter>
             </TForm>
+
+            <TWindow
+                title   ={editandoEndereco ? "Editar Endereço" : "Novo Endereço"}
+                open    ={enderecoWindowOpen}
+                width   ="780px"
+                onClose ={() => setEnderecoWindowOpen(false)}
+                actions ={
+                    <TButton
+                        label   ={editandoEndereco ? "Salvar" : "Adicionar"}
+                        variant ="save"
+                        type    ="submit"
+                        form    ="endereco-form"
+                    />
+                }
+            >
+                <form
+                    id        ="endereco-form"
+                    key       ={editandoEndereco?._tempId ?? "novo"}
+                    className ="flex flex-col gap-4"
+                    onSubmit  ={(e) => {
+                        e.preventDefault()
+                        const inputs = e.currentTarget.querySelectorAll<
+                            HTMLInputElement | HTMLSelectElement
+                        >("input, select")
+                        const data: Record<string, string> = {}
+                        inputs.forEach((el) => {
+                            if (!el.name) return
+                            if (el instanceof HTMLInputElement && el.type === "checkbox") {
+                                data[el.name] = el.checked ? el.value : "false"
+                                return
+                            }
+                            data[el.name] = el.value
+                        })
+                        handleSalvarEndereco(data)
+                    }}
+                >
+                    <TRow>
+                        <TCol>
+                            <TCombo
+                                name         ="tipoEnderecoId"
+                                label        ="Tipo de Endereço"
+                                required
+                                width        ="220px"
+                                defaultValue ={editandoEndereco?.tipoEnderecoId ?? ""}
+                                options      ={tiposEndereco.map(t => ({ value: String(t.id), label: t.nome }))}
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TUniqueSearch
+                                name          ="cidadeNome"
+                                label         ="Cidade"
+                                url           ="/cidades/select"
+                                valueField    ="id"
+                                displayField  ={(item) => {
+                                    const cidade = item as unknown as CidadeItem
+                                    return `${cidade.nome} - ${cidade.estado?.sigla ?? ""}`
+                                }}
+                                searchField   ="nome"
+                                placeholder   ="Buscar cidade..."
+                                minLength     ={2}
+                                width         ="100%"
+                                defaultValue  ={editandoEndereco?.cidadeId   || undefined}
+                                defaultDisplay={editandoEndereco?.cidadeNome || undefined}
+                                onChange      ={(value, item) => {
+                                    setCidadeIdWindow(value)
+                                    if (item) {
+                                        const cidade = item as unknown as CidadeItem
+                                        setCidadeNomeWindow(`${cidade.nome} - ${cidade.estado?.sigla ?? ""}`)
+                                    } else {
+                                        setCidadeNomeWindow("")
+                                    }
+                                }}
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="cep"
+                                label        ="CEP"
+                                mask         ="cep"
+                                width        ="130px"
+                                defaultValue ={editandoEndereco?.cep ?? ""}
+                            />
+                        </TCol>
+                        <TCol>
+                            <TEntry
+                                name         ="rua"
+                                label        ="Rua"
+                                maxLength    ={255}
+                                defaultValue ={editandoEndereco?.rua ?? ""}
+                            />
+                        </TCol>
+                        <TCol>
+                            <TEntry
+                                name         ="numero"
+                                label        ="Número"
+                                maxLength    ={20}
+                                width        ="100px"
+                                defaultValue ={editandoEndereco?.numero ?? ""}
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="bairro"
+                                label        ="Bairro"
+                                maxLength    ={100}
+                                defaultValue ={editandoEndereco?.bairro ?? ""}
+                            />
+                        </TCol>
+                        <TCol>
+                            <TEntry
+                                name         ="complemento"
+                                label        ="Complemento"
+                                maxLength    ={100}
+                                defaultValue ={editandoEndereco?.complemento ?? ""}
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <label className="flex items-center gap-2 text-sm text-(--text-secondary) cursor-pointer">
+                                <input
+                                    type           ="checkbox"
+                                    name           ="principal"
+                                    value          ="true"
+                                    defaultChecked ={editandoEndereco?.principal === "true"}
+                                    className      ="w-4 h-4 cursor-pointer accent-(--accent)"
+                                />
+                                Principal
+                            </label>
+                        </TCol>
+                    </TRow>
+                </form>
+            </TWindow>
         </TPage>
     )
 }

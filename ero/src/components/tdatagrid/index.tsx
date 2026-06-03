@@ -1,4 +1,5 @@
 import type { TDataGridColumn, TDataGridMask } from "../../types/TDataGridColumn"
+import { TButton } from "../tbutton"
 
 interface           TDataGridProps<T extends object> {
   columns:          TDataGridColumn<T>[]
@@ -9,6 +10,7 @@ interface           TDataGridProps<T extends object> {
   onRowClick?:      (row: T) => void
   actions?:         (row: T) => React.ReactNode
   actionsWidth?:    string
+  onAdd?:           () => void
 }
 
 export function TDataGrid<T extends object>({
@@ -19,7 +21,8 @@ export function TDataGrid<T extends object>({
   emptyMessage = "Nenhum registro encontrado",
   onRowClick,
   actions,
-  actionsWidth = "120px"
+  actionsWidth = "120px",
+  onAdd
 }: TDataGridProps<T>) {
 
   const alignClass = {
@@ -73,7 +76,6 @@ export function TDataGrid<T extends object>({
   }
 
   return (
-    // ← wrapper externo garante que o scroll horizontal fique contido na página
     <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-(--border)">
       {/* ← min-w garante que a tabela não colapse abaixo de 400px em mobile */}
       <table className="w-full min-w-100 text-sm">
@@ -83,7 +85,6 @@ export function TDataGrid<T extends object>({
             {actions && (
               <th
                 style     ={{ width: actionsWidth }}
-                // ← whitespace-nowrap evita que "Ações" quebre em duas linhas
                 className ="px-3 py-3 font-medium text-(--text-inverse) text-center whitespace-nowrap"
               >
                 Ações
@@ -93,7 +94,6 @@ export function TDataGrid<T extends object>({
               <th
                 key       ={String(col.field ?? col.label)}
                 style     ={{ width: col.width }}
-                // ← whitespace-nowrap nos headers evita quebras indesejadas
                 className ={`px-3 py-3 font-medium text-(--text-inverse) whitespace-nowrap
                   ${alignClass[col.align ?? "left"]}`}
               >
@@ -153,13 +153,13 @@ export function TDataGrid<T extends object>({
                   // ← max-w + truncate evita que texto longo estoure a célula
                   className={`px-3 py-3 text-(--text-primary) max-w-50 truncate ${alignClass[col.align ?? "left"]}`}
                 >
-                  {col.render 
+                  {col.render
                       ? col.render(row, (val) => {
-                          if (!col.mask) 
+                          if (!col.mask)
                             return val
                           const m = typeof col.mask === "function" ? col.mask(row) : col.mask
                           return applyColumnMask(val, m)
-                        }) 
+                        })
                       : resolveMask(row, col)
                   }
                 </td>
@@ -168,6 +168,16 @@ export function TDataGrid<T extends object>({
           ))}
         </tbody>
       </table>
+      {onAdd && (
+        <div className="px-3 py-2 border-t border-(--border)">
+          <TButton
+            label  ="+ Adicionar"
+            variant="secondary"
+            type   ="button"
+            onClick={onAdd}
+          />
+        </div>
+      )}
     </div>
   )
 }
