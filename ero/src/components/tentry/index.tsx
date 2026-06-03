@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-type MaskType = "cpf" | "cnpj" | "telefone" | "celular" | "cep" | "data" | "hora" | "moeda" | "numero"
+type MaskType = "cpf" | "cnpj" | "telefone" | "celular" | "cep" | "data" | "hora" | "moeda" | "numero" | "numerodecimal"
 
 function applyMask(value: string, mask: MaskType): string {
   const onlyDigits = value.replace(/\D/g, "")
@@ -52,6 +52,13 @@ function applyMask(value: string, mask: MaskType): string {
       return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
     }
 
+    // numerodecimal: exibe 1.234,567 mas armazena 1234.567 (3 casas decimais)
+    case "numerodecimal": {
+      const digits = onlyDigits.slice(0, 16)
+      const num    = parseInt(digits || "0", 10) / 1000
+      return num.toLocaleString("pt-BR", { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+    }
+
     default:
       return value
   }
@@ -97,6 +104,13 @@ function getRawValue(masked: string, mask: MaskType): string {
       return num.toFixed(2)
     }
 
+    // numerodecimal: converte 1.234,567 → 1234.567
+    case "numerodecimal": {
+      const digits = masked.replace(/\D/g, "")
+      const num    = parseInt(digits || "0", 10) / 1000
+      return num.toFixed(3)
+    }
+
     default:
       return masked
   }
@@ -119,6 +133,15 @@ function toDisplay(value: string, mask: MaskType): string {
       const num = parseFloat(value)
       if (!isNaN(num)) {
         return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+      }
+      return applyMask(value, mask)
+    }
+
+    // numerodecimal: recebe 1234.567 → exibe 1.234,567
+    case "numerodecimal": {
+      const num = parseFloat(value)
+      if (!isNaN(num)) {
+        return num.toLocaleString("pt-BR", { minimumFractionDigits: 3, maximumFractionDigits: 3 })
       }
       return applyMask(value, mask)
     }

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="032-create-estoque" author="eduardo">
+
+        <!-- ── estoque: saldo atual por produto × emitente ── -->
+        <createTable tableName="estoque">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_estoque_cliente" references="cliente(id)"/>
+            </column>
+            <column name="emitente_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_estoque_emitente" references="emitente(id)"/>
+            </column>
+            <column name="produto_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_estoque_produto" references="produto(id)"/>
+            </column>
+            <column name="quantidade" type="NUMERIC(15,4)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="preco_venda" type="NUMERIC(15,2)"/>
+            <column name="custo_medio" type="NUMERIC(15,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bloqueado" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints foreignKeyName="fk_estoque_created_by" references="usuario(id)"/>
+            </column>
+            <column name="updated_by" type="BIGINT">
+                <constraints foreignKeyName="fk_estoque_updated_by" references="usuario(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addUniqueConstraint
+            tableName="estoque"
+            columnNames="emitente_id, produto_id"
+            constraintName="uq_estoque_emitente_produto"/>
+
+        <createIndex tableName="estoque" indexName="idx_estoque_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+        <createIndex tableName="estoque" indexName="idx_estoque_emitente_id">
+            <column name="emitente_id"/>
+        </createIndex>
+        <createIndex tableName="estoque" indexName="idx_estoque_produto_id">
+            <column name="produto_id"/>
+        </createIndex>
+
+        <!-- ── estoque_transferencia: cabeçalho de transferências entre emitentes ── -->
+        <createTable tableName="estoque_transferencia">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_est_transf_cliente" references="cliente(id)"/>
+            </column>
+            <column name="produto_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_est_transf_produto" references="produto(id)"/>
+            </column>
+            <column name="emitente_origem_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_est_transf_origem" references="emitente(id)"/>
+            </column>
+            <column name="emitente_destino_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_est_transf_destino" references="emitente(id)"/>
+            </column>
+            <column name="quantidade" type="NUMERIC(15,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="observacao" type="VARCHAR(255)"/>
+            <column name="created_by" type="BIGINT">
+                <constraints foreignKeyName="fk_est_transf_created_by" references="usuario(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="estoque_transferencia" indexName="idx_est_transf_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <!-- ── estoque_movimentacao: log imutável de todas as movimentações ── -->
+        <createTable tableName="estoque_movimentacao">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_est_mov_cliente" references="cliente(id)"/>
+            </column>
+            <column name="estoque_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_est_mov_estoque" references="estoque(id)"/>
+            </column>
+            <column name="emitente_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_est_mov_emitente" references="emitente(id)"/>
+            </column>
+            <column name="produto_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_est_mov_produto" references="produto(id)"/>
+            </column>
+            <!-- ENTRADA, SAIDA, AJUSTE, TRANSFERENCIA_ENTRADA, TRANSFERENCIA_SAIDA -->
+            <column name="tipo" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantidade" type="NUMERIC(15,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantidade_anterior" type="NUMERIC(15,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantidade_posterior" type="NUMERIC(15,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="motivo" type="VARCHAR(255)"/>
+            <column name="transferencia_id" type="BIGINT">
+                <constraints foreignKeyName="fk_est_mov_transferencia" references="estoque_transferencia(id)"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints foreignKeyName="fk_est_mov_created_by" references="usuario(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="estoque_movimentacao" indexName="idx_est_mov_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+        <createIndex tableName="estoque_movimentacao" indexName="idx_est_mov_estoque_id">
+            <column name="estoque_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

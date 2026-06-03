@@ -49,6 +49,7 @@ public class ProdutoMapper {
                 p.getCest()          != null ? p.getCest().getCodigo() : null,
 
                 p.getSubstituicaoTributaria(),
+                p.getBaixarEstoque(),
 
                 p.getCreatedAt(),
                 p.getUpdatedAt()

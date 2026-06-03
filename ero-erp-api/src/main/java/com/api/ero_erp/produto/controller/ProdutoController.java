@@ -54,11 +54,18 @@ public class ProdutoController {
 
     @Operation(summary = "Lista produtos desbloqueados para selects")
     @GetMapping("/select")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PRODUTO', 'PRODUTO_GET')")
+    @PreAuthorize("isAuthenticated()")
     public List<ProdutoResponseDto> select(
             @RequestParam(required = false) String nome
     ) {
         return produtoService.select(nome);
+    }
+
+    @Operation(summary = "Busca produto por id para o select")
+    @GetMapping("/select/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ProdutoResponseDto> selectById(@PathVariable Long id) {
+        return ResponseEntity.ok(produtoService.findByIdResponse(id));
     }
 
     @Operation(summary = "Busca produto por id")

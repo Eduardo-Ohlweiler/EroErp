@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="034-alter-estoque-add-quantidade-minima" author="eduardo">
+        <addColumn tableName="estoque">
+            <column name="quantidade_minima" type="NUMERIC(15,3)"
+                    remarks="Quando quantidade atingir ou ficar abaixo deste valor, gera alerta no dashboard"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

@@ -112,6 +112,7 @@ export interface ProdutoResponse {
   cestCodigo:             string | null
 
   substituicaoTributaria: boolean
+  baixarEstoque:          boolean
 
   createdAt:              string
   updatedAt:              string | null
