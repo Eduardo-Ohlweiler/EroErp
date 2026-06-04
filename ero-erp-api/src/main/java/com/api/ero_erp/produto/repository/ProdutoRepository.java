@@ -64,11 +64,13 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
             JOIN FETCH p.unidadeMedida
             WHERE p.cliente.id = :clienteId
             AND p.bloqueado = false
+            AND (:tipoProdutoId IS NULL OR p.tipoProduto.id = :tipoProdutoId)
             AND (:nome IS NULL OR LOWER(p.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
             ORDER BY p.nome
             """)
     List<Produto> findForSelect(
-            @Param("clienteId") Long   clienteId,
-            @Param("nome")      String nome
+            @Param("clienteId")     Long   clienteId,
+            @Param("tipoProdutoId") Long   tipoProdutoId,
+            @Param("nome")          String nome
     );
 }

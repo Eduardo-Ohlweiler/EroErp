@@ -40,4 +40,6 @@
     <include file="033-insert-roles-estoque.xml"                  relativeToChangelogFile="true" />
     <include file="034-alter-estoque-add-quantidade-minima.xml"  relativeToChangelogFile="true" />
     <include file="035-alter-produto-add-baixar-estoque.xml"    relativeToChangelogFile="true" />
+    <include file="036-insert-roles-clinica.xml"               relativeToChangelogFile="true" />
+    <include file="037-create-clinica.xml"                     relativeToChangelogFile="true" />
 </databaseChangeLog>

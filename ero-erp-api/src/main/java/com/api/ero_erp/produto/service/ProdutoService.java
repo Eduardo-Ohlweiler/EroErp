@@ -116,9 +116,9 @@ public class ProdutoService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProdutoResponseDto> select(String nome) {
+    public List<ProdutoResponseDto> select(Long tipoProdutoId, String nome) {
         Long clienteId = securityUtils.getClienteIdLogado();
-        return produtoRepository.findForSelect(clienteId, nome)
+        return produtoRepository.findForSelect(clienteId, tipoProdutoId, nome)
                 .stream()
                 .map(produtoMapper::toDto)
                 .toList();

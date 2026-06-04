@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -85,6 +85,18 @@ export const menu: MenuItem[] = [
         ]
       },
     ]
+  },
+  {
+    label: "Clínica",
+    icon:  FaStethoscope,
+    roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"],
+    children: [
+      {
+        label: "Consultas",
+        path:  "/clinica/consultas",
+        icon:  FaStethoscope,
+      },
+    ],
   },
   {
     label: "Integrações",
