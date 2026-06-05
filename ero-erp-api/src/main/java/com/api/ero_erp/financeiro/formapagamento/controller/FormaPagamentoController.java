@@ -44,6 +44,12 @@ public class FormaPagamentoController {
         return service.select();
     }
 
+    @GetMapping("/select/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'FINANCEIRO', 'FINANCEIRO_GET')")
+    public FormaPagamentoResponseDto findByIdForSelect(@PathVariable Long id) {
+        return FormaPagamentoMapper.toDto(service.findById(id));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'FINANCEIRO', 'FINANCEIRO_GET')")
     public FormaPagamentoResponseDto findById(@PathVariable Long id) {

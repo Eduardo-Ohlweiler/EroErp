@@ -25,6 +25,7 @@ import { TDbCombo }                                                 from "../../
 import { TDataGrid }                                                from "../../components/tdatagrid"
 import type { TDataGridColumn }                                     from "../../types/TDataGridColumn"
 import { useMessage }                                               from "../../hooks/useMessage"
+import { displayPessoa, displayEmitente }                          from "../../utils/pessoas"
 import { useQuestion }                                              from "../../hooks/useQuestion"
 
 function toInputDT(iso: string | null | undefined) {
@@ -279,22 +280,18 @@ export default function ConsultaForm() {
     ])
   }
 
-  async function handleConcluir() {
-    ask("Concluir esta consulta? O estoque dos produtos consumidos será baixado.", [
-      { label: "Cancelar", variant: "cancel",  onClick: () => {} },
-      { label: "Concluir", variant: "confirm", onClick: async () => {
-        try {
-          await api.patch(`/consultas/${currentId}/concluir`)
-          showMessage("success", "Consulta concluída!")
-          await reload(currentId!)
-        } catch (err) {
-          if (axios.isAxiosError(err)) {
-            const d = err.response?.data as ErrorResponse
-            showMessage("error", d?.erro ?? "Erro ao concluir")
-          }
-        }
-      }},
-    ])
+  function handleConcluir(total: number) {
+    navigate(`/clinica/consultas/${currentId}/faturamento`, {
+      state: {
+        pessoaId:          consulta!.pessoaId,
+        pessoaNome:        consulta!.pessoaNome,
+        pessoaDocumento:   consulta!.pessoaDocumento  ?? null,
+        emitenteId:        consulta!.emitenteId       ?? null,
+        emitenteNome:      consulta!.emitenteNome     ?? null,
+        emitenteDocumento: consulta!.emitenteDocumento ?? null,
+        totalGeral:        total,
+      }
+    })
   }
 
   async function handleCancelar() {
@@ -548,7 +545,7 @@ export default function ConsultaForm() {
               label        ="Emitente (*)"
               url          ="/emitentes/select"
               valueField   ="id"
-              displayField ="pessoaNome"
+              displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Selecione o emitente..."
               required
@@ -567,7 +564,7 @@ export default function ConsultaForm() {
               label        ="Paciente (*)"
               url          ="/pessoas/select"
               valueField   ="id"
-              displayField ="nome"
+              displayField ={displayPessoa}
               searchField  ="nome"
               placeholder  ="Selecione o paciente..."
               required
@@ -800,7 +797,7 @@ export default function ConsultaForm() {
               <TButton label="Iniciar Atendimento" variant="save"   onClick={handleIniciar} />
             )}
             {isEdit && consulta?.status === "EM_ATENDIMENTO" && (
-              <TButton label="Concluir"            variant="save"   onClick={handleConcluir} />
+              <TButton label="Concluir"            variant="save"   onClick={() => handleConcluir(totalGeral)} />
             )}
             {isEdit && (consulta?.status === "CONCLUIDA" || consulta?.status === "EM_ATENDIMENTO") && (
               <TButton label="Gerar Reconsulta" variant="new" onClick={() => {
@@ -1015,7 +1012,7 @@ export default function ConsultaForm() {
             label        ="Emitente (origem do estoque) (*)"
             url          ="/emitentes/select"
             valueField   ="id"
-            displayField ="pessoaNome"
+            displayField ={displayEmitente}
             searchField  ="nome"
             placeholder  ="Selecione o emitente..."
             width        ="100%"

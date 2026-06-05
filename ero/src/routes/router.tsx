@@ -46,10 +46,16 @@ import TransferenciaForm                          from "../pages/cadastros/estoq
 import MovimentacaoList                           from "../pages/cadastros/estoque/MovimentacaoList"
 import ConsultaList                              from "../pages/clinica/ConsultaList"
 import ConsultaForm                              from "../pages/clinica/ConsultaForm"
+import FaturamentoConsulta                       from "../pages/clinica/FaturamentoConsulta"
 import ConsultaDashboard                         from "../pages/clinica/ConsultaDashboard"
 import ContaFinanceiraFormList                   from "../pages/financeiro/auxiliares/ContaFinanceiraFormList"
 import TipoCobrancaFormList                      from "../pages/financeiro/auxiliares/TipoCobrancaFormList"
 import FormaPagamentoFormList                    from "../pages/financeiro/auxiliares/FormaPagamentoFormList"
+import ContaPagarList                            from "../pages/financeiro/contapagar/ContaPagarList"
+import ContaPagarForm                            from "../pages/financeiro/contapagar/ContaPagarForm"
+import ContaReceberList                          from "../pages/financeiro/contareceber/ContaReceberList"
+import ContaReceberForm                          from "../pages/financeiro/contareceber/ContaReceberForm"
+import PagarContas                               from "../pages/financeiro/PagarContas"
 
 export function Router() {
   return (
@@ -158,17 +164,28 @@ export function Router() {
 
             {/* ── CLÍNICA ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"]} />}>
-              <Route path="/clinica/consultas"         element={<ConsultaList />} />
-              <Route path="/clinica/consultas/nova"    element={<ConsultaForm />} />
-              <Route path="/clinica/consultas/:id"     element={<ConsultaForm />} />
-              <Route path="/dashboards/consultas"      element={<ConsultaDashboard />} />
+              <Route path="/clinica/consultas"                      element={<ConsultaList />} />
+              <Route path="/clinica/consultas/nova"             element={<ConsultaForm />} />
+              <Route path="/clinica/consultas/:id"              element={<ConsultaForm />} />
+              <Route path="/clinica/consultas/:id/faturamento"  element={<FaturamentoConsulta />} />
+              <Route path="/dashboards/consultas"               element={<ConsultaDashboard />} />
             </Route>
 
             {/* ── FINANCEIRO ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "FINANCEIRO", "FINANCEIRO_GET"]} />}>
-              <Route path="/financeiro/contas"          element={<ContaFinanceiraFormList />} />
-              <Route path="/financeiro/tipos-cobranca"  element={<TipoCobrancaFormList />} />
+              <Route path="/financeiro/contas"           element={<ContaFinanceiraFormList />} />
+              <Route path="/financeiro/tipos-cobranca"   element={<TipoCobrancaFormList />} />
               <Route path="/financeiro/formas-pagamento" element={<FormaPagamentoFormList />} />
+
+              <Route path="/financeiro/contas-pagar"      element={<ContaPagarList />} />
+              <Route path="/financeiro/contas-pagar/novo" element={<ContaPagarForm />} />
+              <Route path="/financeiro/contas-pagar/:id"  element={<ContaPagarForm />} />
+
+              <Route path="/financeiro/contas-receber"      element={<ContaReceberList />} />
+              <Route path="/financeiro/contas-receber/novo" element={<ContaReceberForm />} />
+              <Route path="/financeiro/contas-receber/:id"  element={<ContaReceberForm />} />
+
+              <Route path="/financeiro/pagar-contas" element={<PagarContas />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />

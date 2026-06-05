@@ -6,6 +6,7 @@ import com.api.ero_erp.clinica.dtos.ConsultaServicoResponseDto;
 import com.api.ero_erp.clinica.entity.Consulta;
 import com.api.ero_erp.clinica.entity.ConsultaProduto;
 import com.api.ero_erp.clinica.entity.ConsultaServico;
+import com.api.ero_erp.pessoa.entity.Pessoa;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -14,6 +15,12 @@ import java.util.List;
 public class ConsultaMapper {
 
     private ConsultaMapper() {}
+
+    private static String resolverDoc(Pessoa p) {
+        if (p == null) return null;
+        if (p.getCpf() != null && !p.getCpf().isBlank()) return p.getCpf();
+        return p.getCnpj();
+    }
 
     public static ConsultaResponseDto toDto(
             Consulta consulta,
@@ -25,8 +32,10 @@ public class ConsultaMapper {
                 consulta.getStatus(),
                 consulta.getEmitente().getId(),
                 consulta.getEmitente().getPessoa().getNome(),
+                resolverDoc(consulta.getEmitente().getPessoa()),
                 consulta.getPessoa().getId(),
                 consulta.getPessoa().getNome(),
+                resolverDoc(consulta.getPessoa()),
                 consulta.getCompromisso() != null ? consulta.getCompromisso().getId() : null,
                 consulta.getInicio(),
                 consulta.getFim(),

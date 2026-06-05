@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -116,6 +116,25 @@ export const menu: MenuItem[] = [
     icon:  FaUniversity,
     roles: ["SUPERADMIN", "ADMIN", "FINANCEIRO", "FINANCEIRO_GET"],
     children: [
+      {
+        label: "Contas a Pagar",
+        icon:  FaArrowDown,
+        children: [
+          { label: "Gerenciar", path: "/financeiro/contas-pagar", icon: FaList },
+        ],
+      },
+      {
+        label: "Contas a Receber",
+        icon:  FaArrowUp,
+        children: [
+          { label: "Gerenciar", path: "/financeiro/contas-receber", icon: FaList },
+        ],
+      },
+      {
+        label: "Pagar Contas",
+        path:  "/financeiro/pagar-contas",
+        icon:  FaHandHoldingUsd,
+      },
       {
         label: "Auxiliar financeiro",
         icon:  FaCogs,

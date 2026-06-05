@@ -15,7 +15,8 @@ import { TDataGrid }                                  from "../../components/tda
 import { TDataGridFooter }                            from "../../components/tdatagridfooter"
 import { TDate }                                      from "../../components/tdate"
 import { useMessage }                                 from "../../hooks/useMessage"
-import { TSpace } from "../../components/tspace"
+import { TSpace }             from "../../components/tspace"
+import { displayEmitente, formatarDocumento } from "../../utils/pessoas"
 
 const STATUS_LABEL: Record<StatusConsulta, string> = {
   AGENDADA:       "Agendada",
@@ -44,8 +45,10 @@ const columns: TDataGridColumn<ConsultaResponse>[] = [
     render: (row) => <span>{formatDT(row.inicio)}</span> },
   { label: "Fim",       width: "150px",
     render: (row) => <span>{formatDT(row.fim)}</span> },
-  { label: "Paciente",  field: "pessoaNome" },
-  { label: "Emitente",  field: "emitenteNome" },
+  { label: "Paciente", field: "pessoaNome",
+    render: (row) => <span>{row.pessoaNome}{row.pessoaDocumento && <span className="ml-1 text-xs opacity-60">({formatarDocumento(row.pessoaDocumento)})</span>}</span> },
+  { label: "Emitente", field: "emitenteNome",
+    render: (row) => <span>{row.emitenteNome}{row.emitenteDocumento && <span className="ml-1 text-xs opacity-60">({formatarDocumento(row.emitenteDocumento)})</span>}</span> },
   { label: "Serviços",  width: "80px", align: "center",
     render: (row) => <span>{row.servicos?.length ?? 0}</span> },
   { label: "Status",    width: "140px", align: "center",
@@ -151,7 +154,7 @@ export default function ConsultaList() {
               label        ="Emitente"
               url          ="/emitentes/select"
               valueField   ="id"
-              displayField ="pessoaNome"
+              displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Todos..."
               width        ="300px"
