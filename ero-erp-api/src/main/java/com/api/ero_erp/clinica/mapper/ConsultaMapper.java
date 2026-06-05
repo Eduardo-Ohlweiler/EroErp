@@ -85,7 +85,7 @@ public class ConsultaMapper {
         );
     }
 
-    private static BigDecimal calcTotal(
+    public static BigDecimal calcTotal(
             BigDecimal preco, BigDecimal qtd,
             String tipoAjuste, String tipoCalculo, BigDecimal valorAjuste
     ) {

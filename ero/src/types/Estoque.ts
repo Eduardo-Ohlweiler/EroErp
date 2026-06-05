@@ -12,6 +12,7 @@ export interface EstoqueResponse {
   precoVenda:         number | null
   custoMedio:         number
   bloqueado:          boolean
+  baixarEstoque:      boolean
   createdByNome:      string | null
   updatedByNome:      string | null
   createdAt:          string

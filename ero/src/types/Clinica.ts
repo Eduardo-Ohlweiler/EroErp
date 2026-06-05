@@ -4,12 +4,18 @@ export type StatusConsulta =
     | "CONCLUIDA"
     | "CANCELADA"
 
+export type TipoAjuste   = "DESCONTO" | "ACRESCIMO"
+export type TipoCalculo  = "FIXO" | "PERCENTUAL"
+
 export interface ConsultaServicoResponse {
     id:            number
     produtoId:     number
     produtoNome:   string
     quantidade:    number
     precoUnitario: number
+    tipoAjuste:    TipoAjuste | null
+    tipoCalculo:   TipoCalculo | null
+    valorAjuste:   number | null
     total:         number
     createdAt:     string
 }
@@ -22,6 +28,9 @@ export interface ConsultaProdutoResponse {
     emitenteNome:  string
     quantidade:    number
     precoUnitario: number
+    tipoAjuste:    TipoAjuste | null
+    tipoCalculo:   TipoCalculo | null
+    valorAjuste:   number | null
     total:         number
     createdAt:     string
 }
@@ -41,6 +50,9 @@ export interface ConsultaResponse {
     consultaPaiId:       number | null
     servicos:            ConsultaServicoResponse[]
     produtos:            ConsultaProdutoResponse[]
+    tipoAjusteGeral:     TipoAjuste | null
+    tipoCalculoGeral:    TipoCalculo | null
+    valorAjusteGeral:    number | null
     createdAt:           string
     createdByNome:       string | null
     updatedAt:           string | null

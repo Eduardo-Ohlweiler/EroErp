@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,19 @@ public interface ConsultaProdutoRepository extends JpaRepository<ConsultaProduto
     List<ConsultaProduto> findByConsultaIdAndClienteId(
             @Param("consultaId") Long consultaId,
             @Param("clienteId")  Long clienteId
+    );
+
+    @Query("""
+            SELECT cp FROM ConsultaProduto cp
+            JOIN FETCH cp.produto p
+            JOIN FETCH cp.consulta c
+            WHERE c.cliente.id = :clienteId
+            AND c.status = 'CONCLUIDA'
+            AND c.inicio >= :desde
+            """)
+    List<ConsultaProduto> findForDashboard(
+            @Param("clienteId") Long          clienteId,
+            @Param("desde")     LocalDateTime desde
     );
 
     @Query("""

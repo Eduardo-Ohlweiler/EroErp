@@ -14,6 +14,7 @@ import { TForm, TFormActionsLeft, TFormActionsRight, TFormFooter }  from "../../
 import { TRow }                                                     from "../../components/trow"
 import { TCol }                                                     from "../../components/tcol"
 import { TEntry }                                                   from "../../components/tentry"
+import { TCombo }                                                   from "../../components/tcombo"
 import { TSpace }                                                   from "../../components/tspace"
 import { TPanel }                                                   from "../../components/tpanel"
 import { TButton }                                                  from "../../components/tbutton"
@@ -39,8 +40,31 @@ function defaultDT(offsetHours = 0) {
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:00`
 }
-function fmtMoeda(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+function fmtMoeda(v: number | null | undefined) {
+  return (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+}
+function fmtQtd(v: number) {
+  return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 3 })
+}
+
+function calcTotal(
+  precoUnitario: number,
+  quantidade: number,
+  tipoAjuste: string | null,
+  tipoCalculo: string | null,
+  valorAjuste: number | null
+): number {
+  const base = precoUnitario * quantidade
+  if (!tipoAjuste || valorAjuste == null) return base
+  const ajuste = tipoCalculo === "PERCENTUAL" ? base * valorAjuste / 100 : valorAjuste
+  return tipoAjuste === "DESCONTO" ? base - ajuste : base + ajuste
+}
+
+function fmtAjuste(tipoAjuste: string | null, tipoCalculo: string | null, valorAjuste: number | null) {
+  if (!tipoAjuste || valorAjuste == null) return "—"
+  const sinal = tipoAjuste === "DESCONTO" ? "−" : "+"
+  const valor = tipoCalculo === "PERCENTUAL" ? `${valorAjuste}%` : fmtMoeda(valorAjuste)
+  return `${sinal} ${valor}`
 }
 
 const STATUS_LABEL: Record<StatusConsulta, string> = {
@@ -56,48 +80,78 @@ const STATUS_COLOR: Record<StatusConsulta, string> = {
   CANCELADA:      "bg-red-100 text-red-800 border-red-200",
 }
 
+const OPCOES_AJUSTE = [
+  { value: "",          label: "Nenhum"    },
+  { value: "DESCONTO",  label: "Desconto"  },
+  { value: "ACRESCIMO", label: "Acréscimo" },
+]
+const OPCOES_CALCULO = [
+  { value: "FIXO",       label: "Valor fixo (R$)" },
+  { value: "PERCENTUAL", label: "Percentual (%)"  },
+]
+
 const colsServico: TDataGridColumn<ConsultaServicoResponse>[] = [
-  { label: "Serviço",    field: "produtoNome" },
-  { label: "Qtd.",       field: "quantidade",    width: "80px",  align: "right",
-    render: r => <span>{Number(r.quantidade).toLocaleString("pt-BR", { minimumFractionDigits: 3 })}</span> },
+  { label: "Serviço",     field: "produtoNome" },
+  { label: "Qtd.",        width: "80px",  align: "right",
+    render: r => <span>{fmtQtd(r.quantidade)}</span> },
   { label: "Preço Unit.", width: "120px", align: "right",
     render: r => <span>{fmtMoeda(r.precoUnitario)}</span> },
+  { label: "Ajuste",      width: "130px", align: "right",
+    render: r => <span>{fmtAjuste(r.tipoAjuste, r.tipoCalculo, r.valorAjuste)}</span> },
   { label: "Total",       width: "120px", align: "right",
     render: r => <span>{fmtMoeda(r.total)}</span> },
 ]
 
 const colsProduto: TDataGridColumn<ConsultaProdutoResponse>[] = [
-  { label: "Produto",    field: "produtoNome" },
-  { label: "Emitente",  field: "emitenteNome", width: "160px" },
-  { label: "Qtd.",       width: "80px",  align: "right",
-    render: r => <span>{Number(r.quantidade).toLocaleString("pt-BR", { minimumFractionDigits: 3 })}</span> },
+  { label: "Produto",     field: "produtoNome" },
+  { label: "Emitente",   field: "emitenteNome", width: "150px" },
+  { label: "Qtd.",        width: "80px",  align: "right",
+    render: r => <span>{fmtQtd(r.quantidade)}</span> },
   { label: "Preço Unit.", width: "120px", align: "right",
     render: r => <span>{fmtMoeda(r.precoUnitario)}</span> },
+  { label: "Ajuste",      width: "130px", align: "right",
+    render: r => <span>{fmtAjuste(r.tipoAjuste, r.tipoCalculo, r.valorAjuste)}</span> },
   { label: "Total",       width: "120px", align: "right",
     render: r => <span>{fmtMoeda(r.total)}</span> },
 ]
 
 interface ServicoModal {
-  open:       boolean
-  editId:     number | null
-  produtoId:  string
-  quantidade: string
-  preco:      string
-  saving:     boolean
+  open:         boolean
+  editId:       number | null
+  produtoId:    string
+  quantidade:   string
+  preco:        string
+  loadingPreco: boolean
+  tipoAjuste:   string
+  tipoCalculo:  string
+  valorAjuste:  string
+  saving:       boolean
 }
 
 interface ProdutoModal {
-  open:       boolean
-  editId:     number | null
-  produtoId:  string
-  emitenteId: string
-  quantidade: string
-  preco:      string
-  saving:     boolean
+  open:         boolean
+  editId:       number | null
+  produtoId:    string
+  emitenteId:   string
+  quantidade:   string
+  preco:        string
+  loadingPreco: boolean
+  tipoAjuste:   string
+  tipoCalculo:  string
+  valorAjuste:  string
+  saving:       boolean
 }
 
-const emptyServico: ServicoModal  = { open: false, editId: null, produtoId: "", quantidade: "1", preco: "0", saving: false }
-const emptyProduto: ProdutoModal  = { open: false, editId: null, produtoId: "", emitenteId: "", quantidade: "1", preco: "0", saving: false }
+const emptyServico: ServicoModal = {
+  open: false, editId: null, produtoId: "", quantidade: "1", preco: "0",
+  loadingPreco: false,
+  tipoAjuste: "", tipoCalculo: "FIXO", valorAjuste: "", saving: false,
+}
+const emptyProduto: ProdutoModal = {
+  open: false, editId: null, produtoId: "", emitenteId: "", quantidade: "1",
+  preco: "0", loadingPreco: false,
+  tipoAjuste: "", tipoCalculo: "FIXO", valorAjuste: "", saving: false,
+}
 
 export default function ConsultaForm() {
   const { id: idParam } = useParams<{ id: string }>()
@@ -111,8 +165,11 @@ export default function ConsultaForm() {
   const [consulta,     setConsulta]     = useState<ConsultaResponse | null>(null)
   const [currentId,    setCurrentId]    = useState<string | undefined>(idParam)
 
-  const [emitenteId,   setEmitenteId]   = useState("")
-  const [pessoaId,     setPessoaId]     = useState("")
+  const [emitenteId,       setEmitenteId]       = useState("")
+  const [pessoaId,         setPessoaId]         = useState("")
+  const [tipoAjusteGeral,  setTipoAjusteGeral]  = useState("")
+  const [tipoCalculoGeral, setTipoCalculoGeral] = useState("FIXO")
+  const [valorAjusteGeral, setValorAjusteGeral] = useState("")
 
   // modais
   const [servicoModal, setServicoModal] = useState<ServicoModal>(emptyServico)
@@ -120,7 +177,7 @@ export default function ConsultaForm() {
   const [cancelModal,  setCancelModal]  = useState(false)
   const [motivoCancel, setMotivoCancel] = useState("")
   const [canceling,    setCanceling]    = useState(false)
-  const [reconsultaModal, setReconsultaModal] = useState(false)
+  const [reconsultaModal,  setReconsultaModal]  = useState(false)
   const [reconsultaInicio, setReconsultaInicio] = useState("")
   const [reconsultaFim,    setReconsultaFim]    = useState("")
   const [reconsultaSaving, setReconsultaSaving] = useState(false)
@@ -132,23 +189,25 @@ export default function ConsultaForm() {
     if (!currentId) { setConsulta(null); return }
     setLoading(true)
     api.get<ConsultaResponse>(`/consultas/${currentId}`)
-      .then(r => {
-        setConsulta(r.data)
-        setEmitenteId(String(r.data.emitenteId))
-        setPessoaId(String(r.data.pessoaId))
-        setFormKey(k => k + 1)
-      })
+      .then(r => loadConsulta(r.data))
       .catch(() => { showMessage("error", "Erro ao carregar consulta"); navigate("/clinica/consultas") })
       .finally(() => setLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentId])
 
+  function loadConsulta(data: ConsultaResponse) {
+    setConsulta(data)
+    setEmitenteId(String(data.emitenteId))
+    setPessoaId(String(data.pessoaId))
+    setTipoAjusteGeral(data.tipoAjusteGeral ?? "")
+    setTipoCalculoGeral(data.tipoCalculoGeral ?? "FIXO")
+    setValorAjusteGeral(data.valorAjusteGeral != null ? String(data.valorAjusteGeral) : "")
+    setFormKey(k => k + 1)
+  }
+
   async function reload(id: string) {
     const r = await api.get<ConsultaResponse>(`/consultas/${id}`)
-    setConsulta(r.data)
-    setEmitenteId(String(r.data.emitenteId))
-    setPessoaId(String(r.data.pessoaId))
-    setFormKey(k => k + 1)
+    loadConsulta(r.data)
   }
 
   function handleNovo() {
@@ -156,6 +215,9 @@ export default function ConsultaForm() {
     setConsulta(null)
     setEmitenteId("")
     setPessoaId("")
+    setTipoAjusteGeral("")
+    setTipoCalculoGeral("FIXO")
+    setValorAjusteGeral("")
     setFormKey(k => k + 1)
   }
 
@@ -165,11 +227,14 @@ export default function ConsultaForm() {
     setSaving(true)
     try {
       const payload = {
-        emitenteId: Number(emitenteId),
-        pessoaId:   Number(pessoaId),
-        inicio:     fromInputDT(data.inicio),
-        fim:        fromInputDT(data.fim),
-        observacao: data.observacao?.trim() || null,
+        emitenteId:       Number(emitenteId),
+        pessoaId:         Number(pessoaId),
+        inicio:           fromInputDT(data.inicio),
+        fim:              fromInputDT(data.fim),
+        observacao:       data.observacao?.trim() || null,
+        tipoAjusteGeral:  tipoAjusteGeral  || null,
+        tipoCalculoGeral: tipoAjusteGeral  ? tipoCalculoGeral : null,
+        valorAjusteGeral: tipoAjusteGeral && valorAjusteGeral ? Number(valorAjusteGeral) : null,
       }
       if (isEdit) {
         await api.put(`/consultas/${currentId}`, payload)
@@ -284,13 +349,30 @@ export default function ConsultaForm() {
 
   function openEditServico(s: ConsultaServicoResponse) {
     setServicoModal({
-      open:       true,
-      editId:     s.id,
-      produtoId:  String(s.produtoId),
-      quantidade: String(s.quantidade),
-      preco:      String(s.precoUnitario),
-      saving:     false,
+      open:         true,
+      editId:       s.id,
+      produtoId:    String(s.produtoId),
+      quantidade:   String(s.quantidade),
+      preco:        String(s.precoUnitario),
+      loadingPreco: false,
+      tipoAjuste:   s.tipoAjuste  ?? "",
+      tipoCalculo:  s.tipoCalculo ?? "FIXO",
+      valorAjuste:  s.valorAjuste != null ? String(s.valorAjuste) : "",
+      saving:       false,
     })
+  }
+
+  async function fetchPrecoEstoqueServico(produtoId: string) {
+    if (!produtoId || !emitenteId) return
+    setServicoModal(m => ({ ...m, loadingPreco: true }))
+    try {
+      const res = await api.get<{ precoVenda: number }>("/estoque/preco-venda", {
+        params: { emitenteId: Number(emitenteId), produtoId: Number(produtoId) },
+      })
+      setServicoModal(m => ({ ...m, preco: String(res.data.precoVenda ?? 0), loadingPreco: false }))
+    } catch {
+      setServicoModal(m => ({ ...m, preco: "0", loadingPreco: false }))
+    }
   }
 
   async function handleSalvarServico() {
@@ -301,6 +383,10 @@ export default function ConsultaForm() {
         produtoId:     Number(servicoModal.produtoId),
         quantidade:    Number(servicoModal.quantidade),
         precoUnitario: Number(servicoModal.preco),
+        tipoAjuste:    servicoModal.tipoAjuste  || null,
+        tipoCalculo:   servicoModal.tipoAjuste  ? servicoModal.tipoCalculo : null,
+        valorAjuste:   servicoModal.tipoAjuste && servicoModal.valorAjuste
+                         ? Number(servicoModal.valorAjuste) : null,
       }
       if (servicoModal.editId) {
         await api.put(`/consultas/${currentId}/servicos/${servicoModal.editId}`, payload)
@@ -342,14 +428,31 @@ export default function ConsultaForm() {
 
   function openEditProduto(p: ConsultaProdutoResponse) {
     setProdutoModal({
-      open:       true,
-      editId:     p.id,
-      produtoId:  String(p.produtoId),
-      emitenteId: String(p.emitenteId),
-      quantidade: String(p.quantidade),
-      preco:      String(p.precoUnitario),
-      saving:     false,
+      open:         true,
+      editId:       p.id,
+      produtoId:    String(p.produtoId),
+      emitenteId:   String(p.emitenteId),
+      quantidade:   String(p.quantidade),
+      preco:        String(p.precoUnitario),
+      loadingPreco: false,
+      tipoAjuste:   p.tipoAjuste  ?? "",
+      tipoCalculo:  p.tipoCalculo ?? "FIXO",
+      valorAjuste:  p.valorAjuste != null ? String(p.valorAjuste) : "",
+      saving:       false,
     })
+  }
+
+  async function fetchPrecoEstoque(produtoId: string, emitenteId: string) {
+    if (!produtoId || !emitenteId) return
+    setProdutoModal(m => ({ ...m, loadingPreco: true }))
+    try {
+      const res = await api.get<{ precoVenda: number }>("/estoque/preco-venda", {
+        params: { emitenteId: Number(emitenteId), produtoId: Number(produtoId) },
+      })
+      setProdutoModal(m => ({ ...m, preco: String(res.data.precoVenda ?? 0), loadingPreco: false }))
+    } catch {
+      setProdutoModal(m => ({ ...m, preco: "0", loadingPreco: false }))
+    }
   }
 
   async function handleSalvarProduto() {
@@ -358,10 +461,13 @@ export default function ConsultaForm() {
     setProdutoModal(m => ({ ...m, saving: true }))
     try {
       const payload = {
-        produtoId:     Number(produtoModal.produtoId),
-        emitenteId:    Number(produtoModal.emitenteId),
-        quantidade:    Number(produtoModal.quantidade),
-        precoUnitario: Number(produtoModal.preco),
+        produtoId:   Number(produtoModal.produtoId),
+        emitenteId:  Number(produtoModal.emitenteId),
+        quantidade:  Number(produtoModal.quantidade),
+        tipoAjuste:  produtoModal.tipoAjuste  || null,
+        tipoCalculo: produtoModal.tipoAjuste  ? produtoModal.tipoCalculo : null,
+        valorAjuste: produtoModal.tipoAjuste && produtoModal.valorAjuste
+                       ? Number(produtoModal.valorAjuste) : null,
       }
       if (produtoModal.editId) {
         await api.put(`/consultas/${currentId}/produtos/${produtoModal.editId}`, payload)
@@ -395,6 +501,17 @@ export default function ConsultaForm() {
     ])
   }
 
+  // ── Cálculos do resumo ─────────────────────────────────────────────────────
+
+  const servicos      = consulta?.servicos ?? []
+  const produtos      = consulta?.produtos  ?? []
+  const totalServicos = servicos.reduce((acc, s) => acc + s.total, 0)
+  const totalProdutos = produtos.reduce((acc, p) => acc + p.total, 0)
+  const subtotal      = totalServicos + totalProdutos
+
+  const valorAjusteGeralNum = valorAjusteGeral ? Number(valorAjusteGeral) : null
+  const totalGeral = calcTotal(subtotal, 1, tipoAjusteGeral || null, tipoCalculoGeral, valorAjusteGeralNum)
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -406,9 +523,6 @@ export default function ConsultaForm() {
       </TPage>
     )
   }
-
-  const totalServicos = (consulta?.servicos ?? []).reduce((acc, s) => acc + s.total, 0)
-  const totalProdutos = (consulta?.produtos  ?? []).reduce((acc, p) => acc + p.total, 0)
 
   return (
     <TPage
@@ -509,9 +623,9 @@ export default function ConsultaForm() {
           <TSpace />
         </TRow>
 
-        {/* ── Serviços (só visível quando há registro) ── */}
+        {/* ── Serviços ── */}
         {isEdit && (
-          <TPanel title={`Serviços${consulta?.servicos?.length ? ` (${consulta.servicos.length})` : ""}`}>
+          <TPanel title={`Serviços${servicos.length ? ` (${servicos.length})` : ""}`}>
             {!isClosed && (
               <div className="mb-2">
                 <TButton label="Adicionar Serviço" variant="new" type="button" onClick={openNovoServico} />
@@ -519,28 +633,23 @@ export default function ConsultaForm() {
             )}
             <TDataGrid
               columns      ={colsServico}
-              data         ={consulta?.servicos ?? []}
+              data         ={servicos}
               keyField     ="id"
               emptyMessage ="Nenhum serviço adicionado"
               actionsWidth ={isClosed ? "0px" : "80px"}
               actions      ={isClosed ? undefined : (row) => (
                 <>
-                  <TButton label="" variant="edit"    onClick={(e) => { e?.stopPropagation(); openEditServico(row) }} />
-                  <TButton label="" variant="delete"  onClick={(e) => { e?.stopPropagation(); handleRemoverServico(row) }} />
+                  <TButton label="" variant="edit"   onClick={(e) => { e?.stopPropagation(); openEditServico(row) }} />
+                  <TButton label="" variant="delete" onClick={(e) => { e?.stopPropagation(); handleRemoverServico(row) }} />
                 </>
               )}
             />
-            {totalServicos > 0 && (
-              <div className="mt-1 text-right text-sm font-semibold text-(--text-primary)">
-                Total serviços: {fmtMoeda(totalServicos)}
-              </div>
-            )}
           </TPanel>
         )}
 
-        {/* ── Produtos consumidos (só visível quando há registro) ── */}
+        {/* ── Produtos consumidos ── */}
         {isEdit && (
-          <TPanel title={`Produtos Consumidos${consulta?.produtos?.length ? ` (${consulta.produtos.length})` : ""}`}>
+          <TPanel title={`Produtos Consumidos${produtos.length ? ` (${produtos.length})` : ""}`}>
             {!isClosed && (
               <div className="mb-2">
                 <TButton label="Adicionar Produto" variant="new" type="button" onClick={openNovoProduto} />
@@ -548,7 +657,7 @@ export default function ConsultaForm() {
             )}
             <TDataGrid
               columns      ={colsProduto}
-              data         ={consulta?.produtos ?? []}
+              data         ={produtos}
               keyField     ="id"
               emptyMessage ="Nenhum produto consumido"
               actionsWidth ={isClosed ? "0px" : "80px"}
@@ -559,16 +668,103 @@ export default function ConsultaForm() {
                 </>
               )}
             />
-            {totalProdutos > 0 && (
-              <div className="mt-1 text-right text-sm font-semibold text-(--text-primary)">
-                Total produtos: {fmtMoeda(totalProdutos)}
+          </TPanel>
+        )}
+
+        {/* ── Resumo financeiro ── */}
+        {isEdit && (servicos.length > 0 || produtos.length > 0) && (
+          <TPanel title="Resumo Financeiro">
+            <div className="flex flex-col gap-1 text-sm">
+              {/* Linhas de serviços */}
+              {servicos.map(s => (
+                <div key={s.id} className="flex justify-between text-(--text-muted)">
+                  <span>{s.produtoNome} × {fmtQtd(s.quantidade)}</span>
+                  <span className="flex gap-4">
+                    {s.tipoAjuste && (
+                      <span className={s.tipoAjuste === "DESCONTO" ? "text-red-600" : "text-green-600"}>
+                        {fmtAjuste(s.tipoAjuste, s.tipoCalculo, s.valorAjuste)}
+                      </span>
+                    )}
+                    <span className="w-28 text-right">{fmtMoeda(s.total)}</span>
+                  </span>
+                </div>
+              ))}
+              {/* Linhas de produtos */}
+              {produtos.map(p => (
+                <div key={p.id} className="flex justify-between text-(--text-muted)">
+                  <span>{p.produtoNome} × {fmtQtd(p.quantidade)}</span>
+                  <span className="flex gap-4">
+                    {p.tipoAjuste && (
+                      <span className={p.tipoAjuste === "DESCONTO" ? "text-red-600" : "text-green-600"}>
+                        {fmtAjuste(p.tipoAjuste, p.tipoCalculo, p.valorAjuste)}
+                      </span>
+                    )}
+                    <span className="w-28 text-right">{fmtMoeda(p.total)}</span>
+                  </span>
+                </div>
+              ))}
+
+              <hr className="border-(--border) my-1" />
+
+              {/* Subtotal */}
+              <div className="flex justify-between font-medium text-(--text-primary)">
+                <span>Subtotal</span>
+                <span>{fmtMoeda(subtotal)}</span>
               </div>
-            )}
-            {(totalServicos + totalProdutos) > 0 && (
-              <div className="mt-1 text-right text-sm font-bold text-(--accent)">
-                Total geral: {fmtMoeda(totalServicos + totalProdutos)}
+
+              {/* Ajuste global */}
+              {!isClosed ? (
+                <div className="mt-2 flex flex-wrap items-end gap-3">
+                  <TCombo
+                    name         ="tipoAjusteGeral"
+                    label        ="Ajuste geral"
+                    width        ="160px"
+                    defaultValue ={tipoAjusteGeral}
+                    onChange     ={setTipoAjusteGeral}
+                    options      ={OPCOES_AJUSTE}
+                  />
+                  {tipoAjusteGeral && (
+                    <>
+                      <TCombo
+                        name         ="tipoCalculoGeral"
+                        label        ="Tipo"
+                        width        ="160px"
+                        defaultValue ={tipoCalculoGeral}
+                        onChange     ={setTipoCalculoGeral}
+                        options      ={OPCOES_CALCULO}
+                      />
+                      <TEntry
+                        name         ="valorAjusteGeral"
+                        label        ={tipoCalculoGeral === "PERCENTUAL" ? "Percentual (%)" : "Valor (R$)"}
+                        mask         ="numerodecimal"
+                        width        ="150px"
+                        defaultValue ={valorAjusteGeral}
+                        onChange     ={setValorAjusteGeral}
+                      />
+                    </>
+                  )}
+                </div>
+              ) : (
+                tipoAjusteGeral && (
+                  <div className="flex justify-between text-(--text-muted)">
+                    <span>
+                      {tipoAjusteGeral === "DESCONTO" ? "Desconto" : "Acréscimo"} geral{" "}
+                      ({tipoCalculoGeral === "PERCENTUAL" ? `${valorAjusteGeral}%` : "fixo"})
+                    </span>
+                    <span className={tipoAjusteGeral === "DESCONTO" ? "text-red-600" : "text-green-600"}>
+                      {fmtAjuste(tipoAjusteGeral, tipoCalculoGeral, valorAjusteGeralNum)}
+                    </span>
+                  </div>
+                )
+              )}
+
+              {/* Total geral */}
+              <hr className="border-(--border) my-1" />
+              <div className="flex justify-between text-base font-bold text-(--accent)">
+                <span>Total Geral</span>
+                <span>{fmtMoeda(totalGeral)}</span>
               </div>
-            )}
+            </div>
           </TPanel>
         )}
 
@@ -595,16 +791,16 @@ export default function ConsultaForm() {
           </TFormActionsLeft>
           <TFormActionsRight>
             {isEdit && consulta?.status === "AGENDADA" && (
-              <TButton label="Cancelar Consulta"   variant="cancel"  onClick={() => setCancelModal(true)} />
+              <TButton label="Cancelar Consulta"   variant="cancel" onClick={() => setCancelModal(true)} />
             )}
             {isEdit && consulta?.status === "EM_ATENDIMENTO" && (
-              <TButton label="Cancelar Consulta"   variant="cancel"  onClick={() => setCancelModal(true)} />
+              <TButton label="Cancelar Consulta"   variant="cancel" onClick={() => setCancelModal(true)} />
             )}
             {isEdit && consulta?.status === "AGENDADA" && (
-              <TButton label="Iniciar Atendimento" variant="save"    onClick={handleIniciar} />
+              <TButton label="Iniciar Atendimento" variant="save"   onClick={handleIniciar} />
             )}
             {isEdit && consulta?.status === "EM_ATENDIMENTO" && (
-              <TButton label="Concluir"            variant="save"    onClick={handleConcluir} />
+              <TButton label="Concluir"            variant="save"   onClick={handleConcluir} />
             )}
             {isEdit && (consulta?.status === "CONCLUIDA" || consulta?.status === "EM_ATENDIMENTO") && (
               <TButton label="Gerar Reconsulta" variant="new" onClick={() => {
@@ -693,7 +889,7 @@ export default function ConsultaForm() {
         title   ={servicoModal.editId ? "Editar Serviço" : "Adicionar Serviço"}
         open    ={servicoModal.open}
         onClose ={() => setServicoModal(emptyServico)}
-        width   ="500px"
+        width   ="520px"
         actions ={
           <>
             <TButton label="Cancelar" variant="cancel" onClick={() => setServicoModal(emptyServico)} />
@@ -711,25 +907,76 @@ export default function ConsultaForm() {
             searchField  ="nome"
             placeholder  ="Buscar serviço..."
             width        ="100%"
+            extraParams  ={{ classificacao: "SERVICO" }}
             value        ={servicoModal.produtoId}
-            onChange     ={(val) => setServicoModal(m => ({ ...m, produtoId: val }))}
+            onChange     ={(val) => {
+              setServicoModal(m => ({ ...m, produtoId: val }))
+              fetchPrecoEstoqueServico(val)
+            }}
           />
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             <TEntry
               name        ="servico_quantidade"
               label       ="Quantidade (*)"
+              mask        ="numerodecimal"
               width       ="130px"
               defaultValue={servicoModal.quantidade}
               onChange    ={(val) => setServicoModal(m => ({ ...m, quantidade: val }))}
             />
             <TEntry
+              key         ={`sp_${servicoModal.preco}`}
               name        ="servico_preco"
-              label       ="Preço Unitário (*)"
+              label       ={servicoModal.loadingPreco ? "Preço (carregando...)" : "Preço do Estoque"}
+              mask        ="moeda"
               width       ="150px"
               defaultValue={servicoModal.preco}
-              onChange    ={(val) => setServicoModal(m => ({ ...m, preco: val }))}
+              disabled
             />
           </div>
+          {/* Ajuste por item */}
+          <div className="flex gap-3 flex-wrap items-end">
+            <TCombo
+              name         ="servico_tipoAjuste"
+              label        ="Ajuste"
+              width        ="150px"
+              defaultValue ={servicoModal.tipoAjuste}
+              onChange     ={(val) => setServicoModal(m => ({ ...m, tipoAjuste: val, valorAjuste: "" }))}
+              options      ={OPCOES_AJUSTE}
+            />
+            {servicoModal.tipoAjuste && (
+              <>
+                <TCombo
+                  name         ="servico_tipoCalculo"
+                  label        ="Tipo"
+                  width        ="155px"
+                  defaultValue ={servicoModal.tipoCalculo}
+                  onChange     ={(val) => setServicoModal(m => ({ ...m, tipoCalculo: val }))}
+                  options      ={OPCOES_CALCULO}
+                />
+                <TEntry
+                  name         ="servico_valorAjuste"
+                  label        ={servicoModal.tipoCalculo === "PERCENTUAL" ? "Percentual (%)" : "Valor (R$)"}
+                  mask         ="numerodecimal"
+                  width        ="130px"
+                  defaultValue ={servicoModal.valorAjuste}
+                  onChange     ={(val) => setServicoModal(m => ({ ...m, valorAjuste: val }))}
+                />
+              </>
+            )}
+          </div>
+          {/* Preview do total */}
+          {servicoModal.produtoId && (
+            <div className="text-sm text-right text-(--text-muted)">
+              Total estimado:{" "}
+              <span className="font-semibold text-(--text-primary)">
+                {fmtMoeda(calcTotal(
+                  Number(servicoModal.preco), Number(servicoModal.quantidade),
+                  servicoModal.tipoAjuste || null, servicoModal.tipoCalculo,
+                  servicoModal.valorAjuste ? Number(servicoModal.valorAjuste) : null
+                ))}
+              </span>
+            </div>
+          )}
         </div>
       </TWindow>
 
@@ -738,7 +985,7 @@ export default function ConsultaForm() {
         title   ={produtoModal.editId ? "Editar Produto Consumido" : "Adicionar Produto Consumido"}
         open    ={produtoModal.open}
         onClose ={() => setProdutoModal(emptyProduto)}
-        width   ="540px"
+        width   ="560px"
         actions ={
           <>
             <TButton label="Cancelar" variant="cancel" onClick={() => setProdutoModal(emptyProduto)} />
@@ -756,8 +1003,12 @@ export default function ConsultaForm() {
             searchField  ="nome"
             placeholder  ="Buscar produto..."
             width        ="100%"
+            extraParams  ={{ classificacao: "PRODUTO" }}
             value        ={produtoModal.produtoId}
-            onChange     ={(val) => setProdutoModal(m => ({ ...m, produtoId: val }))}
+            onChange     ={(val) => {
+              setProdutoModal(m => ({ ...m, produtoId: val }))
+              if (produtoModal.emitenteId) fetchPrecoEstoque(val, produtoModal.emitenteId)
+            }}
           />
           <TDbCombo
             name         ="produto_emitenteId"
@@ -769,24 +1020,74 @@ export default function ConsultaForm() {
             placeholder  ="Selecione o emitente..."
             width        ="100%"
             value        ={produtoModal.emitenteId}
-            onChange     ={(val) => setProdutoModal(m => ({ ...m, emitenteId: val }))}
+            onChange     ={(val) => {
+              setProdutoModal(m => ({ ...m, emitenteId: val }))
+              if (produtoModal.produtoId) fetchPrecoEstoque(produtoModal.produtoId, val)
+            }}
           />
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             <TEntry
               name        ="produto_quantidade"
               label       ="Quantidade (*)"
+              mask        ="numerodecimal"
               width       ="130px"
               defaultValue={produtoModal.quantidade}
               onChange    ={(val) => setProdutoModal(m => ({ ...m, quantidade: val }))}
             />
             <TEntry
+              key         ={`pp_${produtoModal.preco}`}
               name        ="produto_preco"
-              label       ="Preço Unitário (*)"
-              width       ="150px"
+              label       ={produtoModal.loadingPreco ? "Preço (carregando...)" : "Preço do Estoque"}
+              mask        ="moeda"
+              width       ="160px"
               defaultValue={produtoModal.preco}
-              onChange    ={(val) => setProdutoModal(m => ({ ...m, preco: val }))}
+              disabled
             />
           </div>
+          {/* Ajuste por item */}
+          <div className="flex gap-3 flex-wrap items-end">
+            <TCombo
+              name         ="produto_tipoAjuste"
+              label        ="Ajuste"
+              width        ="150px"
+              defaultValue ={produtoModal.tipoAjuste}
+              onChange     ={(val) => setProdutoModal(m => ({ ...m, tipoAjuste: val, valorAjuste: "" }))}
+              options      ={OPCOES_AJUSTE}
+            />
+            {produtoModal.tipoAjuste && (
+              <>
+                <TCombo
+                  name         ="produto_tipoCalculo"
+                  label        ="Tipo"
+                  width        ="155px"
+                  defaultValue ={produtoModal.tipoCalculo}
+                  onChange     ={(val) => setProdutoModal(m => ({ ...m, tipoCalculo: val }))}
+                  options      ={OPCOES_CALCULO}
+                />
+                <TEntry
+                  name         ="produto_valorAjuste"
+                  label        ={produtoModal.tipoCalculo === "PERCENTUAL" ? "Percentual (%)" : "Valor (R$)"}
+                  mask         ="numerodecimal"
+                  width        ="130px"
+                  defaultValue ={produtoModal.valorAjuste}
+                  onChange     ={(val) => setProdutoModal(m => ({ ...m, valorAjuste: val }))}
+                />
+              </>
+            )}
+          </div>
+          {/* Preview do total */}
+          {produtoModal.produtoId && produtoModal.emitenteId && (
+            <div className="text-sm text-right text-(--text-muted)">
+              Total estimado:{" "}
+              <span className="font-semibold text-(--text-primary)">
+                {fmtMoeda(calcTotal(
+                  Number(produtoModal.preco), Number(produtoModal.quantidade),
+                  produtoModal.tipoAjuste || null, produtoModal.tipoCalculo,
+                  produtoModal.valorAjuste ? Number(produtoModal.valorAjuste) : null
+                ))}
+              </span>
+            </div>
+          )}
         </div>
       </TWindow>
     </TPage>

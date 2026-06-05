@@ -15,6 +15,7 @@ import { TDataGrid }                                  from "../../components/tda
 import { TDataGridFooter }                            from "../../components/tdatagridfooter"
 import { TDate }                                      from "../../components/tdate"
 import { useMessage }                                 from "../../hooks/useMessage"
+import { TSpace } from "../../components/tspace"
 
 const STATUS_LABEL: Record<StatusConsulta, string> = {
   AGENDADA:       "Agendada",
@@ -142,6 +143,8 @@ export default function ConsultaList() {
               defaultValue={filtroNomePessoa}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TDbCombo
               name         ="emitenteId"
@@ -156,11 +159,13 @@ export default function ConsultaList() {
               onChange     ={(val) => setFiltroEmitenteId(val)}
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol>
             <TCombo
               name        ="status"
               label       ="Status"
-              width       ="180px"
+              width       ="160px"
               defaultValue={filtroStatus}
               options     ={[
                 { value: "",               label: "Todos"          },
@@ -177,7 +182,7 @@ export default function ConsultaList() {
             <TDate
               name        ="inicio"
               label       ="Data de (início)"
-              width       ="170px"
+              width       ="160px"
               defaultValue={filtroInicio}
             />
           </TCol>
@@ -185,10 +190,11 @@ export default function ConsultaList() {
             <TDate
               name        ="fim"
               label       ="Data até (fim)"
-              width       ="170px"
+              width       ="160px"
               defaultValue={filtroFim}
             />
           </TCol>
+          <TSpace />
         </TRow>
         <TFormFooter>
           <TFormActionsLeft>

@@ -1,7 +1,8 @@
 export interface TipoProdutoResponse {
-  id:    number
-  nome:  string
-  ativo: boolean
+  id:             number
+  nome:           string
+  ativo:          boolean
+  classificacao:  string
 }
 
 export interface UnidadeMedidaResponse {
@@ -112,7 +113,6 @@ export interface ProdutoResponse {
   cestCodigo:             string | null
 
   substituicaoTributaria: boolean
-  baixarEstoque:          boolean
 
   createdAt:              string
   updatedAt:              string | null

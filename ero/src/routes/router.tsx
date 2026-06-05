@@ -45,7 +45,8 @@ import TransferenciaList                          from "../pages/cadastros/estoq
 import TransferenciaForm                          from "../pages/cadastros/estoque/TransferenciaForm";
 import MovimentacaoList                           from "../pages/cadastros/estoque/MovimentacaoList"
 import ConsultaList                              from "../pages/clinica/ConsultaList"
-import ConsultaForm                              from "../pages/clinica/ConsultaForm";
+import ConsultaForm                              from "../pages/clinica/ConsultaForm"
+import ConsultaDashboard                         from "../pages/clinica/ConsultaDashboard"
 
 export function Router() {
   return (
@@ -154,9 +155,10 @@ export function Router() {
 
             {/* ── CLÍNICA ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"]} />}>
-              <Route path="/clinica/consultas"       element={<ConsultaList />} />
-              <Route path="/clinica/consultas/nova"  element={<ConsultaForm />} />
-              <Route path="/clinica/consultas/:id"   element={<ConsultaForm />} />
+              <Route path="/clinica/consultas"         element={<ConsultaList />} />
+              <Route path="/clinica/consultas/nova"    element={<ConsultaForm />} />
+              <Route path="/clinica/consultas/:id"     element={<ConsultaForm />} />
+              <Route path="/dashboards/consultas"      element={<ConsultaDashboard />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />

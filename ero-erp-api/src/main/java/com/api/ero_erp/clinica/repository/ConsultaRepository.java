@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -25,6 +26,19 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
     Optional<Consulta> findByIdAndClienteId(
             @Param("id")        Long id,
             @Param("clienteId") Long clienteId
+    );
+
+    @Query("""
+            SELECT c FROM Consulta c
+            JOIN FETCH c.pessoa
+            WHERE c.cliente.id = :clienteId
+            AND c.status = 'CONCLUIDA'
+            AND c.inicio >= :desde
+            ORDER BY c.inicio ASC
+            """)
+    List<Consulta> findConcluidasForDashboard(
+            @Param("clienteId") Long          clienteId,
+            @Param("desde")     LocalDateTime desde
     );
 
     @Query("""
