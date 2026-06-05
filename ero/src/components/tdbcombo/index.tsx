@@ -15,6 +15,7 @@ interface TDbComboProps {
   width?:        string
   hint?:         string
   minLength?:    number
+  extraParams?:  Record<string, string>
   onChange?:     (value: string, item?: Record<string, unknown>) => void
 }
 
@@ -32,6 +33,7 @@ export function TDbCombo({
   width        = "100%",
   hint,
   minLength    = 0,
+  extraParams,
   onChange
 }: TDbComboProps) {
 
@@ -77,7 +79,7 @@ export function TDbCombo({
     debounce.current = setTimeout(async () => {
       setLoading(true)
       try {
-        const params = new URLSearchParams()
+        const params = new URLSearchParams(extraParams ?? {})
         if (valor && searchField) {
           params.append(searchField, valor)
         }

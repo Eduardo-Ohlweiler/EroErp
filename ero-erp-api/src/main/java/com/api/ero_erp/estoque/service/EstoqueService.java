@@ -15,6 +15,7 @@ import com.api.ero_erp.estoque.mapper.EstoqueMapper;
 import com.api.ero_erp.estoque.repository.EstoqueMovimentacaoRepository;
 import com.api.ero_erp.estoque.repository.EstoqueRepository;
 import com.api.ero_erp.estoque.repository.EstoqueTransferenciaRepository;
+import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.produto.entity.Produto;
@@ -110,6 +111,7 @@ public class EstoqueService {
         estoque.setPrecoVenda(dto.precoVenda());
         estoque.setQuantidadeMinima(dto.quantidadeMinima());
         estoque.setCustoMedio(produto.getCusto() != null ? produto.getCusto() : BigDecimal.ZERO);
+        if (dto.baixarEstoque() != null) estoque.setBaixarEstoque(dto.baixarEstoque());
         estoque.setCreatedBy(usuario);
         estoque = estoqueRepository.save(estoque);
 
@@ -135,6 +137,7 @@ public class EstoqueService {
 
         if (dto.precoVenda()       != null) estoque.setPrecoVenda(dto.precoVenda());
         if (dto.bloqueado()        != null) estoque.setBloqueado(dto.bloqueado());
+        if (dto.baixarEstoque()    != null) estoque.setBaixarEstoque(dto.baixarEstoque());
         // permite zerar o alerta enviando null explicitamente
         estoque.setQuantidadeMinima(dto.quantidadeMinima());
         estoque.setUpdatedBy(usuario);
@@ -302,6 +305,48 @@ public class EstoqueService {
         e.setCustoMedio(produto.getCusto() != null ? produto.getCusto() : BigDecimal.ZERO);
         e.setCreatedBy(usuario);
         return estoqueRepository.save(e);
+    }
+
+    @Transactional(readOnly = true)
+    public java.math.BigDecimal getPrecoVenda(Long emitenteId, Long produtoId) {
+        return estoqueRepository.findByEmitenteIdAndProdutoId(emitenteId, produtoId)
+                .map(e -> e.getPrecoVenda() != null ? e.getPrecoVenda() : java.math.BigDecimal.ZERO)
+                .orElse(java.math.BigDecimal.ZERO);
+    }
+
+    public void baixarEstoquePorConsumo(
+            Long       clienteId,
+            Long       emitenteId,
+            Long       produtoId,
+            BigDecimal quantidade,
+            String     motivo,
+            Usuario    usuario
+    ) {
+        Estoque estoque = estoqueRepository.findByEmitenteIdAndProdutoId(emitenteId, produtoId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Estoque não encontrado para o produto neste emitente"));
+
+        if (!estoque.getCliente().getId().equals(clienteId))
+            throw new NotFoundException("Estoque não pertence ao cliente");
+
+        if (Boolean.TRUE.equals(estoque.getBloqueado()))
+            throw new BadRequestException("Estoque bloqueado para este produto");
+
+        BigDecimal anterior  = estoque.getQuantidade();
+        if (anterior.compareTo(quantidade) < 0)
+            throw new BadRequestException(
+                    "Quantidade insuficiente no estoque: disponível " + anterior + ", solicitado " + quantidade);
+
+        BigDecimal posterior = anterior.subtract(quantidade);
+        estoque.setQuantidade(posterior);
+        estoqueRepository.save(estoque);
+
+        registrarMovimentacao(
+                estoque, estoque.getCliente(), usuario,
+                TipoMovimentacao.SAIDA,
+                quantidade, anterior, posterior,
+                motivo, null
+        );
     }
 
     private EstoqueMovimentacao registrarMovimentacao(

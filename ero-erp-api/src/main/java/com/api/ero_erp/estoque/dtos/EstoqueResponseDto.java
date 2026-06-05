@@ -20,6 +20,7 @@ public record EstoqueResponseDto(
         BigDecimal    precoVenda,
         BigDecimal    custoMedio,
         Boolean       bloqueado,
+        Boolean       baixarEstoque,
 
         String        createdByNome,
         String        updatedByNome,

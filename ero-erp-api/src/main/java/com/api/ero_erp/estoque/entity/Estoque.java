@@ -46,6 +46,9 @@ public class Estoque extends BaseEntity {
     @Column(name = "bloqueado", nullable = false)
     private Boolean bloqueado;
 
+    @Column(name = "baixar_estoque", nullable = false)
+    private Boolean baixarEstoque;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private Usuario createdBy;
@@ -59,6 +62,7 @@ public class Estoque extends BaseEntity {
         super.prePersist();
         if (this.quantidade == null)  this.quantidade  = BigDecimal.ZERO;
         if (this.custoMedio == null)  this.custoMedio  = BigDecimal.ZERO;
-        if (this.bloqueado  == null)  this.bloqueado   = false;
+        if (this.bloqueado      == null) this.bloqueado      = false;
+        if (this.baixarEstoque  == null) this.baixarEstoque  = true;
     }
 }

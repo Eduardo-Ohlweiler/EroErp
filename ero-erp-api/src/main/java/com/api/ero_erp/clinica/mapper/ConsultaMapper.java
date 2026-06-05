@@ -1,0 +1,103 @@
+package com.api.ero_erp.clinica.mapper;
+
+import com.api.ero_erp.clinica.dtos.ConsultaProdutoResponseDto;
+import com.api.ero_erp.clinica.dtos.ConsultaResponseDto;
+import com.api.ero_erp.clinica.dtos.ConsultaServicoResponseDto;
+import com.api.ero_erp.clinica.entity.Consulta;
+import com.api.ero_erp.clinica.entity.ConsultaProduto;
+import com.api.ero_erp.clinica.entity.ConsultaServico;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.List;
+
+public class ConsultaMapper {
+
+    private ConsultaMapper() {}
+
+    public static ConsultaResponseDto toDto(
+            Consulta consulta,
+            List<ConsultaServico>  servicos,
+            List<ConsultaProduto>  produtos
+    ) {
+        return new ConsultaResponseDto(
+                consulta.getId(),
+                consulta.getStatus(),
+                consulta.getEmitente().getId(),
+                consulta.getEmitente().getPessoa().getNome(),
+                consulta.getPessoa().getId(),
+                consulta.getPessoa().getNome(),
+                consulta.getCompromisso() != null ? consulta.getCompromisso().getId() : null,
+                consulta.getInicio(),
+                consulta.getFim(),
+                consulta.getObservacao(),
+                consulta.getMotivoCancelamento(),
+                consulta.getConsultaPai() != null ? consulta.getConsultaPai().getId() : null,
+                servicos.stream().map(ConsultaMapper::toServicoDto).toList(),
+                produtos.stream().map(ConsultaMapper::toProdutoDto).toList(),
+                consulta.getTipoAjusteGeral(),
+                consulta.getTipoCalculoGeral(),
+                consulta.getValorAjusteGeral(),
+                consulta.getCreatedAt(),
+                consulta.getCreatedBy() != null ? consulta.getCreatedBy().getNome() : null,
+                consulta.getUpdatedAt(),
+                consulta.getUpdatedBy() != null ? consulta.getUpdatedBy().getNome() : null
+        );
+    }
+
+    public static ConsultaServicoResponseDto toServicoDto(ConsultaServico cs) {
+        BigDecimal total = calcTotal(
+                cs.getPrecoUnitario(), cs.getQuantidade(),
+                cs.getTipoAjuste(), cs.getTipoCalculo(), cs.getValorAjuste()
+        );
+        return new ConsultaServicoResponseDto(
+                cs.getId(),
+                cs.getProduto().getId(),
+                cs.getProduto().getNome(),
+                cs.getQuantidade(),
+                cs.getPrecoUnitario(),
+                cs.getTipoAjuste(),
+                cs.getTipoCalculo(),
+                cs.getValorAjuste(),
+                total,
+                cs.getCreatedAt()
+        );
+    }
+
+    public static ConsultaProdutoResponseDto toProdutoDto(ConsultaProduto cp) {
+        BigDecimal total = calcTotal(
+                cp.getPrecoUnitario(), cp.getQuantidade(),
+                cp.getTipoAjuste(), cp.getTipoCalculo(), cp.getValorAjuste()
+        );
+        return new ConsultaProdutoResponseDto(
+                cp.getId(),
+                cp.getProduto().getId(),
+                cp.getProduto().getNome(),
+                cp.getEmitente().getId(),
+                cp.getEmitente().getPessoa().getNome(),
+                cp.getQuantidade(),
+                cp.getPrecoUnitario(),
+                cp.getTipoAjuste(),
+                cp.getTipoCalculo(),
+                cp.getValorAjuste(),
+                total,
+                cp.getCreatedAt()
+        );
+    }
+
+    public static BigDecimal calcTotal(
+            BigDecimal preco, BigDecimal qtd,
+            String tipoAjuste, String tipoCalculo, BigDecimal valorAjuste
+    ) {
+        BigDecimal base = preco.multiply(qtd);
+        if (tipoAjuste == null || valorAjuste == null || valorAjuste.compareTo(BigDecimal.ZERO) == 0)
+            return base.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal ajuste = "PERCENTUAL".equalsIgnoreCase(tipoCalculo)
+                ? base.multiply(valorAjuste).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                : valorAjuste.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = "DESCONTO".equalsIgnoreCase(tipoAjuste)
+                ? base.subtract(ajuste)
+                : base.add(ajuste);
+        return total.setScale(2, RoundingMode.HALF_UP);
+    }
+}

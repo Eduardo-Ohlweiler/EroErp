@@ -1,0 +1,46 @@
+package com.api.ero_erp.clinica.dtos;
+
+import com.api.ero_erp.clinica.enums.StatusConsulta;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+public record ConsultaResponseDto(
+        Long                          id,
+        StatusConsulta                status,
+
+        // Emitente
+        Long                          emitenteId,
+        String                        emitenteNome,
+
+        // Pessoa / paciente
+        Long                          pessoaId,
+        String                        pessoaNome,
+
+        // Compromisso vinculado
+        Long                          compromissoId,
+
+        java.time.LocalDateTime       inicio,
+        java.time.LocalDateTime       fim,
+
+        String                        observacao,
+        String                        motivoCancelamento,
+
+        // Reconsulta
+        Long                          consultaPaiId,
+
+        // Sublistas
+        List<ConsultaServicoResponseDto>  servicos,
+        List<ConsultaProdutoResponseDto>  produtos,
+
+        // Ajuste global
+        String                        tipoAjusteGeral,
+        String                        tipoCalculoGeral,
+        java.math.BigDecimal          valorAjusteGeral,
+
+        // Auditoria
+        LocalDateTime                 createdAt,
+        String                        createdByNome,
+        LocalDateTime                 updatedAt,
+        String                        updatedByNome
+) {}

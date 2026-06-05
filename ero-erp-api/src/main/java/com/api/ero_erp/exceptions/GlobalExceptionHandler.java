@@ -6,12 +6,28 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleGenericException(Exception e, WebRequest request) {
+        log.error("Erro interno não tratado: {}", e.getMessage(), e);
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .erro("Erro interno: " + e.getMessage())
+                .codigo(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .timestamp(new Date())
+                .path(request.getDescription(false))
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<Object> applicationException(ApplicationException e, WebRequest request){

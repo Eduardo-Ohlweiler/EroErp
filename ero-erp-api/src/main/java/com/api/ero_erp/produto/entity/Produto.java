@@ -90,9 +90,6 @@ public class Produto extends BaseEntity {
     @Column(name = "substituicao_tributaria", nullable = false)
     private Boolean substituicaoTributaria;
 
-    @Column(name = "baixar_estoque", nullable = false)
-    private Boolean baixarEstoque;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private Usuario createdBy;
@@ -107,6 +104,5 @@ public class Produto extends BaseEntity {
         if (this.bloqueado == null) this.bloqueado = false;
         if (this.custo == null) this.custo = BigDecimal.ZERO;
         if (this.substituicaoTributaria == null) this.substituicaoTributaria = false;
-        if (this.baixarEstoque == null) this.baixarEstoque = true;
     }
 }

@@ -52,13 +52,15 @@ public class ProdutoController {
         return produtoService.getAll(pageable, bloqueado, tipoProdutoId, subgrupoId, categoriaId, marcaId, nome);
     }
 
-    @Operation(summary = "Lista produtos desbloqueados para selects")
+    @Operation(summary = "Lista produtos desbloqueados para selects (filtro por tipoProdutoId e/ou classificacao)")
     @GetMapping("/select")
     @PreAuthorize("isAuthenticated()")
     public List<ProdutoResponseDto> select(
+            @RequestParam(required = false) Long   tipoProdutoId,
+            @RequestParam(required = false) String classificacao,
             @RequestParam(required = false) String nome
     ) {
-        return produtoService.select(nome);
+        return produtoService.select(tipoProdutoId, classificacao, nome);
     }
 
     @Operation(summary = "Busca produto por id para o select")

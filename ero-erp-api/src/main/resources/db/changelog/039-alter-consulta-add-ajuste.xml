@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="039-alter-consulta-servico-add-ajuste" author="eduardo">
+        <addColumn tableName="consulta_servico">
+            <column name="tipo_ajuste"  type="VARCHAR(10)" />
+            <column name="tipo_calculo" type="VARCHAR(10)" />
+            <column name="valor_ajuste" type="DECIMAL(15,2)" />
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="039-alter-consulta-produto-add-ajuste" author="eduardo">
+        <addColumn tableName="consulta_produto">
+            <column name="tipo_ajuste"  type="VARCHAR(10)" />
+            <column name="tipo_calculo" type="VARCHAR(10)" />
+            <column name="valor_ajuste" type="DECIMAL(15,2)" />
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="039-alter-consulta-add-ajuste-geral" author="eduardo">
+        <addColumn tableName="consulta">
+            <column name="tipo_ajuste_geral"  type="VARCHAR(10)" />
+            <column name="tipo_calculo_geral" type="VARCHAR(10)" />
+            <column name="valor_ajuste_geral" type="DECIMAL(15,2)" />
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

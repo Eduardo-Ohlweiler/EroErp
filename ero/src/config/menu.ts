@@ -1,12 +1,25 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
-    label: "Dashboard",
+    label: "Dashboards",
     icon:  FaTachometerAlt,
-    path:  "/",
-    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET"],
+    children: [
+      {
+        label: "Geral",
+        path:  "/",
+        icon:  FaTachometerAlt,
+        roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET"],
+      },
+      {
+        label: "Consultas",
+        path:  "/dashboards/consultas",
+        icon:  FaStethoscope,
+        roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"],
+      },
+    ],
   },
   {
     label: "Agenda",
@@ -85,6 +98,18 @@ export const menu: MenuItem[] = [
         ]
       },
     ]
+  },
+  {
+    label: "Clínica",
+    icon:  FaStethoscope,
+    roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"],
+    children: [
+      {
+        label: "Consultas",
+        path:  "/clinica/consultas",
+        icon:  FaStethoscope,
+      },
+    ],
   },
   {
     label: "Integrações",

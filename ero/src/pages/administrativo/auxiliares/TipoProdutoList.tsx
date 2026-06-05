@@ -7,19 +7,24 @@ import { TDataGrid }                                  from "../../../components/
 import { TDataGridFooter }                            from "../../../components/tdatagridfooter"
 import { useMessage }                                 from "../../../hooks/useMessage"
 
-const columns: TDataGridColumn<TipoProdutoResponse>[] = [
-  { label: "ID",   field: "id",   width: "60px", align: "center" },
-  { label: "Nome", field: "nome" },
-  {
-    label: "Status", width: "100px", align: "center",
-    render: (row) => (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium text-white
-        ${row.ativo ? "bg-(--success)" : "bg-(--danger)"}`}>
-        {row.ativo ? "Ativo" : "Inativo"}
-      </span>
-    )
-  }
-]
+const CLASSIFICACAO_LABEL: Record<string, string> = {
+  PRODUTO: "Produto",
+  SERVICO: "Serviço",
+}
+
+function ClassificacaoBadge({ row, onChange }: { row: TipoProdutoResponse; onChange: (id: number, val: string) => void }) {
+  return (
+    <select
+      value     ={row.classificacao ?? "PRODUTO"}
+      onChange  ={(e) => onChange(row.id, e.target.value)}
+      className ="border border-(--border) rounded px-2 py-0.5 text-xs bg-(--bg-input)
+                  text-(--text-primary) focus:outline-none focus:ring-1 focus:ring-(--accent)"
+    >
+      <option value="PRODUTO">Produto</option>
+      <option value="SERVICO">Serviço</option>
+    </select>
+  )
+}
 
 export default function TipoProdutoList() {
   const { showMessage }                         = useMessage()
@@ -47,6 +52,36 @@ export default function TipoProdutoList() {
       setLoading(false)
     }
   }
+
+  async function handleClassificacaoChange(id: number, classificacao: string) {
+    try {
+      await api.patch(`/tipos-produto/${id}/classificacao`, { classificacao })
+      setData(prev => prev.map(r => r.id === id ? { ...r, classificacao } : r))
+      showMessage("success", `Tipo atualizado para ${CLASSIFICACAO_LABEL[classificacao]}`)
+    } catch {
+      showMessage("error", "Erro ao atualizar classificação")
+    }
+  }
+
+  const columns: TDataGridColumn<TipoProdutoResponse>[] = [
+    { label: "ID",   field: "id",   width: "60px", align: "center" },
+    { label: "Nome", field: "nome" },
+    {
+      label: "Classificação", width: "140px", align: "center",
+      render: (row) => (
+        <ClassificacaoBadge row={row} onChange={handleClassificacaoChange} />
+      )
+    },
+    {
+      label: "Status", width: "100px", align: "center",
+      render: (row) => (
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium text-white
+          ${row.ativo ? "bg-(--success)" : "bg-(--danger)"}`}>
+          {row.ativo ? "Ativo" : "Inativo"}
+        </span>
+      )
+    }
+  ]
 
   return (
     <TPage title="Tipos de Produto" breadcrumb={["Administração", "Tabelas Produto", "Tipos de Produto"]}>

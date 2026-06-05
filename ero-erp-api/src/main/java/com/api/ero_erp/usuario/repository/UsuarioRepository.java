@@ -22,7 +22,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("SELECT COUNT(u) > 0 FROM Usuario u JOIN u.roles r WHERE r.nome = 'SUPERADMIN'")
     boolean existsBySuperAdmin();
 
-    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.roles LEFT JOIN FETCH u.cliente WHERE u.id = :id")
+    @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.roles LEFT JOIN FETCH u.cliente WHERE u.id = :id")
     Optional<Usuario> findByIdWithDetails(@Param("id") Long id);
 
     @Query("""

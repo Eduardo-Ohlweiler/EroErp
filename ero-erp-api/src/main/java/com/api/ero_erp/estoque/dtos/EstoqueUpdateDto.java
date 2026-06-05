@@ -5,5 +5,6 @@ import java.math.BigDecimal;
 public record EstoqueUpdateDto(
         BigDecimal precoVenda,
         BigDecimal quantidadeMinima,
-        Boolean    bloqueado
+        Boolean    bloqueado,
+        Boolean    baixarEstoque
 ) {}

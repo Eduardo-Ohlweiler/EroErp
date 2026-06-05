@@ -30,6 +30,7 @@ export default function EstoqueForm() {
   const [precoVenda,        setPrecoVenda]        = useState("")
   //const [motivo,            setMotivo]            = useState("")
   const [bloqueado,         setBloqueado]         = useState("false")
+  const [baixarEstoque,     setBaixarEstoque]     = useState("true")
 
   useEffect(() => {
     if (isEdit) loadEstoque()
@@ -47,6 +48,7 @@ export default function EstoqueForm() {
       setQuantidadeMinima(e.quantidadeMinima != null ? String(e.quantidadeMinima) : "")
       setPrecoVenda(e.precoVenda != null ? String(e.precoVenda) : "")
       setBloqueado(e.bloqueado ? "true" : "false")
+      setBaixarEstoque(e.baixarEstoque ? "true" : "false")
       setFormKey((k) => k + 1)
     } catch {
       showMessage("error", "Erro ao carregar estoque")
@@ -66,6 +68,7 @@ export default function EstoqueForm() {
           precoVenda:      formData.precoVenda      ? Number(formData.precoVenda)      : null,
           quantidadeMinima:formData.quantidadeMinima? Number(formData.quantidadeMinima): null,
           bloqueado:       formData.bloqueado === "true",
+          baixarEstoque:   formData.baixarEstoque === "true",
         })
         showMessage("success", "Estoque atualizado com sucesso!")
       } else {
@@ -75,6 +78,7 @@ export default function EstoqueForm() {
           quantidadeInicial: formData.quantidade       ? Number(formData.quantidade)       : 0,
           precoVenda:        formData.precoVenda        ? Number(formData.precoVenda)        : null,
           quantidadeMinima:  formData.quantidadeMinima  ? Number(formData.quantidadeMinima)  : null,
+          baixarEstoque:     formData.baixarEstoque === "true",
           motivo:            formData.motivo            || null,
         })
         showMessage("success", "Estoque cadastrado com sucesso!")
@@ -184,6 +188,22 @@ export default function EstoqueForm() {
               hint         ="Quando o estoque atingir este valor, aparece um alerta no dashboard"
               defaultValue ={quantidadeMinima}
               width        ="220px"
+            />
+          </TCol>
+        </TRow>
+
+        <TRow>
+          <TCol>
+            <TCombo
+              name         ="baixarEstoque"
+              label        ="Baixar Estoque"
+              width        ="160px"
+              defaultValue ={baixarEstoque}
+              onChange     ={setBaixarEstoque}
+              options      ={[
+                { value: "true",  label: "Sim" },
+                { value: "false", label: "Não" },
+              ]}
             />
           </TCol>
         </TRow>
