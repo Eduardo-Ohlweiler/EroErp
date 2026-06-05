@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="043-create-contas-pagar-receber" author="eduardo">
+
+        <!-- ── CONTA A PAGAR ─────────────────────────────────────────────── -->
+        <createTable tableName="conta_pagar">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="emitente_id" type="BIGINT"/>
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_relacao_pessoa" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descricao" type="VARCHAR(255)"/>
+            <column name="valor_total" type="NUMERIC(15,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(25)" defaultValue="ABERTO">
+                <constraints nullable="false"/>
+            </column>
+            <column name="observacao" type="TEXT"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="conta_pagar" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_conta_pagar_cliente"/>
+        <addForeignKeyConstraint
+                baseTableName="conta_pagar" baseColumnNames="emitente_id"
+                referencedTableName="emitente" referencedColumnNames="id"
+                constraintName="fk_conta_pagar_emitente"/>
+        <addForeignKeyConstraint
+                baseTableName="conta_pagar" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_conta_pagar_pessoa"/>
+
+        <createIndex tableName="conta_pagar" indexName="idx_conta_pagar_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <!-- ── PARCELA CONTA A PAGAR ─────────────────────────────────────── -->
+        <createTable tableName="parcela_conta_pagar">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="conta_pagar_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero_parcela" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_vencimento" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="valor" type="NUMERIC(15,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="forma_pagamento_id" type="BIGINT"/>
+            <column name="conta_financeira_id" type="BIGINT"/>
+            <column name="data_pagamento" type="DATE"/>
+            <column name="valor_pago" type="NUMERIC(15,2)"/>
+            <column name="status" type="VARCHAR(25)" defaultValue="ABERTO">
+                <constraints nullable="false"/>
+            </column>
+            <column name="observacao" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="parcela_conta_pagar" baseColumnNames="conta_pagar_id"
+                referencedTableName="conta_pagar" referencedColumnNames="id"
+                constraintName="fk_parcela_cp_conta_pagar"/>
+        <addForeignKeyConstraint
+                baseTableName="parcela_conta_pagar" baseColumnNames="forma_pagamento_id"
+                referencedTableName="forma_pagamento" referencedColumnNames="id"
+                constraintName="fk_parcela_cp_forma_pagamento"/>
+        <addForeignKeyConstraint
+                baseTableName="parcela_conta_pagar" baseColumnNames="conta_financeira_id"
+                referencedTableName="conta_financeira" referencedColumnNames="id"
+                constraintName="fk_parcela_cp_conta_financeira"/>
+
+        <createIndex tableName="parcela_conta_pagar" indexName="idx_parcela_cp_conta_pagar_id">
+            <column name="conta_pagar_id"/>
+        </createIndex>
+
+        <!-- ── CONTA A RECEBER ───────────────────────────────────────────── -->
+        <createTable tableName="conta_receber">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="emitente_id" type="BIGINT"/>
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_relacao_pessoa" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descricao" type="VARCHAR(255)"/>
+            <column name="valor_total" type="NUMERIC(15,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(25)" defaultValue="ABERTO">
+                <constraints nullable="false"/>
+            </column>
+            <column name="observacao" type="TEXT"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="conta_receber" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_conta_receber_cliente"/>
+        <addForeignKeyConstraint
+                baseTableName="conta_receber" baseColumnNames="emitente_id"
+                referencedTableName="emitente" referencedColumnNames="id"
+                constraintName="fk_conta_receber_emitente"/>
+        <addForeignKeyConstraint
+                baseTableName="conta_receber" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_conta_receber_pessoa"/>
+
+        <createIndex tableName="conta_receber" indexName="idx_conta_receber_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <!-- ── PARCELA CONTA A RECEBER ───────────────────────────────────── -->
+        <createTable tableName="parcela_conta_receber">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="conta_receber_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero_parcela" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_vencimento" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="valor" type="NUMERIC(15,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="forma_pagamento_id" type="BIGINT"/>
+            <column name="conta_financeira_id" type="BIGINT"/>
+            <column name="data_pagamento" type="DATE"/>
+            <column name="valor_pago" type="NUMERIC(15,2)"/>
+            <column name="status" type="VARCHAR(25)" defaultValue="ABERTO">
+                <constraints nullable="false"/>
+            </column>
+            <column name="observacao" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="parcela_conta_receber" baseColumnNames="conta_receber_id"
+                referencedTableName="conta_receber" referencedColumnNames="id"
+                constraintName="fk_parcela_cr_conta_receber"/>
+        <addForeignKeyConstraint
+                baseTableName="parcela_conta_receber" baseColumnNames="forma_pagamento_id"
+                referencedTableName="forma_pagamento" referencedColumnNames="id"
+                constraintName="fk_parcela_cr_forma_pagamento"/>
+        <addForeignKeyConstraint
+                baseTableName="parcela_conta_receber" baseColumnNames="conta_financeira_id"
+                referencedTableName="conta_financeira" referencedColumnNames="id"
+                constraintName="fk_parcela_cr_conta_financeira"/>
+
+        <createIndex tableName="parcela_conta_receber" indexName="idx_parcela_cr_conta_receber_id">
+            <column name="conta_receber_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

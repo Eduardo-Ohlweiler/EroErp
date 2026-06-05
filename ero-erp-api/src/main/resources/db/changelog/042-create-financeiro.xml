@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="042-create-financeiro" author="eduardo">
+
+        <!-- ── CONTA FINANCEIRA ───────────────────────────────────────────── -->
+        <createTable tableName="conta_financeira">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="nome" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="conta_financeira" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_conta_financeira_cliente"/>
+
+        <createIndex tableName="conta_financeira" indexName="idx_conta_financeira_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <!-- ── TIPO COBRANÇA ──────────────────────────────────────────────── -->
+        <createTable tableName="tipo_cobranca">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="nome" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="tipo_cobranca" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_tipo_cobranca_cliente"/>
+
+        <createIndex tableName="tipo_cobranca" indexName="idx_tipo_cobranca_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <!-- ── FORMA DE PAGAMENTO ─────────────────────────────────────────── -->
+        <createTable tableName="forma_pagamento">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="nome" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="tipo_cobranca_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="conta_financeira_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="forma_pagamento" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_forma_pagamento_cliente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="forma_pagamento" baseColumnNames="tipo_cobranca_id"
+                referencedTableName="tipo_cobranca" referencedColumnNames="id"
+                constraintName="fk_forma_pagamento_tipo_cobranca"/>
+
+        <addForeignKeyConstraint
+                baseTableName="forma_pagamento" baseColumnNames="conta_financeira_id"
+                referencedTableName="conta_financeira" referencedColumnNames="id"
+                constraintName="fk_forma_pagamento_conta_financeira"/>
+
+        <createIndex tableName="forma_pagamento" indexName="idx_forma_pagamento_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

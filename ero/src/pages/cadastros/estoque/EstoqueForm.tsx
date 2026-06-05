@@ -1,6 +1,7 @@
 import { useState, useEffect }                              from "react"
 import { useNavigate, useParams }                           from "react-router-dom"
 import { api }                                              from "../../../services/api"
+import { displayEmitente }                                  from "../../../utils/pessoas"
 import axios                                                from "axios"
 import type { EstoqueResponse }                             from "../../../types/Estoque"
 import type { ErrorResponse }                               from "../../../types/ErrorResponse"
@@ -111,7 +112,7 @@ export default function EstoqueForm() {
               label        ="Emitente"
               url          ="/emitentes/select"
               valueField   ="id"
-              displayField ="pessoaNome"
+              displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Selecione..."
               required

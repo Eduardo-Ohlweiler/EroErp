@@ -40,8 +40,10 @@ export interface ConsultaResponse {
     status:              StatusConsulta
     emitenteId:          number
     emitenteNome:        string
+    emitenteDocumento:   string | null
     pessoaId:            number
     pessoaNome:          string
+    pessoaDocumento:     string | null
     compromissoId:       number | null
     inicio:              string
     fim:                 string

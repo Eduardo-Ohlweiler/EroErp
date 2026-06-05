@@ -12,10 +12,12 @@ public record ConsultaResponseDto(
         // Emitente
         Long                          emitenteId,
         String                        emitenteNome,
+        String                        emitenteDocumento,
 
         // Pessoa / paciente
         Long                          pessoaId,
         String                        pessoaNome,
+        String                        pessoaDocumento,
 
         // Compromisso vinculado
         Long                          compromissoId,

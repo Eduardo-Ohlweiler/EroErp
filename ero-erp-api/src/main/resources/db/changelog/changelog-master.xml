@@ -45,4 +45,8 @@
     <include file="038-alter-estoque-add-baixar-estoque.xml"   relativeToChangelogFile="true" />
     <include file="039-alter-consulta-add-ajuste.xml"          relativeToChangelogFile="true" />
     <include file="040-alter-tipo-produto-add-classificacao.xml" relativeToChangelogFile="true" />
+    <include file="041-insert-roles-financeiro.xml"            relativeToChangelogFile="true" />
+    <include file="042-create-financeiro.xml"                  relativeToChangelogFile="true" />
+    <include file="043-create-contas-pagar-receber.xml"        relativeToChangelogFile="true" />
+    <include file="044-drop-tipo-relacao-pessoa.xml"           relativeToChangelogFile="true" />
 </databaseChangeLog>

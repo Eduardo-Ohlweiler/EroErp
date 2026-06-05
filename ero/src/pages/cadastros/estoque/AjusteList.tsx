@@ -1,6 +1,7 @@
 import { useState, useEffect }                        from "react"
 import { useNavigate }                                from "react-router-dom"
 import { api }                                        from "../../../services/api"
+import { displayEmitente }                             from "../../../utils/pessoas"
 import type { MovimentacaoResponse }                  from "../../../types/Estoque"
 import type { TDataGridColumn }                       from "../../../types/TDataGridColumn"
 import { TPage }                                      from "../../../components/tpage"
@@ -87,7 +88,7 @@ export default function AjusteList() {
               label        ="Emitente"
               url          ="/emitentes/select"
               valueField   ="id"
-              displayField ="pessoaNome"
+              displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Todos..."
               width        ="350px"

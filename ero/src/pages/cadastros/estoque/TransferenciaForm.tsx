@@ -1,6 +1,7 @@
 import { useState }                                          from "react"
 import { useNavigate }                                        from "react-router-dom"
 import { api }                                                from "../../../services/api"
+import { displayEmitente }                                    from "../../../utils/pessoas"
 import axios                                                  from "axios"
 import type { ErrorResponse }                                 from "../../../types/ErrorResponse"
 import { TPage }                                              from "../../../components/tpage"
@@ -80,7 +81,7 @@ export default function TransferenciaForm() {
               label        ="Emitente de Origem"
               url          ="/emitentes/select"
               valueField   ="id"
-              displayField ="pessoaNome"
+              displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Selecione..."
               required
@@ -97,7 +98,7 @@ export default function TransferenciaForm() {
               label        ="Emitente de Destino"
               url          ="/emitentes/select"
               valueField   ="id"
-              displayField ="pessoaNome"
+              displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Selecione..."
               required
