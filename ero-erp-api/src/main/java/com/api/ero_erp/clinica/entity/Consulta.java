@@ -57,6 +57,15 @@ public class Consulta extends BaseEntity {
     @JoinColumn(name = "consulta_pai_id")
     private Consulta consultaPai;
 
+    @Column(name = "tipo_ajuste_geral", length = 10)
+    private String tipoAjusteGeral;
+
+    @Column(name = "tipo_calculo_geral", length = 10)
+    private String tipoCalculoGeral;
+
+    @Column(name = "valor_ajuste_geral", precision = 15, scale = 2)
+    private java.math.BigDecimal valorAjusteGeral;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private Usuario createdBy;

@@ -27,6 +27,7 @@ public class EstoqueMapper {
                 e.getPrecoVenda(),
                 e.getCustoMedio(),
                 e.getBloqueado(),
+                e.getBaixarEstoque(),
                 e.getCreatedBy() != null ? e.getCreatedBy().getNome() : null,
                 e.getUpdatedBy() != null ? e.getUpdatedBy().getNome() : null,
                 e.getCreatedAt(),

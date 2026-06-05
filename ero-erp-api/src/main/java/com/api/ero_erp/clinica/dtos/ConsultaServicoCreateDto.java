@@ -15,5 +15,9 @@ public record ConsultaServicoCreateDto(
         BigDecimal quantidade,
 
         @NotNull(message = "Preço unitário é obrigatório")
-        BigDecimal precoUnitario
+        BigDecimal precoUnitario,
+
+        String     tipoAjuste,
+        String     tipoCalculo,
+        BigDecimal valorAjuste
 ) {}

@@ -17,6 +17,7 @@ public record ConsultaProdutoCreateDto(
         @Positive(message = "Quantidade deve ser positiva")
         BigDecimal quantidade,
 
-        @NotNull(message = "Preço unitário é obrigatório")
-        BigDecimal precoUnitario
+        String     tipoAjuste,
+        String     tipoCalculo,
+        BigDecimal valorAjuste
 ) {}

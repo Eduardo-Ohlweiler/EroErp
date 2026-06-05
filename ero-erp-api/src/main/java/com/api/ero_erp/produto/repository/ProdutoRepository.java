@@ -65,12 +65,14 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
             WHERE p.cliente.id = :clienteId
             AND p.bloqueado = false
             AND (:tipoProdutoId IS NULL OR p.tipoProduto.id = :tipoProdutoId)
+            AND (:classificacao IS NULL OR UPPER(p.tipoProduto.classificacao) = UPPER(:classificacao))
             AND (:nome IS NULL OR LOWER(p.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
             ORDER BY p.nome
             """)
     List<Produto> findForSelect(
             @Param("clienteId")     Long   clienteId,
             @Param("tipoProdutoId") Long   tipoProdutoId,
+            @Param("classificacao") String classificacao,
             @Param("nome")          String nome
     );
 }

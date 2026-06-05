@@ -33,6 +33,11 @@ public record ConsultaResponseDto(
         List<ConsultaServicoResponseDto>  servicos,
         List<ConsultaProdutoResponseDto>  produtos,
 
+        // Ajuste global
+        String                        tipoAjusteGeral,
+        String                        tipoCalculoGeral,
+        java.math.BigDecimal          valorAjusteGeral,
+
         // Auditoria
         LocalDateTime                 createdAt,
         String                        createdByNome,

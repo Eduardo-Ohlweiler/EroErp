@@ -30,6 +30,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -99,9 +100,11 @@ public class ConsultaService {
             LocalDateTime  fim,
             String         nomePessoa
     ) {
-        Long clienteId = securityUtils.getClienteIdLogado();
+        Long          clienteId   = securityUtils.getClienteIdLogado();
+        LocalDateTime inicioFinal = (inicio != null) ? inicio : LocalDateTime.of(1900, 1, 1, 0, 0);
+        LocalDateTime fimFinal    = (fim    != null) ? fim    : LocalDateTime.of(2100, 12, 31, 23, 59, 59);
         return consultaRepository.findAllWithFilters(
-                pageable, clienteId, status, emitenteId, pessoaId, inicio, fim, nomePessoa
+                pageable, clienteId, status, emitenteId, pessoaId, inicioFinal, fimFinal, nomePessoa
         ).map(this::buildResponse);
     }
 
@@ -165,6 +168,9 @@ public class ConsultaService {
         consulta.setInicio(dto.inicio());
         consulta.setFim(dto.fim());
         consulta.setObservacao(dto.observacao());
+        consulta.setTipoAjusteGeral(dto.tipoAjusteGeral());
+        consulta.setTipoCalculoGeral(dto.tipoCalculoGeral());
+        consulta.setValorAjusteGeral(dto.valorAjusteGeral());
         consulta.setUpdatedBy(usuario);
 
         // Atualiza o compromisso vinculado
@@ -353,6 +359,9 @@ public class ConsultaService {
         servico.setProduto(produto);
         servico.setQuantidade(dto.quantidade());
         servico.setPrecoUnitario(dto.precoUnitario());
+        servico.setTipoAjuste(dto.tipoAjuste());
+        servico.setTipoCalculo(dto.tipoCalculo());
+        servico.setValorAjuste(dto.valorAjuste());
         servico.setUpdatedBy(usuario);
         return ConsultaMapper.toServicoDto(servicoRepository.save(servico));
     }
@@ -391,8 +400,12 @@ public class ConsultaService {
         cp.setConsulta(consulta);
         cp.setProduto(produto);
         cp.setEmitente(emitente);
+        BigDecimal precoVenda = estoqueService.getPrecoVenda(dto.emitenteId(), dto.produtoId());
         cp.setQuantidade(dto.quantidade());
-        cp.setPrecoUnitario(dto.precoUnitario());
+        cp.setPrecoUnitario(precoVenda);
+        cp.setTipoAjuste(dto.tipoAjuste());
+        cp.setTipoCalculo(dto.tipoCalculo());
+        cp.setValorAjuste(dto.valorAjuste());
         cp.setCreatedBy(usuario);
         return ConsultaMapper.toProdutoDto(produtoConsumidoRepository.save(cp));
     }
@@ -413,10 +426,14 @@ public class ConsultaService {
                 .orElseThrow(() -> new NotFoundException("Produto não encontrado"));
         Emitente emitente    = emitenteService.findById(dto.emitenteId());
 
+        BigDecimal novoPreco = estoqueService.getPrecoVenda(dto.emitenteId(), dto.produtoId());
         cp.setProduto(novoProduto);
         cp.setEmitente(emitente);
         cp.setQuantidade(dto.quantidade());
-        cp.setPrecoUnitario(dto.precoUnitario());
+        cp.setPrecoUnitario(novoPreco);
+        cp.setTipoAjuste(dto.tipoAjuste());
+        cp.setTipoCalculo(dto.tipoCalculo());
+        cp.setValorAjuste(dto.valorAjuste());
         cp.setUpdatedBy(usuario);
         return ConsultaMapper.toProdutoDto(produtoConsumidoRepository.save(cp));
     }
@@ -459,6 +476,9 @@ public class ConsultaService {
         cs.setProduto(produto);
         cs.setQuantidade(dto.quantidade());
         cs.setPrecoUnitario(dto.precoUnitario());
+        cs.setTipoAjuste(dto.tipoAjuste());
+        cs.setTipoCalculo(dto.tipoCalculo());
+        cs.setValorAjuste(dto.valorAjuste());
         cs.setCreatedBy(usuario);
         return servicoRepository.save(cs);
     }

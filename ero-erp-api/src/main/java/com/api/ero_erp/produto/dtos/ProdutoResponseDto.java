@@ -44,7 +44,6 @@ public record ProdutoResponseDto(
         String        cestCodigo,
 
         Boolean       substituicaoTributaria,
-        Boolean       baixarEstoque,
 
         LocalDateTime createdAt,
         LocalDateTime updatedAt

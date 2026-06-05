@@ -19,9 +19,14 @@ public class TipoProduto extends BaseEntity {
     @Column(name = "ativo", nullable = false)
     private Boolean ativo;
 
+    /** "PRODUTO" ou "SERVICO" */
+    @Column(name = "classificacao", nullable = false, length = 10)
+    private String classificacao;
+
     @PrePersist
     public void prePersist() {
         super.prePersist();
-        if (this.ativo == null) this.ativo = true;
+        if (this.ativo          == null) this.ativo          = true;
+        if (this.classificacao  == null) this.classificacao  = "PRODUTO";
     }
 }

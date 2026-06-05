@@ -116,9 +116,9 @@ public class ProdutoService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProdutoResponseDto> select(Long tipoProdutoId, String nome) {
+    public List<ProdutoResponseDto> select(Long tipoProdutoId, String classificacao, String nome) {
         Long clienteId = securityUtils.getClienteIdLogado();
-        return produtoRepository.findForSelect(clienteId, tipoProdutoId, nome)
+        return produtoRepository.findForSelect(clienteId, tipoProdutoId, classificacao, nome)
                 .stream()
                 .map(produtoMapper::toDto)
                 .toList();
@@ -139,7 +139,7 @@ public class ProdutoService {
                 dto.tipoProdutoId(), dto.subgrupoId(), dto.categoriaId(), dto.marcaId(),
                 dto.unidadeMedidaId(), dto.fornecedorPessoaId(), clienteId,
                 dto.custo(), dto.ncmId(), dto.origemProdutoId(), dto.cestId(),
-                dto.substituicaoTributaria(), dto.baixarEstoque());
+                dto.substituicaoTributaria());
 
         return produtoMapper.toDto(produtoRepository.save(produto));
     }
@@ -157,7 +157,7 @@ public class ProdutoService {
                 dto.tipoProdutoId(), dto.subgrupoId(), dto.categoriaId(), dto.marcaId(),
                 dto.unidadeMedidaId(), dto.fornecedorPessoaId(), clienteId,
                 dto.custo(), dto.ncmId(), dto.origemProdutoId(), dto.cestId(),
-                dto.substituicaoTributaria(), dto.baixarEstoque());
+                dto.substituicaoTributaria());
 
         return produtoMapper.toDto(produtoRepository.save(produto));
     }
@@ -186,8 +186,7 @@ public class ProdutoService {
             Long    ncmId,
             Long    origemProdutoId,
             Long    cestId,
-            Boolean substituicaoTributaria,
-            Boolean baixarEstoque
+            Boolean substituicaoTributaria
     ) {
         TipoProduto   tipoProduto   = tipoProdutoService.findById(tipoProdutoId);
         UnidadeMedida unidadeMedida = unidadeMedidaService.findById(unidadeMedidaId);
@@ -222,12 +221,5 @@ public class ProdutoService {
         produto.setOrigemProduto(origem);
         produto.setCest(cest);
         if (substituicaoTributaria != null) produto.setSubstituicaoTributaria(substituicaoTributaria);
-
-        // Serviço nunca baixa estoque — ignora o valor enviado e força false
-        if (tipoProduto.getNome().equalsIgnoreCase("Serviço")) {
-            produto.setBaixarEstoque(false);
-        } else {
-            produto.setBaixarEstoque(baixarEstoque != null ? baixarEstoque : true);
-        }
     }
 }

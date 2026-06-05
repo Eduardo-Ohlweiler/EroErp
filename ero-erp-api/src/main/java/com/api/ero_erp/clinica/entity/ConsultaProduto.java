@@ -41,6 +41,15 @@ public class ConsultaProduto extends BaseEntity {
     @Column(name = "preco_unitario", nullable = false, precision = 15, scale = 2)
     private BigDecimal precoUnitario = BigDecimal.ZERO;
 
+    @Column(name = "tipo_ajuste", length = 10)
+    private String tipoAjuste;
+
+    @Column(name = "tipo_calculo", length = 10)
+    private String tipoCalculo;
+
+    @Column(name = "valor_ajuste", precision = 15, scale = 2)
+    private BigDecimal valorAjuste;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private Usuario createdBy;

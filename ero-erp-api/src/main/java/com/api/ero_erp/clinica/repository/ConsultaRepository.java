@@ -35,8 +35,8 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
             AND (:status IS NULL OR c.status = :status)
             AND (:emitenteId IS NULL OR c.emitente.id = :emitenteId)
             AND (:pessoaId IS NULL OR c.pessoa.id = :pessoaId)
-            AND (:inicio IS NULL OR c.inicio >= :inicio)
-            AND (:fim IS NULL OR c.inicio <= :fim)
+            AND c.inicio >= :inicio
+            AND c.inicio <= :fim
             AND (:nomePessoa IS NULL OR LOWER(p.nome) LIKE LOWER(CONCAT('%', CAST(:nomePessoa AS string), '%')))
             ORDER BY c.createdAt DESC
             """)

@@ -41,9 +41,11 @@ public interface ConsultaProdutoRepository extends JpaRepository<ConsultaProduto
     @Query("""
             SELECT cp FROM ConsultaProduto cp
             JOIN FETCH cp.produto p
-            JOIN FETCH cp.emitente
+            JOIN FETCH cp.emitente em
+            JOIN com.api.ero_erp.estoque.entity.Estoque est
+              ON est.produto = p AND est.emitente = em AND est.cliente = cp.cliente
             WHERE cp.consulta.id = :consultaId
-            AND p.baixarEstoque = true
+            AND est.baixarEstoque = true
             """)
     List<ConsultaProduto> findParaBaixarEstoque(@Param("consultaId") Long consultaId);
 }

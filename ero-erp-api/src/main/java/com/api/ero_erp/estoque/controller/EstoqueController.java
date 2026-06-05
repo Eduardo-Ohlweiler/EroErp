@@ -14,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/estoque")
@@ -66,6 +68,17 @@ public class EstoqueController {
     }
 
     // ── ALERTAS ──────────────────────────────────────────────────────────────
+
+    @Operation(summary = "Retorna o preço de venda do estoque para um produto em um emitente")
+    @GetMapping("/preco-venda")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'ESTOQUE', 'ESTOQUE_GET', 'CLINICA', 'CLINICA_ATENDIMENTO')")
+    public ResponseEntity<Map<String, BigDecimal>> getPrecoVenda(
+            @RequestParam Long emitenteId,
+            @RequestParam Long produtoId
+    ) {
+        BigDecimal preco = estoqueService.getPrecoVenda(emitenteId, produtoId);
+        return ResponseEntity.ok(Map.of("precoVenda", preco));
+    }
 
     @Operation(summary = "Lista itens de estoque abaixo ou igual à quantidade mínima")
     @GetMapping("/alertas")

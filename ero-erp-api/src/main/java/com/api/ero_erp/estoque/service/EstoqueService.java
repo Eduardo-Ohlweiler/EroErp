@@ -111,6 +111,7 @@ public class EstoqueService {
         estoque.setPrecoVenda(dto.precoVenda());
         estoque.setQuantidadeMinima(dto.quantidadeMinima());
         estoque.setCustoMedio(produto.getCusto() != null ? produto.getCusto() : BigDecimal.ZERO);
+        if (dto.baixarEstoque() != null) estoque.setBaixarEstoque(dto.baixarEstoque());
         estoque.setCreatedBy(usuario);
         estoque = estoqueRepository.save(estoque);
 
@@ -136,6 +137,7 @@ public class EstoqueService {
 
         if (dto.precoVenda()       != null) estoque.setPrecoVenda(dto.precoVenda());
         if (dto.bloqueado()        != null) estoque.setBloqueado(dto.bloqueado());
+        if (dto.baixarEstoque()    != null) estoque.setBaixarEstoque(dto.baixarEstoque());
         // permite zerar o alerta enviando null explicitamente
         estoque.setQuantidadeMinima(dto.quantidadeMinima());
         estoque.setUpdatedBy(usuario);
@@ -305,7 +307,13 @@ public class EstoqueService {
         return estoqueRepository.save(e);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    public java.math.BigDecimal getPrecoVenda(Long emitenteId, Long produtoId) {
+        return estoqueRepository.findByEmitenteIdAndProdutoId(emitenteId, produtoId)
+                .map(e -> e.getPrecoVenda() != null ? e.getPrecoVenda() : java.math.BigDecimal.ZERO)
+                .orElse(java.math.BigDecimal.ZERO);
+    }
+
     public void baixarEstoquePorConsumo(
             Long       clienteId,
             Long       emitenteId,

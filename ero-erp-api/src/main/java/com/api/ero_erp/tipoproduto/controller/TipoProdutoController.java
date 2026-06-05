@@ -1,10 +1,13 @@
 package com.api.ero_erp.tipoproduto.controller;
 
 import com.api.ero_erp.tipoproduto.dtos.TipoProdutoResponseDto;
+import com.api.ero_erp.tipoproduto.dtos.TipoProdutoUpdateDto;
 import com.api.ero_erp.tipoproduto.entity.TipoProduto;
 import com.api.ero_erp.tipoproduto.service.TipoProdutoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +38,16 @@ public class TipoProdutoController {
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PRODUTO', 'PRODUTO_GET')")
     public TipoProdutoResponseDto findById(@PathVariable Long id) {
         TipoProduto t = tipoProdutoService.findById(id);
-        return new TipoProdutoResponseDto(t.getId(), t.getNome(), t.getAtivo());
+        return new TipoProdutoResponseDto(t.getId(), t.getNome(), t.getAtivo(), t.getClassificacao());
+    }
+
+    @Operation(summary = "Atualiza a classificação (PRODUTO/SERVICO) de um tipo de produto")
+    @PatchMapping("/{id}/classificacao")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<TipoProdutoResponseDto> updateClassificacao(
+            @PathVariable Long id,
+            @Valid @RequestBody TipoProdutoUpdateDto dto
+    ) {
+        return ResponseEntity.ok(tipoProdutoService.updateClassificacao(id, dto));
     }
 }

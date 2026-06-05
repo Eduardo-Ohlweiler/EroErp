@@ -22,5 +22,7 @@ public record EstoqueCreateDto(
         @DecimalMin(value = "0", message = "Quantidade mínima não pode ser negativa")
         BigDecimal quantidadeMinima,
 
+        Boolean baixarEstoque,
+
         String motivo
 ) {}

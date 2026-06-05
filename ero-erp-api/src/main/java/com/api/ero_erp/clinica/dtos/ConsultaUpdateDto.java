@@ -18,5 +18,9 @@ public record ConsultaUpdateDto(
         @NotNull(message = "Fim é obrigatório")
         LocalDateTime fim,
 
-        String observacao
+        String observacao,
+
+        String     tipoAjusteGeral,
+        String     tipoCalculoGeral,
+        java.math.BigDecimal valorAjusteGeral
 ) {}

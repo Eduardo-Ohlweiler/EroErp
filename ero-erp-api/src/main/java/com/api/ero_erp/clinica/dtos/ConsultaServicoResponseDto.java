@@ -9,6 +9,9 @@ public record ConsultaServicoResponseDto(
         String        produtoNome,
         BigDecimal    quantidade,
         BigDecimal    precoUnitario,
+        String        tipoAjuste,
+        String        tipoCalculo,
+        BigDecimal    valorAjuste,
         BigDecimal    total,
         LocalDateTime createdAt
 ) {}

@@ -62,8 +62,5 @@ public record ProdutoCreateDto(
         Long cestId,
 
         @Schema(description = "Indica substituição tributária", example = "false")
-        Boolean substituicaoTributaria,
-
-        @Schema(description = "Indica se o produto baixa estoque", example = "true")
-        Boolean baixarEstoque
+        Boolean substituicaoTributaria
 ) {}
