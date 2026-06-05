@@ -2,6 +2,7 @@ import { useEffect, useState }      from "react"
 import { useNavigate }               from "react-router-dom"
 import { api }                       from "../../../services/api"
 import { useMessage }                from "../../../hooks/useMessage"
+import { useQuestion }               from "../../../hooks/useQuestion"
 import type { ContaPagarResponse }   from "../../../types/ContaPagar"
 import type { TDataGridColumn }      from "../../../types/TDataGridColumn"
 import { TPage }                     from "../../../components/tpage"
@@ -69,6 +70,7 @@ const columns: TDataGridColumn<ContaPagarResponse>[] = [
 export default function ContaPagarList() {
     const navigate        = useNavigate()
     const { showMessage } = useMessage()
+    const { ask }         = useQuestion()
 
     const [data,          setData]          = useState<ContaPagarResponse[]>([])
     const [loading,       setLoading]       = useState(false)
@@ -132,6 +134,21 @@ export default function ContaPagarList() {
         setFiltroAtivo({})
         setPage(0)
         load({}, 0)
+    }
+
+    function handleDelete(row: ContaPagarResponse) {
+        ask(`Excluir a conta "${row.descricao ?? `#${row.id}`}"? Esta ação não pode ser desfeita.`, [
+            { label: "Cancelar", variant: "cancel", onClick: () => {} },
+            { label: "Excluir",  variant: "delete",  onClick: async () => {
+                try {
+                    await api.delete(`/financeiro/contas-pagar/${row.id}`)
+                    showMessage("success", "Conta excluída!")
+                    load(filtroAtivo, page)
+                } catch {
+                    showMessage("error", "Erro ao excluir conta")
+                }
+            }},
+        ])
     }
 
     return (
@@ -215,13 +232,15 @@ export default function ContaPagarList() {
                 keyField     ="id"
                 loading      ={loading}
                 emptyMessage ="Nenhuma conta a pagar encontrada"
-                actionsWidth ="80px"
+                onRowClick   ={(row) => navigate(`/financeiro/contas-pagar/${row.id}`)}
+                actionsWidth ="120px"
                 actions      ={(row) => (
-                    <TButton
-                        label   =""
-                        variant ="edit"
-                        onClick ={(e) => { e?.stopPropagation(); navigate(`/financeiro/contas-pagar/${row.id}`) }}
-                    />
+                    <>
+                        <TButton label="" variant="edit"
+                            onClick={(e) => { e?.stopPropagation(); navigate(`/financeiro/contas-pagar/${row.id}`) }} />
+                        <TButton label="" variant="delete"
+                            onClick={(e) => { e?.stopPropagation(); handleDelete(row) }} />
+                    </>
                 )}
             />
 

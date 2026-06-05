@@ -257,7 +257,7 @@ export default function FaturamentoConsulta() {
                     </div>
                 )}
                 {parcelas.map(p => (
-                    <div key={p._id} className="rounded-lg border border-(--border) bg-(--surface) overflow-hidden">
+                    <div key={p._id} className="rounded-lg border border-(--border) bg-(--surface)">
                         <div className="flex flex-wrap items-end gap-3 p-3">
                             <div className="flex items-center justify-center w-7 h-7 rounded-full bg-(--surface-secondary) text-xs font-bold text-(--text-secondary) mb-1 shrink-0 self-end">
                                 {p.numeroParcela}

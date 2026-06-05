@@ -162,6 +162,12 @@ public class ContaPagarService {
         repository.save(conta);
     }
 
+    @Transactional
+    public void delete(Long id) {
+        ContaPagar conta = findById(id);
+        repository.delete(conta);
+    }
+
     private List<ParcelaContaPagar> buildParcelas(List<ParcelaContaPagarCreateDto> dtos, ContaPagar conta) {
         List<ParcelaContaPagar> parcelas = new ArrayList<>();
         for (int i = 0; i < dtos.size(); i++) {

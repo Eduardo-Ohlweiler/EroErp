@@ -59,6 +59,13 @@ public class ContaPagarController {
         return ResponseEntity.ok(service.update(id, dto));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'FINANCEIRO')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/parcelas/{parcelaId}/pagar")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'FINANCEIRO')")
     public ResponseEntity<ContaPagarResponseDto> pagarParcela(

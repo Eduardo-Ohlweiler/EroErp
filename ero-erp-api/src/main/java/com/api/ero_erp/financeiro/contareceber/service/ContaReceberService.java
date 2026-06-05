@@ -167,6 +167,12 @@ public class ContaReceberService {
         repository.save(conta);
     }
 
+    @Transactional
+    public void delete(Long id) {
+        ContaReceber conta = findById(id);
+        repository.delete(conta);
+    }
+
     private List<ParcelaContaReceber> buildParcelas(List<ParcelaContaReceberCreateDto> dtos, ContaReceber conta) {
         List<ParcelaContaReceber> parcelas = new ArrayList<>();
         for (int i = 0; i < dtos.size(); i++) {
