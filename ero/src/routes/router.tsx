@@ -47,6 +47,9 @@ import MovimentacaoList                           from "../pages/cadastros/estoq
 import ConsultaList                              from "../pages/clinica/ConsultaList"
 import ConsultaForm                              from "../pages/clinica/ConsultaForm"
 import ConsultaDashboard                         from "../pages/clinica/ConsultaDashboard"
+import ContaFinanceiraFormList                   from "../pages/financeiro/auxiliares/ContaFinanceiraFormList"
+import TipoCobrancaFormList                      from "../pages/financeiro/auxiliares/TipoCobrancaFormList"
+import FormaPagamentoFormList                    from "../pages/financeiro/auxiliares/FormaPagamentoFormList"
 
 export function Router() {
   return (
@@ -159,6 +162,13 @@ export function Router() {
               <Route path="/clinica/consultas/nova"    element={<ConsultaForm />} />
               <Route path="/clinica/consultas/:id"     element={<ConsultaForm />} />
               <Route path="/dashboards/consultas"      element={<ConsultaDashboard />} />
+            </Route>
+
+            {/* ── FINANCEIRO ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "FINANCEIRO", "FINANCEIRO_GET"]} />}>
+              <Route path="/financeiro/contas"          element={<ContaFinanceiraFormList />} />
+              <Route path="/financeiro/tipos-cobranca"  element={<TipoCobrancaFormList />} />
+              <Route path="/financeiro/formas-pagamento" element={<FormaPagamentoFormList />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />

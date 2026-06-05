@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -108,6 +108,22 @@ export const menu: MenuItem[] = [
         label: "Consultas",
         path:  "/clinica/consultas",
         icon:  FaStethoscope,
+      },
+    ],
+  },
+  {
+    label: "Financeiro",
+    icon:  FaUniversity,
+    roles: ["SUPERADMIN", "ADMIN", "FINANCEIRO", "FINANCEIRO_GET"],
+    children: [
+      {
+        label: "Auxiliar financeiro",
+        icon:  FaCogs,
+        children: [
+          { label: "Contas Financeiras",   path: "/financeiro/contas",           icon: FaMoneyBill  },
+          { label: "Tipos de Cobrança",    path: "/financeiro/tipos-cobranca",   icon: FaCog        },
+          { label: "Formas de Pagamento",  path: "/financeiro/formas-pagamento", icon: FaCreditCard },
+        ],
       },
     ],
   },
