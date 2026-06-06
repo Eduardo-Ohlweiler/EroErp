@@ -19,26 +19,29 @@ import { TDataGrid }          from "../../components/tdatagrid"
 import { TWindow }            from "../../components/twindow"
 import { TSpace }             from "../../components/tspace"
 import { displayPessoa, displayEmitente, formatarDocumento } from "../../utils/pessoas"
+import { gerarPdfComprovantePagamento }                      from "../../utils/geradorPdf"
 
 interface PagarContasItem {
-    tipo:               string
-    parcelaId:          number
-    numeroParcela:      number | null
-    contaId:            number
-    descricao:          string | null
+    tipo:                string
+    parcelaId:           number
+    numeroParcela:       number | null
+    contaId:             number
+    descricao:           string | null
     emitenteId:          number | null
     emitenteNome:        string | null
     emitenteDocumento:   string | null
     pessoaId:            number
     pessoaNome:          string
     pessoaDocumento:     string | null
-    dataVencimento:     string
-    valor:              number
-    formaPagamentoId:   number | null
-    formaPagamentoNome: string | null
-    contaFinanceiraId:  number | null
+    dataVencimento:      string
+    valor:               number
+    formaPagamentoId:    number | null
+    formaPagamentoNome:  string | null
+    contaFinanceiraId:   number | null
     contaFinanceiraNome: string | null
-    status:             string
+    status:              string
+    dataPagamento:       string | null
+    valorPago:           number | null
 }
 
 const STATUS_OPTIONS = [
@@ -144,6 +147,59 @@ export default function PagarContas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    function buildDadosComprovante(item: PagarContasItem): Parameters<typeof gerarPdfComprovantePagamento>[0] {
+        return {
+            tipo:               item.tipo as "PAGAR" | "RECEBER",
+            numeroParcela:      item.numeroParcela,
+            emitenteNome:       item.emitenteNome,
+            emitenteDocumento:  item.emitenteDocumento,
+            pessoaNome:         item.pessoaNome,
+            pessoaDocumento:    item.pessoaDocumento,
+            descricao:          item.descricao,
+            dataVencimento:     item.dataVencimento,
+            valorOriginal:      item.valor,
+            dataPagamento:      item.dataPagamento,
+            valorPago:          item.valorPago,
+            formaPagamentoNome: item.formaPagamentoNome,
+            contaFinanceiraNome: item.contaFinanceiraNome,
+        }
+    }
+
+    function nomeArquivo(item: PagarContasItem) {
+        const tipo  = item.tipo === "RECEBER" ? "recebimento" : "pagamento"
+        const parc  = item.numeroParcela ? `-parcela-${item.numeroParcela}` : ""
+        return `comprovante-${tipo}-${item.parcelaId}${parc}.pdf`
+    }
+
+    function handleVisualizarPdf(item: PagarContasItem, e: React.MouseEvent) {
+        e.stopPropagation()
+        const base64 = gerarPdfComprovantePagamento(buildDadosComprovante(item))
+        const link   = document.createElement("a")
+        link.href    = `data:application/pdf;base64,${base64}`
+        link.download = nomeArquivo(item)
+        link.click()
+    }
+
+    async function handleEnviarWhatsapp(item: PagarContasItem, e: React.MouseEvent) {
+        e.stopPropagation()
+        try {
+            const base64  = gerarPdfComprovantePagamento(buildDadosComprovante(item))
+            const arquivo = nomeArquivo(item)
+            const caption = item.tipo === "RECEBER"
+                ? `Comprovante de recebimento — ${item.descricao ?? arquivo}`
+                : `Comprovante de pagamento — ${item.descricao ?? arquivo}`
+            await api.post("/financeiro/pagar-contas/enviar-pdf", {
+                pessoaId: item.pessoaId,
+                base64,
+                fileName: arquivo,
+                caption,
+            })
+            showMessage("success", "PDF enviado via WhatsApp!")
+        } catch {
+            showMessage("error", "Falha ao enviar PDF via WhatsApp")
+        }
+    }
+
     async function handlePagar() {
         if (!selectedItem || !pgDataPagamento || !pgValorPago || !pgContaFinanceiraId || !pgFormaPagamentoId) {
             showMessage("error", "Preencha todos os campos obrigatórios")
@@ -167,7 +223,18 @@ export default function PagarContas() {
             setSelectedItem(null)
             setData(prev => prev.map(item =>
                 item.parcelaId === selectedItem.parcelaId && item.tipo === selectedItem.tipo
-                    ? { ...item, status: "PAGO" }
+                    ? {
+                        ...item,
+                        status:             "PAGO",
+                        dataPagamento:      pgDataPagamento,
+                        valorPago:          parseFloat(pgValorPago),
+                        formaPagamentoNome: item.formaPagamentoId === Number(pgFormaPagamentoId)
+                                                ? item.formaPagamentoNome
+                                                : item.formaPagamentoNome,
+                        contaFinanceiraNome: item.contaFinanceiraId === Number(pgContaFinanceiraId)
+                                                ? item.contaFinanceiraNome
+                                                : item.contaFinanceiraNome,
+                    }
                     : item
             ))
         } catch (err) {
@@ -209,6 +276,27 @@ export default function PagarContas() {
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium text-white ${STATUS_BADGE[row.status] ?? ""}`}>
                     {STATUS_LABEL[row.status] ?? row.status}
                 </span>
+            ),
+        },
+        {
+            label: "", field: "parcelaId", width: "110px", align: "center",
+            render: (row) => row.status !== "PAGO" ? null : (
+                <div className="flex gap-1 justify-center" onClick={e => e.stopPropagation()}>
+                    <button
+                        title="Baixar comprovante PDF"
+                        onClick={(e) => handleVisualizarPdf(row, e)}
+                        className="px-2 py-1 rounded text-xs font-medium bg-(--surface-secondary) border border-(--border) text-(--text-primary) hover:bg-(--accent) hover:text-white transition-colors"
+                    >
+                        📄 Ver
+                    </button>
+                    <button
+                        title="Enviar comprovante via WhatsApp"
+                        onClick={(e) => handleEnviarWhatsapp(row, e)}
+                        className="px-2 py-1 rounded text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                    >
+                        📱 Enviar
+                    </button>
+                </div>
             ),
         },
     ]

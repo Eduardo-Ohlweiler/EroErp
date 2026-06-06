@@ -10,6 +10,7 @@ import { TEntry }                                        from "../../components/
 import { TDate }                                         from "../../components/tdate"
 import { TDbCombo }                                      from "../../components/tdbcombo"
 import { formatarDocumento }                             from "../../utils/pessoas"
+import { gerarPdfFaturamento, gerarPdfRecibo }           from "../../utils/geradorPdf"
 
 interface ParcelaFaturamento {
     _id:               string
@@ -110,7 +111,23 @@ export default function FaturamentoConsulta() {
         })
     }
 
+    function baixarPdf(base64: string, nomeArquivo: string) {
+        const link = document.createElement("a")
+        link.href = `data:application/pdf;base64,${base64}`
+        link.download = nomeArquivo
+        link.click()
+    }
+
+    async function enviarPdfWhatsapp(base64: string, fileName: string, caption: string) {
+        try {
+            await api.post(`/consultas/${id}/enviar-pdf`, { base64, fileName, caption })
+        } catch {
+            // falha silenciosa — PDF já foi baixado localmente
+        }
+    }
+
     async function handleSubmit() {
+        if (!state) return
         if (parcelas.length === 0) {
             showMessage("error", "Defina o número de parcelas e clique em Distribuir")
             return
@@ -160,6 +177,42 @@ export default function FaturamentoConsulta() {
             })
 
             await api.patch(`/consultas/${id}/concluir`)
+
+            // ── Gera e baixa PDF de faturamento ──────────────────────────────
+            const dadosFat = {
+                consultaId:        id!,
+                emitenteNome:      state.emitenteNome      ?? "Emitente",
+                emitenteDocumento: state.emitenteDocumento ?? null,
+                pessoaNome:        state.pessoaNome,
+                pessoaDocumento:   state.pessoaDocumento   ?? null,
+                descricao,
+                data,
+                parcelas,
+                totalGeral:        state.totalGeral,
+            }
+            const pdfFat     = gerarPdfFaturamento(dadosFat)
+            const nomeArqFat = `faturamento-consulta-${id}.pdf`
+            baixarPdf(pdfFat, nomeArqFat)
+            await enviarPdfWhatsapp(pdfFat, nomeArqFat, `Faturamento — Consulta #${id}`)
+
+            // ── Gera recibo para cada parcela já paga ─────────────────────────
+            const parcPagas = parcelas.filter(p => p.pago)
+            for (const p of parcPagas) {
+                const pdfRec = gerarPdfRecibo({
+                    consultaId:        id!,
+                    numeroParcela:     p.numeroParcela,
+                    emitenteNome:      state.emitenteNome      ?? "Emitente",
+                    emitenteDocumento: state.emitenteDocumento ?? null,
+                    pessoaNome:        state.pessoaNome,
+                    pessoaDocumento:   state.pessoaDocumento   ?? null,
+                    valorPago:         p.valorPago,
+                    dataPagamento:     p.dataPagamento,
+                    descricao,
+                })
+                const nomeArqRec = `recibo-consulta-${id}-parcela-${p.numeroParcela}.pdf`
+                baixarPdf(pdfRec, nomeArqRec)
+                await enviarPdfWhatsapp(pdfRec, nomeArqRec, `Recibo — Consulta #${id} — Parcela ${p.numeroParcela}`)
+            }
 
             showMessage("success", "Consulta concluída e conta a receber criada!")
             window.history.replaceState({}, "")
