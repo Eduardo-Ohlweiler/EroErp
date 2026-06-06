@@ -385,13 +385,107 @@ export function gerarPdfFaturamento(dados: DadosFaturamento): string {
     margin: { left: mg, right: mg },
   })
 
-  // @ts-expect-error jspdf-autotable adiciona lastAutoTable
   const afterTable: number = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 40
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "italic")
   doc.setTextColor(100, 100, 100)
   doc.text(`Total por extenso: ${numeroPorExtenso(dados.totalGeral)}`, mg, afterTable + 6)
+  doc.setTextColor(0, 0, 0)
+
+  return doc.output("datauristring").split(",")[1]
+}
+
+// ── CONTA FINANCEIRA (PAGAR / RECEBER) ────────────────────────────────────────
+
+export interface DadosContaFinanceira {
+  tipo:              "PAGAR" | "RECEBER"
+  contaId:           string | number
+  emitenteNome:      string | null
+  emitenteDocumento: string | null
+  pessoaNome:        string
+  pessoaDocumento:   string | null
+  descricao:         string | null
+  data:              string
+  parcelas: {
+    numeroParcela:  number
+    dataVencimento: string
+    valor:          number
+    status:         string
+    dataPagamento:  string | null
+    valorPago:      number | null
+  }[]
+  totalGeral: number
+}
+
+export function gerarPdfContaFinanceira(dados: DadosContaFinanceira): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+
+  const isReceber = dados.tipo === "RECEBER"
+  const titulo    = isReceber ? "CONTA A RECEBER" : "CONTA A PAGAR"
+  const cabNome   = dados.emitenteNome ?? dados.pessoaNome
+  const cor: [number, number, number] = isReceber ? [22, 105, 60] : [140, 40, 40]
+
+  let y = faixaTopo(doc, cabNome, titulo, cor)
+
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  doc.text(`Ref. Nº ${dados.contaId}  •  Emitido em ${fmtData(dados.data)}`, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  doc.setFontSize(9)
+  const blocos: [string, string][] = []
+  if (dados.emitenteNome) blocos.push(["Emitente:", dados.emitenteNome + (dados.emitenteDocumento ? `  (${dados.emitenteDocumento})` : "")])
+  blocos.push(["Pessoa:", dados.pessoaNome + (dados.pessoaDocumento ? `  (${dados.pessoaDocumento})` : "")])
+  if (dados.descricao) blocos.push(["Descrição:", dados.descricao])
+
+  for (const [label, valor] of blocos) {
+    doc.setFont("helvetica", "bold")
+    doc.text(label, mg, y)
+    doc.setFont("helvetica", "normal")
+    y = blocoTexto(doc, valor, mg + 22, y, inner - 22, 5)
+    y += 2
+  }
+
+  y += 4
+
+  const statusLabel = (s: string) => {
+    if (s === "PAGO")              return "Pago"
+    if (s === "PARCIALMENTE_PAGO") return "Parc. Pago"
+    if (s === "CANCELADO")         return "Cancelado"
+    return "Em aberto"
+  }
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Nº", "Vencimento", "Valor", "Status", "Data Pag.", "Valor Pago"]],
+    body: dados.parcelas.map(p => [
+      String(p.numeroParcela),
+      fmtData(p.dataVencimento),
+      fmtMoeda(p.valor),
+      statusLabel(p.status),
+      p.dataPagamento ? fmtData(p.dataPagamento) : "—",
+      p.valorPago     ? fmtMoeda(p.valorPago)    : "—",
+    ]),
+    foot: [["", "", "", "", "Total", fmtMoeda(dados.totalGeral)]],
+    headStyles:   { fillColor: cor, fontSize: 9 },
+    footStyles:   { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: "bold", fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 0: { halign: "center", cellWidth: 12 }, 2: { halign: "right" }, 5: { halign: "right" } },
+    margin: { left: mg, right: mg },
+  })
+
+  const afterTableCF: number = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 40
+
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(100, 100, 100)
+  doc.text(`Total por extenso: ${numeroPorExtenso(dados.totalGeral)}`, mg, afterTableCF + 6)
   doc.setTextColor(0, 0, 0)
 
   return doc.output("datauristring").split(",")[1]

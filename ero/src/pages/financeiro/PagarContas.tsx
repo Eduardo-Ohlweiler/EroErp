@@ -285,7 +285,7 @@ export default function PagarContas() {
                     <button
                         title="Baixar comprovante PDF"
                         onClick={(e) => handleVisualizarPdf(row, e)}
-                        className="px-2 py-1 rounded text-xs font-medium bg-(--surface-secondary) border border-(--border) text-(--text-primary) hover:bg-(--accent) hover:text-white transition-colors"
+                        className="px-2 py-1 rounded text-xs font-medium bg-(--metal-100) border border-(--border) text-(--text-primary) hover:bg-(--accent) hover:text-white transition-colors"
                     >
                         📄 Ver
                     </button>
@@ -410,7 +410,7 @@ export default function PagarContas() {
             >
                 {selectedItem && (
                     <div className="flex flex-col gap-4">
-                        <div className="p-3 rounded-lg bg-(--surface-secondary) text-sm flex flex-col gap-1">
+                        <div className="p-3 rounded-lg bg-(--metal-100) border border-(--border) text-sm flex flex-col gap-1 text-(--text-primary)">
                             <span><strong>Tipo:</strong> {selectedItem.tipo === "PAGAR" ? "Conta a Pagar" : "Conta a Receber"}</span>
                             <span><strong>Pessoa:</strong> {selectedItem.pessoaNome}</span>
                             {selectedItem.emitenteNome && <span><strong>Emitente:</strong> {selectedItem.emitenteNome}</span>}

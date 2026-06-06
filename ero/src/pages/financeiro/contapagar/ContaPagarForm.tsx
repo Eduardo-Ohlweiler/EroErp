@@ -7,7 +7,8 @@ import type { ContaPagarResponse, ParcelaLocal } from "../../../types/ContaPagar
 import type { TDataGridColumn }    from "../../../types/TDataGridColumn"
 import type { ErrorResponse }      from "../../../types/ErrorResponse"
 
-import { FaMoneyBill }             from "react-icons/fa6"
+import { FaMoneyBill, FaFilePdf, FaWhatsapp } from "react-icons/fa6"
+import { gerarPdfContaFinanceira } from "../../../utils/geradorPdf"
 import { displayPessoa, displayEmitente } from "../../../utils/pessoas"
 import { TPage }                   from "../../../components/tpage"
 import { TForm, TFormFooter, TFormActionsLeft, TFormActionsRight } from "../../../components/tform"
@@ -237,6 +238,53 @@ export default function ContaPagarForm() {
         setParcelas(prev => prev.filter(p => p._tempId !== tempId))
     }
 
+    function buildPdfBase64() {
+        if (!conta) return null
+        return gerarPdfContaFinanceira({
+            tipo:              "PAGAR",
+            contaId:           conta.id,
+            emitenteNome:      conta.emitenteNome,
+            emitenteDocumento: conta.emitenteDocumento,
+            pessoaNome:        conta.pessoaNome,
+            pessoaDocumento:   conta.pessoaDocumento,
+            descricao:         conta.descricao,
+            data:              conta.data,
+            parcelas:          conta.parcelas.map(p => ({
+                numeroParcela:  p.numeroParcela,
+                dataVencimento: p.dataVencimento,
+                valor:          Number(p.valor),
+                status:         p.status,
+                dataPagamento:  p.dataPagamento,
+                valorPago:      p.valorPago != null ? Number(p.valorPago) : null,
+            })),
+            totalGeral: conta.valorTotal,
+        })
+    }
+
+    function handleVisualizarPdf() {
+        const base64 = buildPdfBase64()
+        if (!base64) return
+        const blob = new Blob([Uint8Array.from(atob(base64), c => c.charCodeAt(0))], { type: "application/pdf" })
+        const url  = URL.createObjectURL(blob)
+        window.open(url, "_blank")
+    }
+
+    async function handleEnviarWhatsapp() {
+        const base64 = buildPdfBase64()
+        if (!base64 || !conta) return
+        try {
+            await api.post("/financeiro/pagar-contas/enviar-pdf", {
+                pessoaId: conta.pessoaId,
+                base64,
+                fileName: `conta-pagar-${conta.id}.pdf`,
+                caption:  `Conta a pagar Nº ${conta.id}${conta.descricao ? " — " + conta.descricao : ""}`,
+            })
+            showMessage("success", "PDF enviado via WhatsApp!")
+        } catch {
+            showMessage("error", "Erro ao enviar PDF via WhatsApp")
+        }
+    }
+
     async function handleSubmit(formData: Record<string, string>) {
         if (parcelas.length === 0) {
             showMessage("error", "Adicione ao menos uma parcela")
@@ -447,14 +495,14 @@ export default function ContaPagarForm() {
                 </TPanel>
 
                 {valorTotalNum > 0 && (
-                    <div className="flex flex-wrap gap-4 px-1 py-3 my-2 rounded-lg bg-(--surface-secondary) border border-(--border)">
+                    <div className="flex flex-wrap gap-4 px-1 py-3 my-2 rounded-lg bg-(--metal-100) border border-(--border)">
                         <div className="flex flex-col items-center flex-1 min-w-30">
                             <span className="text-xs text-(--text-secondary) mb-1">Valor Total</span>
-                            <span className="text-base font-semibold">{fmt(valorTotalNum)}</span>
+                            <span className="text-base font-semibold text-(--text-primary)">{fmt(valorTotalNum)}</span>
                         </div>
                         <div className="flex flex-col items-center flex-1 min-w-30">
                             <span className="text-xs text-(--text-secondary) mb-1">Total Parcelado</span>
-                            <span className="text-base font-semibold text-blue-500">{fmt(sumParcelas)}</span>
+                            <span className="text-base font-semibold text-(--accent)">{fmt(sumParcelas)}</span>
                         </div>
                         <div className="flex flex-col items-center flex-1 min-w-30">
                             <span className="text-xs text-(--text-secondary) mb-1">Saldo Restante</span>
@@ -464,7 +512,7 @@ export default function ContaPagarForm() {
                         </div>
                         <div className="flex flex-col items-center flex-1 min-w-20">
                             <span className="text-xs text-(--text-secondary) mb-1">Parcelas</span>
-                            <span className="text-base font-semibold">{parcelas.length}</span>
+                            <span className="text-base font-semibold text-(--text-primary)">{parcelas.length}</span>
                         </div>
                     </div>
                 )}
@@ -473,6 +521,22 @@ export default function ContaPagarForm() {
                     <TFormActionsLeft>
                         <TButton label="Voltar" variant="cancel" onClick={() => navigate("/financeiro/contas-pagar")} />
                         <TButton label="Novo"   variant="new"    onClick={handleNovo} />
+                        {isEdit && conta && (
+                            <>
+                                <TButton
+                                    label   ="PDF"
+                                    variant ="secondary"
+                                    icon    ={<FaFilePdf size={13} />}
+                                    onClick ={handleVisualizarPdf}
+                                />
+                                <TButton
+                                    label   ="WhatsApp"
+                                    variant ="success"
+                                    icon    ={<FaWhatsapp size={13} />}
+                                    onClick ={handleEnviarWhatsapp}
+                                />
+                            </>
+                        )}
                     </TFormActionsLeft>
                     <TFormActionsRight>
                         <TButton label="Salvar" variant="save" type="submit" loading={saving} />
