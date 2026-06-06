@@ -6,8 +6,11 @@ import com.api.ero_erp.financeiro.contapagar.entity.ParcelaContaPagar;
 import com.api.ero_erp.financeiro.contapagar.repository.ParcelaContaPagarRepository;
 import com.api.ero_erp.financeiro.contareceber.entity.ParcelaContaReceber;
 import com.api.ero_erp.financeiro.contareceber.repository.ParcelaContaReceberRepository;
+import com.api.ero_erp.financeiro.pagarcontas.dtos.EnviarPdfFinanceiroDto;
 import com.api.ero_erp.financeiro.pagarcontas.dtos.PagarContasItemDto;
+import com.api.ero_erp.whatsapp.service.WhatsappNotificationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,15 +26,18 @@ public class PagarContasController {
     private final ParcelaContaPagarRepository   contaPagarRepo;
     private final ParcelaContaReceberRepository contaReceberRepo;
     private final SecurityUtils                 securityUtils;
+    private final WhatsappNotificationService   notificationService;
 
     public PagarContasController(
             ParcelaContaPagarRepository   contaPagarRepo,
             ParcelaContaReceberRepository contaReceberRepo,
-            SecurityUtils                 securityUtils
+            SecurityUtils                 securityUtils,
+            WhatsappNotificationService   notificationService
     ) {
-        this.contaPagarRepo   = contaPagarRepo;
-        this.contaReceberRepo = contaReceberRepo;
-        this.securityUtils    = securityUtils;
+        this.contaPagarRepo    = contaPagarRepo;
+        this.contaReceberRepo  = contaReceberRepo;
+        this.securityUtils     = securityUtils;
+        this.notificationService = notificationService;
     }
 
     private static String resolverDoc(Pessoa p) {
@@ -82,7 +88,9 @@ public class PagarContasController {
                     p.getFormaPagamento() != null ? p.getFormaPagamento().getNome() : null,
                     p.getContaFinanceira() != null ? p.getContaFinanceira().getId()   : null,
                     p.getContaFinanceira() != null ? p.getContaFinanceira().getNome() : null,
-                    p.getStatus() != null ? p.getStatus().name() : null
+                    p.getStatus() != null ? p.getStatus().name() : null,
+                    p.getDataPagamento() != null ? p.getDataPagamento().toString() : null,
+                    p.getValorPago()
             ));
         }
 
@@ -107,7 +115,9 @@ public class PagarContasController {
                     p.getFormaPagamento() != null ? p.getFormaPagamento().getNome() : null,
                     p.getContaFinanceira() != null ? p.getContaFinanceira().getId()   : null,
                     p.getContaFinanceira() != null ? p.getContaFinanceira().getNome() : null,
-                    p.getStatus() != null ? p.getStatus().name() : null
+                    p.getStatus() != null ? p.getStatus().name() : null,
+                    p.getDataPagamento() != null ? p.getDataPagamento().toString() : null,
+                    p.getValorPago()
             ));
         }
 
@@ -118,5 +128,19 @@ public class PagarContasController {
                     return a.dataVencimento().compareTo(b.dataVencimento());
                 })
                 .toList();
+    }
+
+    @PostMapping("/enviar-pdf")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'FINANCEIRO')")
+    public ResponseEntity<Void> enviarPdf(@RequestBody EnviarPdfFinanceiroDto dto) {
+        notificationService.enviarPdfParaCliente(
+                dto.pessoaId(),
+                securityUtils.getClienteIdLogado(),
+                securityUtils.getUsuarioIdLogado(),
+                dto.base64(),
+                dto.fileName(),
+                dto.caption()
+        );
+        return ResponseEntity.noContent().build();
     }
 }

@@ -137,6 +137,19 @@ public class ConsultaController {
         return ResponseEntity.noContent().build();
     }
 
+    // ── WhatsApp / PDF ────────────────────────────────────────────────────────
+
+    @Operation(summary = "Envia um PDF (base64) para o paciente via WhatsApp")
+    @PostMapping("/{id}/enviar-pdf")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CLINICA')")
+    public ResponseEntity<Void> enviarPdfWhatsapp(
+            @PathVariable Long id,
+            @RequestBody EnviarPdfConsultaDto dto
+    ) {
+        consultaService.enviarPdfWhatsapp(id, dto);
+        return ResponseEntity.noContent().build();
+    }
+
     // ── Produtos consumidos ───────────────────────────────────────────────────
 
     @Operation(summary = "Adiciona produto consumido à consulta")

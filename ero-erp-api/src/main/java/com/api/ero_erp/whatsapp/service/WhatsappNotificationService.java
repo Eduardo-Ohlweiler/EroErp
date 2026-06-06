@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class WhatsappNotificationService {
@@ -203,6 +204,52 @@ public class WhatsappNotificationService {
                 motivo,
                 localEmitente
         );
+    }
+
+    public void enviarPdfParaCliente(
+            Long   pessoaId,
+            Long   clienteId,
+            Long   usuarioId,
+            String base64,
+            String fileName,
+            String caption
+    ) {
+        try {
+            WhatsappConfigGlobal configGlobal = configGlobalRepository.findFirstByAtivoTrue().orElse(null);
+            if (configGlobal == null) {
+                log.warn("Nenhuma configuração global de WhatsApp ativa. PDF não enviado.");
+                return;
+            }
+
+            Optional<WhatsappInstancia> instanciaOpt = instanciaRepository.findByUsuarioIdAndClienteId(usuarioId, clienteId);
+            if (instanciaOpt.isEmpty() || !Boolean.TRUE.equals(instanciaOpt.get().getAtivo())) {
+                log.warn("Instância WhatsApp inativa ou inexistente para usuário {} / cliente {}. PDF não enviado.", usuarioId, clienteId);
+                return;
+            }
+            WhatsappInstancia instancia = instanciaOpt.get();
+
+            String phone = telefoneRepository
+                    .findFirstByPessoaIdAndClienteIdAndTipoTelefoneId(pessoaId, clienteId, 2L)
+                    .map(t -> limparNumero(t.getNumero()))
+                    .orElse(null);
+
+            if (phone == null || phone.isBlank()) {
+                log.warn("Pessoa {} sem telefone WhatsApp cadastrado. PDF não enviado.", pessoaId);
+                return;
+            }
+
+            evolutionClient.enviarDocumento(
+                    configGlobal.getApiUrl(),
+                    instancia.getInstanceName(),
+                    instancia.getToken(),
+                    "55" + phone,
+                    base64,
+                    fileName,
+                    caption
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao enviar PDF via WhatsApp para pessoa {}: {}", pessoaId, e.getMessage());
+        }
     }
 
     static String limparNumero(String numero) {

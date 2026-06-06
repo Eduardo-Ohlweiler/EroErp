@@ -25,6 +25,9 @@ import com.api.ero_erp.produto.entity.Produto;
 import com.api.ero_erp.produto.repository.ProdutoRepository;
 import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.service.UsuarioService;
+import com.api.ero_erp.whatsapp.service.WhatsappNotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -37,42 +40,47 @@ import java.util.List;
 @Service
 public class ConsultaService {
 
-    private final ConsultaRepository        consultaRepository;
-    private final ConsultaServicoRepository servicoRepository;
-    private final ConsultaProdutoRepository produtoConsumidoRepository;
-    private final CompromissoRepository     compromissoRepository;
-    private final ClienteService            clienteService;
-    private final EmitenteService           emitenteService;
-    private final PessoaService             pessoaService;
-    private final UsuarioService            usuarioService;
-    private final ProdutoRepository         produtoRepository;
-    private final EstoqueService            estoqueService;
-    private final SecurityUtils             securityUtils;
+    private static final Logger log = LoggerFactory.getLogger(ConsultaService.class);
+
+    private final ConsultaRepository         consultaRepository;
+    private final ConsultaServicoRepository  servicoRepository;
+    private final ConsultaProdutoRepository  produtoConsumidoRepository;
+    private final CompromissoRepository      compromissoRepository;
+    private final ClienteService             clienteService;
+    private final EmitenteService            emitenteService;
+    private final PessoaService              pessoaService;
+    private final UsuarioService             usuarioService;
+    private final ProdutoRepository          produtoRepository;
+    private final EstoqueService             estoqueService;
+    private final SecurityUtils              securityUtils;
+    private final WhatsappNotificationService notificationService;
 
     public ConsultaService(
-            ConsultaRepository        consultaRepository,
-            ConsultaServicoRepository servicoRepository,
-            ConsultaProdutoRepository produtoConsumidoRepository,
-            CompromissoRepository     compromissoRepository,
-            ClienteService            clienteService,
-            EmitenteService           emitenteService,
-            PessoaService             pessoaService,
-            UsuarioService            usuarioService,
-            ProdutoRepository         produtoRepository,
-            EstoqueService            estoqueService,
-            SecurityUtils             securityUtils
+            ConsultaRepository         consultaRepository,
+            ConsultaServicoRepository  servicoRepository,
+            ConsultaProdutoRepository  produtoConsumidoRepository,
+            CompromissoRepository      compromissoRepository,
+            ClienteService             clienteService,
+            EmitenteService            emitenteService,
+            PessoaService              pessoaService,
+            UsuarioService             usuarioService,
+            ProdutoRepository          produtoRepository,
+            EstoqueService             estoqueService,
+            SecurityUtils              securityUtils,
+            WhatsappNotificationService notificationService
     ) {
-        this.consultaRepository        = consultaRepository;
-        this.servicoRepository         = servicoRepository;
+        this.consultaRepository         = consultaRepository;
+        this.servicoRepository          = servicoRepository;
         this.produtoConsumidoRepository = produtoConsumidoRepository;
-        this.compromissoRepository     = compromissoRepository;
-        this.clienteService            = clienteService;
-        this.emitenteService           = emitenteService;
-        this.pessoaService             = pessoaService;
-        this.usuarioService            = usuarioService;
-        this.produtoRepository         = produtoRepository;
-        this.estoqueService            = estoqueService;
-        this.securityUtils             = securityUtils;
+        this.compromissoRepository      = compromissoRepository;
+        this.clienteService             = clienteService;
+        this.emitenteService            = emitenteService;
+        this.pessoaService              = pessoaService;
+        this.usuarioService             = usuarioService;
+        this.produtoRepository          = produtoRepository;
+        this.estoqueService             = estoqueService;
+        this.securityUtils              = securityUtils;
+        this.notificationService        = notificationService;
     }
 
     // ── Consultas ────────────────────────────────────────────────────────────
@@ -145,6 +153,12 @@ public class ConsultaService {
             for (ConsultaServicoCreateDto s : dto.servicos()) {
                 criarServico(consulta, s, cliente, usuario);
             }
+        }
+
+        try {
+            notificationService.notificarCriacao(compromisso);
+        } catch (Exception e) {
+            log.warn("Falha ao notificar criação da consulta {}: {}", consulta.getId(), e.getMessage());
         }
 
         return buildResponse(consulta);
@@ -263,6 +277,11 @@ public class ConsultaService {
                 c.setUpdatedBy(usuario);
                 compromissoRepository.save(c);
             }
+            try {
+                notificationService.notificarCancelamento(c);
+            } catch (Exception e) {
+                log.warn("Falha ao notificar cancelamento da consulta {}: {}", id, e.getMessage());
+            }
         }
 
         return buildResponse(consultaRepository.save(consulta));
@@ -321,6 +340,12 @@ public class ConsultaService {
             copia.setPrecoUnitario(s.getPrecoUnitario());
             copia.setCreatedBy(usuario);
             servicoRepository.save(copia);
+        }
+
+        try {
+            notificationService.notificarCriacao(novoCompromisso);
+        } catch (Exception e) {
+            log.warn("Falha ao notificar criação da reconsulta {}: {}", reconsulta.getId(), e.getMessage());
         }
 
         return buildResponse(reconsulta);
@@ -450,6 +475,21 @@ public class ConsultaService {
                 .orElseThrow(() -> new NotFoundException("Produto consumido não encontrado"));
 
         produtoConsumidoRepository.delete(cp);
+    }
+
+    // ── PDF / WhatsApp ────────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public void enviarPdfWhatsapp(Long consultaId, com.api.ero_erp.clinica.dtos.EnviarPdfConsultaDto dto) {
+        Consulta consulta = findById(consultaId);
+        notificationService.enviarPdfParaCliente(
+                consulta.getPessoa().getId(),
+                consulta.getCliente().getId(),
+                securityUtils.getUsuarioIdLogado(),
+                dto.base64(),
+                dto.fileName(),
+                dto.caption()
+        );
     }
 
     // ── Auxiliares ────────────────────────────────────────────────────────────
