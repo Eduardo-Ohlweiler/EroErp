@@ -1,6 +1,8 @@
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
+// ── Formatadores ───────────────────────────────────────────────────────────────
+
 const fmtMoeda = (v: number | string) =>
   Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
@@ -10,121 +12,305 @@ const fmtData = (iso: string) => {
   return `${d}/${m}/${y}`
 }
 
-function cabecalho(doc: jsPDF, emitenteNome: string, titulo: string) {
-  const largura = doc.internal.pageSize.getWidth()
+const MESES_PT = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+]
+
+function fmtDataPorExtenso(iso: string): string {
+  if (!iso) return ""
+  const [y, m, d] = iso.split("-")
+  return `${parseInt(d, 10)} de ${MESES_PT[parseInt(m, 10) - 1]} de ${y}`
+}
+
+// ── Valor por extenso (PT-BR) ──────────────────────────────────────────────────
+
+function inteiroParaExtenso(n: number): string {
+  if (n === 0) return "zero"
+  const un  = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove",
+                "dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis",
+                "dezessete", "dezoito", "dezenove"]
+  const dez = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"]
+  const cen = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos",
+               "seiscentos", "setecentos", "oitocentos", "novecentos"]
+
+  if (n < 20)  return un[n]
+  if (n < 100) { const d = Math.floor(n / 10), u = n % 10; return u === 0 ? dez[d] : `${dez[d]} e ${un[u]}` }
+  if (n === 100) return "cem"
+  if (n < 1000)  { const c = Math.floor(n / 100), r = n % 100; return r === 0 ? cen[c] : `${cen[c]} e ${inteiroParaExtenso(r)}` }
+  if (n < 1_000_000) {
+    const mil = Math.floor(n / 1000), r = n % 1000
+    const ms  = mil === 1 ? "mil" : `${inteiroParaExtenso(mil)} mil`
+    return r === 0 ? ms : r < 100 ? `${ms} e ${inteiroParaExtenso(r)}` : `${ms} e ${inteiroParaExtenso(r)}`
+  }
+  if (n < 1_000_000_000) {
+    const mi = Math.floor(n / 1_000_000), r = n % 1_000_000
+    const ms = mi === 1 ? "um milhão" : `${inteiroParaExtenso(mi)} milhões`
+    return r === 0 ? ms : `${ms} e ${inteiroParaExtenso(r)}`
+  }
+  return String(n)
+}
+
+export function numeroPorExtenso(valor: number): string {
+  const reais    = Math.floor(valor)
+  const centavos = Math.round((valor - reais) * 100)
+  const tR = reais === 1 ? `${inteiroParaExtenso(reais)} real` : `${inteiroParaExtenso(reais)} reais`
+  if (centavos === 0) { const s = tR; return s.charAt(0).toUpperCase() + s.slice(1) }
+  const tC = centavos === 1 ? `${inteiroParaExtenso(centavos)} centavo` : `${inteiroParaExtenso(centavos)} centavos`
+  const s  = `${tR} e ${tC}`
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+// ── Helpers internos ───────────────────────────────────────────────────────────
+
+function blocoTexto(doc: jsPDF, texto: string, x: number, y: number, maxW: number, espaco: number): number {
+  const linhas = doc.splitTextToSize(texto, maxW) as string[]
+  linhas.forEach((l: string) => { doc.text(l, x, y); y += espaco })
+  return y
+}
+
+function faixaTopo(doc: jsPDF, emitenteNome: string, subtitulo: string, cor: [number, number, number]): number {
+  const L = doc.internal.pageSize.getWidth()
+  doc.setFillColor(...cor)
+  doc.rect(0, 0, L, 34, "F")
 
   doc.setFontSize(16)
   doc.setFont("helvetica", "bold")
-  doc.text(emitenteNome, largura / 2, 18, { align: "center" })
+  doc.setTextColor(255, 255, 255)
+  doc.text(emitenteNome, L / 2, 14, { align: "center" })
 
-  doc.setFontSize(11)
+  doc.setFontSize(10)
   doc.setFont("helvetica", "normal")
-  doc.text(titulo, largura / 2, 26, { align: "center" })
+  doc.text(subtitulo, L / 2, 23, { align: "center" })
 
-  doc.setDrawColor(180, 180, 180)
-  doc.line(14, 30, largura - 14, 30)
-
-  return 36
+  doc.setTextColor(0, 0, 0)
+  return 42
 }
 
+// ── RECIBO DE PAGAMENTO ────────────────────────────────────────────────────────
+
+export interface DadosRecibo {
+  consultaId:        string | number
+  numeroParcela:     number
+  emitenteNome:      string
+  emitenteDocumento: string | null
+  pessoaNome:        string
+  pessoaDocumento:   string | null
+  valorPago:         string          // string numérica, ex: "1500.00"
+  dataPagamento:     string          // YYYY-MM-DD
+  descricao:         string
+}
+
+export function gerarPdfRecibo(dados: DadosRecibo): string {
+  const doc    = new jsPDF({ unit: "mm", format: "a4" })
+  const L      = doc.internal.pageSize.getWidth()
+  const mg     = 18
+  const inner  = L - mg * 2
+
+  // Faixa de topo azul-marinho
+  let y = faixaTopo(doc, dados.emitenteNome, "RECIBO DE PAGAMENTO", [30, 65, 120])
+
+  // Referência
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  doc.text(
+    `Ref.: Consulta #${dados.consultaId}  •  Parcela ${dados.numeroParcela}  •  Emitido em ${fmtData(dados.dataPagamento)}`,
+    L / 2, y, { align: "center" }
+  )
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  // ── Caixa do valor ────────────────────────────────────────────────────────
+  const vlr = Number(dados.valorPago)
+  doc.setFillColor(240, 247, 255)
+  doc.setDrawColor(30, 65, 120)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(mg, y, inner, 20, 3, 3, "FD")
+
+  doc.setFontSize(10)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(50, 50, 50)
+  doc.text("Valor recebido", mg + 5, y + 8)
+
+  doc.setFontSize(18)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(30, 65, 120)
+  doc.text(fmtMoeda(vlr), L - mg - 5, y + 13, { align: "right" })
+  doc.setTextColor(0, 0, 0)
+
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(100, 100, 100)
+  doc.text(numeroPorExtenso(vlr), mg + 5, y + 16)
+  doc.setTextColor(0, 0, 0)
+
+  y += 28
+
+  // ── Texto jurídico ────────────────────────────────────────────────────────
+  const descr   = dados.descricao || `Consulta #${dados.consultaId}`
+  const docPess = dados.pessoaDocumento
+    ? `, CPF/CNPJ ${dados.pessoaDocumento},`
+    : ","
+
+  const texto =
+    `Recebi(emos) de ${dados.pessoaNome}${docPess} a importância de ` +
+    `${fmtMoeda(vlr)} (${numeroPorExtenso(vlr)}), referente a ${descr}.`
+
+  doc.setFontSize(10)
+  doc.setFont("helvetica", "normal")
+  y = blocoTexto(doc, texto, mg, y, inner, 6)
+
+  y += 8
+
+  // ── Linha de dados ────────────────────────────────────────────────────────
+  doc.setDrawColor(210, 210, 210)
+  doc.setLineWidth(0.3)
+  doc.line(mg, y, L - mg, y)
+  y += 6
+
+  const dataExt = fmtDataPorExtenso(dados.dataPagamento)
+
+  doc.setFontSize(9)
+  const pares: [string, string][] = [
+    ["Paciente:",    dados.pessoaNome + (dados.pessoaDocumento ? `  (${dados.pessoaDocumento})` : "")],
+    ["Emitente:",   dados.emitenteNome + (dados.emitenteDocumento ? `  (${dados.emitenteDocumento})` : "")],
+    ["Data pag.:",  dataExt],
+  ]
+  for (const [label, valor] of pares) {
+    doc.setFont("helvetica", "bold")
+    doc.text(label, mg, y)
+    doc.setFont("helvetica", "normal")
+    doc.text(valor, mg + 24, y)
+    y += 6
+  }
+
+  return doc.output("datauristring").split(",")[1]
+}
+
+// ── COMPROVANTE FINANCEIRO ────────────────────────────────────────────────────
+
 export interface DadosComprovantePagamento {
-  tipo:               "PAGAR" | "RECEBER"
-  numeroParcela:      number | null
-  emitenteNome:       string | null
-  emitenteDocumento:  string | null
-  pessoaNome:         string
-  pessoaDocumento:    string | null
-  descricao:          string | null
-  dataVencimento:     string | null
-  valorOriginal:      number
-  dataPagamento:      string | null
-  valorPago:          number | null
-  formaPagamentoNome: string | null
+  tipo:                "PAGAR" | "RECEBER"
+  numeroParcela:       number | null
+  emitenteNome:        string | null
+  emitenteDocumento:   string | null
+  pessoaNome:          string
+  pessoaDocumento:     string | null
+  descricao:           string | null
+  dataVencimento:      string | null
+  valorOriginal:       number
+  dataPagamento:       string | null
+  valorPago:           number | null
+  formaPagamentoNome:  string | null
   contaFinanceiraNome: string | null
 }
 
 export function gerarPdfComprovantePagamento(dados: DadosComprovantePagamento): string {
-  const doc    = new jsPDF({ unit: "mm", format: "a4" })
-  const largura = doc.internal.pageSize.getWidth()
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
 
-  const tituloTipo = dados.tipo === "RECEBER" ? "COMPROVANTE DE RECEBIMENTO" : "COMPROVANTE DE PAGAMENTO"
-  const cabNome    = dados.emitenteNome ?? (dados.tipo === "RECEBER" ? dados.pessoaNome : "—")
+  const isReceber  = dados.tipo === "RECEBER"
+  const cabNome    = dados.emitenteNome ?? dados.pessoaNome
+  const tituloDoc  = isReceber ? "RECIBO DE RECEBIMENTO" : "COMPROVANTE DE PAGAMENTO"
+  const corTopo: [number, number, number] = isReceber ? [22, 105, 60] : [140, 40, 40]
 
-  let curY = cabecalho(doc, cabNome, tituloTipo)
+  let y = faixaTopo(doc, cabNome, tituloDoc, corTopo)
 
-  // Badge tipo
-  const badgeLabel  = dados.tipo === "RECEBER" ? "A Receber" : "A Pagar"
-  const badgeColor: [number, number, number] = dados.tipo === "RECEBER" ? [34, 139, 34] : [200, 50, 50]
-  doc.setFillColor(...badgeColor)
-  doc.setTextColor(255, 255, 255)
+  // Referência / parcela
   doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  const refTexto = [
+    dados.numeroParcela ? `Parcela ${dados.numeroParcela}` : null,
+    dados.dataPagamento ? `Pago em ${fmtData(dados.dataPagamento)}` : null,
+  ].filter(Boolean).join("  •  ")
+  if (refTexto) doc.text(refTexto, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  // ── Caixa do valor ────────────────────────────────────────────────────────
+  const vlrPago = dados.valorPago ?? dados.valorOriginal
+
+  doc.setFillColor(245, 250, 245)
+  doc.setDrawColor(...corTopo)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(mg, y, inner, 20, 3, 3, "FD")
+
+  doc.setFontSize(10)
   doc.setFont("helvetica", "bold")
-  const badgeW = 28
-  doc.roundedRect(largura - 14 - badgeW, curY - 5, badgeW, 7, 2, 2, "F")
-  doc.text(badgeLabel, largura - 14 - badgeW / 2, curY, { align: "center" })
+  doc.setTextColor(50, 50, 50)
+  doc.text(isReceber ? "Valor recebido" : "Valor pago", mg + 5, y + 8)
+
+  doc.setFontSize(18)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(...corTopo)
+  doc.text(fmtMoeda(vlrPago), L - mg - 5, y + 13, { align: "right" })
   doc.setTextColor(0, 0, 0)
 
-  // Dados principais
-  doc.setFontSize(9)
-  const linhas: [string, string][] = [
-    ["Emitente:",    dados.emitenteNome ?? "—"],
-    ["Pessoa:",      dados.pessoaNome   + (dados.pessoaDocumento ? `  (${dados.pessoaDocumento})` : "")],
-    ["Descrição:",   dados.descricao    ?? "—"],
-    ["Vencimento:",  dados.dataVencimento  ? fmtData(dados.dataVencimento)  : "—"],
-    ["Data pag.:",   dados.dataPagamento   ? fmtData(dados.dataPagamento)   : "—"],
-    ["Forma pag.:",  dados.formaPagamentoNome  ?? "—"],
-    ["Conta:",       dados.contaFinanceiraNome ?? "—"],
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(100, 100, 100)
+  doc.text(numeroPorExtenso(vlrPago), mg + 5, y + 16)
+  doc.setTextColor(0, 0, 0)
+
+  y += 28
+
+  // ── Texto jurídico ────────────────────────────────────────────────────────
+  const descr    = dados.descricao || "serviço/produto conforme acordado"
+  const docPess  = dados.pessoaDocumento ? `, CPF/CNPJ ${dados.pessoaDocumento},` : ","
+
+  let textoJur: string
+  if (isReceber) {
+    textoJur =
+      `Recebi(emos) de ${dados.pessoaNome}${docPess} a importância de ` +
+      `${fmtMoeda(vlrPago)} (${numeroPorExtenso(vlrPago)}), referente a ${descr}.`
+  } else {
+    const docEmit = dados.emitenteDocumento ? `, CPF/CNPJ ${dados.emitenteDocumento},` : ","
+    textoJur =
+      `${dados.emitenteNome ?? "O emitente"}${docEmit} declara ter efetuado o pagamento a ` +
+      `${dados.pessoaNome}${docPess} no valor de ` +
+      `${fmtMoeda(vlrPago)} (${numeroPorExtenso(vlrPago)}), referente a ${descr}.`
+  }
+
+  doc.setFontSize(10)
+  doc.setFont("helvetica", "normal")
+  y = blocoTexto(doc, textoJur, mg, y, inner, 6)
+
+  y += 8
+
+  // ── Dados complementares ──────────────────────────────────────────────────
+  doc.setDrawColor(210, 210, 210)
+  doc.setLineWidth(0.3)
+  doc.line(mg, y, L - mg, y)
+  y += 6
+
+  const dados2: [string, string][] = [
+    ["Emitente:",  dados.emitenteNome ?? "—"],
+    ["Pessoa:",    dados.pessoaNome + (dados.pessoaDocumento ? `  (${dados.pessoaDocumento})` : "")],
   ]
-
-  curY += 4
-  for (const [label, valor] of linhas) {
-    doc.setFont("helvetica", "bold")
-    doc.text(label, 14, curY)
-    doc.setFont("helvetica", "normal")
-    doc.text(valor, 48, curY)
-    curY += 6
-  }
-
-  // Caixa de valor destaque
-  curY += 4
-  doc.setFillColor(240, 248, 255)
-  doc.setDrawColor(50, 100, 160)
-  doc.roundedRect(14, curY, largura - 28, 22, 3, 3, "FD")
+  if (dados.dataVencimento)      dados2.push(["Vencimento:",  fmtData(dados.dataVencimento)])
+  if (dados.dataPagamento)       dados2.push(["Data pag.:",   fmtDataPorExtenso(dados.dataPagamento)])
+  if (dados.formaPagamentoNome)  dados2.push(["Forma pag.:",  dados.formaPagamentoNome])
+  if (dados.contaFinanceiraNome) dados2.push(["Conta:",       dados.contaFinanceiraNome])
+  if (dados.valorOriginal !== vlrPago)
+    dados2.push(["Vl. original:", fmtMoeda(dados.valorOriginal)])
 
   doc.setFontSize(9)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(80, 80, 80)
-  doc.text("Valor original:", 20, curY + 7)
-  doc.setFont("helvetica", "normal")
-  doc.text(fmtMoeda(dados.valorOriginal), largura - 20, curY + 7, { align: "right" })
-
-  doc.setFontSize(12)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(30, 70, 130)
-  doc.text("Valor pago:", 20, curY + 16)
-  doc.text(fmtMoeda(dados.valorPago ?? dados.valorOriginal), largura - 20, curY + 16, { align: "right" })
-  doc.setTextColor(0, 0, 0)
-
-  // Número da parcela, se houver
-  if (dados.numeroParcela != null) {
-    curY += 30
-    doc.setFontSize(8)
-    doc.setFont("helvetica", "italic")
-    doc.setTextColor(120, 120, 120)
-    doc.text(`Parcela ${dados.numeroParcela}`, largura / 2, curY, { align: "center" })
-    doc.setTextColor(0, 0, 0)
+  for (const [label, valor] of dados2) {
+    doc.setFont("helvetica", "bold")
+    doc.text(label, mg, y)
+    doc.setFont("helvetica", "normal")
+    doc.text(valor, mg + 26, y)
+    y += 5.5
   }
-
-  // Linha assinatura
-  curY += 20
-  doc.setDrawColor(150, 150, 150)
-  doc.line(14, curY, largura / 2 - 10, curY)
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  doc.text("Assinatura do responsável", 14, curY + 5)
 
   return doc.output("datauristring").split(",")[1]
 }
+
+// ── FATURAMENTO DE CONSULTA ───────────────────────────────────────────────────
 
 export interface DadosFaturamento {
   consultaId:        string | number
@@ -147,57 +333,41 @@ export interface DadosFaturamento {
 
 export function gerarPdfFaturamento(dados: DadosFaturamento): string {
   const doc   = new jsPDF({ unit: "mm", format: "a4" })
-  let   curY  = cabecalho(doc, dados.emitenteNome, "FATURAMENTO DE CONSULTA")
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
 
-  // Bloco de identificação
+  let y = faixaTopo(doc, dados.emitenteNome, "FATURAMENTO DE CONSULTA", [30, 65, 120])
+
+  // Referência
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  doc.text(`Consulta Nº ${dados.consultaId}  •  Emitido em ${fmtData(dados.data)}`, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  // Identificação
   doc.setFontSize(9)
-  doc.setFont("helvetica", "bold")
-  doc.text("Consulta Nº:", 14, curY)
-  doc.setFont("helvetica", "normal")
-  doc.text(String(dados.consultaId), 40, curY)
+  const blocos: [string, string][] = [
+    ["Emitente:", dados.emitenteNome + (dados.emitenteDocumento ? `  (${dados.emitenteDocumento})` : "")],
+    ["Paciente:", dados.pessoaNome   + (dados.pessoaDocumento   ? `  (${dados.pessoaDocumento})`   : "")],
+  ]
+  if (dados.descricao) blocos.push(["Descrição:", dados.descricao])
 
-  doc.setFont("helvetica", "bold")
-  doc.text("Data:", 80, curY)
-  doc.setFont("helvetica", "normal")
-  doc.text(fmtData(dados.data), 92, curY)
-
-  curY += 6
-
-  doc.setFont("helvetica", "bold")
-  doc.text("Paciente:", 14, curY)
-  doc.setFont("helvetica", "normal")
-  doc.text(
-    dados.pessoaNome + (dados.pessoaDocumento ? `  (${dados.pessoaDocumento})` : ""),
-    38,
-    curY
-  )
-
-  curY += 6
-
-  doc.setFont("helvetica", "bold")
-  doc.text("Emitente:", 14, curY)
-  doc.setFont("helvetica", "normal")
-  doc.text(
-    dados.emitenteNome + (dados.emitenteDocumento ? `  (${dados.emitenteDocumento})` : ""),
-    38,
-    curY
-  )
-
-  curY += 6
-
-  if (dados.descricao) {
+  for (const [label, valor] of blocos) {
     doc.setFont("helvetica", "bold")
-    doc.text("Descrição:", 14, curY)
+    doc.text(label, mg, y)
     doc.setFont("helvetica", "normal")
-    doc.text(dados.descricao, 38, curY)
-    curY += 6
+    y = blocoTexto(doc, valor, mg + 22, y, inner - 22, 5)
+    y += 2
   }
 
-  curY += 2
+  y += 4
 
   // Tabela de parcelas
   autoTable(doc, {
-    startY: curY,
+    startY: y,
     head: [["Nº", "Vencimento", "Valor", "Status", "Pagamento", "Valor Pago"]],
     body: dados.parcelas.map(p => [
       String(p.numeroParcela),
@@ -208,86 +378,21 @@ export function gerarPdfFaturamento(dados: DadosFaturamento): string {
       p.pago ? fmtMoeda(p.valorPago)    : "—",
     ]),
     foot: [["", "", "", "", "Total Geral", fmtMoeda(dados.totalGeral)]],
-    headStyles:  { fillColor: [50, 100, 160], fontSize: 9 },
-    footStyles:  { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: "bold", fontSize: 9 },
-    bodyStyles:  { fontSize: 9 },
-    columnStyles: {
-      0: { halign: "center", cellWidth: 12 },
-      2: { halign: "right" },
-      5: { halign: "right" },
-    },
-    margin: { left: 14, right: 14 },
+    headStyles:   { fillColor: [30, 65, 120], fontSize: 9 },
+    footStyles:   { fillColor: [235, 240, 255], textColor: [0, 0, 0], fontStyle: "bold", fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 0: { halign: "center", cellWidth: 12 }, 2: { halign: "right" }, 5: { halign: "right" } },
+    margin: { left: mg, right: mg },
   })
 
-  return doc.output("datauristring").split(",")[1]
-}
+  // @ts-expect-error jspdf-autotable adiciona lastAutoTable
+  const afterTable: number = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 40
 
-export interface DadosRecibo {
-  consultaId:        string | number
-  numeroParcela:     number
-  emitenteNome:      string
-  emitenteDocumento: string | null
-  pessoaNome:        string
-  pessoaDocumento:   string | null
-  valorPago:         string
-  dataPagamento:     string
-  descricao:         string
-}
-
-export function gerarPdfRecibo(dados: DadosRecibo): string {
-  const doc    = new jsPDF({ unit: "mm", format: "a4" })
-  const largura = doc.internal.pageSize.getWidth()
-  let   curY   = cabecalho(doc, dados.emitenteNome, "RECIBO DE PAGAMENTO")
-
-  // Número do recibo
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "bold")
-  doc.text(
-    `Recibo — Consulta #${dados.consultaId}  /  Parcela ${dados.numeroParcela}`,
-    largura / 2,
-    curY,
-    { align: "center" }
-  )
-  curY += 10
-
-  // Bloco de dados
-  const linhas = [
-    ["Emitente:",      dados.emitenteNome + (dados.emitenteDocumento ? `  (${dados.emitenteDocumento})` : "")],
-    ["Paciente:",      dados.pessoaNome   + (dados.pessoaDocumento   ? `  (${dados.pessoaDocumento})`   : "")],
-    ["Descrição:",     dados.descricao || `Consulta #${dados.consultaId}`],
-    ["Data pag.:",     fmtData(dados.dataPagamento)],
-  ]
-
-  doc.setFontSize(10)
-  for (const [label, valor] of linhas) {
-    doc.setFont("helvetica", "bold")
-    doc.text(label, 14, curY)
-    doc.setFont("helvetica", "normal")
-    doc.text(valor, 48, curY)
-    curY += 7
-  }
-
-  // Caixa de valor destacado
-  curY += 4
-  doc.setFillColor(240, 248, 255)
-  doc.setDrawColor(50, 100, 160)
-  doc.roundedRect(14, curY, largura - 28, 20, 3, 3, "FD")
-
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(30, 70, 130)
-  doc.text("Valor recebido:", 20, curY + 8)
-  doc.setFontSize(16)
-  doc.text(fmtMoeda(dados.valorPago), largura - 20, curY + 11, { align: "right" })
-  doc.setTextColor(0, 0, 0)
-
-  // Linha de assinatura
-  curY += 40
-  doc.setDrawColor(120, 120, 120)
-  doc.line(14, curY, largura / 2 - 10, curY)
   doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  doc.text("Assinatura do responsável", 14, curY + 5)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(100, 100, 100)
+  doc.text(`Total por extenso: ${numeroPorExtenso(dados.totalGeral)}`, mg, afterTable + 6)
+  doc.setTextColor(0, 0, 0)
 
   return doc.output("datauristring").split(",")[1]
 }
