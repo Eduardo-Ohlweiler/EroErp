@@ -49,4 +49,6 @@
     <include file="042-create-financeiro.xml"                  relativeToChangelogFile="true" />
     <include file="043-create-contas-pagar-receber.xml"        relativeToChangelogFile="true" />
     <include file="044-drop-tipo-relacao-pessoa.xml"           relativeToChangelogFile="true" />
+    <include file="045-create-lancamento-financeiro.xml"       relativeToChangelogFile="true" />
+    <include file="046-create-transferencia-entre-contas.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

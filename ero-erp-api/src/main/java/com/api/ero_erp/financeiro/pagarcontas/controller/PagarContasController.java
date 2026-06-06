@@ -125,7 +125,7 @@ public class PagarContasController {
                 .sorted((a, b) -> {
                     if (a.dataVencimento() == null) return 1;
                     if (b.dataVencimento() == null) return -1;
-                    return a.dataVencimento().compareTo(b.dataVencimento());
+                    return b.dataVencimento().compareTo(a.dataVencimento());
                 })
                 .toList();
     }

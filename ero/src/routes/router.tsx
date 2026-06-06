@@ -56,6 +56,9 @@ import ContaPagarForm                            from "../pages/financeiro/conta
 import ContaReceberList                          from "../pages/financeiro/contareceber/ContaReceberList"
 import ContaReceberForm                          from "../pages/financeiro/contareceber/ContaReceberForm"
 import PagarContas                               from "../pages/financeiro/PagarContas"
+import FinanceiroDashboard                       from "../pages/financeiro/FinanceiroDashboard"
+import LancamentosFinanceiros                    from "../pages/financeiro/LancamentosFinanceiros"
+import TransferenciaEntreContas                  from "../pages/financeiro/TransferenciaEntreContas"
 
 export function Router() {
   return (
@@ -185,7 +188,10 @@ export function Router() {
               <Route path="/financeiro/contas-receber/novo" element={<ContaReceberForm />} />
               <Route path="/financeiro/contas-receber/:id"  element={<ContaReceberForm />} />
 
-              <Route path="/financeiro/pagar-contas" element={<PagarContas />} />
+              <Route path="/financeiro/pagar-contas"    element={<PagarContas />} />
+              <Route path="/dashboards/financeiro"      element={<FinanceiroDashboard />} />
+              <Route path="/financeiro/lancamentos"     element={<LancamentosFinanceiros />} />
+              <Route path="/financeiro/transferencias"  element={<TransferenciaEntreContas />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />

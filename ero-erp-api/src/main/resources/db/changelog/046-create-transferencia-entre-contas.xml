@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="046-create-transferencia-entre-contas" author="eduardo">
+
+        <createTable tableName="transferencia_entre_contas">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="conta_origem_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="conta_destino_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="valor" type="NUMERIC(15,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descricao" type="VARCHAR(255)"/>
+            <column name="lancamento_saida_id" type="BIGINT"/>
+            <column name="lancamento_entrada_id" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="transferencia_entre_contas" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_transferencia_cliente"/>
+        <addForeignKeyConstraint
+                baseTableName="transferencia_entre_contas" baseColumnNames="conta_origem_id"
+                referencedTableName="conta_financeira" referencedColumnNames="id"
+                constraintName="fk_transferencia_conta_origem"/>
+        <addForeignKeyConstraint
+                baseTableName="transferencia_entre_contas" baseColumnNames="conta_destino_id"
+                referencedTableName="conta_financeira" referencedColumnNames="id"
+                constraintName="fk_transferencia_conta_destino"/>
+        <addForeignKeyConstraint
+                baseTableName="transferencia_entre_contas" baseColumnNames="lancamento_saida_id"
+                referencedTableName="lancamento_financeiro" referencedColumnNames="id"
+                constraintName="fk_transferencia_lancamento_saida"/>
+        <addForeignKeyConstraint
+                baseTableName="transferencia_entre_contas" baseColumnNames="lancamento_entrada_id"
+                referencedTableName="lancamento_financeiro" referencedColumnNames="id"
+                constraintName="fk_transferencia_lancamento_entrada"/>
+
+        <createIndex tableName="transferencia_entre_contas" indexName="idx_transferencia_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+        <createIndex tableName="transferencia_entre_contas" indexName="idx_transferencia_data">
+            <column name="data"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

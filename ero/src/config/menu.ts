@@ -5,7 +5,7 @@ export const menu: MenuItem[] = [
   {
     label: "Dashboards",
     icon:  FaTachometerAlt,
-    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET"],
     children: [
       {
         label: "Geral",
@@ -18,6 +18,12 @@ export const menu: MenuItem[] = [
         path:  "/dashboards/consultas",
         icon:  FaStethoscope,
         roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"],
+      },
+      {
+        label: "Financeiro",
+        path:  "/dashboards/financeiro",
+        icon:  FaUniversity,
+        roles: ["SUPERADMIN", "ADMIN", "FINANCEIRO", "FINANCEIRO_GET"],
       },
     ],
   },
@@ -134,6 +140,16 @@ export const menu: MenuItem[] = [
         label: "Pagar Contas",
         path:  "/financeiro/pagar-contas",
         icon:  FaHandHoldingUsd,
+      },
+      {
+        label: "Lançamentos",
+        path:  "/financeiro/lancamentos",
+        icon:  FaExchangeAlt,
+      },
+      {
+        label: "Transferências",
+        path:  "/financeiro/transferencias",
+        icon:  FaExchangeAlt,
       },
       {
         label: "Auxiliar financeiro",
