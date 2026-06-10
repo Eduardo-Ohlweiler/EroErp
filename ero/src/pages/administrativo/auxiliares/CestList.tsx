@@ -236,7 +236,7 @@ export default function CestList() {
       <TForm onSubmit={handleFiltrar}>
         <TRow>
           <TCol>
-            <TEntry name="busca" label="Buscar por código ou descrição" placeholder="Filtrar..." width="50%" />
+            <TEntry name="busca" label="Buscar por código ou descrição" placeholder="Filtrar..." width="100%" />
           </TCol>
         </TRow>
         <TFormFooter>

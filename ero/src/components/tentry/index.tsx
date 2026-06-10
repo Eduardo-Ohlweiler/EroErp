@@ -215,7 +215,7 @@ export function TEntry({
   }
 
   return (
-    <div className="flex flex-col gap-1" style={{ width }}>
+    <div className="flex flex-col gap-1 max-w-full" style={{ width }}>
 
       <label className="text-sm text-(--text-secondary)">
         {label}

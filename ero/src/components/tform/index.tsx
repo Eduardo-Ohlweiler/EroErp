@@ -38,7 +38,7 @@ export function TForm({ id, onSubmit, children }: TFormProps) {
     <form
       id={id}
       onSubmit={handleSubmit}
-      className="bg-(--bg-surface) border border-(--border) rounded-lg p-6"
+      className="bg-(--bg-surface) border border-(--border) rounded-lg p-4 sm:p-6"
     >
       <div className="flex flex-col gap-4">
         {children}
@@ -49,16 +49,16 @@ export function TForm({ id, onSubmit, children }: TFormProps) {
 
 export function TFormFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex justify-between mt-6 pt-4 border-t border-(--border)">
+    <div className="flex flex-wrap justify-between gap-2 mt-6 pt-4 border-t border-(--border)">
       {children}
     </div>
   )
 }
 
 export function TFormActionsLeft({ children }: { children: React.ReactNode }) {
-  return <div className="flex gap-2">{children}</div>
+  return <div className="flex flex-wrap gap-2">{children}</div>
 }
 
 export function TFormActionsRight({ children }: { children: React.ReactNode }) {
-  return <div className="flex gap-2">{children}</div>
+  return <div className="flex flex-wrap gap-2">{children}</div>
 }

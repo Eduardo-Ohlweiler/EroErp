@@ -58,7 +58,7 @@ export function TDate({
     const blanks    = Array.from({ length: firstDay })
 
     return (
-        <div className="flex flex-col gap-1 relative" style={{ width }} ref={ref}>
+        <div className="flex flex-col gap-1 relative max-w-full" style={{ width }} ref={ref}>
 
         <label className="text-sm text-(--text-secondary)">
             {label}

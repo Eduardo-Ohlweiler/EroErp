@@ -145,7 +145,7 @@ export function TDbCombo({
   }
 
   return (
-    <div className="flex flex-col gap-1 relative" style={{ width }}>
+    <div className="flex flex-col gap-1 relative max-w-full" style={{ width }}>
 
       <label className="text-sm text-(--text-secondary)">
         {label}

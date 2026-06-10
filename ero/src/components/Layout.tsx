@@ -5,7 +5,7 @@ import Header from "./header"
 
 export default function Layout() {
 
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => window.innerWidth < 640)
 
   return (
     <div className="flex h-screen overflow-hidden bg-(--bg-base)">

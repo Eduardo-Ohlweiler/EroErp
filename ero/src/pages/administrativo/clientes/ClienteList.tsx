@@ -136,7 +136,7 @@ export default function ClienteList() {
                         label="Nome"
                         placeholder="Filtrar por nome..."
                         defaultValue={filtroNome}
-                        width="60%"
+                        width="100%"
                     />
                 </TCol>
             </TRow>
@@ -147,7 +147,7 @@ export default function ClienteList() {
                         label="E-mail"
                         placeholder="Filtrar por e-mail..."
                         defaultValue={filtroEmail}
-                        width="60%"
+                        width="100%"
                     />
                 </TCol>
             </TRow>

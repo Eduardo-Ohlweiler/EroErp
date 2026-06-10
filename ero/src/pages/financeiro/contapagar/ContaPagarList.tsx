@@ -163,7 +163,7 @@ export default function ContaPagarList() {
                             valueField   ="id"
                             displayField ={displayEmitente}
                             value        ={filtroEmitenteId}
-                            width        ="50%"
+                            width        ="100%"
                             onChange     ={(val) => setFiltroEmitenteId(val)}
                         />
                     </TCol>
@@ -177,7 +177,7 @@ export default function ContaPagarList() {
                             valueField   ="id"
                             displayField ={displayPessoa}
                             value        ={filtroPessoaId}
-                            width        ="50%"
+                            width        ="100%"
                             onChange     ={(val) => setFiltroPessoaId(val)}
                         />
                     </TCol>

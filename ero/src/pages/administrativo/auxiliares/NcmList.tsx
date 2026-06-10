@@ -198,7 +198,7 @@ export default function NcmList() {
       <TForm onSubmit={handleFiltrar}>
         <TRow>
           <TCol>
-            <TEntry name="busca" label="Buscar por código ou descrição" placeholder="Filtrar..." width="60%" />
+            <TEntry name="busca" label="Buscar por código ou descrição" placeholder="Filtrar..." width="100%" />
           </TCol>
         </TRow>
         <TFormFooter>
