@@ -8,6 +8,7 @@ import type {
   ConsultaProdutoResponse,
   StatusConsulta,
 } from "../../types/Clinica"
+import type { FichaAnamnesesSummary } from "../../types/Anamnese"
 import type { ErrorResponse }                                       from "../../types/ErrorResponse"
 import { TPage }                                                    from "../../components/tpage"
 import { TForm, TFormActionsLeft, TFormActionsRight, TFormFooter }  from "../../components/tform"
@@ -168,6 +169,8 @@ export default function ConsultaForm() {
 
   const [emitenteId,       setEmitenteId]       = useState("")
   const [pessoaId,         setPessoaId]         = useState("")
+  const [fichaAnamneseId,  setFichaAnamneseId]  = useState("")
+  const [fichaOptions,     setFichaOptions]     = useState<{ value: string; label: string }[]>([])
   const [tipoAjusteGeral,  setTipoAjusteGeral]  = useState("")
   const [tipoCalculoGeral, setTipoCalculoGeral] = useState("FIXO")
   const [valorAjusteGeral, setValorAjusteGeral] = useState("")
@@ -196,19 +199,34 @@ export default function ConsultaForm() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentId])
 
-  function loadConsulta(data: ConsultaResponse) {
+  async function loadFichaOptions(pId: string) {
+    if (!pId) { setFichaOptions([]); return }
+    try {
+      const r = await api.get<FichaAnamnesesSummary[]>(`/fichas-anamnese/por-pessoa/${pId}`)
+      setFichaOptions(r.data.map(f => ({
+        value: String(f.id),
+        label: `${f.templateNome} — ${new Date(f.dataPreenchimento + "T00:00").toLocaleDateString("pt-BR")}`,
+      })))
+    } catch {
+      setFichaOptions([])
+    }
+  }
+
+  async function loadConsulta(data: ConsultaResponse) {
     setConsulta(data)
     setEmitenteId(String(data.emitenteId))
     setPessoaId(String(data.pessoaId))
+    setFichaAnamneseId(data.fichaAnamneseId ? String(data.fichaAnamneseId) : "")
     setTipoAjusteGeral(data.tipoAjusteGeral ?? "")
     setTipoCalculoGeral(data.tipoCalculoGeral ?? "FIXO")
     setValorAjusteGeral(data.valorAjusteGeral != null ? String(data.valorAjusteGeral) : "")
+    await loadFichaOptions(String(data.pessoaId))
     setFormKey(k => k + 1)
   }
 
   async function reload(id: string) {
     const r = await api.get<ConsultaResponse>(`/consultas/${id}`)
-    loadConsulta(r.data)
+    await loadConsulta(r.data)
   }
 
   function handleNovo() {
@@ -216,6 +234,8 @@ export default function ConsultaForm() {
     setConsulta(null)
     setEmitenteId("")
     setPessoaId("")
+    setFichaAnamneseId("")
+    setFichaOptions([])
     setTipoAjusteGeral("")
     setTipoCalculoGeral("FIXO")
     setValorAjusteGeral("")
@@ -230,6 +250,7 @@ export default function ConsultaForm() {
       const payload = {
         emitenteId:       Number(emitenteId),
         pessoaId:         Number(pessoaId),
+        fichaAnamneseId:  fichaAnamneseId ? Number(fichaAnamneseId) : null,
         inicio:           fromInputDT(data.inicio),
         fim:              fromInputDT(data.fim),
         observacao:       data.observacao?.trim() || null,
@@ -571,11 +592,35 @@ export default function ConsultaForm() {
               width        ="100%"
               disabled     ={isClosed}
               value        ={pessoaId}
-              onChange     ={(val) => setPessoaId(val)}
+              onChange     ={(val) => {
+                setPessoaId(val)
+                setFichaAnamneseId("")
+                loadFichaOptions(val)
+              }}
             />
           </TCol>
           <TSpace />
         </TRow>
+
+        {pessoaId && (
+          <TRow>
+            <TCol>
+              <TCombo
+                name         ="fichaAnamneseId"
+                label        ="Ficha de Anamnese (opcional)"
+                width        ="100%"
+                disabled     ={isClosed}
+                defaultValue ={fichaAnamneseId}
+                onChange     ={(val) => setFichaAnamneseId(val)}
+                options      ={[
+                  { value: "", label: "Nenhuma" },
+                  ...fichaOptions,
+                ]}
+              />
+            </TCol>
+            <TSpace />
+          </TRow>
+        )}
 
         <TPanel title="Horário">
           <TRow>

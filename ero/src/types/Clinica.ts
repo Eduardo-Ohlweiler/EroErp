@@ -45,6 +45,7 @@ export interface ConsultaResponse {
     pessoaNome:          string
     pessoaDocumento:     string | null
     compromissoId:       number | null
+    fichaAnamneseId:     number | null
     inicio:              string
     fim:                 string
     observacao:          string | null

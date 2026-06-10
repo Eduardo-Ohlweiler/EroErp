@@ -48,6 +48,10 @@ import ConsultaList                              from "../pages/clinica/Consulta
 import ConsultaForm                              from "../pages/clinica/ConsultaForm"
 import FaturamentoConsulta                       from "../pages/clinica/FaturamentoConsulta"
 import ConsultaDashboard                         from "../pages/clinica/ConsultaDashboard"
+import TemplateAnamneseList                      from "../pages/clinica/TemplateAnamneseList"
+import TemplateAnamneseForm                      from "../pages/clinica/TemplateAnamneseForm"
+import FichaAnamneseList                         from "../pages/clinica/FichaAnamneseList"
+import FichaAnamneseForm                         from "../pages/clinica/FichaAnamneseForm"
 import ContaFinanceiraFormList                   from "../pages/financeiro/auxiliares/ContaFinanceiraFormList"
 import TipoCobrancaFormList                      from "../pages/financeiro/auxiliares/TipoCobrancaFormList"
 import FormaPagamentoFormList                    from "../pages/financeiro/auxiliares/FormaPagamentoFormList"
@@ -172,6 +176,12 @@ export function Router() {
               <Route path="/clinica/consultas/:id"              element={<ConsultaForm />} />
               <Route path="/clinica/consultas/:id/faturamento"  element={<FaturamentoConsulta />} />
               <Route path="/dashboards/consultas"               element={<ConsultaDashboard />} />
+              <Route path="/clinica/fichas-anamnese"            element={<FichaAnamneseList />} />
+              <Route path="/clinica/fichas-anamnese/nova"       element={<FichaAnamneseForm />} />
+              <Route path="/clinica/fichas-anamnese/:id"        element={<FichaAnamneseForm />} />
+              <Route path="/clinica/templates-anamnese"         element={<TemplateAnamneseList />} />
+              <Route path="/clinica/templates-anamnese/novo"    element={<TemplateAnamneseForm />} />
+              <Route path="/clinica/templates-anamnese/:id"     element={<TemplateAnamneseForm />} />
             </Route>
 
             {/* ── FINANCEIRO ── */}

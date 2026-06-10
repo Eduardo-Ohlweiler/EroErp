@@ -108,12 +108,32 @@ export const menu: MenuItem[] = [
   {
     label: "Clínica",
     icon:  FaStethoscope,
-    roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET", "ANAMNESE", "ANAMNESE_GET", "TEMPLATE_ANAMNESE", "TEMPLATE_ANAMNESE_GET"],
     children: [
       {
         label: "Consultas",
         path:  "/clinica/consultas",
         icon:  FaStethoscope,
+        roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"],
+      },
+      {
+        label: "Fichas de Anamnese",
+        path:  "/clinica/fichas-anamnese",
+        icon:  FaClipboardList,
+        roles: ["SUPERADMIN", "ADMIN", "ANAMNESE", "ANAMNESE_GET"],
+      },
+      {
+        label: "Auxiliar Clínica",
+        icon:  FaCogs,
+        roles: ["SUPERADMIN", "ADMIN", "TEMPLATE_ANAMNESE", "TEMPLATE_ANAMNESE_GET"],
+        children: [
+          {
+            label: "Templates de Anamnese",
+            path:  "/clinica/templates-anamnese",
+            icon:  FaCog,
+            roles: ["SUPERADMIN", "ADMIN", "TEMPLATE_ANAMNESE", "TEMPLATE_ANAMNESE_GET"],
+          },
+        ],
       },
     ],
   },

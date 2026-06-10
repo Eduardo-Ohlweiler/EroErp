@@ -490,3 +490,113 @@ export function gerarPdfContaFinanceira(dados: DadosContaFinanceira): string {
 
   return doc.output("datauristring").split(",")[1]
 }
+
+// ── FICHA DE ANAMNESE ─────────────────────────────────────────────────────────
+
+export interface DadosFichaAnamnese {
+  fichaId:           string | number
+  emitenteNome:      string
+  finalidadeLabel:   string       // ex: "Estética"
+  templateNome:      string
+  pessoaNome:        string
+  pessoaDocumento:   string | null
+  dataPreenchimento: string       // YYYY-MM-DD
+  observacoes:       string | null
+  secoes: {
+    nome: string
+    campos: {
+      rotulo: string
+      tipo:   string
+      valor:  string | null
+    }[]
+  }[]
+}
+
+export function gerarPdfFichaAnamnese(dados: DadosFichaAnamnese): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+
+  let y = faixaTopo(doc, dados.emitenteNome, `FICHA DE ANAMNESE — ${dados.finalidadeLabel.toUpperCase()}`, [44, 62, 80])
+
+  // Referência
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  doc.text(`Ficha Nº ${dados.fichaId}  •  ${dados.templateNome}  •  Emitido em ${fmtData(dados.dataPreenchimento)}`, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  // Dados do paciente
+  const pares: [string, string][] = [
+    ["Paciente:", dados.pessoaNome + (dados.pessoaDocumento ? `  (${dados.pessoaDocumento})` : "")],
+    ["Data:",     fmtData(dados.dataPreenchimento)],
+  ]
+  doc.setFontSize(9)
+  for (const [label, valor] of pares) {
+    doc.setFont("helvetica", "bold")
+    doc.text(label, mg, y)
+    doc.setFont("helvetica", "normal")
+    doc.text(valor, mg + 20, y)
+    y += 5.5
+  }
+  y += 4
+
+  // Seções e campos
+  for (const secao of dados.secoes) {
+    if (y > 270) { doc.addPage(); y = 20 }
+
+    // Título da seção
+    doc.setFillColor(44, 62, 80)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(255, 255, 255)
+    doc.text(secao.nome, mg + 2, y + 1.5)
+    doc.setTextColor(0, 0, 0)
+    y += 9
+
+    // Campos da seção
+    for (const campo of secao.campos) {
+      if (y > 275) { doc.addPage(); y = 20 }
+
+      const valorText = campo.valor
+        ? (campo.tipo === "CHECKBOX" ? (campo.valor === "true" ? "Sim" : "Não") : campo.valor)
+        : "—"
+
+      doc.setFontSize(8.5)
+      doc.setFont("helvetica", "bold")
+      doc.text(campo.rotulo + ":", mg + 2, y)
+
+      doc.setFont("helvetica", "normal")
+      const linhas = doc.splitTextToSize(valorText, inner - 55) as string[]
+      linhas.forEach((l, i) => {
+        if (i > 0 && y > 275) { doc.addPage(); y = 20 }
+        doc.text(l, mg + 55, y)
+        if (i < linhas.length - 1) y += 5
+      })
+      y += 6
+    }
+    y += 3
+  }
+
+  // Observações
+  if (dados.observacoes) {
+    if (y > 260) { doc.addPage(); y = 20 }
+    doc.setFillColor(240, 240, 240)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(0, 0, 0)
+    doc.text("OBSERVAÇÕES", mg + 2, y + 1.5)
+    y += 9
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    y = blocoTexto(doc, dados.observacoes, mg + 2, y, inner - 4, 5)
+    y += 4
+  }
+
+  return doc.output("datauristring").split(",")[1]
+}
