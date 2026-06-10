@@ -6,9 +6,11 @@ import com.api.ero_erp.clinica.dtos.ConsultaServicoResponseDto;
 import com.api.ero_erp.clinica.entity.Consulta;
 import com.api.ero_erp.clinica.entity.ConsultaProduto;
 import com.api.ero_erp.clinica.entity.ConsultaServico;
+import com.api.ero_erp.clinica.entity.FichaAnamnese;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 
 import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
 import java.math.RoundingMode;
 import java.util.List;
 
@@ -50,8 +52,16 @@ public class ConsultaMapper {
                 consulta.getCreatedAt(),
                 consulta.getCreatedBy() != null ? consulta.getCreatedBy().getNome() : null,
                 consulta.getUpdatedAt(),
-                consulta.getUpdatedBy() != null ? consulta.getUpdatedBy().getNome() : null
+                consulta.getUpdatedBy() != null ? consulta.getUpdatedBy().getNome() : null,
+                consulta.getFichaAnamnese() != null ? consulta.getFichaAnamnese().getId() : null,
+                buildFichaDescricao(consulta.getFichaAnamnese())
         );
+    }
+
+    private static String buildFichaDescricao(FichaAnamnese f) {
+        if (f == null) return null;
+        String data = f.getDataPreenchimento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        return f.getTemplate().getNome() + " — " + data;
     }
 
     public static ConsultaServicoResponseDto toServicoDto(ConsultaServico cs) {

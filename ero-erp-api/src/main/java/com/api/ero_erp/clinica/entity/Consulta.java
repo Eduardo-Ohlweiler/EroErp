@@ -67,6 +67,10 @@ public class Consulta extends BaseEntity {
     private java.math.BigDecimal valorAjusteGeral;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ficha_anamnese_id")
+    private FichaAnamnese fichaAnamnese;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private Usuario createdBy;
 

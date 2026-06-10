@@ -51,4 +51,7 @@
     <include file="044-drop-tipo-relacao-pessoa.xml"           relativeToChangelogFile="true" />
     <include file="045-create-lancamento-financeiro.xml"       relativeToChangelogFile="true" />
     <include file="046-create-transferencia-entre-contas.xml" relativeToChangelogFile="true" />
+    <include file="047-insert-roles-anamnese.xml"            relativeToChangelogFile="true" />
+    <include file="048-create-anamnese.xml"                  relativeToChangelogFile="true" />
+    <include file="049-alter-consulta-add-ficha-anamnese.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

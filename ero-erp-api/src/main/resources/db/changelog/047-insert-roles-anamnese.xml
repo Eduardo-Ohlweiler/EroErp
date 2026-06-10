@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="047-insert-roles-anamnese" author="eduardo">
+
+        <insert tableName="role">
+            <column name="nome" value="ANAMNESE"/>
+            <column name="descricao" value="Permissão geral para anamnese"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="ANAMNESE_GET"/>
+            <column name="descricao" value="Permissão para consultar anamnese"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="TEMPLATE_ANAMNESE"/>
+            <column name="descricao" value="Permissão geral para templates de anamnese"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="TEMPLATE_ANAMNESE_GET"/>
+            <column name="descricao" value="Permissão para consultar templates de anamnese"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -22,6 +22,8 @@ public record ConsultaCreateDto(
 
         String observacao,
 
+        Long fichaAnamneseId,
+
         @Valid
         List<ConsultaServicoCreateDto> servicos
 ) {}

@@ -44,5 +44,9 @@ public record ConsultaResponseDto(
         LocalDateTime                 createdAt,
         String                        createdByNome,
         LocalDateTime                 updatedAt,
-        String                        updatedByNome
+        String                        updatedByNome,
+
+        // Ficha de anamnese vinculada
+        Long                          fichaAnamneseId,
+        String                        fichaAnamneseDescricao
 ) {}

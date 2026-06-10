@@ -4,11 +4,13 @@ import com.api.ero_erp.clinica.dtos.*;
 import com.api.ero_erp.clinica.entity.Consulta;
 import com.api.ero_erp.clinica.entity.ConsultaProduto;
 import com.api.ero_erp.clinica.entity.ConsultaServico;
+import com.api.ero_erp.clinica.entity.FichaAnamnese;
 import com.api.ero_erp.clinica.enums.StatusConsulta;
 import com.api.ero_erp.clinica.mapper.ConsultaMapper;
 import com.api.ero_erp.clinica.repository.ConsultaProdutoRepository;
 import com.api.ero_erp.clinica.repository.ConsultaRepository;
 import com.api.ero_erp.clinica.repository.ConsultaServicoRepository;
+import com.api.ero_erp.clinica.repository.FichaAnamneseRepository;
 import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.cliente.service.ClienteService;
 import com.api.ero_erp.compromisso.entity.Compromisso;
@@ -42,32 +44,34 @@ public class ConsultaService {
 
     private static final Logger log = LoggerFactory.getLogger(ConsultaService.class);
 
-    private final ConsultaRepository         consultaRepository;
-    private final ConsultaServicoRepository  servicoRepository;
-    private final ConsultaProdutoRepository  produtoConsumidoRepository;
-    private final CompromissoRepository      compromissoRepository;
-    private final ClienteService             clienteService;
-    private final EmitenteService            emitenteService;
-    private final PessoaService              pessoaService;
-    private final UsuarioService             usuarioService;
-    private final ProdutoRepository          produtoRepository;
-    private final EstoqueService             estoqueService;
-    private final SecurityUtils              securityUtils;
+    private final ConsultaRepository          consultaRepository;
+    private final ConsultaServicoRepository   servicoRepository;
+    private final ConsultaProdutoRepository   produtoConsumidoRepository;
+    private final CompromissoRepository       compromissoRepository;
+    private final ClienteService              clienteService;
+    private final EmitenteService             emitenteService;
+    private final PessoaService               pessoaService;
+    private final UsuarioService              usuarioService;
+    private final ProdutoRepository           produtoRepository;
+    private final EstoqueService              estoqueService;
+    private final SecurityUtils               securityUtils;
     private final WhatsappNotificationService notificationService;
+    private final FichaAnamneseRepository     fichaAnamneseRepository;
 
     public ConsultaService(
-            ConsultaRepository         consultaRepository,
-            ConsultaServicoRepository  servicoRepository,
-            ConsultaProdutoRepository  produtoConsumidoRepository,
-            CompromissoRepository      compromissoRepository,
-            ClienteService             clienteService,
-            EmitenteService            emitenteService,
-            PessoaService              pessoaService,
-            UsuarioService             usuarioService,
-            ProdutoRepository          produtoRepository,
-            EstoqueService             estoqueService,
-            SecurityUtils              securityUtils,
-            WhatsappNotificationService notificationService
+            ConsultaRepository          consultaRepository,
+            ConsultaServicoRepository   servicoRepository,
+            ConsultaProdutoRepository   produtoConsumidoRepository,
+            CompromissoRepository       compromissoRepository,
+            ClienteService              clienteService,
+            EmitenteService             emitenteService,
+            PessoaService               pessoaService,
+            UsuarioService              usuarioService,
+            ProdutoRepository           produtoRepository,
+            EstoqueService              estoqueService,
+            SecurityUtils               securityUtils,
+            WhatsappNotificationService notificationService,
+            FichaAnamneseRepository     fichaAnamneseRepository
     ) {
         this.consultaRepository         = consultaRepository;
         this.servicoRepository          = servicoRepository;
@@ -81,6 +85,7 @@ public class ConsultaService {
         this.estoqueService             = estoqueService;
         this.securityUtils              = securityUtils;
         this.notificationService        = notificationService;
+        this.fichaAnamneseRepository    = fichaAnamneseRepository;
     }
 
     // ── Consultas ────────────────────────────────────────────────────────────
@@ -147,6 +152,14 @@ public class ConsultaService {
         consulta.setFim(dto.fim());
         consulta.setObservacao(dto.observacao());
         consulta.setCreatedBy(usuario);
+
+        if (dto.fichaAnamneseId() != null) {
+            FichaAnamnese fichaAnamnese = fichaAnamneseRepository
+                    .findByIdAndClienteId(dto.fichaAnamneseId(), clienteId)
+                    .orElseThrow(() -> new NotFoundException("Ficha de anamnese não encontrada, verifique!"));
+            consulta.setFichaAnamnese(fichaAnamnese);
+        }
+
         consultaRepository.save(consulta);
 
         if (dto.servicos() != null) {
@@ -186,6 +199,16 @@ public class ConsultaService {
         consulta.setTipoCalculoGeral(dto.tipoCalculoGeral());
         consulta.setValorAjusteGeral(dto.valorAjusteGeral());
         consulta.setUpdatedBy(usuario);
+
+        if (dto.fichaAnamneseId() != null) {
+            Long clienteId = securityUtils.getClienteIdLogado();
+            FichaAnamnese fichaAnamnese = fichaAnamneseRepository
+                    .findByIdAndClienteId(dto.fichaAnamneseId(), clienteId)
+                    .orElseThrow(() -> new NotFoundException("Ficha de anamnese não encontrada, verifique!"));
+            consulta.setFichaAnamnese(fichaAnamnese);
+        } else {
+            consulta.setFichaAnamnese(null);
+        }
 
         // Atualiza o compromisso vinculado
         if (consulta.getCompromisso() != null) {

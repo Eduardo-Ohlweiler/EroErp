@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="048-create-anamnese" author="eduardo">
+
+        <!-- ── TEMPLATE_ANAMNESE ─────────────────────────────────────────────── -->
+        <createTable tableName="template_anamnese">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <!-- NULL = template global do sistema; NOT NULL = template do tenant -->
+            <column name="cliente_id" type="BIGINT"/>
+
+            <column name="nome" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- ESTETICA | CLINICA_GERAL | DENTISTA | PODOLOGIA | NUTRICAO | VETERINARIA -->
+            <column name="finalidade" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="descricao" type="TEXT"/>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="updated_by" type="BIGINT"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="template_anamnese" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_template_anamnese_cliente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="template_anamnese" baseColumnNames="created_by"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_template_anamnese_created_by"/>
+
+        <addForeignKeyConstraint
+                baseTableName="template_anamnese" baseColumnNames="updated_by"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_template_anamnese_updated_by"/>
+
+        <createIndex tableName="template_anamnese" indexName="idx_template_anamnese_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="template_anamnese" indexName="idx_template_anamnese_finalidade">
+            <column name="finalidade"/>
+        </createIndex>
+
+        <!-- ── CAMPO_ANAMNESE ──────────────────────────────────────────────── -->
+        <createTable tableName="campo_anamnese">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT"/>
+
+            <column name="template_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="secao" type="VARCHAR(200)"/>
+
+            <column name="rotulo" type="VARCHAR(300)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- TEXTO | TEXTO_LONGO | CHECKBOX | DATA | NUMERO | OPCOES | MULTIPLAS_OPCOES -->
+            <column name="tipo" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- JSON array string para tipos OPCOES / MULTIPLAS_OPCOES -->
+            <column name="opcoes" type="TEXT"/>
+
+            <column name="ordem" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="obrigatorio" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="campo_anamnese" baseColumnNames="template_id"
+                referencedTableName="template_anamnese" referencedColumnNames="id"
+                constraintName="fk_campo_anamnese_template"
+                onDelete="CASCADE"/>
+
+        <createIndex tableName="campo_anamnese" indexName="idx_campo_anamnese_template">
+            <column name="template_id"/>
+        </createIndex>
+
+        <!-- ── FICHA_ANAMNESE ──────────────────────────────────────────────── -->
+        <createTable tableName="ficha_anamnese">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="template_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="emitente_id" type="BIGINT"/>
+
+            <column name="data_preenchimento" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="observacoes" type="TEXT"/>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="updated_by" type="BIGINT"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="ficha_anamnese" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_ficha_anamnese_cliente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="ficha_anamnese" baseColumnNames="template_id"
+                referencedTableName="template_anamnese" referencedColumnNames="id"
+                constraintName="fk_ficha_anamnese_template"/>
+
+        <addForeignKeyConstraint
+                baseTableName="ficha_anamnese" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_ficha_anamnese_pessoa"/>
+
+        <addForeignKeyConstraint
+                baseTableName="ficha_anamnese" baseColumnNames="emitente_id"
+                referencedTableName="emitente" referencedColumnNames="id"
+                constraintName="fk_ficha_anamnese_emitente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="ficha_anamnese" baseColumnNames="created_by"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_ficha_anamnese_created_by"/>
+
+        <addForeignKeyConstraint
+                baseTableName="ficha_anamnese" baseColumnNames="updated_by"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_ficha_anamnese_updated_by"/>
+
+        <createIndex tableName="ficha_anamnese" indexName="idx_ficha_anamnese_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="ficha_anamnese" indexName="idx_ficha_anamnese_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <!-- ── RESPOSTA_ANAMNESE ───────────────────────────────────────────── -->
+        <createTable tableName="resposta_anamnese">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ficha_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="campo_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="valor" type="TEXT"/>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="resposta_anamnese" baseColumnNames="ficha_id"
+                referencedTableName="ficha_anamnese" referencedColumnNames="id"
+                constraintName="fk_resposta_anamnese_ficha"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="resposta_anamnese" baseColumnNames="campo_id"
+                referencedTableName="campo_anamnese" referencedColumnNames="id"
+                constraintName="fk_resposta_anamnese_campo"/>
+
+        <createIndex tableName="resposta_anamnese" indexName="idx_resposta_anamnese_ficha">
+            <column name="ficha_id"/>
+        </createIndex>
+
+        <!-- ── TEMPLATES PADRÃO (globais — cliente_id NULL) ─────────────────── -->
+
+        <!-- Template 1: Estética -->
+        <sql splitStatements="true">
+            INSERT INTO template_anamnese (nome, finalidade, descricao, ativo, created_at) VALUES ('Anamnese Estética', 'ESTETICA', 'Ficha padrão para procedimentos estéticos', true, NOW());
+
+            INSERT INTO campo_anamnese (template_id, secao, rotulo, tipo, ordem, obrigatorio, ativo, created_at) VALUES
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Dados Gerais', 'Possui alergias a cosméticos ou produtos químicos?', 'CHECKBOX', 1, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Dados Gerais', 'Quais alergias?', 'TEXTO', 2, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Dados Gerais', 'Realiza algum tratamento médico?', 'CHECKBOX', 3, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Dados Gerais', 'Qual tratamento?', 'TEXTO', 4, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Dados Gerais', 'Usa medicamentos continuamente?', 'CHECKBOX', 5, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Dados Gerais', 'Quais medicamentos?', 'TEXTO', 6, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Dados Gerais', 'Tem histórico de cicatrização ruim (queloides)?', 'CHECKBOX', 7, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Histórico de Procedimentos', 'Já realizou procedimentos estéticos anteriormente?', 'CHECKBOX', 8, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Histórico de Procedimentos', 'Quais procedimentos realizados?', 'TEXTO_LONGO', 9, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Histórico de Procedimentos', 'Apresentou reações adversas em algum procedimento?', 'CHECKBOX', 10, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Histórico de Procedimentos', 'Descreva as reações:', 'TEXTO_LONGO', 11, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='ESTETICA' AND cliente_id IS NULL LIMIT 1), 'Objetivo', 'Objetivo da consulta/procedimento', 'TEXTO_LONGO', 12, true, true, NOW());
+        </sql>
+
+        <!-- Template 2: Clínica Geral -->
+        <sql splitStatements="true">
+            INSERT INTO template_anamnese (nome, finalidade, descricao, ativo, created_at) VALUES ('Anamnese Clínica Geral', 'CLINICA_GERAL', 'Ficha padrão para consultas clínicas gerais', true, NOW());
+
+            INSERT INTO campo_anamnese (template_id, secao, rotulo, tipo, opcoes, ordem, obrigatorio, ativo, created_at) VALUES
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Tem alergias a medicamentos?', 'CHECKBOX', NULL, 1, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Quais alergias?', 'TEXTO', NULL, 2, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Está sob tratamento médico?', 'CHECKBOX', NULL, 3, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Qual tratamento?', 'TEXTO', NULL, 4, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Usa medicamentos?', 'CHECKBOX', NULL, 5, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Quais medicamentos?', 'TEXTO', NULL, 6, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Tem doenças crônicas (diabetes, hipertensão, etc.)?', 'CHECKBOX', NULL, 7, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Quais doenças crônicas?', 'TEXTO', NULL, 8, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Histórico familiar de doenças relevantes', 'TEXTO_LONGO', NULL, 9, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Pressão arterial habitual', 'OPCOES', '["Normal","Alta","Baixa","Não sei"]', 10, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Fuma?', 'CHECKBOX', NULL, 11, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Dados de Saúde', 'Consome álcool?', 'CHECKBOX', NULL, 12, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Queixa Principal', 'Queixa principal', 'TEXTO_LONGO', NULL, 13, true, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Queixa Principal', 'Sintomas atuais', 'TEXTO_LONGO', NULL, 14, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='CLINICA_GERAL' AND cliente_id IS NULL LIMIT 1), 'Queixa Principal', 'Há quanto tempo apresenta os sintomas?', 'TEXTO', NULL, 15, false, true, NOW());
+        </sql>
+
+        <!-- Template 3: Dentista -->
+        <sql splitStatements="true">
+            INSERT INTO template_anamnese (nome, finalidade, descricao, ativo, created_at) VALUES ('Anamnese Odontológica', 'DENTISTA', 'Ficha padrão para consultas odontológicas', true, NOW());
+
+            INSERT INTO campo_anamnese (template_id, secao, rotulo, tipo, opcoes, ordem, obrigatorio, ativo, created_at) VALUES
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Está sob tratamento médico?', 'CHECKBOX', NULL, 1, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Qual?', 'TEXTO', NULL, 2, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Tem alergia a algum medicamento?', 'CHECKBOX', NULL, 3, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Qual?', 'TEXTO', NULL, 4, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Tem diabetes?', 'CHECKBOX', NULL, 5, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Tem hipertensão?', 'CHECKBOX', NULL, 6, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Tem problemas cardíacos?', 'CHECKBOX', NULL, 7, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Usa anticoagulantes?', 'CHECKBOX', NULL, 8, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Está grávida ou amamentando?', 'CHECKBOX', NULL, 9, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Bucal', 'Sente dor ou sensibilidade dental?', 'CHECKBOX', NULL, 10, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Bucal', 'Tem sangramento gengival?', 'CHECKBOX', NULL, 11, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Bucal', 'Usa prótese dental?', 'CHECKBOX', NULL, 12, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Bucal', 'Qual tipo de prótese?', 'TEXTO', NULL, 13, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Bucal', 'Tem bruxismo (range os dentes)?', 'CHECKBOX', NULL, 14, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Saúde Bucal', 'Data da última consulta odontológica', 'DATA', NULL, 15, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='DENTISTA' AND cliente_id IS NULL LIMIT 1), 'Queixa', 'Motivo da consulta', 'TEXTO_LONGO', NULL, 16, true, true, NOW());
+        </sql>
+
+        <!-- Template 4: Podologia -->
+        <sql splitStatements="true">
+            INSERT INTO template_anamnese (nome, finalidade, descricao, ativo, created_at) VALUES ('Anamnese Podológica', 'PODOLOGIA', 'Ficha padrão para consultas podológicas', true, NOW());
+
+            INSERT INTO campo_anamnese (template_id, secao, rotulo, tipo, opcoes, ordem, obrigatorio, ativo, created_at) VALUES
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Tem diabetes?', 'CHECKBOX', NULL, 1, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Tem hipertensão?', 'CHECKBOX', NULL, 2, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Tem problemas circulatórios?', 'CHECKBOX', NULL, 3, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Usa medicamentos?', 'CHECKBOX', NULL, 4, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Saúde Geral', 'Quais medicamentos?', 'TEXTO', NULL, 5, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Histórico Podológico', 'Tem unhas encravadas?', 'CHECKBOX', NULL, 6, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Histórico Podológico', 'Tem calosidades/calos?', 'CHECKBOX', NULL, 7, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Histórico Podológico', 'Tem micoses (frieira, etc.)?', 'CHECKBOX', NULL, 8, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Histórico Podológico', 'Tem rachaduras nos pés?', 'CHECKBOX', NULL, 9, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Histórico Podológico', 'Usa calçado adequado?', 'CHECKBOX', NULL, 10, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Histórico Podológico', 'Realiza tratamento podológico regularmente?', 'CHECKBOX', NULL, 11, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='PODOLOGIA' AND cliente_id IS NULL LIMIT 1), 'Queixa', 'Queixa principal', 'TEXTO_LONGO', NULL, 12, true, true, NOW());
+        </sql>
+
+        <!-- Template 5: Nutrição -->
+        <sql splitStatements="true">
+            INSERT INTO template_anamnese (nome, finalidade, descricao, ativo, created_at) VALUES ('Anamnese Nutricional', 'NUTRICAO', 'Ficha padrão para consultas nutricionais', true, NOW());
+
+            INSERT INTO campo_anamnese (template_id, secao, rotulo, tipo, opcoes, ordem, obrigatorio, ativo, created_at) VALUES
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Tem alergias alimentares?', 'CHECKBOX', NULL, 1, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Quais alergias?', 'TEXTO', NULL, 2, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Tem intolerâncias alimentares?', 'CHECKBOX', NULL, 3, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Quais intolerâncias?', 'TEXTO', NULL, 4, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Tem doenças crônicas?', 'CHECKBOX', NULL, 5, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Quais doenças?', 'TEXTO', NULL, 6, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Usa medicamentos?', 'CHECKBOX', NULL, 7, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Quais?', 'TEXTO', NULL, 8, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Hábitos Alimentares', 'Quantas refeições faz por dia?', 'NUMERO', NULL, 9, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Hábitos Alimentares', 'Quantos litros de água bebe por dia?', 'NUMERO', NULL, 10, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Hábitos Alimentares', 'Consome álcool?', 'CHECKBOX', NULL, 11, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Hábitos Alimentares', 'Consome fast food regularmente?', 'CHECKBOX', NULL, 12, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Hábitos Alimentares', 'Tem restrições alimentares?', 'CHECKBOX', NULL, 13, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Hábitos Alimentares', 'Quais restrições?', 'TEXTO', NULL, 14, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Hábitos Alimentares', 'Nível de atividade física', 'OPCOES', '["Sedentário","Levemente ativo","Moderadamente ativo","Muito ativo"]', 15, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Objetivos', 'Objetivo nutricional', 'TEXTO_LONGO', NULL, 16, true, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Objetivos', 'Peso atual (kg)', 'NUMERO', NULL, 17, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='NUTRICAO' AND cliente_id IS NULL LIMIT 1), 'Objetivos', 'Altura (cm)', 'NUMERO', NULL, 18, false, true, NOW());
+        </sql>
+
+        <!-- Template 6: Veterinária -->
+        <sql splitStatements="true">
+            INSERT INTO template_anamnese (nome, finalidade, descricao, ativo, created_at) VALUES ('Anamnese Veterinária', 'VETERINARIA', 'Ficha padrão para consultas veterinárias', true, NOW());
+
+            INSERT INTO campo_anamnese (template_id, secao, rotulo, tipo, opcoes, ordem, obrigatorio, ativo, created_at) VALUES
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Dados do Animal', 'Nome do animal', 'TEXTO', NULL, 1, true, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Dados do Animal', 'Espécie', 'OPCOES', '["Cão","Gato","Pássaro","Réptil","Roedor","Outro"]', 2, true, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Dados do Animal', 'Raça', 'TEXTO', NULL, 3, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Dados do Animal', 'Sexo', 'OPCOES', '["Macho","Fêmea"]', 4, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Dados do Animal', 'Castrado/Esterilizado?', 'CHECKBOX', NULL, 5, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Dados do Animal', 'Data de nascimento (aproximada)', 'DATA', NULL, 6, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Dados do Animal', 'Peso aproximado (kg)', 'NUMERO', NULL, 7, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Vacinas em dia?', 'CHECKBOX', NULL, 8, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Usa antiparasitários/vermífugo?', 'CHECKBOX', NULL, 9, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Tem alergias?', 'CHECKBOX', NULL, 10, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Quais?', 'TEXTO', NULL, 11, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Usa medicamentos?', 'CHECKBOX', NULL, 12, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Quais?', 'TEXTO', NULL, 13, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Já teve doenças graves?', 'CHECKBOX', NULL, 14, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Saúde', 'Quais doenças?', 'TEXTO', NULL, 15, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='VETERINARIA' AND cliente_id IS NULL LIMIT 1), 'Motivo', 'Motivo da consulta', 'TEXTO_LONGO', NULL, 16, true, true, NOW());
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

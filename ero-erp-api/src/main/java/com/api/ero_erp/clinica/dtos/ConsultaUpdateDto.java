@@ -22,5 +22,7 @@ public record ConsultaUpdateDto(
 
         String     tipoAjusteGeral,
         String     tipoCalculoGeral,
-        java.math.BigDecimal valorAjusteGeral
+        java.math.BigDecimal valorAjusteGeral,
+
+        Long fichaAnamneseId
 ) {}
