@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 public class PlanoTreinoService {
@@ -200,5 +201,45 @@ public class PlanoTreinoService {
                 "plano-treino.pdf",
                 "Plano de treino: " + plano.getNome()
         );
+    }
+
+    @Transactional
+    public PlanoTreinoResponseDto clonar(Long id) {
+        Long        clienteId = securityUtils.getClienteIdLogado();
+        Cliente     cliente   = securityUtils.getClienteLogado();
+        PlanoTreino original  = planoRepository.findByIdWithItens(id, clienteId)
+                .orElseThrow(() -> new NotFoundException("Plano de treino não encontrado, verifique!"));
+
+        PlanoTreino copia = new PlanoTreino();
+        copia.setCliente(cliente);
+        copia.setPessoa(original.getPessoa());
+        copia.setUsuario(original.getUsuario());
+        copia.setNome(original.getNome() + " (cópia)");
+        copia.setDataInicio(original.getDataInicio());
+        copia.setDataFim(original.getDataFim());
+        copia.setObservacao(original.getObservacao());
+        copia.setAtivo(true);
+        planoRepository.save(copia);
+
+        List<ItemPlanoTreino> novosItens = original.getItens().stream()
+                .map(i -> {
+                    ItemPlanoTreino novo = new ItemPlanoTreino();
+                    novo.setCliente(cliente);
+                    novo.setPlano(copia);
+                    novo.setExercicio(i.getExercicio());
+                    novo.setDiaSemana(i.getDiaSemana());
+                    novo.setOrdem(i.getOrdem());
+                    novo.setSeries(i.getSeries());
+                    novo.setRepeticoes(i.getRepeticoes());
+                    novo.setTipoExecucao(i.getTipoExecucao());
+                    novo.setPausaSegundos(i.getPausaSegundos());
+                    novo.setObservacao(i.getObservacao());
+                    return novo;
+                })
+                .toList();
+
+        itemRepository.saveAll(novosItens);
+
+        return GymMapper.toResponseDto(planoRepository.findByIdWithItens(copia.getId(), clienteId).orElseThrow());
     }
 }

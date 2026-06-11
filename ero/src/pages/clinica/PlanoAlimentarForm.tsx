@@ -83,6 +83,7 @@ export default function PlanoAlimentarForm() {
   const [loading,      setLoading]      = useState(false)
   const [saving,       setSaving]       = useState(false)
   const [sendingWpp,   setSendingWpp]   = useState(false)
+  const [cloning,      setCloning]      = useState(false)
   const [plano,        setPlano]        = useState<PlanoAlimentarResponse | null>(null)
   const [currentId,    setCurrentId]    = useState<string | undefined>(idParam)
   const [selectedDay,  setSelectedDay]  = useState<DiaSemana>("SEGUNDA")
@@ -309,6 +310,24 @@ export default function PlanoAlimentarForm() {
     }
   }
 
+  async function handleClonar() {
+    setCloning(true)
+    try {
+      const res = await api.post(`/planos-alimentares/${currentId}/clonar`)
+      showMessage("success", "Plano alimentar clonado com sucesso!")
+      navigate(`/clinica/planos-alimentares/${res.data.id}`)
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const d = err.response?.data as ErrorResponse
+        showMessage("error", d?.erro ?? "Erro ao clonar plano alimentar")
+      } else {
+        showMessage("error", "Erro inesperado")
+      }
+    } finally {
+      setCloning(false)
+    }
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -455,6 +474,9 @@ export default function PlanoAlimentarForm() {
             <TButton label="Novo" variant="new" type="button" onClick={handleNovo} />
           </TFormActionsLeft>
           <TFormActionsRight>
+            {isEdit && (
+              <TButton label="Clonar" variant="new" type="button" loading={cloning} onClick={handleClonar} />
+            )}
             {isEdit && plano && (
               <>
                 <TButton label="Imprimir PDF"    variant="save"   type="button"

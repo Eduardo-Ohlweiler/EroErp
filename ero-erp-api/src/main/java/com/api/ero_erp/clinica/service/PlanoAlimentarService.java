@@ -198,4 +198,42 @@ public class PlanoAlimentarService {
                 "Plano alimentar: " + plano.getNome()
         );
     }
+
+    @Transactional
+    public PlanoAlimentarResponseDto clonar(Long id) {
+        Long           clienteId = securityUtils.getClienteIdLogado();
+        Cliente        cliente   = securityUtils.getClienteLogado();
+        PlanoAlimentar original  = planoRepository.findByIdWithItens(id, clienteId)
+                .orElseThrow(() -> new NotFoundException("Plano alimentar não encontrado, verifique!"));
+
+        PlanoAlimentar copia = new PlanoAlimentar();
+        copia.setCliente(cliente);
+        copia.setPessoa(original.getPessoa());
+        copia.setEmitente(original.getEmitente());
+        copia.setNome(original.getNome() + " (cópia)");
+        copia.setDataInicio(original.getDataInicio());
+        copia.setDataFim(original.getDataFim());
+        copia.setObservacao(original.getObservacao());
+        copia.setAtivo(true);
+        planoRepository.save(copia);
+
+        java.util.List<ItemPlanoAlimentar> novosItens = original.getItens().stream()
+                .map(i -> {
+                    ItemPlanoAlimentar novo = new ItemPlanoAlimentar();
+                    novo.setCliente(cliente);
+                    novo.setPlano(copia);
+                    novo.setRefeicao(i.getRefeicao());
+                    novo.setDiaSemana(i.getDiaSemana());
+                    novo.setHorario(i.getHorario());
+                    novo.setQuantidade(i.getQuantidade());
+                    novo.setPeso(i.getPeso());
+                    novo.setObservacao(i.getObservacao());
+                    return novo;
+                })
+                .toList();
+
+        itemRepository.saveAll(novosItens);
+
+        return PlanoAlimentarMapper.toResponseDto(planoRepository.findByIdWithItens(copia.getId(), clienteId).orElseThrow());
+    }
 }

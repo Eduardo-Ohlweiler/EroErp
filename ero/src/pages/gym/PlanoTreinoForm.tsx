@@ -91,6 +91,7 @@ export default function PlanoTreinoForm() {
   const [loading,     setLoading]     = useState(false)
   const [saving,      setSaving]      = useState(false)
   const [sendingWpp,  setSendingWpp]  = useState(false)
+  const [cloning,     setCloning]     = useState(false)
   const [plano,       setPlano]       = useState<PlanoTreinoResponse | null>(null)
   const [currentId,   setCurrentId]   = useState<string | undefined>(idParam)
   const [selectedDay, setSelectedDay] = useState<DiaSemanaGym>("SEGUNDA")
@@ -322,6 +323,24 @@ export default function PlanoTreinoForm() {
     }
   }
 
+  async function handleClonar() {
+    setCloning(true)
+    try {
+      const res = await api.post<PlanoTreinoResponse>(`/planos-treino/${currentId}/clonar`)
+      showMessage("success", "Plano de treino clonado com sucesso!")
+      navigate(`/gym/planos-treino/${res.data.id}`)
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const d = err.response?.data as ErrorResponse
+        showMessage("error", d?.erro ?? "Erro ao clonar plano de treino")
+      } else {
+        showMessage("error", "Erro inesperado")
+      }
+    } finally {
+      setCloning(false)
+    }
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -468,6 +487,9 @@ export default function PlanoTreinoForm() {
             <TButton label="Novo" variant="new" type="button" onClick={handleNovo} />
           </TFormActionsLeft>
           <TFormActionsRight>
+            {isEdit && (
+              <TButton label="Clonar" variant="new" type="button" loading={cloning} onClick={handleClonar} />
+            )}
             {isEdit && plano && (
               <>
                 <TButton label="Imprimir PDF"    variant="save"   type="button"

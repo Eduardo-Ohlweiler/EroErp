@@ -69,6 +69,12 @@ public class PlanoAlimentarController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{id}/clonar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PlanoAlimentarResponseDto> clonar(@PathVariable Long id) {
+        return new ResponseEntity<>(planoService.clonar(id), HttpStatus.CREATED);
+    }
+
     @PostMapping("/{id}/enviar-pdf")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PLANO_ALIMENTAR', 'PLANO_ALIMENTAR_GET')")
     @Operation(summary = "Envia PDF do plano alimentar via WhatsApp para o paciente")

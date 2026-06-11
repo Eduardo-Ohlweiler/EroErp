@@ -69,6 +69,12 @@ public class PlanoTreinoController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{id}/clonar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PlanoTreinoResponseDto> clonar(@PathVariable Long id) {
+        return new ResponseEntity<>(planoService.clonar(id), HttpStatus.CREATED);
+    }
+
     @PostMapping("/{id}/enviar-pdf")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PLANO_TREINO', 'PLANO_TREINO_GET')")
     @Operation(summary = "Envia PDF do plano de treino via WhatsApp para o aluno")
