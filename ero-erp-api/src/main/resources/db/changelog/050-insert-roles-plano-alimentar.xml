@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="050-insert-roles-plano-alimentar" author="eduardo">
+
+        <insert tableName="role">
+            <column name="nome" value="PLANO_ALIMENTAR"/>
+            <column name="descricao" value="Permissão geral para plano alimentar"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="PLANO_ALIMENTAR_GET"/>
+            <column name="descricao" value="Permissão para consultar plano alimentar"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="REFEICAO"/>
+            <column name="descricao" value="Permissão geral para refeição"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="REFEICAO_GET"/>
+            <column name="descricao" value="Permissão para consultar refeição"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

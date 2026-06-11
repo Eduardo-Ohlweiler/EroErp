@@ -52,6 +52,10 @@ import TemplateAnamneseList                      from "../pages/clinica/Template
 import TemplateAnamneseForm                      from "../pages/clinica/TemplateAnamneseForm"
 import FichaAnamneseList                         from "../pages/clinica/FichaAnamneseList"
 import FichaAnamneseForm                         from "../pages/clinica/FichaAnamneseForm"
+import PlanoAlimentarList                        from "../pages/clinica/PlanoAlimentarList"
+import PlanoAlimentarForm                        from "../pages/clinica/PlanoAlimentarForm"
+import RefeicaoList                              from "../pages/clinica/RefeicaoList"
+import RefeicaoForm                              from "../pages/clinica/RefeicaoForm"
 import ContaFinanceiraFormList                   from "../pages/financeiro/auxiliares/ContaFinanceiraFormList"
 import TipoCobrancaFormList                      from "../pages/financeiro/auxiliares/TipoCobrancaFormList"
 import FormaPagamentoFormList                    from "../pages/financeiro/auxiliares/FormaPagamentoFormList"
@@ -182,6 +186,12 @@ export function Router() {
               <Route path="/clinica/templates-anamnese"         element={<TemplateAnamneseList />} />
               <Route path="/clinica/templates-anamnese/novo"    element={<TemplateAnamneseForm />} />
               <Route path="/clinica/templates-anamnese/:id"     element={<TemplateAnamneseForm />} />
+              <Route path="/clinica/planos-alimentares"         element={<PlanoAlimentarList />} />
+              <Route path="/clinica/planos-alimentares/novo"    element={<PlanoAlimentarForm />} />
+              <Route path="/clinica/planos-alimentares/:id"     element={<PlanoAlimentarForm />} />
+              <Route path="/clinica/refeicoes"                  element={<RefeicaoList />} />
+              <Route path="/clinica/refeicoes/nova"             element={<RefeicaoForm />} />
+              <Route path="/clinica/refeicoes/:id"              element={<RefeicaoForm />} />
             </Route>
 
             {/* ── FINANCEIRO ── */}

@@ -54,4 +54,6 @@
     <include file="047-insert-roles-anamnese.xml"            relativeToChangelogFile="true" />
     <include file="048-create-anamnese.xml"                  relativeToChangelogFile="true" />
     <include file="049-alter-consulta-add-ficha-anamnese.xml" relativeToChangelogFile="true" />
+    <include file="050-insert-roles-plano-alimentar.xml"     relativeToChangelogFile="true" />
+    <include file="051-create-plano-alimentar.xml"           relativeToChangelogFile="true" />
 </databaseChangeLog>

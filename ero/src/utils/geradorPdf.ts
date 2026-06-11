@@ -600,3 +600,134 @@ export function gerarPdfFichaAnamnese(dados: DadosFichaAnamnese): string {
 
   return doc.output("datauristring").split(",")[1]
 }
+
+// ── PLANO ALIMENTAR ───────────────────────────────────────────────────────────
+
+export interface DadosPlanoAlimentar {
+  nome:          string
+  pessoaNome:    string
+  emitenteNome?: string
+  dataInicio:    string
+  dataFim?:      string
+  observacao?:   string
+  itens: {
+    diaSemana:    string
+    horario:      string
+    refeicaoNome: string
+    quantidade?:  string
+    peso?:        number
+    observacao?:  string
+  }[]
+}
+
+export function gerarPdfPlanoAlimentar(dados: DadosPlanoAlimentar): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+
+  const COR_TOPO: [number, number, number] = [34, 100, 60]
+  const COR_DIA:  [number, number, number] = [34, 100, 60]
+
+  const DIAS_ORDEM = ["SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA", "SABADO", "DOMINGO"]
+  const DIA_LABELS: Record<string, string> = {
+    SEGUNDA: "Segunda-feira",
+    TERCA:   "Terça-feira",
+    QUARTA:  "Quarta-feira",
+    QUINTA:  "Quinta-feira",
+    SEXTA:   "Sexta-feira",
+    SABADO:  "Sábado",
+    DOMINGO: "Domingo",
+  }
+
+  // ── Faixa de topo ────────────────────────────────────────────────────────────
+  let y = faixaTopo(doc, dados.emitenteNome ?? dados.pessoaNome, "PLANO ALIMENTAR", COR_TOPO)
+
+  // ── Bloco de informações ──────────────────────────────────────────────────────
+  const periodo = dados.dataFim
+    ? `${dados.dataInicio} a ${dados.dataFim}`
+    : `A partir de ${dados.dataInicio}`
+
+  const infos: [string, string][] = [
+    ["Paciente:",  dados.pessoaNome],
+    ["Plano:",     dados.nome],
+    ["Período:",   periodo],
+  ]
+  if (dados.emitenteNome) infos.push(["Responsável:", dados.emitenteNome])
+
+  doc.setFontSize(9)
+  for (const [label, valor] of infos) {
+    doc.setFont("helvetica", "bold")
+    doc.text(label, mg, y)
+    doc.setFont("helvetica", "normal")
+    doc.text(valor, mg + 26, y)
+    y += 5.5
+  }
+  y += 5
+
+  // ── Itens agrupados por dia ───────────────────────────────────────────────────
+  for (const dia of DIAS_ORDEM) {
+    const itensDia = dados.itens
+      .filter(i => i.diaSemana === dia)
+      .sort((a, b) => a.horario.localeCompare(b.horario))
+
+    if (itensDia.length === 0) continue
+
+    if (y > 255) { doc.addPage(); y = 20 }
+
+    // Cabeçalho do dia
+    doc.setFillColor(...COR_DIA)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(255, 255, 255)
+    doc.text(DIA_LABELS[dia], mg + 2, y + 1.5)
+    doc.setTextColor(0, 0, 0)
+    y += 10
+
+    // Tabela de itens do dia
+    autoTable(doc, {
+      startY: y,
+      head:   [["Horário", "Refeição", "Quantidade", "Peso", "Observação"]],
+      body:   itensDia.map(item => [
+        item.horario,
+        item.refeicaoNome,
+        item.quantidade ?? "—",
+        item.peso != null ? `${item.peso}g` : "—",
+        item.observacao ?? "",
+      ]),
+      headStyles:   { fillColor: [60, 130, 90], fontSize: 8, textColor: 255 },
+      bodyStyles:   { fontSize: 8 },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 20 },
+        2: { cellWidth: 38 },
+        3: { halign: "center", cellWidth: 20 },
+      },
+      margin: { left: mg, right: mg },
+      theme:  "striped",
+    })
+
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 20
+    y += 6
+  }
+
+  // ── Observações gerais ────────────────────────────────────────────────────────
+  if (dados.observacao) {
+    if (y > 260) { doc.addPage(); y = 20 }
+
+    doc.setFillColor(240, 240, 240)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(0, 0, 0)
+    doc.text("OBSERVAÇÕES GERAIS", mg + 2, y + 1.5)
+    y += 9
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    y = blocoTexto(doc, dados.observacao, mg + 2, y, inner - 4, 5)
+    y += 4
+  }
+
+  return doc.output("datauristring").split(",")[1]
+}

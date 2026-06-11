@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="051-create-plano-alimentar" author="eduardo">
+
+        <!-- ── REFEICAO ───────────────────────────────────────────────────── -->
+        <createTable tableName="refeicao">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="nome" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="descricao" type="TEXT"/>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="refeicao" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_refeicao_cliente"
+                onDelete="RESTRICT"/>
+
+        <createIndex tableName="refeicao" indexName="idx_refeicao_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <!-- ── PLANO_ALIMENTAR ────────────────────────────────────────────── -->
+        <createTable tableName="plano_alimentar">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="emitente_id" type="BIGINT"/>
+
+            <column name="nome" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="data_inicio" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="data_fim" type="DATE"/>
+
+            <column name="observacao" type="TEXT"/>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="plano_alimentar" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_plano_alimentar_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="plano_alimentar" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_plano_alimentar_pessoa"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="plano_alimentar" baseColumnNames="emitente_id"
+                referencedTableName="emitente" referencedColumnNames="id"
+                constraintName="fk_plano_alimentar_emitente"
+                onDelete="SET NULL"/>
+
+        <createIndex tableName="plano_alimentar" indexName="idx_plano_alimentar_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="plano_alimentar" indexName="idx_plano_alimentar_pessoa_id">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <!-- ── ITEM_PLANO_ALIMENTAR ───────────────────────────────────────── -->
+        <createTable tableName="item_plano_alimentar">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="plano_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="refeicao_id" type="BIGINT"/>
+
+            <!-- SEGUNDA | TERCA | QUARTA | QUINTA | SEXTA | SABADO | DOMINGO -->
+            <column name="dia_semana" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="horario" type="TIME">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Texto livre: "1 porção", "2 colheres", etc. -->
+            <column name="quantidade" type="VARCHAR(100)"/>
+
+            <!-- Peso em gramas -->
+            <column name="peso" type="NUMERIC(10,2)"/>
+
+            <column name="observacao" type="TEXT"/>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="item_plano_alimentar" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_item_plano_alimentar_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="item_plano_alimentar" baseColumnNames="plano_id"
+                referencedTableName="plano_alimentar" referencedColumnNames="id"
+                constraintName="fk_item_plano_alimentar_plano"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="item_plano_alimentar" baseColumnNames="refeicao_id"
+                referencedTableName="refeicao" referencedColumnNames="id"
+                constraintName="fk_item_plano_alimentar_refeicao"
+                onDelete="SET NULL"/>
+
+        <createIndex tableName="item_plano_alimentar" indexName="idx_item_plano_alimentar_plano_id">
+            <column name="plano_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

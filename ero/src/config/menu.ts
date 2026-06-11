@@ -108,7 +108,7 @@ export const menu: MenuItem[] = [
   {
     label: "Clínica",
     icon:  FaStethoscope,
-    roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET", "ANAMNESE", "ANAMNESE_GET", "TEMPLATE_ANAMNESE", "TEMPLATE_ANAMNESE_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET", "ANAMNESE", "ANAMNESE_GET", "TEMPLATE_ANAMNESE", "TEMPLATE_ANAMNESE_GET", "PLANO_ALIMENTAR", "PLANO_ALIMENTAR_GET", "REFEICAO", "REFEICAO_GET"],
     children: [
       {
         label: "Consultas",
@@ -123,15 +123,27 @@ export const menu: MenuItem[] = [
         roles: ["SUPERADMIN", "ADMIN", "ANAMNESE", "ANAMNESE_GET"],
       },
       {
+        label: "Planos Alimentares",
+        path:  "/clinica/planos-alimentares",
+        icon:  FaClipboardList,
+        roles: ["SUPERADMIN", "ADMIN", "PLANO_ALIMENTAR", "PLANO_ALIMENTAR_GET"],
+      },
+      {
         label: "Auxiliar Clínica",
         icon:  FaCogs,
-        roles: ["SUPERADMIN", "ADMIN", "TEMPLATE_ANAMNESE", "TEMPLATE_ANAMNESE_GET"],
+        roles: ["SUPERADMIN", "ADMIN", "TEMPLATE_ANAMNESE", "TEMPLATE_ANAMNESE_GET", "REFEICAO", "REFEICAO_GET"],
         children: [
           {
             label: "Templates de Anamnese",
             path:  "/clinica/templates-anamnese",
             icon:  FaCog,
             roles: ["SUPERADMIN", "ADMIN", "TEMPLATE_ANAMNESE", "TEMPLATE_ANAMNESE_GET"],
+          },
+          {
+            label: "Refeições",
+            path:  "/clinica/refeicoes",
+            icon:  FaCog,
+            roles: ["SUPERADMIN", "ADMIN", "REFEICAO", "REFEICAO_GET"],
           },
         ],
       },
