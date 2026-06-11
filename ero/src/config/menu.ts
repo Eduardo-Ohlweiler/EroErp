@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -144,6 +144,32 @@ export const menu: MenuItem[] = [
             path:  "/clinica/refeicoes",
             icon:  FaCog,
             roles: ["SUPERADMIN", "ADMIN", "REFEICAO", "REFEICAO_GET"],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Gym",
+    icon:  FaDumbbell,
+    roles: ["SUPERADMIN", "ADMIN", "PLANO_TREINO", "PLANO_TREINO_GET", "EXERCICIO", "EXERCICIO_GET"],
+    children: [
+      {
+        label: "Planos de Treino",
+        path:  "/gym/planos-treino",
+        icon:  FaClipboardList,
+        roles: ["SUPERADMIN", "ADMIN", "PLANO_TREINO", "PLANO_TREINO_GET"],
+      },
+      {
+        label: "Auxiliar Gym",
+        icon:  FaCogs,
+        roles: ["SUPERADMIN", "ADMIN", "EXERCICIO", "EXERCICIO_GET"],
+        children: [
+          {
+            label: "Exercícios",
+            path:  "/gym/exercicios",
+            icon:  FaCog,
+            roles: ["SUPERADMIN", "ADMIN", "EXERCICIO", "EXERCICIO_GET"],
           },
         ],
       },

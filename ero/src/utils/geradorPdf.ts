@@ -731,3 +731,146 @@ export function gerarPdfPlanoAlimentar(dados: DadosPlanoAlimentar): string {
 
   return doc.output("datauristring").split(",")[1]
 }
+
+// ── PLANO DE TREINO ────────────────────────────────────────────────────────────
+
+export interface DadosPlanoTreino {
+  nome:          string
+  pessoaNome:    string
+  emitenteNome?: string
+  dataInicio:    string
+  dataFim?:      string
+  observacao?:   string
+  itens: {
+    diaSemana:     string
+    ordem:         number
+    exercicioNome: string
+    series:        number | null
+    repeticoes:    string | null
+    tipoExecucao:  string | null
+    pausaSegundos: number | null
+    observacao?:   string
+  }[]
+}
+
+const TIPO_EXECUCAO_LABEL_PDF: Record<string, string> = {
+  NORMAL:            "Normal",
+  DROPSET:           "Drop Set",
+  DROPSET_INVERTIDO: "Drop Set Invertido",
+}
+
+function formatarPausaGym(segundos: number | null): string {
+  if (segundos == null) return "—"
+  if (segundos < 60) return `${segundos}s`
+  const min = Math.floor(segundos / 60)
+  const sec = segundos % 60
+  return sec === 0 ? `${min}min` : `${min}min ${sec}s`
+}
+
+export function gerarPdfPlanoTreino(dados: DadosPlanoTreino): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+
+  const COR_TOPO: [number, number, number] = [40, 60, 120]
+  const COR_DIA:  [number, number, number] = [40, 60, 120]
+
+  const DIAS_ORDEM = ["SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA", "SABADO", "DOMINGO"]
+  const DIA_LABELS: Record<string, string> = {
+    SEGUNDA: "Segunda-feira",
+    TERCA:   "Terça-feira",
+    QUARTA:  "Quarta-feira",
+    QUINTA:  "Quinta-feira",
+    SEXTA:   "Sexta-feira",
+    SABADO:  "Sábado",
+    DOMINGO: "Domingo",
+  }
+
+  let y = faixaTopo(doc, dados.emitenteNome ?? dados.pessoaNome, "PLANO DE TREINO", COR_TOPO)
+
+  const periodo = dados.dataFim
+    ? `${dados.dataInicio} a ${dados.dataFim}`
+    : `A partir de ${dados.dataInicio}`
+
+  const infos: [string, string][] = [
+    ["Aluno:",    dados.pessoaNome],
+    ["Plano:",    dados.nome],
+    ["Período:",  periodo],
+  ]
+  if (dados.emitenteNome) infos.push(["Personal:", dados.emitenteNome])
+
+  doc.setFontSize(9)
+  for (const [label, valor] of infos) {
+    doc.setFont("helvetica", "bold")
+    doc.text(label, mg, y)
+    doc.setFont("helvetica", "normal")
+    doc.text(valor, mg + 26, y)
+    y += 5.5
+  }
+  y += 5
+
+  for (const dia of DIAS_ORDEM) {
+    const itensDia = dados.itens
+      .filter(i => i.diaSemana === dia)
+      .sort((a, b) => a.ordem - b.ordem)
+
+    if (itensDia.length === 0) continue
+
+    if (y > 255) { doc.addPage(); y = 20 }
+
+    doc.setFillColor(...COR_DIA)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(255, 255, 255)
+    doc.text(DIA_LABELS[dia], mg + 2, y + 1.5)
+    doc.setTextColor(0, 0, 0)
+    y += 10
+
+    autoTable(doc, {
+      startY: y,
+      head:   [["Exercício", "Séries", "Reps", "Execução", "Pausa", "Observação"]],
+      body:   itensDia.map(item => [
+        item.exercicioNome,
+        item.series != null ? String(item.series) : "—",
+        item.repeticoes ?? "—",
+        item.tipoExecucao ? (TIPO_EXECUCAO_LABEL_PDF[item.tipoExecucao] ?? item.tipoExecucao) : "—",
+        formatarPausaGym(item.pausaSegundos),
+        item.observacao ?? "",
+      ]),
+      headStyles:   { fillColor: [60, 85, 155], fontSize: 8, textColor: 255 },
+      bodyStyles:   { fontSize: 8 },
+      columnStyles: {
+        1: { halign: "center", cellWidth: 18 },
+        2: { halign: "center", cellWidth: 18 },
+        3: { cellWidth: 38 },
+        4: { halign: "center", cellWidth: 22 },
+      },
+      margin: { left: mg, right: mg },
+      theme:  "striped",
+    })
+
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 20
+    y += 6
+  }
+
+  if (dados.observacao) {
+    if (y > 260) { doc.addPage(); y = 20 }
+
+    doc.setFillColor(240, 240, 240)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(0, 0, 0)
+    doc.text("OBSERVAÇÕES GERAIS", mg + 2, y + 1.5)
+    y += 9
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    y = blocoTexto(doc, dados.observacao, mg + 2, y, inner - 4, 5)
+    y += 4
+  }
+
+  return doc.output("datauristring").split(",")[1]
+}

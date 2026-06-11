@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="052-insert-roles-gym" author="eduardo">
+
+        <insert tableName="role">
+            <column name="nome" value="PLANO_TREINO"/>
+            <column name="descricao" value="Permissão geral para plano de treino"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="PLANO_TREINO_GET"/>
+            <column name="descricao" value="Permissão para consultar plano de treino"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="EXERCICIO"/>
+            <column name="descricao" value="Permissão geral para exercício"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="EXERCICIO_GET"/>
+            <column name="descricao" value="Permissão para consultar exercício"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

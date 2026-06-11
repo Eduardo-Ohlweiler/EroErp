@@ -56,6 +56,10 @@ import PlanoAlimentarList                        from "../pages/clinica/PlanoAli
 import PlanoAlimentarForm                        from "../pages/clinica/PlanoAlimentarForm"
 import RefeicaoList                              from "../pages/clinica/RefeicaoList"
 import RefeicaoForm                              from "../pages/clinica/RefeicaoForm"
+import PlanoTreinoList                           from "../pages/gym/PlanoTreinoList"
+import PlanoTreinoForm                           from "../pages/gym/PlanoTreinoForm"
+import ExercicioList                             from "../pages/gym/ExercicioList"
+import ExercicioForm                             from "../pages/gym/ExercicioForm"
 import ContaFinanceiraFormList                   from "../pages/financeiro/auxiliares/ContaFinanceiraFormList"
 import TipoCobrancaFormList                      from "../pages/financeiro/auxiliares/TipoCobrancaFormList"
 import FormaPagamentoFormList                    from "../pages/financeiro/auxiliares/FormaPagamentoFormList"
@@ -192,6 +196,16 @@ export function Router() {
               <Route path="/clinica/refeicoes"                  element={<RefeicaoList />} />
               <Route path="/clinica/refeicoes/nova"             element={<RefeicaoForm />} />
               <Route path="/clinica/refeicoes/:id"              element={<RefeicaoForm />} />
+            </Route>
+
+            {/* ── GYM ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "PLANO_TREINO", "PLANO_TREINO_GET", "EXERCICIO", "EXERCICIO_GET"]} />}>
+              <Route path="/gym/planos-treino"         element={<PlanoTreinoList />} />
+              <Route path="/gym/planos-treino/novo"    element={<PlanoTreinoForm />} />
+              <Route path="/gym/planos-treino/:id"     element={<PlanoTreinoForm />} />
+              <Route path="/gym/exercicios"            element={<ExercicioList />} />
+              <Route path="/gym/exercicios/novo"       element={<ExercicioForm />} />
+              <Route path="/gym/exercicios/:id"        element={<ExercicioForm />} />
             </Route>
 
             {/* ── FINANCEIRO ── */}
