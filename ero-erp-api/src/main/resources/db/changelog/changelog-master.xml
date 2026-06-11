@@ -58,4 +58,5 @@
     <include file="051-create-plano-alimentar.xml"           relativeToChangelogFile="true" />
     <include file="052-insert-roles-gym.xml"                 relativeToChangelogFile="true" />
     <include file="053-create-gym.xml"                       relativeToChangelogFile="true" />
+    <include file="054-alter-plano-treino-personal.xml"      relativeToChangelogFile="true" />
 </databaseChangeLog>

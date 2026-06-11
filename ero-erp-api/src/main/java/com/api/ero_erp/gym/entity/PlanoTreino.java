@@ -2,7 +2,7 @@ package com.api.ero_erp.gym.entity;
 
 import com.api.ero_erp.baseentity.BaseEntity;
 import com.api.ero_erp.cliente.entity.Cliente;
-import com.api.ero_erp.emitente.entity.Emitente;
+import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,8 +29,8 @@ public class PlanoTreino extends BaseEntity {
     private Pessoa pessoa;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "emitente_id")
-    private Emitente emitente;
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
 
     @Column(name = "nome", nullable = false, length = 200)
     private String nome;

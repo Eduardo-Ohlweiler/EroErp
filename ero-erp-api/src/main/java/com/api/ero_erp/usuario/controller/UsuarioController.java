@@ -67,6 +67,24 @@ public class UsuarioController {
         return usuarioService.select(clienteId, nome);
     }
 
+    @Operation(summary = "Select de usuários do cliente logado", description = "Retorna usuários ativos do cliente logado para uso em combos")
+    @GetMapping("/select-personal")
+    @PreAuthorize("isAuthenticated()")
+    public List<UsuarioResponseDto> selectPersonal(
+            @RequestParam(required = false) String nome
+    ) {
+        return usuarioService.selectByClienteLogado(nome);
+    }
+
+    @Operation(summary = "Busca usuário do cliente logado por ID", description = "Usado pelo TDbCombo para carregar o label do valor inicial")
+    @GetMapping("/select-personal/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UsuarioResponseDto> selectPersonalById(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(usuarioService.findByIdResponse(id));
+    }
+
     @Operation(summary = "Select de usuarios", description = "Retorna usuario selecionado no combo")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Retornada com sucesso")

@@ -2,8 +2,8 @@ package com.api.ero_erp.gym.service;
 
 import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.config.SecurityUtils;
-import com.api.ero_erp.emitente.entity.Emitente;
-import com.api.ero_erp.emitente.service.EmitenteService;
+import com.api.ero_erp.usuario.entity.Usuario;
+import com.api.ero_erp.usuario.service.UsuarioService;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.gym.dto.*;
 import com.api.ero_erp.gym.entity.Exercicio;
@@ -27,7 +27,7 @@ public class PlanoTreinoService {
     private final ItemPlanoTreinoRepository  itemRepository;
     private final ExercicioService           exercicioService;
     private final PessoaService              pessoaService;
-    private final EmitenteService            emitenteService;
+    private final UsuarioService             usuarioService;
     private final SecurityUtils              securityUtils;
     private final WhatsappNotificationService notificationService;
 
@@ -36,7 +36,7 @@ public class PlanoTreinoService {
             ItemPlanoTreinoRepository  itemRepository,
             ExercicioService           exercicioService,
             PessoaService              pessoaService,
-            EmitenteService            emitenteService,
+            UsuarioService             usuarioService,
             SecurityUtils              securityUtils,
             WhatsappNotificationService notificationService
     ) {
@@ -44,7 +44,7 @@ public class PlanoTreinoService {
         this.itemRepository      = itemRepository;
         this.exercicioService    = exercicioService;
         this.pessoaService       = pessoaService;
-        this.emitenteService     = emitenteService;
+        this.usuarioService      = usuarioService;
         this.securityUtils       = securityUtils;
         this.notificationService = notificationService;
     }
@@ -72,14 +72,14 @@ public class PlanoTreinoService {
     public PlanoTreinoResponseDto create(PlanoTreinoCreateDto dto) {
         Cliente  cliente  = securityUtils.getClienteLogado();
         Pessoa   pessoa   = pessoaService.findById(dto.pessoaId());
-        Emitente emitente = dto.emitenteId() != null
-                ? emitenteService.findById(dto.emitenteId())
+        Usuario usuario = dto.usuarioId() != null
+                ? usuarioService.findByIdAndClienteId(dto.usuarioId())
                 : null;
 
         PlanoTreino plano = new PlanoTreino();
         plano.setCliente(cliente);
         plano.setPessoa(pessoa);
-        plano.setEmitente(emitente);
+        plano.setUsuario(usuario);
         plano.setNome(dto.nome());
         plano.setDataInicio(dto.dataInicio());
         plano.setDataFim(dto.dataFim());
@@ -100,9 +100,9 @@ public class PlanoTreinoService {
         if (dto.pessoaId() != null) {
             plano.setPessoa(pessoaService.findById(dto.pessoaId()));
         }
-        if (dto.emitenteId() != null) {
-            plano.setEmitente(emitenteService.findById(dto.emitenteId()));
-        }
+        plano.setUsuario(dto.usuarioId() != null
+                ? usuarioService.findByIdAndClienteId(dto.usuarioId())
+                : null);
         if (dto.nome()       != null && !dto.nome().isBlank()) plano.setNome(dto.nome());
         if (dto.dataInicio() != null)                           plano.setDataInicio(dto.dataInicio());
         if (dto.dataFim()    != null)                           plano.setDataFim(dto.dataFim());

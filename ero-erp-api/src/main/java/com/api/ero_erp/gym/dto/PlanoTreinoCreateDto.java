@@ -13,8 +13,8 @@ public record PlanoTreinoCreateDto(
         @NotNull(message = "Pessoa é obrigatória")
         Long pessoaId,
 
-        @Schema(description = "ID do emitente (personal/responsável) — opcional")
-        Long emitenteId,
+        @Schema(description = "ID do usuário (personal/responsável) — opcional")
+        Long usuarioId,
 
         @Schema(description = "Nome do plano de treino", example = "Treino A — Hipertrofia")
         @NotBlank(message = "Nome é obrigatório")

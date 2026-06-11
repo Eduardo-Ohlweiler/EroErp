@@ -19,3 +19,7 @@ export function displayEmitente(item: Record<string, unknown>): string {
     const doc  = item.pessoaDocumento ? String(item.pessoaDocumento) : null
     return doc ? `${nome}  (${formatarDocumento(doc)})` : nome
 }
+
+export function displayUsuario(item: Record<string, unknown>): string {
+    return String(item.nome ?? "")
+}

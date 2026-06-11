@@ -10,8 +10,8 @@ public record PlanoTreinoUpdateDto(
         @Schema(description = "ID da pessoa (aluno/paciente)")
         Long pessoaId,
 
-        @Schema(description = "ID do emitente (personal/responsável) — null remove o emitente")
-        Long emitenteId,
+        @Schema(description = "ID do usuário (personal/responsável) — null remove o personal")
+        Long usuarioId,
 
         @Schema(description = "Nome do plano de treino")
         @Size(max = 200, message = "Nome deve ter no máximo 200 caracteres")

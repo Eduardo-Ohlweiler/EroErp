@@ -20,8 +20,8 @@ export interface PlanoTreinoResponse {
   id:           number
   pessoaId:     number
   pessoaNome:   string
-  emitenteId:   number | null
-  emitenteNome: string | null
+  usuarioId:   number | null
+  usuarioNome: string | null
   nome:         string
   dataInicio:   string
   dataFim:      string | null

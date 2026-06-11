@@ -60,6 +60,15 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
+    public List<UsuarioResponseDto> selectByClienteLogado(String nome) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        return usuarioRepository.findForSelect(clienteId, nome)
+                .stream()
+                .map(usuarioMapper::toDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Page<UsuarioResponseDto> getAll(Pageable pageable, Long clienteId, String nome, String email) {
         return usuarioRepository.findAllWithFilters(pageable, clienteId, nome, email)
                 .map(usuarioMapper::toDTO);

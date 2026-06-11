@@ -23,7 +23,7 @@ import { TWindow }                                                 from "../../c
 import { TDataGrid }                                               from "../../components/tdatagrid"
 import { useMessage }                                              from "../../hooks/useMessage"
 import { useQuestion }                                             from "../../hooks/useQuestion"
-import { displayPessoa, displayEmitente }                         from "../../utils/pessoas"
+import { displayPessoa, displayUsuario }                          from "../../utils/pessoas"
 import {
   DIAS_SEMANA,
   DIA_SEMANA_LABEL,
@@ -95,7 +95,7 @@ export default function PlanoTreinoForm() {
   const [currentId,   setCurrentId]   = useState<string | undefined>(idParam)
   const [selectedDay, setSelectedDay] = useState<DiaSemanaGym>("SEGUNDA")
   const [pessoaId,    setPessoaId]    = useState("")
-  const [emitenteId,  setEmitenteId]  = useState("")
+  const [usuarioId,   setUsuarioId]   = useState("")
   const [exercicioOptions, setExercicioOptions] = useState<{ value: string; label: string }[]>([])
   const [itemModal,   setItemModal]   = useState<ItemModal>(emptyItem)
 
@@ -131,7 +131,7 @@ export default function PlanoTreinoForm() {
   function loadPlano(data: PlanoTreinoResponse) {
     setPlano(data)
     setPessoaId(String(data.pessoaId))
-    setEmitenteId(data.emitenteId ? String(data.emitenteId) : "")
+    setUsuarioId(data.usuarioId ? String(data.usuarioId) : "")
     setFormKey(k => k + 1)
   }
 
@@ -144,7 +144,7 @@ export default function PlanoTreinoForm() {
     setCurrentId(undefined)
     setPlano(null)
     setPessoaId("")
-    setEmitenteId("")
+    setUsuarioId("")
     setSelectedDay("SEGUNDA")
     setFormKey(k => k + 1)
   }
@@ -161,7 +161,7 @@ export default function PlanoTreinoForm() {
       const payload = {
         nome:       data.nome.trim(),
         pessoaId:   Number(pessoaId),
-        emitenteId: emitenteId ? Number(emitenteId) : null,
+        usuarioId: usuarioId ? Number(usuarioId) : null,
         dataInicio: data.dataInicio,
         dataFim:    data.dataFim || null,
         observacao: data.observacao?.trim() || null,
@@ -270,7 +270,7 @@ export default function PlanoTreinoForm() {
     return {
       nome:         p.nome,
       pessoaNome:   p.pessoaNome,
-      emitenteNome: p.emitenteNome ?? undefined,
+      emitenteNome: p.usuarioNome ?? undefined,
       dataInicio:   formatarDataBR(p.dataInicio),
       dataFim:      p.dataFim ? formatarDataBR(p.dataFim) : undefined,
       observacao:   p.observacao ?? undefined,
@@ -372,16 +372,16 @@ export default function PlanoTreinoForm() {
             onChange     ={(val) => setPessoaId(val)}
           />
           <TDbCombo
-            name         ="emitenteId"
+            name         ="usuarioId"
             label        ="Personal / Responsável (opcional)"
-            url          ="/emitentes/select"
+            url          ="/usuarios/select-personal"
             valueField   ="id"
-            displayField ={displayEmitente}
+            displayField ={displayUsuario}
             searchField  ="nome"
             placeholder  ="Selecione o responsável..."
             width        ="100%"
-            value        ={emitenteId}
-            onChange     ={(val) => setEmitenteId(val)}
+            value        ={usuarioId}
+            onChange     ={(val) => setUsuarioId(val)}
           />
           <TDate
             name        ="dataInicio"
