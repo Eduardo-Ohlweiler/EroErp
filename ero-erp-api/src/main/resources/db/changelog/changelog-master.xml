@@ -59,4 +59,7 @@
     <include file="052-insert-roles-gym.xml"                 relativeToChangelogFile="true" />
     <include file="053-create-gym.xml"                       relativeToChangelogFile="true" />
     <include file="054-alter-plano-treino-personal.xml"      relativeToChangelogFile="true" />
+    <include file="055-create-avaliacao-fisica.xml"          relativeToChangelogFile="true" />
+    <include file="056-insert-roles-avaliacao-fisica.xml"    relativeToChangelogFile="true" />
+    <include file="057-alter-avaliacao-fisica-usuario.xml"   relativeToChangelogFile="true" />
 </databaseChangeLog>

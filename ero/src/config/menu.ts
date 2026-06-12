@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -172,6 +172,19 @@ export const menu: MenuItem[] = [
             roles: ["SUPERADMIN", "ADMIN", "EXERCICIO", "EXERCICIO_GET"],
           },
         ],
+      },
+    ],
+  },
+  {
+    label: "Avaliação Física",
+    icon:  FaRuler,
+    roles: ["SUPERADMIN", "ADMIN", "AVALIACAO_FISICA", "AVALIACAO_FISICA_GET"],
+    children: [
+      {
+        label: "Avaliações",
+        path:  "/avaliacao/avaliacoes-fisicas",
+        icon:  FaClipboardList,
+        roles: ["SUPERADMIN", "ADMIN", "AVALIACAO_FISICA", "AVALIACAO_FISICA_GET"],
       },
     ],
   },

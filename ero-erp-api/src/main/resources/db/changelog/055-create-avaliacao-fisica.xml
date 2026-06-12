@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="055-create-avaliacao-fisica" author="eduardo">
+
+        <!-- ── AVALIACAO_FISICA ───────────────────────────────────────────── -->
+        <createTable tableName="avaliacao_fisica">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="emitente_id" type="BIGINT"/>
+
+            <column name="data_avaliacao" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Dados antropométricos -->
+            <column name="peso" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="altura" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="imc" type="DECIMAL(5,2)"/>
+
+            <column name="idade" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- M | F -->
+            <column name="sexo" type="VARCHAR(1)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- EMAGRECIMENTO | GANHO_MASSA_MUSCULAR | DEFINICAO_MUSCULAR |
+                 MANUTENCAO_PESO | SAUDE_BEM_ESTAR | REABILITACAO | PERFORMANCE_ESPORTIVA -->
+            <column name="objetivo" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="meta_descricao" type="TEXT"/>
+            <column name="peso_alvo" type="DECIMAL(5,2)"/>
+            <column name="observacoes" type="TEXT"/>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_fisica" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_avaliacao_fisica_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_fisica" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_avaliacao_fisica_pessoa"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_fisica" baseColumnNames="emitente_id"
+                referencedTableName="emitente" referencedColumnNames="id"
+                constraintName="fk_avaliacao_fisica_emitente"
+                onDelete="SET NULL"/>
+
+        <createIndex tableName="avaliacao_fisica" indexName="idx_avaliacao_fisica_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="avaliacao_fisica" indexName="idx_avaliacao_fisica_pessoa_id">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <!-- ── MEDIDA_CORPORAL ─────────────────────────────────────────────── -->
+        <createTable tableName="medida_corporal">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="avaliacao_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- PESCOCO | OMBRO | TORAX | CINTURA | ABDOMEN | QUADRIL |
+                 BRACO_ESQUERDO | BRACO_DIREITO | ANTEBRACO_ESQUERDO | ANTEBRACO_DIREITO |
+                 COXA_ESQUERDA | COXA_DIREITA | PANTURRILHA_ESQUERDA | PANTURRILHA_DIREITA -->
+            <column name="ponto_medicao" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="valor_cm" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="medida_corporal" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_medida_corporal_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="medida_corporal" baseColumnNames="avaliacao_id"
+                referencedTableName="avaliacao_fisica" referencedColumnNames="id"
+                constraintName="fk_medida_corporal_avaliacao"
+                onDelete="CASCADE"/>
+
+        <createIndex tableName="medida_corporal" indexName="idx_medida_corporal_avaliacao_id">
+            <column name="avaliacao_id"/>
+        </createIndex>
+
+        <!-- ── COMPOSICAO_CORPORAL ─────────────────────────────────────────── -->
+        <createTable tableName="composicao_corporal">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="avaliacao_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="percentual_gordura" type="DECIMAL(5,2)"/>
+            <column name="massa_muscular_kg" type="DECIMAL(5,2)"/>
+            <column name="massa_gorda_kg" type="DECIMAL(5,2)"/>
+            <column name="massa_ossea_kg" type="DECIMAL(5,2)"/>
+            <column name="agua_corporal_percentual" type="DECIMAL(5,2)"/>
+            <column name="metabolismo_basal" type="INTEGER"/>
+            <column name="idade_metabolica" type="INTEGER"/>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="composicao_corporal" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_composicao_corporal_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="composicao_corporal" baseColumnNames="avaliacao_id"
+                referencedTableName="avaliacao_fisica" referencedColumnNames="id"
+                constraintName="fk_composicao_corporal_avaliacao"
+                onDelete="CASCADE"/>
+
+    </changeSet>
+
+</databaseChangeLog>

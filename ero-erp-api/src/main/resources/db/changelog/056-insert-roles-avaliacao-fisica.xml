@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="056-insert-roles-avaliacao-fisica" author="eduardo">
+
+        <insert tableName="role">
+            <column name="nome" value="AVALIACAO_FISICA"/>
+            <column name="descricao" value="Permissão geral para avaliação física"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="AVALIACAO_FISICA_GET"/>
+            <column name="descricao" value="Permissão para consultar avaliação física"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

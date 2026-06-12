@@ -60,6 +60,9 @@ import PlanoTreinoList                           from "../pages/gym/PlanoTreinoL
 import PlanoTreinoForm                           from "../pages/gym/PlanoTreinoForm"
 import ExercicioList                             from "../pages/gym/ExercicioList"
 import ExercicioForm                             from "../pages/gym/ExercicioForm"
+import AvaliacaoFisicaList                       from "../pages/avaliacao/AvaliacaoFisicaList"
+import AvaliacaoFisicaForm                       from "../pages/avaliacao/AvaliacaoFisicaForm"
+import AvaliacaoFisicaEvolucao                   from "../pages/avaliacao/AvaliacaoFisicaEvolucao"
 import ContaFinanceiraFormList                   from "../pages/financeiro/auxiliares/ContaFinanceiraFormList"
 import TipoCobrancaFormList                      from "../pages/financeiro/auxiliares/TipoCobrancaFormList"
 import FormaPagamentoFormList                    from "../pages/financeiro/auxiliares/FormaPagamentoFormList"
@@ -206,6 +209,14 @@ export function Router() {
               <Route path="/gym/exercicios"            element={<ExercicioList />} />
               <Route path="/gym/exercicios/novo"       element={<ExercicioForm />} />
               <Route path="/gym/exercicios/:id"        element={<ExercicioForm />} />
+            </Route>
+
+            {/* ── AVALIAÇÃO FÍSICA ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "AVALIACAO_FISICA", "AVALIACAO_FISICA_GET"]} />}>
+              <Route path="/avaliacao/avaliacoes-fisicas"                         element={<AvaliacaoFisicaList />} />
+              <Route path="/avaliacao/avaliacoes-fisicas/novo"                    element={<AvaliacaoFisicaForm />} />
+              <Route path="/avaliacao/avaliacoes-fisicas/evolucao/:pessoaId"      element={<AvaliacaoFisicaEvolucao />} />
+              <Route path="/avaliacao/avaliacoes-fisicas/:id"                     element={<AvaliacaoFisicaForm />} />
             </Route>
 
             {/* ── FINANCEIRO ── */}
