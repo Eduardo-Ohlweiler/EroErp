@@ -345,7 +345,7 @@ export default function AvaliacaoFisicaForm() {
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div>
               <p className="text-xs text-gray-500 mb-2">Circunferências em centímetros (cm)</p>
-              <div className="grid grid-cols-3 gap-x-3 gap-y-2" style={{ maxWidth: 380 }}>
+              <div className="grid grid-cols-3 gap-x-3 gap-y-2" style={{ maxWidth: 880 }}>
                 {PONTOS_ORDENADOS.map(ponto => (
                   <TEntry
                     key         ={ponto}
@@ -358,7 +358,7 @@ export default function AvaliacaoFisicaForm() {
                 ))}
               </div>
             </div>
-            <div className="w-full md:flex-1" style={{ maxWidth: 280 }}>
+            <div className="w-full md:flex-1" style={{ maxWidth: 780 }}>
               <TBodyChart
                 medidas={medidasParaChart}
                 sexo   ={sexoVal}
