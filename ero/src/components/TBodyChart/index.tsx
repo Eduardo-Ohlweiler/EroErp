@@ -130,9 +130,9 @@ export default function TBodyChart({ medidas, titulo, medidasBase }: Props) {
       {titulo && (
         <span className="text-xs font-semibold text-blue-300">{titulo}</span>
       )}
-      <div className="w-full" style={{ maxWidth: 280 }}>
+      <div className="w-full" style={{ maxWidth: 360 }}>
         <svg
-          viewBox="0 0 280 540"
+          viewBox="-50 0 380 540"
           style={{ width: '100%', height: 'auto', overflow: 'visible' }}
         >
           <defs>
@@ -160,24 +160,24 @@ export default function TBodyChart({ medidas, titulo, medidasBase }: Props) {
             const base = mapaBase?.get(ponto)
 
             if (!val) {
-              return <circle key={ponto} cx={x} cy={y} r={2} fill="#475569" opacity={0.5} />
+              return <circle key={ponto} cx={x} cy={y} r={3} fill="#475569" opacity={0.5} />
             }
 
             const clr     = dotColor(val, base)
-            const len     = 18
+            const len     = 24
             const x2      = side === 'R' ? x + len  : x - len
-            const tX      = side === 'R' ? x2 + 3   : x2 - 3
+            const tX      = side === 'R' ? x2 + 4   : x2 - 4
             const anchor  = side === 'R' ? 'start'   : 'end'
             const diffStr = (base != null && val !== base) ? ` → ${val.toFixed(1)}` : null
 
             return (
               <g key={ponto}>
-                <circle cx={x} cy={y} r={3} fill={clr} />
-                <line x1={x} y1={y} x2={x2} y2={y} stroke={clr} strokeWidth={1} opacity={0.8} />
-                <text x={tX} y={y - 3} fontSize={7.5} fontWeight="700" fill={clr} textAnchor={anchor} fontFamily="system-ui,sans-serif">
+                <circle cx={x} cy={y} r={4} fill={clr} />
+                <line x1={x} y1={y} x2={x2} y2={y} stroke={clr} strokeWidth={1.2} opacity={0.8} />
+                <text x={tX} y={y - 4} fontSize={13} fontWeight="700" fill={clr} textAnchor={anchor} fontFamily="system-ui,sans-serif">
                   {PONTO_LABELS[ponto]}
                 </text>
-                <text x={tX} y={y + 8} fontSize={7.5} fill={clr} textAnchor={anchor} opacity={0.9} fontFamily="system-ui,sans-serif">
+                <text x={tX} y={y + 11} fontSize={12} fill={clr} textAnchor={anchor} opacity={0.9} fontFamily="system-ui,sans-serif">
                   {base != null && diffStr ? `${base.toFixed(1)}${diffStr}cm` : `${val.toFixed(1)}cm`}
                 </text>
               </g>
