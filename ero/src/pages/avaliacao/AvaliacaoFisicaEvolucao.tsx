@@ -176,6 +176,7 @@ export default function AvaliacaoFisicaEvolucao() {
             <TCol flex={1}>
               <TBodyChart
                 medidas    ={primeira.medidas}
+                sexo       ={primeira.sexo}
                 titulo     ={`Inicial — ${formatarData(primeira.dataAvaliacao)}`}
               />
             </TCol>
@@ -200,6 +201,7 @@ export default function AvaliacaoFisicaEvolucao() {
               <TBodyChart
                 medidas    ={ultima.medidas}
                 medidasBase={primeira.medidas}
+                sexo       ={ultima.sexo}
                 titulo     ={`Atual — ${formatarData(ultima.dataAvaliacao)}`}
               />
             </TCol>

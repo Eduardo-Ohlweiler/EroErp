@@ -73,6 +73,7 @@ export default function AvaliacaoFisicaForm() {
   const [usuarioId,  setUsuarioId]  = useState("")
   const [pesoVal,    setPesoVal]    = useState("")
   const [alturaVal,  setAlturaVal]  = useState("")
+  const [sexoVal,    setSexoVal]    = useState("M")
   const [medidas,    setMedidas]    = useState<MedidaState>({})
   const [composicao, setComposicao] = useState<ComposicaoState>(emptyComposicao)
   const [imcCalc,    setImcCalc]    = useState<string>("")
@@ -92,6 +93,7 @@ export default function AvaliacaoFisicaForm() {
       setPesoVal(String(a.peso))
       setAlturaVal(String(a.altura))
       if (a.imc) setImcCalc(String(a.imc))
+      if (a.sexo) setSexoVal(a.sexo)
 
       const medidasMap: MedidaState = {}
       a.medidas.forEach(m => { medidasMap[m.pontoMedicao] = String(m.valorCm) })
@@ -219,8 +221,8 @@ export default function AvaliacaoFisicaForm() {
 
         {/* ── Dados Básicos ─────────────────────────────────────────────── */}
         <TPanel title="Dados Básicos">
-          <TRow>
-            <TCol flex={3}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-2">
               <TDbCombo
                 name        ="pessoaId"
                 label       ="Paciente / Aluno"
@@ -233,8 +235,8 @@ export default function AvaliacaoFisicaForm() {
                 onChange    ={(v) => setPessoaId(v)}
                 placeholder ="Buscar paciente..."
               />
-            </TCol>
-            <TCol flex={3}>
+            </div>
+            <div className="lg:col-span-2">
               <TDbCombo
                 name        ="usuarioId"
                 label       ="Profissional (Nutricionista / Personal)"
@@ -246,64 +248,53 @@ export default function AvaliacaoFisicaForm() {
                 onChange    ={(v) => setUsuarioId(v)}
                 placeholder ="Selecionar profissional..."
               />
-            </TCol>
-            <TCol flex={2}>
+            </div>
+            <div>
               <TDate
                 name        ="dataAvaliacao"
                 label       ="Data da Avaliação"
                 required
                 defaultValue={avaliacao?.dataAvaliacao ?? ""}
               />
-            </TCol>
-          </TRow>
-          <TRow>
-            <TCol flex={1}>
-              <TEntry
-                name        ="peso"
-                label       ="Peso (kg)"
-                placeholder ="Ex: 75.5"
-                required
-                defaultValue={pesoVal}
-                onChange    ={handlePesoChange}
-              />
-            </TCol>
-            <TCol flex={1}>
-              <TEntry
-                name        ="altura"
-                label       ="Altura (cm)"
-                placeholder ="Ex: 170"
-                required
-                defaultValue={alturaVal}
-                onChange    ={handleAlturaChange}
-              />
-            </TCol>
-            <TCol flex={1}>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-(--text-secondary)">IMC (calculado)</label>
-                <div className="flex items-center h-9.5 bg-(--bg-input) border border-(--border) rounded-md px-3 text-sm text-(--text-primary) opacity-70 select-none">
-                  {imcCalc || "—"}
-                </div>
+            </div>
+            <TEntry
+              name        ="peso"
+              label       ="Peso (kg)"
+              placeholder ="Ex: 75.5"
+              required
+              defaultValue={pesoVal}
+              onChange    ={handlePesoChange}
+            />
+            <TEntry
+              name        ="altura"
+              label       ="Altura (cm)"
+              placeholder ="Ex: 170"
+              required
+              defaultValue={alturaVal}
+              onChange    ={handleAlturaChange}
+            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-(--text-secondary)">IMC (calculado)</label>
+              <div className="flex items-center h-9.5 bg-(--bg-input) border border-(--border) rounded-md px-3 text-sm text-(--text-primary) opacity-70 select-none">
+                {imcCalc || "—"}
               </div>
-            </TCol>
-            <TCol flex={1}>
-              <TEntry
-                name        ="idade"
-                label       ="Idade (anos)"
-                placeholder ="Ex: 30"
-                required
-                defaultValue={avaliacao?.idade ? String(avaliacao.idade) : ""}
-              />
-            </TCol>
-            <TCol flex={1}>
-              <TCombo
-                name        ="sexo"
-                label       ="Sexo"
-                options     ={SEXO_OPTIONS}
-                required
-                defaultValue={avaliacao?.sexo ?? ""}
-              />
-            </TCol>
-          </TRow>
+            </div>
+            <TEntry
+              name        ="idade"
+              label       ="Idade (anos)"
+              placeholder ="Ex: 30"
+              required
+              defaultValue={avaliacao?.idade ? String(avaliacao.idade) : ""}
+            />
+            <TCombo
+              name        ="sexo"
+              label       ="Sexo"
+              options     ={SEXO_OPTIONS}
+              required
+              defaultValue={avaliacao?.sexo ?? ""}
+              onChange    ={(v) => setSexoVal(v)}
+            />
+          </div>
         </TPanel>
 
         {/* ── Objetivo e Meta ───────────────────────────────────────────── */}
@@ -351,27 +342,26 @@ export default function AvaliacaoFisicaForm() {
 
         {/* ── Medidas Corporais ─────────────────────────────────────────── */}
         <TPanel title="Medidas Corporais">
-          <div className="flex gap-6 flex-wrap">
-            <div className="flex-1 min-w-70">
-              <p className="text-xs text-gray-500 mb-3">Informe as circunferências em centímetros (cm)</p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          <div className="flex flex-col md:flex-row gap-6 items-start">
+            <div>
+              <p className="text-xs text-gray-500 mb-2">Circunferências em centímetros (cm)</p>
+              <div className="grid grid-cols-3 gap-x-3 gap-y-2" style={{ maxWidth: 380 }}>
                 {PONTOS_ORDENADOS.map(ponto => (
                   <TEntry
                     key         ={ponto}
                     name        ={`medida_${ponto}`}
                     label       ={PONTO_LABELS[ponto]}
                     placeholder ="cm"
-                    width       ="100%"
                     defaultValue={medidas[ponto] ?? ""}
                     onChange    ={(v) => handleMedidaChange(ponto, v)}
                   />
                 ))}
               </div>
             </div>
-            <div className="flex flex-col items-center justify-start pt-6 min-w-60">
+            <div className="w-full md:flex-1" style={{ maxWidth: 280 }}>
               <TBodyChart
                 medidas={medidasParaChart}
-                titulo ="Visualização Corporal"
+                sexo   ={sexoVal}
               />
             </div>
           </div>
@@ -380,74 +370,57 @@ export default function AvaliacaoFisicaForm() {
         {/* ── Bioimpedância ─────────────────────────────────────────────── */}
         <TPanel title="Composição Corporal (Bioimpedância)">
           <p className="text-xs text-gray-500">Dados opcionais da avaliação de bioimpedância</p>
-          <TRow>
-            <TCol flex={1}>
-              <TEntry
-                name        ="percGordura"
-                label       ="% Gordura Corporal"
-                placeholder ="Ex: 22.5"
-                defaultValue={composicao.percentualGordura}
-                onChange    ={(v) => setComposicao(p => ({ ...p, percentualGordura: v }))}
-              />
-            </TCol>
-            <TCol flex={1}>
-              <TEntry
-                name        ="massaMuscular"
-                label       ="Massa Muscular (kg)"
-                placeholder ="Ex: 35.2"
-                defaultValue={composicao.massaMuscularKg}
-                onChange    ={(v) => setComposicao(p => ({ ...p, massaMuscularKg: v }))}
-              />
-            </TCol>
-            <TCol flex={1}>
-              <TEntry
-                name        ="massaGorda"
-                label       ="Massa Gorda (kg)"
-                placeholder ="Ex: 18.1"
-                defaultValue={composicao.massaGordaKg}
-                onChange    ={(v) => setComposicao(p => ({ ...p, massaGordaKg: v }))}
-              />
-            </TCol>
-            <TCol flex={1}>
-              <TEntry
-                name        ="massaOssea"
-                label       ="Massa Óssea (kg)"
-                placeholder ="Ex: 3.4"
-                defaultValue={composicao.massaOsseaKg}
-                onChange    ={(v) => setComposicao(p => ({ ...p, massaOsseaKg: v }))}
-              />
-            </TCol>
-          </TRow>
-          <TRow>
-            <TCol flex={1}>
-              <TEntry
-                name        ="aguaCorporal"
-                label       ="Água Corporal (%)"
-                placeholder ="Ex: 55.0"
-                defaultValue={composicao.aguaCorporalPercentual}
-                onChange    ={(v) => setComposicao(p => ({ ...p, aguaCorporalPercentual: v }))}
-              />
-            </TCol>
-            <TCol flex={1}>
-              <TEntry
-                name        ="metabolismoBasal"
-                label       ="Metabolismo Basal (kcal)"
-                placeholder ="Ex: 1650"
-                defaultValue={composicao.metabolismoBasal}
-                onChange    ={(v) => setComposicao(p => ({ ...p, metabolismoBasal: v }))}
-              />
-            </TCol>
-            <TCol flex={1}>
-              <TEntry
-                name        ="idadeMetabolica"
-                label       ="Idade Metabólica (anos)"
-                placeholder ="Ex: 28"
-                defaultValue={composicao.idadeMetabolica}
-                onChange    ={(v) => setComposicao(p => ({ ...p, idadeMetabolica: v }))}
-              />
-            </TCol>
-            <TCol flex={1}><span /></TCol>
-          </TRow>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <TEntry
+              name        ="percGordura"
+              label       ="% Gordura Corporal"
+              placeholder ="Ex: 22.5"
+              defaultValue={composicao.percentualGordura}
+              onChange    ={(v) => setComposicao(p => ({ ...p, percentualGordura: v }))}
+            />
+            <TEntry
+              name        ="massaMuscular"
+              label       ="Massa Muscular (kg)"
+              placeholder ="Ex: 35.2"
+              defaultValue={composicao.massaMuscularKg}
+              onChange    ={(v) => setComposicao(p => ({ ...p, massaMuscularKg: v }))}
+            />
+            <TEntry
+              name        ="massaGorda"
+              label       ="Massa Gorda (kg)"
+              placeholder ="Ex: 18.1"
+              defaultValue={composicao.massaGordaKg}
+              onChange    ={(v) => setComposicao(p => ({ ...p, massaGordaKg: v }))}
+            />
+            <TEntry
+              name        ="massaOssea"
+              label       ="Massa Óssea (kg)"
+              placeholder ="Ex: 3.4"
+              defaultValue={composicao.massaOsseaKg}
+              onChange    ={(v) => setComposicao(p => ({ ...p, massaOsseaKg: v }))}
+            />
+            <TEntry
+              name        ="aguaCorporal"
+              label       ="Água Corporal (%)"
+              placeholder ="Ex: 55.0"
+              defaultValue={composicao.aguaCorporalPercentual}
+              onChange    ={(v) => setComposicao(p => ({ ...p, aguaCorporalPercentual: v }))}
+            />
+            <TEntry
+              name        ="metabolismoBasal"
+              label       ="Metabolismo Basal (kcal)"
+              placeholder ="Ex: 1650"
+              defaultValue={composicao.metabolismoBasal}
+              onChange    ={(v) => setComposicao(p => ({ ...p, metabolismoBasal: v }))}
+            />
+            <TEntry
+              name        ="idadeMetabolica"
+              label       ="Idade Metabólica (anos)"
+              placeholder ="Ex: 28"
+              defaultValue={composicao.idadeMetabolica}
+              onChange    ={(v) => setComposicao(p => ({ ...p, idadeMetabolica: v }))}
+            />
+          </div>
         </TPanel>
 
         <TFormFooter>
