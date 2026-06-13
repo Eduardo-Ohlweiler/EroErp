@@ -38,17 +38,17 @@ public class FinanceiroDashboardService {
     private final SecurityUtils securityUtils;
 
     public FinanceiroDashboardService(
-            ParcelaContaReceberRepository parcelaReceberRepo,
-            ParcelaContaPagarRepository parcelaContaPagarRepo,
-            ContaFinanceiraRepository contaFinanceiraRepo,
-            LancamentoFinanceiroRepository lancamentoRepo,
-            SecurityUtils securityUtils
+            ParcelaContaReceberRepository   parcelaReceberRepo,
+            ParcelaContaPagarRepository     parcelaContaPagarRepo,
+            ContaFinanceiraRepository       contaFinanceiraRepo,
+            LancamentoFinanceiroRepository  lancamentoRepo,
+            SecurityUtils                   securityUtils
     ) {
-        this.parcelaReceberRepo = parcelaReceberRepo;
-        this.parcelaContaPagarRepo = parcelaContaPagarRepo;
-        this.contaFinanceiraRepo = contaFinanceiraRepo;
-        this.lancamentoRepo = lancamentoRepo;
-        this.securityUtils = securityUtils;
+        this.parcelaReceberRepo     = parcelaReceberRepo;
+        this.parcelaContaPagarRepo  = parcelaContaPagarRepo;
+        this.contaFinanceiraRepo    = contaFinanceiraRepo;
+        this.lancamentoRepo         = lancamentoRepo;
+        this.securityUtils          = securityUtils;
     }
 
     @Transactional(readOnly = true)
@@ -56,18 +56,18 @@ public class FinanceiroDashboardService {
         Long clienteId = securityUtils.getClienteIdLogado();
         LocalDate hoje = LocalDate.now();
 
-        List<ParcelaContaReceber> todasReceber = parcelaReceberRepo.findForPagarContas(clienteId, null, null, null, null, null);
-        List<ParcelaContaPagar> todasPagar = parcelaContaPagarRepo.findForPagarContas(clienteId, null, null, null, null, null);
+        List<ParcelaContaReceber> todasReceber = parcelaReceberRepo.findForPagarContas(clienteId,    null, null, null, null, null);
+        List<ParcelaContaPagar>   todasPagar   = parcelaContaPagarRepo.findForPagarContas(clienteId, null, null, null, null, null);
 
         // Cards - pendentes (valor face)
         BigDecimal pendenteReceber = todasReceber.stream()
                 .filter(p -> p.getStatus() == StatusConta.ABERTO)
-                .map(p -> p.getValor() != null ? p.getValor() : BigDecimal.ZERO)
+                .map(   p -> p.getValor()  != null ? p.getValor() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal pendenteAtrasadoReceber = todasReceber.stream()
                 .filter(p -> p.getStatus() == StatusConta.ABERTO && p.getDataVencimento().isBefore(hoje))
-                .map(p -> p.getValor() != null ? p.getValor() : BigDecimal.ZERO)
+                .map(   p -> p.getValor()  != null ? p.getValor() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal pendentePagar = todasPagar.stream()

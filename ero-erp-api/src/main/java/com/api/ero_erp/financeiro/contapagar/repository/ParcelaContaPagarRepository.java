@@ -45,4 +45,25 @@ public interface ParcelaContaPagarRepository extends JpaRepository<ParcelaContaP
             @Param("dataVencDe") LocalDate dataVencDe,
             @Param("dataVencAte") LocalDate dataVencAte
     );
+
+    @Query("""
+        SELECT p FROM ParcelaContaPagar p
+        JOIN FETCH p.contaPagar c
+        JOIN FETCH c.pessoa pes
+        LEFT JOIN FETCH c.emitente e
+        LEFT JOIN FETCH e.pessoa ep
+        LEFT JOIN FETCH p.formaPagamento
+        LEFT JOIN FETCH p.contaFinanceira
+        WHERE c.cliente.id = :clienteId
+          AND CAST(p.status AS string) = :status
+          AND p.dataVencimento >= :dataInicio
+          AND p.dataVencimento <= :dataFim
+        ORDER BY p.dataVencimento ASC
+    """)
+    List<ParcelaContaPagar> findForDashboard(
+            @Param("clienteId") Long clienteId,
+            @Param("status") String status,
+            @Param("dataInicio") LocalDate dataInicio,
+            @Param("dataFim") LocalDate dataFim
+    );
 }

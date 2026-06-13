@@ -25,6 +25,14 @@ export const menu: MenuItem[] = [
         icon:  FaUniversity,
         roles: ["SUPERADMIN", "ADMIN", "FINANCEIRO", "FINANCEIRO_GET"],
       },
+      {
+        label: "Auxiliar Dashboards",
+        icon:  FaCogs,
+        roles: ["SUPERADMIN", "ADMIN"],
+        children: [
+          { label: "Config. de Pendências", path: "/dashboards/configuracao-pendencias", icon: FaCog },
+        ],
+      },
     ],
   },
   {

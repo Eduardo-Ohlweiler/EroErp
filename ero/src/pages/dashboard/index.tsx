@@ -5,12 +5,17 @@ import { useMessage }                                 from "../../hooks/useMessa
 import type { CompromissoDashboard, PorDiaDto,
                 PorHoraDto, PorPessoaDto }              from "../../types/CompromissoDashboard"
 import type { EstoqueAlertaResponse }                 from "../../types/Estoque"
+import type { PendenciasFinanceirasDto,
+                PendenciaItemDto }                      from "../../types/PendenciasFinanceiras"
 import { TPage }                                      from "../../components/tpage"
 import {
     FaCalendarCheck, FaCalendarTimes, FaCheckCircle,
     FaCalendarDay, FaCalendarWeek, FaUser, FaClock,
     FaExclamationTriangle, FaBoxOpen
 } from "react-icons/fa"
+import {
+    FaMoneyBillWave, FaHandHoldingDollar, FaCircleExclamation
+} from "react-icons/fa6"
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -56,14 +61,50 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     )
 }
 
+function PendenciaRow({ item, tipo, onClick }: { item: PendenciaItemDto; tipo: "PAGAR" | "RECEBER"; onClick: () => void }) {
+    const venc = new Date(item.dataVencimento + "T00:00:00").toLocaleDateString("pt-BR")
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`w-full text-left flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm
+                border transition-colors cursor-pointer
+                ${item.vencida
+                    ? "border-red-200 bg-white dark:bg-red-950/40 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/60"
+                    : "border-orange-200 bg-white dark:bg-orange-950/20 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/40"}`}
+        >
+            <div className="flex flex-col min-w-0 flex-1">
+                <span className="font-medium text-(--text-primary) truncate">{item.pessoaNome}</span>
+                {item.descricao && (
+                    <span className="text-xs text-(--text-muted) truncate">{item.descricao}</span>
+                )}
+            </div>
+            <div className="flex flex-col items-end shrink-0 gap-0.5">
+                <span className="text-xs text-(--text-muted)">
+                    Parc. {item.numeroParcela} · {venc}
+                </span>
+                <span className="text-sm font-semibold text-(--text-primary)">
+                    {Number(item.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </span>
+                {item.vencida && (
+                    <span className="text-xs text-red-500 font-medium">
+                        {item.diasAtraso}d em atraso
+                    </span>
+                )}
+            </div>
+        </button>
+    )
+}
+
 // ── componente principal ───────────────────────────────────────────────────────
 
 export function DashBoard() {
     const navigate             = useNavigate()
     const { showMessage }      = useMessage()
-    const [data,    setData]   = useState<CompromissoDashboard | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [alertas, setAlertas] = useState<EstoqueAlertaResponse[]>([])
+    const [data,       setData]       = useState<CompromissoDashboard | null>(null)
+    const [loading,    setLoading]    = useState(true)
+    const [alertas,    setAlertas]    = useState<EstoqueAlertaResponse[]>([])
+    const [pendencias, setPendencias] = useState<PendenciasFinanceirasDto | null>(null)
 
     useEffect(() => {
         api.get<CompromissoDashboard>("/compromissos/dashboard")
@@ -74,6 +115,10 @@ export function DashBoard() {
         api.get<EstoqueAlertaResponse[]>("/estoque/alertas")
             .then((r) => setAlertas(r.data ?? []))
             .catch(() => { /* silencioso: usuário pode não ter permissão */ })
+
+        api.get<PendenciasFinanceirasDto>("/dashboards/pendencias-financeiras")
+            .then((r) => setPendencias(r.data))
+            .catch((e) => console.error("pendencias-financeiras:", e?.response?.status, e?.response?.data))
     }, []) // eslint-disable-line
 
     if (loading) {
@@ -148,6 +193,107 @@ export function DashBoard() {
                                 </button>
                             )
                         })}
+                    </div>
+                </div>
+            )}
+
+            {/* ── PENDÊNCIAS FINANCEIRAS ───────────────────────────────────── */}
+            {pendencias && (pendencias.contasPagar.length > 0 || pendencias.contasReceber.length > 0) && (
+                <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/20 p-4 mb-6">
+                    <SectionTitle>
+                        <span className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                            <FaCircleExclamation /> Pendências Financeiras
+                        </span>
+                    </SectionTitle>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Contas a Pagar */}
+                        {pendencias.contasPagar.length > 0 && (
+                            <div>
+                                <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                                    <FaMoneyBillWave /> Contas a Pagar ({pendencias.contasPagar.length})
+                                </p>
+                                <div className="flex flex-col gap-1.5">
+                                    {pendencias.contasPagar.map((p: PendenciaItemDto, i: number) => (
+                                        <PendenciaRow
+                                            key={i}
+                                            item={p}
+                                            tipo="PAGAR"
+                                            onClick={() => navigate("/financeiro/pagar-contas", {
+                                                state: {
+                                                    preItem: {
+                                                        tipo:                "PAGAR",
+                                                        parcelaId:           p.parcelaId,
+                                                        numeroParcela:       p.numeroParcela,
+                                                        contaId:             p.contaId,
+                                                        descricao:           p.descricao,
+                                                        emitenteId:          p.emitenteId,
+                                                        emitenteNome:        p.emitenteNome,
+                                                        emitenteDocumento:   null,
+                                                        pessoaId:            p.pessoaId,
+                                                        pessoaNome:          p.pessoaNome,
+                                                        pessoaDocumento:     null,
+                                                        dataVencimento:      p.dataVencimento,
+                                                        valor:               p.valor,
+                                                        formaPagamentoId:    null,
+                                                        formaPagamentoNome:  null,
+                                                        contaFinanceiraId:   null,
+                                                        contaFinanceiraNome: null,
+                                                        status:              "ABERTO",
+                                                        dataPagamento:       null,
+                                                        valorPago:           null,
+                                                    }
+                                                }
+                                            })}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Contas a Receber */}
+                        {pendencias.contasReceber.length > 0 && (
+                            <div>
+                                <p className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2 flex items-center gap-1">
+                                    <FaHandHoldingDollar /> Contas a Receber ({pendencias.contasReceber.length})
+                                </p>
+                                <div className="flex flex-col gap-1.5">
+                                    {pendencias.contasReceber.map((p: PendenciaItemDto, i: number) => (
+                                        <PendenciaRow
+                                            key={i}
+                                            item={p}
+                                            tipo="RECEBER"
+                                            onClick={() => navigate("/financeiro/pagar-contas", {
+                                                state: {
+                                                    preItem: {
+                                                        tipo:                "RECEBER",
+                                                        parcelaId:           p.parcelaId,
+                                                        numeroParcela:       p.numeroParcela,
+                                                        contaId:             p.contaId,
+                                                        descricao:           p.descricao,
+                                                        emitenteId:          p.emitenteId,
+                                                        emitenteNome:        p.emitenteNome,
+                                                        emitenteDocumento:   null,
+                                                        pessoaId:            p.pessoaId,
+                                                        pessoaNome:          p.pessoaNome,
+                                                        pessoaDocumento:     null,
+                                                        dataVencimento:      p.dataVencimento,
+                                                        valor:               p.valor,
+                                                        formaPagamentoId:    null,
+                                                        formaPagamentoNome:  null,
+                                                        contaFinanceiraId:   null,
+                                                        contaFinanceiraNome: null,
+                                                        status:              "ABERTO",
+                                                        dataPagamento:       null,
+                                                        valorPago:           null,
+                                                    }
+                                                }
+                                            })}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

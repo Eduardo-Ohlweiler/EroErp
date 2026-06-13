@@ -874,3 +874,182 @@ export function gerarPdfPlanoTreino(dados: DadosPlanoTreino): string {
 
   return doc.output("datauristring").split(",")[1]
 }
+
+// ── AVALIAÇÃO FÍSICA ───────────────────────────────────────────────────────────
+
+export interface DadosAvaliacaoFisica {
+  pessoaNome:    string
+  usuarioNome:   string | null
+  dataAvaliacao: string
+  peso:          number
+  altura:        number
+  imc:           number | null
+  idade:         number
+  sexo:          string
+  objetivo:      string
+  metaDescricao: string | null
+  pesoAlvo:      number | null
+  observacoes:   string | null
+  medidas:       { label: string; valorCm: number }[]
+  composicao: {
+    percentualGordura:      number | null
+    massaMuscularKg:        number | null
+    massaGordaKg:           number | null
+    massaOsseaKg:           number | null
+    aguaCorporalPercentual: number | null
+    metabolismoBasal:       number | null
+    idadeMetabolica:        number | null
+  } | null
+}
+
+export function gerarPdfAvaliacaoFisica(dados: DadosAvaliacaoFisica): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+  const COR: [number, number, number] = [22, 115, 105]
+
+  let y = faixaTopo(doc, dados.pessoaNome, "AVALIAÇÃO FÍSICA", COR)
+
+  doc.setFontSize(9)
+  const pares: [string, string][] = [
+    ["Data da Avaliação:", fmtData(dados.dataAvaliacao)],
+    ["Sexo:",              dados.sexo === "M" ? "Masculino" : "Feminino"],
+    ["Idade:",             `${dados.idade} anos`],
+  ]
+  if (dados.usuarioNome) pares.push(["Profissional:", dados.usuarioNome])
+
+  for (const [label, valor] of pares) {
+    doc.setFont("helvetica", "bold")
+    doc.text(label, mg, y)
+    doc.setFont("helvetica", "normal")
+    doc.text(valor, mg + 36, y)
+    y += 5.5
+  }
+  y += 5
+
+  const h      = dados.altura / 100
+  const imcVal = dados.imc ? dados.imc.toFixed(1) : (dados.peso / (h * h)).toFixed(1)
+
+  const metrics: { label: string; valor: string }[] = [
+    { label: "Peso",   valor: `${dados.peso.toFixed(1)} kg` },
+    { label: "Altura", valor: `${dados.altura} cm` },
+    { label: "IMC",    valor: imcVal },
+  ]
+  if (dados.pesoAlvo != null) metrics.push({ label: "Peso Alvo", valor: `${dados.pesoAlvo.toFixed(1)} kg` })
+
+  doc.setFillColor(235, 250, 248)
+  doc.setDrawColor(...COR)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(mg, y, inner, 20, 3, 3, "FD")
+
+  const cellW = inner / metrics.length
+  metrics.forEach((m, i) => {
+    const cx = mg + i * cellW + cellW / 2
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(80, 80, 80)
+    doc.text(m.label, cx, y + 7, { align: "center" })
+    doc.setFontSize(13)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COR)
+    doc.text(m.valor, cx, y + 15, { align: "center" })
+  })
+  doc.setTextColor(0, 0, 0)
+  y += 27
+
+  if (dados.objetivo) {
+    doc.setFillColor(44, 62, 80)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(255, 255, 255)
+    doc.text("OBJETIVO E META", mg + 2, y + 1.5)
+    doc.setTextColor(0, 0, 0)
+    y += 9
+
+    const objPares: [string, string][] = [["Objetivo:", dados.objetivo]]
+    if (dados.metaDescricao) objPares.push(["Meta:", dados.metaDescricao])
+
+    doc.setFontSize(9)
+    for (const [label, valor] of objPares) {
+      doc.setFont("helvetica", "bold")
+      doc.text(label, mg + 2, y)
+      doc.setFont("helvetica", "normal")
+      y = blocoTexto(doc, valor, mg + 22, y, inner - 24, 5)
+      y += 2
+    }
+    y += 4
+  }
+
+  if (dados.medidas.length > 0) {
+    if (y > 240) { doc.addPage(); y = 20 }
+
+    const rows: string[][] = []
+    for (let i = 0; i < dados.medidas.length; i += 2) {
+      const a = dados.medidas[i]
+      const b = dados.medidas[i + 1]
+      rows.push([a.label, a.valorCm.toFixed(1), b ? b.label : "", b ? b.valorCm.toFixed(1) : ""])
+    }
+
+    autoTable(doc, {
+      startY:       y,
+      head:         [["Medida Corporal", "cm", "Medida Corporal", "cm"]],
+      body:         rows,
+      headStyles:   { fillColor: COR, fontSize: 9 },
+      bodyStyles:   { fontSize: 9 },
+      columnStyles: { 1: { halign: "right", cellWidth: 22 }, 3: { halign: "right", cellWidth: 22 } },
+      margin:       { left: mg, right: mg },
+    })
+
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+    y += 5
+  }
+
+  if (dados.composicao) {
+    const c = dados.composicao
+    const compRows: [string, string][] = []
+    if (c.percentualGordura      != null) compRows.push(["% Gordura Corporal",  `${c.percentualGordura.toFixed(1)}%`])
+    if (c.massaMuscularKg        != null) compRows.push(["Massa Muscular",       `${c.massaMuscularKg.toFixed(1)} kg`])
+    if (c.massaGordaKg           != null) compRows.push(["Massa Gorda",          `${c.massaGordaKg.toFixed(1)} kg`])
+    if (c.massaOsseaKg           != null) compRows.push(["Massa Óssea",          `${c.massaOsseaKg.toFixed(1)} kg`])
+    if (c.aguaCorporalPercentual != null) compRows.push(["Água Corporal",        `${c.aguaCorporalPercentual.toFixed(1)}%`])
+    if (c.metabolismoBasal       != null) compRows.push(["Metabolismo Basal",    `${c.metabolismoBasal} kcal`])
+    if (c.idadeMetabolica        != null) compRows.push(["Idade Metabólica",     `${c.idadeMetabolica} anos`])
+
+    if (compRows.length > 0) {
+      if (y > 240) { doc.addPage(); y = 20 }
+
+      autoTable(doc, {
+        startY:       y,
+        head:         [["Composição Corporal (Bioimpedância)", "Valor"]],
+        body:         compRows,
+        headStyles:   { fillColor: [100, 60, 150] as [number,number,number], fontSize: 9 },
+        bodyStyles:   { fontSize: 9 },
+        columnStyles: { 1: { halign: "right" } },
+        margin:       { left: mg, right: mg },
+      })
+
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+      y += 5
+    }
+  }
+
+  if (dados.observacoes) {
+    if (y > 260) { doc.addPage(); y = 20 }
+
+    doc.setFillColor(245, 245, 245)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(0, 0, 0)
+    doc.text("OBSERVAÇÕES", mg + 2, y + 1.5)
+    y += 9
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    blocoTexto(doc, dados.observacoes, mg + 2, y, inner - 4, 5)
+  }
+
+  return doc.output("datauristring").split(",")[1]
+}

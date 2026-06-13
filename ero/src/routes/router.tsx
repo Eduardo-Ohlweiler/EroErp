@@ -74,6 +74,7 @@ import PagarContas                               from "../pages/financeiro/Pagar
 import FinanceiroDashboard                       from "../pages/financeiro/FinanceiroDashboard"
 import LancamentosFinanceiros                    from "../pages/financeiro/LancamentosFinanceiros"
 import TransferenciaEntreContas                  from "../pages/financeiro/TransferenciaEntreContas"
+import ConfiguracaoPendenciasForm                from "../pages/dashboard/auxiliares/ConfiguracaoPendenciasForm"
 
 export function Router() {
   return (
@@ -217,6 +218,11 @@ export function Router() {
               <Route path="/avaliacao/avaliacoes-fisicas/novo"                    element={<AvaliacaoFisicaForm />} />
               <Route path="/avaliacao/avaliacoes-fisicas/evolucao/:pessoaId"      element={<AvaliacaoFisicaEvolucao />} />
               <Route path="/avaliacao/avaliacoes-fisicas/:id"                     element={<AvaliacaoFisicaForm />} />
+            </Route>
+
+            {/* ── DASHBOARDS AUXILIAR ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
+              <Route path="/dashboards/configuracao-pendencias" element={<ConfiguracaoPendenciasForm />} />
             </Route>
 
             {/* ── FINANCEIRO ── */}

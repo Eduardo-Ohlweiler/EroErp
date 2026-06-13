@@ -54,7 +54,18 @@ export default function AvaliacaoFisicaEvolucao() {
 
   if (loading) {
     return (
-      <TPage title="Evolução Física" breadcrumb={["Avaliação Física", "Evolução"]}>
+      <TPage
+        title     ="Evolução Física"
+        breadcrumb={["Avaliação Física", "Evolução"]}
+        actions   ={
+          <TButton
+            label   ="Voltar"
+            variant ="cancel"
+            type    ="button"
+            onClick ={() => navigate(-1)}
+          />
+        }
+      >
         <div className="p-8 text-center text-gray-500">Carregando...</div>
       </TPage>
     )
@@ -62,7 +73,18 @@ export default function AvaliacaoFisicaEvolucao() {
 
   if (!avaliacoes.length) {
     return (
-      <TPage title="Evolução Física" breadcrumb={["Avaliação Física", "Evolução"]}>
+      <TPage
+        title     ="Evolução Física"
+        breadcrumb={["Avaliação Física", "Evolução"]}
+        actions   ={
+          <TButton
+            label   ="Voltar"
+            variant ="cancel"
+            type    ="button"
+            onClick ={() => navigate(-1)}
+          />
+        }
+      >
         <div className="p-8 text-center text-gray-400">
           Nenhuma avaliação encontrada para este paciente.
         </div>
@@ -113,11 +135,19 @@ export default function AvaliacaoFisicaEvolucao() {
       title     ={`Evolução — ${nomePessoa}`}
       breadcrumb={["Avaliação Física", "Evolução", nomePessoa]}
       actions   ={
-        <TButton
-          label   ="Nova Avaliação"
-          variant ="save"
-          onClick ={() => navigate(`/avaliacao/avaliacoes-fisicas/novo`)}
-        />
+        <div className="flex gap-2">
+          <TButton
+            label   ="Voltar"
+            variant ="cancel"
+            type    ="button"
+            onClick ={() => navigate(-1)}
+          />
+          <TButton
+            label   ="Nova Avaliação"
+            variant ="save"
+            onClick ={() => navigate(`/avaliacao/avaliacoes-fisicas/novo`)}
+          />
+        </div>
       }
     >
 

@@ -12,6 +12,7 @@ import com.api.ero_erp.usuario.service.UsuarioService;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.pessoa.service.PessoaService;
+import com.api.ero_erp.whatsapp.service.WhatsappNotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,21 +26,24 @@ import java.util.List;
 @Service
 public class AvaliacaoFisicaService {
 
-    private final AvaliacaoFisicaRepository repository;
-    private final PessoaService             pessoaService;
-    private final UsuarioService            usuarioService;
-    private final SecurityUtils             securityUtils;
+    private final AvaliacaoFisicaRepository   repository;
+    private final PessoaService               pessoaService;
+    private final UsuarioService              usuarioService;
+    private final SecurityUtils               securityUtils;
+    private final WhatsappNotificationService notificationService;
 
     public AvaliacaoFisicaService(
-            AvaliacaoFisicaRepository repository,
-            PessoaService             pessoaService,
-            UsuarioService            usuarioService,
-            SecurityUtils             securityUtils
+            AvaliacaoFisicaRepository   repository,
+            PessoaService               pessoaService,
+            UsuarioService              usuarioService,
+            SecurityUtils               securityUtils,
+            WhatsappNotificationService notificationService
     ) {
-        this.repository     = repository;
-        this.pessoaService  = pessoaService;
-        this.usuarioService = usuarioService;
-        this.securityUtils  = securityUtils;
+        this.repository          = repository;
+        this.pessoaService       = pessoaService;
+        this.usuarioService      = usuarioService;
+        this.securityUtils       = securityUtils;
+        this.notificationService = notificationService;
     }
 
     // ── Leitura ───────────────────────────────────────────────────────────────
@@ -168,6 +172,21 @@ public class AvaliacaoFisicaService {
         AvaliacaoFisica avaliacao = repository.findByIdWithDetails(id, clienteId)
                 .orElseThrow(() -> new NotFoundException("Avaliação física não encontrada, verifique!"));
         repository.delete(avaliacao);
+    }
+
+    @Transactional(readOnly = true)
+    public void enviarPdfWhatsapp(Long avaliacaoId, EnviarPdfAvaliacaoDto dto) {
+        Long            clienteId = securityUtils.getClienteIdLogado();
+        AvaliacaoFisica avaliacao = repository.findByIdWithDetails(avaliacaoId, clienteId)
+                .orElseThrow(() -> new NotFoundException("Avaliação física não encontrada, verifique!"));
+        notificationService.enviarPdfParaCliente(
+                avaliacao.getPessoa().getId(),
+                avaliacao.getCliente().getId(),
+                securityUtils.getUsuarioIdLogado(),
+                dto.base64(),
+                dto.fileName(),
+                dto.caption()
+        );
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

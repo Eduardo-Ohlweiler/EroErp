@@ -80,4 +80,15 @@ public class AvaliacaoFisicaController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{id}/enviar-pdf")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'AVALIACAO_FISICA', 'AVALIACAO_FISICA_GET')")
+    @Operation(summary = "Envia PDF da avaliação via WhatsApp para o paciente")
+    public ResponseEntity<Void> enviarPdfWhatsapp(
+            @PathVariable Long id,
+            @Valid @RequestBody EnviarPdfAvaliacaoDto dto
+    ) {
+        service.enviarPdfWhatsapp(id, dto);
+        return ResponseEntity.ok().build();
+    }
 }

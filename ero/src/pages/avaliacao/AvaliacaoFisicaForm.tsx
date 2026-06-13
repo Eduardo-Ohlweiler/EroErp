@@ -1,5 +1,5 @@
 import { useEffect, useState }                                    from "react"
-import { FaCalculator }                                           from "react-icons/fa6"
+import { FaCalculator, FaFilePdf, FaWhatsapp }                   from "react-icons/fa6"
 import { useNavigate, useParams }                                  from "react-router-dom"
 import axios                                                       from "axios"
 import { api }                                                     from "../../services/api"
@@ -26,6 +26,7 @@ import { TCol }                                                    from "../../c
 import { useMessage }                                              from "../../hooks/useMessage"
 import TBodyChart                                                  from "../../components/TBodyChart"
 import { displayUsuario, displayPessoa }                          from "../../utils/pessoas"
+import { gerarPdfAvaliacaoFisica }                               from "../../utils/geradorPdf"
 
 const OBJETIVO_OPTIONS = (Object.keys(OBJETIVO_LABELS) as ObjetivoAvaliacao[]).map(k => ({
   value: k,
@@ -83,6 +84,7 @@ export default function AvaliacaoFisicaForm() {
 
   useEffect(() => {
     if (idParam) carregarAvaliacao(idParam)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idParam])
 
   async function carregarAvaliacao(id: string) {
@@ -293,6 +295,73 @@ export default function AvaliacaoFisicaForm() {
       }
     } finally {
       setSaving(false)
+    }
+  }
+
+  function handleGerarPdf() {
+    if (!avaliacao) return
+    const b64  = gerarPdfAvaliacaoFisica({
+      pessoaNome:    avaliacao.pessoaNome,
+      usuarioNome:   avaliacao.usuarioNome,
+      dataAvaliacao: avaliacao.dataAvaliacao,
+      peso:          avaliacao.peso,
+      altura:        avaliacao.altura,
+      imc:           avaliacao.imc,
+      idade:         avaliacao.idade,
+      sexo:          avaliacao.sexo,
+      objetivo:      OBJETIVO_LABELS[avaliacao.objetivo],
+      metaDescricao: avaliacao.metaDescricao,
+      pesoAlvo:      avaliacao.pesoAlvo,
+      observacoes:   avaliacao.observacoes,
+      medidas:       avaliacao.medidas.map(m => ({
+        label:   PONTO_LABELS[m.pontoMedicao],
+        valorCm: m.valorCm,
+      })),
+      composicao: avaliacao.composicao,
+    })
+    const link   = document.createElement("a")
+    link.href     = `data:application/pdf;base64,${b64}`
+    link.download = `avaliacao_${avaliacao.pessoaNome.replace(/\s+/g, "_")}_${avaliacao.dataAvaliacao}.pdf`
+    link.click()
+  }
+
+  async function handleEnviarWhatsapp() {
+    if (!avaliacao) return
+    const b64      = gerarPdfAvaliacaoFisica({
+      pessoaNome:    avaliacao.pessoaNome,
+      usuarioNome:   avaliacao.usuarioNome,
+      dataAvaliacao: avaliacao.dataAvaliacao,
+      peso:          avaliacao.peso,
+      altura:        avaliacao.altura,
+      imc:           avaliacao.imc,
+      idade:         avaliacao.idade,
+      sexo:          avaliacao.sexo,
+      objetivo:      OBJETIVO_LABELS[avaliacao.objetivo],
+      metaDescricao: avaliacao.metaDescricao,
+      pesoAlvo:      avaliacao.pesoAlvo,
+      observacoes:   avaliacao.observacoes,
+      medidas:       avaliacao.medidas.map(m => ({
+        label:   PONTO_LABELS[m.pontoMedicao],
+        valorCm: m.valorCm,
+      })),
+      composicao: avaliacao.composicao,
+    })
+    const [y, m, d] = avaliacao.dataAvaliacao.split("-")
+    const dataFmt   = `${d}/${m}/${y}`
+    try {
+      await api.post(`/avaliacoes-fisicas/${idParam}/enviar-pdf`, {
+        base64:   b64,
+        fileName: `avaliacao_${avaliacao.pessoaNome.replace(/\s+/g, "_")}_${avaliacao.dataAvaliacao}.pdf`,
+        caption:  `Avaliação Física — ${avaliacao.pessoaNome} — ${dataFmt}`,
+      })
+      showMessage("success", "PDF enviado por WhatsApp com sucesso!")
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const data = err.response?.data as { erro?: string }
+        showMessage("error", data?.erro ?? "Erro ao enviar PDF")
+      } else {
+        showMessage("error", "Erro ao enviar PDF")
+      }
     }
   }
 
@@ -511,12 +580,28 @@ export default function AvaliacaoFisicaForm() {
         <TFormFooter>
           <TFormActionsLeft>
             {idParam && avaliacao && (
-              <TButton
-                label   ="Ver Evolução"
-                variant ="secondary"
-                type    ="button"
-                onClick ={() => navigate(`/avaliacao/avaliacoes-fisicas/evolucao/${avaliacao.pessoaId}`)}
-              />
+              <>
+                <TButton
+                  label   ="Ver Evolução"
+                  variant ="secondary"
+                  type    ="button"
+                  onClick ={() => navigate(`/avaliacao/avaliacoes-fisicas/evolucao/${avaliacao.pessoaId}`)}
+                />
+                <TButton
+                  label   ="Gerar PDF"
+                  variant ="secondary"
+                  type    ="button"
+                  icon    ={<FaFilePdf />}
+                  onClick ={handleGerarPdf}
+                />
+                <TButton
+                  label   ="Enviar por WhatsApp"
+                  variant ="secondary"
+                  type    ="button"
+                  icon    ={<FaWhatsapp />}
+                  onClick ={handleEnviarWhatsapp}
+                />
+              </>
             )}
           </TFormActionsLeft>
           <TFormActionsRight>
