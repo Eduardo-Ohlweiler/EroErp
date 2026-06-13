@@ -61,14 +61,14 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     )
 }
 
-function PendenciaRow({ item, tipo, onClick }: { item: PendenciaItemDto; tipo: "PAGAR" | "RECEBER"; onClick: () => void }) {
+function PendenciaRow({ item, tipo: _tipo, onClick }: { item: PendenciaItemDto; tipo: string; onClick: () => void }) {
     const venc = new Date(item.dataVencimento + "T00:00:00").toLocaleDateString("pt-BR")
     return (
         <button
             type="button"
             onClick={onClick}
             className={`w-full text-left flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm
-                border transition-colors cursor-pointer
+                border transition-colors cursor-pointer text-gray-700 dark:text-gray-300
                 ${item.vencida
                     ? "border-red-200 bg-white dark:bg-red-950/40 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/60"
                     : "border-orange-200 bg-white dark:bg-orange-950/20 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/40"}`}
@@ -76,11 +76,11 @@ function PendenciaRow({ item, tipo, onClick }: { item: PendenciaItemDto; tipo: "
             <div className="flex flex-col min-w-0 flex-1">
                 <span className="font-medium text-(--text-primary) truncate">{item.pessoaNome}</span>
                 {item.descricao && (
-                    <span className="text-xs text-(--text-muted) truncate">{item.descricao}</span>
+                    <span className="text-xs text-gray-600 dark:text-(--text-muted) truncate">{item.descricao}</span>
                 )}
             </div>
             <div className="flex flex-col items-end shrink-0 gap-0.5">
-                <span className="text-xs text-(--text-muted)">
+                <span className="text-xs">
                     Parc. {item.numeroParcela} · {venc}
                 </span>
                 <span className="text-sm font-semibold text-(--text-primary)">
