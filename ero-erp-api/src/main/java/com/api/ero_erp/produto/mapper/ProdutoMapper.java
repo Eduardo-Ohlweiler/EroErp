@@ -23,7 +23,7 @@ public class ProdutoMapper {
 
                 p.getSubgrupo()   != null ? p.getSubgrupo().getId()   : null,
                 p.getSubgrupo()   != null ? p.getSubgrupo().getNome() : null,
-                p.getSubgrupo()   != null ? p.getSubgrupo().getGrupo().getNome() : null,
+                p.getSubgrupo() != null && p.getSubgrupo().getGrupo() != null ? p.getSubgrupo().getGrupo().getNome() : null,
 
                 p.getCategoria()  != null ? p.getCategoria().getId()   : null,
                 p.getCategoria()  != null ? p.getCategoria().getNome() : null,

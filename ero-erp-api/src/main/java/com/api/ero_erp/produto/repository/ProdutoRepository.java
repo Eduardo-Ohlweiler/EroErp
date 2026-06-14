@@ -65,7 +65,7 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
             WHERE p.cliente.id = :clienteId
             AND p.bloqueado = false
             AND (:tipoProdutoId IS NULL OR p.tipoProduto.id = :tipoProdutoId)
-            AND (:classificacao IS NULL OR UPPER(p.tipoProduto.classificacao) = UPPER(:classificacao))
+            AND (:classificacao IS NULL OR UPPER(p.tipoProduto.classificacao) = UPPER(CAST(:classificacao AS string)))
             AND (:nome IS NULL OR LOWER(p.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
             ORDER BY p.nome
             """)
