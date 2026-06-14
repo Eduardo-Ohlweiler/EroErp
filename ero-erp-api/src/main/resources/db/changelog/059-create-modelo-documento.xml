@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="059-create-modelo-documento" author="eduardo">
+        <createTable tableName="modelo_documento">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_modelo_documento_cliente"
+                             references="cliente(id)"/>
+            </column>
+
+            <column name="nome" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="descricao" type="VARCHAR(500)"/>
+
+            <column name="conteudo" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_by" type="BIGINT">
+                <constraints foreignKeyName="fk_modelo_documento_created_by"
+                             references="usuario(id)"/>
+            </column>
+
+            <column name="updated_by" type="BIGINT">
+                <constraints foreignKeyName="fk_modelo_documento_updated_by"
+                             references="usuario(id)"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="modelo_documento" indexName="idx_modelo_documento_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="modelo_documento" indexName="idx_modelo_documento_nome">
+            <column name="cliente_id"/>
+            <column name="nome"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

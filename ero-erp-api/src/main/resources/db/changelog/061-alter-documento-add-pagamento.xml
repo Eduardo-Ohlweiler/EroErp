@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="061-alter-documento-add-pagamento" author="eduardo">
+        <addColumn tableName="documento">
+            <column name="tipo_desconto" type="VARCHAR(10)" defaultValue="VALOR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_acrescimo" type="VARCHAR(10)" defaultValue="VALOR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="forma_pagamento_id" type="BIGINT">
+                <constraints foreignKeyName="fk_documento_forma_pagamento"
+                             references="forma_pagamento(id)"/>
+            </column>
+        </addColumn>
+
+        <createIndex tableName="documento" indexName="idx_documento_forma_pagamento_id">
+            <column name="forma_pagamento_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

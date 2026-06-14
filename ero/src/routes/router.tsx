@@ -75,6 +75,10 @@ import FinanceiroDashboard                       from "../pages/financeiro/Finan
 import LancamentosFinanceiros                    from "../pages/financeiro/LancamentosFinanceiros"
 import TransferenciaEntreContas                  from "../pages/financeiro/TransferenciaEntreContas"
 import ConfiguracaoPendenciasForm                from "../pages/dashboard/auxiliares/ConfiguracaoPendenciasForm"
+import ModeloDocumentoList                       from "../pages/documentos/modelos/ModeloDocumentoList"
+import ModeloDocumentoForm                       from "../pages/documentos/modelos/ModeloDocumentoForm"
+import DocumentoList                             from "../pages/documentos/DocumentoList"
+import DocumentoForm                             from "../pages/documentos/DocumentoForm"
 
 export function Router() {
   return (
@@ -243,6 +247,19 @@ export function Router() {
               <Route path="/dashboards/financeiro"      element={<FinanceiroDashboard />} />
               <Route path="/financeiro/lancamentos"     element={<LancamentosFinanceiros />} />
               <Route path="/financeiro/transferencias"  element={<TransferenciaEntreContas />} />
+            </Route>
+
+            {/* ── DOCUMENTOS ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "MODELO_DOCUMENTO", "MODELO_DOCUMENTO_GET"]} />}>
+              <Route path="/documentos/modelos"      element={<ModeloDocumentoList />} />
+              <Route path="/documentos/modelos/novo" element={<ModeloDocumentoForm />} />
+              <Route path="/documentos/modelos/:id"  element={<ModeloDocumentoForm />} />
+            </Route>
+
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "DOCUMENTO", "DOCUMENTO_GET"]} />}>
+              <Route path="/documentos"      element={<DocumentoList />} />
+              <Route path="/documentos/novo" element={<DocumentoForm />} />
+              <Route path="/documentos/:id"  element={<DocumentoForm />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="060-create-documento" author="eduardo">
+        <createTable tableName="documento">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_documento_cliente"
+                             references="cliente(id)"/>
+            </column>
+
+            <column name="modelo_documento_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_documento_modelo_documento"
+                             references="modelo_documento(id)"/>
+            </column>
+
+            <column name="emitente_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_documento_emitente"
+                             references="emitente(id)"/>
+            </column>
+
+            <column name="cliente_pessoa_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_documento_cliente_pessoa"
+                             references="pessoa(id)"/>
+            </column>
+
+            <column name="estoque_id" type="BIGINT">
+                <constraints foreignKeyName="fk_documento_estoque"
+                             references="estoque(id)"/>
+            </column>
+
+            <column name="data_emissao" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="valor" type="NUMERIC(15,2)"/>
+
+            <column name="desconto" type="NUMERIC(15,2)" defaultValueNumeric="0"/>
+
+            <column name="acrescimo" type="NUMERIC(15,2)" defaultValueNumeric="0"/>
+
+            <column name="valor_final" type="NUMERIC(15,2)"/>
+
+            <column name="numero_parcelas" type="INTEGER" defaultValueNumeric="1"/>
+
+            <column name="status" type="VARCHAR(20)" defaultValue="RASCUNHO">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="conteudo_gerado" type="TEXT"/>
+
+            <column name="observacoes" type="VARCHAR(1000)"/>
+
+            <column name="created_by" type="BIGINT">
+                <constraints foreignKeyName="fk_documento_created_by"
+                             references="usuario(id)"/>
+            </column>
+
+            <column name="updated_by" type="BIGINT">
+                <constraints foreignKeyName="fk_documento_updated_by"
+                             references="usuario(id)"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="documento" indexName="idx_documento_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="documento" indexName="idx_documento_emitente_id">
+            <column name="emitente_id"/>
+        </createIndex>
+
+        <createIndex tableName="documento" indexName="idx_documento_status">
+            <column name="cliente_id"/>
+            <column name="status"/>
+        </createIndex>
+
+        <createIndex tableName="documento" indexName="idx_documento_data_emissao">
+            <column name="cliente_id"/>
+            <column name="data_emissao"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

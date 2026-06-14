@@ -63,4 +63,7 @@
     <include file="056-insert-roles-avaliacao-fisica.xml"    relativeToChangelogFile="true" />
     <include file="057-alter-avaliacao-fisica-usuario.xml"   relativeToChangelogFile="true" />
     <include file="058-create-configuracao-pendencias.xml"   relativeToChangelogFile="true" />
+    <include file="059-create-modelo-documento.xml"          relativeToChangelogFile="true" />
+    <include file="060-create-documento.xml"                 relativeToChangelogFile="true" />
+    <include file="061-alter-documento-add-pagamento.xml"    relativeToChangelogFile="true" />
 </databaseChangeLog>

@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -112,6 +112,25 @@ export const menu: MenuItem[] = [
         ]
       },
     ]
+  },
+  {
+    label: "Documentos",
+    icon:  FaFileAlt,
+    roles: ["SUPERADMIN", "ADMIN", "DOCUMENTO", "DOCUMENTO_GET", "MODELO_DOCUMENTO", "MODELO_DOCUMENTO_GET"],
+    children: [
+      {
+        label: "Documentos",
+        path:  "/documentos",
+        icon:  FaFileInvoice,
+        roles: ["SUPERADMIN", "ADMIN", "DOCUMENTO", "DOCUMENTO_GET"],
+      },
+      {
+        label: "Modelos de Documentos",
+        path:  "/documentos/modelos",
+        icon:  FaClipboardList,
+        roles: ["SUPERADMIN", "ADMIN", "MODELO_DOCUMENTO", "MODELO_DOCUMENTO_GET"],
+      },
+    ],
   },
   {
     label: "Clínica",
