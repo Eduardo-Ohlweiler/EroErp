@@ -79,6 +79,8 @@ import ModeloDocumentoList                       from "../pages/documentos/model
 import ModeloDocumentoForm                       from "../pages/documentos/modelos/ModeloDocumentoForm"
 import DocumentoList                             from "../pages/documentos/DocumentoList"
 import DocumentoForm                             from "../pages/documentos/DocumentoForm"
+import ConfiguracaoDocumentoForm                 from "../pages/documentos/auxiliares/ConfiguracaoDocumentoForm"
+import AssinaturaPage                            from "../pages/documentos/assinatura/AssinaturaPage"
 
 export function Router() {
   return (
@@ -89,6 +91,9 @@ export function Router() {
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<Login />} />
         </Route>
+
+        {/* rota pública de assinatura */}
+        <Route path="/assinar/:token" element={<AssinaturaPage />} />
 
         {/* rotas privadas */}
         <Route element={<PrivateRoute />}>
@@ -260,6 +265,11 @@ export function Router() {
               <Route path="/documentos"      element={<DocumentoList />} />
               <Route path="/documentos/novo" element={<DocumentoForm />} />
               <Route path="/documentos/:id"  element={<DocumentoForm />} />
+            </Route>
+
+            {/* ── DOCUMENTOS AUXILIAR ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
+              <Route path="/documentos/configuracao-documento" element={<ConfiguracaoDocumentoForm />} />
             </Route>
 
             <Route path="/" element={<DashBoard />} />

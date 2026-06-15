@@ -1,10 +1,11 @@
 import { useNavigate, useParams }                                from "react-router-dom"
 import { useMessage }                                            from "../../hooks/useMessage"
-import { useEffect, useMemo, useState }                         from "react"
+import { useEffect, useMemo, useRef, useState }                 from "react"
 import type { Documento }                                        from "../../types/Documento"
 import { api }                                                   from "../../services/api"
 import axios                                                     from "axios"
 import type { ErrorResponse }                                    from "../../types/ErrorResponse"
+import type { AssinaturaDocumento }                              from "../../types/AssinaturaDocumento"
 import { displayEmitente }                                       from "../../utils/pessoas"
 import { TPage }                                                 from "../../components/tpage"
 import { TForm, TFormActionsLeft, TFormActionsRight, TFormFooter } from "../../components/tform"
@@ -15,6 +16,50 @@ import { TEntry }                                                from "../../com
 import { TDbCombo }                                              from "../../components/tdbcombo"
 import { TCombo }                                                from "../../components/tcombo"
 import { TDate }                                                 from "../../components/tdate"
+
+function formatarDataExtenso(dataStr?: string): string {
+    if (!dataStr) return ""
+    const meses = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"]
+    const partes = dataStr.split("T")[0].split("-")
+    return `${parseInt(partes[2])} de ${meses[parseInt(partes[1]) - 1]} de ${partes[0]}`
+}
+
+function SignaturePreviewCanvas({ strokeData }: { strokeData: string }) {
+    const ref = useRef<HTMLCanvasElement>(null)
+
+    useEffect(() => {
+        const canvas = ref.current
+        if (!canvas) return
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return
+        try {
+            const strokes = JSON.parse(strokeData) as number[][][]
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            ctx.strokeStyle = "#111"
+            ctx.lineWidth = 2.5
+            ctx.lineCap = "round"
+            ctx.lineJoin = "round"
+            const sx = canvas.width / 800
+            const sy = canvas.height / 220
+            strokes.forEach(stroke => {
+                if (stroke.length < 2) return
+                ctx.beginPath()
+                ctx.moveTo(stroke[0][0] * sx, stroke[0][1] * sy)
+                stroke.slice(1).forEach(([x, y]) => ctx.lineTo(x * sx, y * sy))
+                ctx.stroke()
+            })
+        } catch { /* ignore */ }
+    }, [strokeData])
+
+    return (
+        <canvas
+            ref={ref}
+            width={320}
+            height={96}
+            style={{ width: "100%", height: "96px", display: "block" }}
+        />
+    )
+}
 
 export default function DocumentoForm() {
 
@@ -38,6 +83,12 @@ export default function DocumentoForm() {
     const [exportandoPdf,     setExportandoPdf]     = useState(false)
     const [formKey,           setFormKey]           = useState(0)
     const [currentId,         setCurrentId]         = useState<string | undefined>(idParam)
+    const [assinaturaConfig,  setAssinaturaConfig]  = useState<{ assinaturaDigital?: string } | null>(null)
+    const [assinatura,        setAssinatura]        = useState<AssinaturaDocumento | null>(null)
+    const [linkGerado,        setLinkGerado]        = useState<string | null>(null)
+    const [solicitando,       setSolicitando]       = useState(false)
+    const [aceitando,         setAceitando]         = useState(false)
+    const [rejeitando,        setRejeitando]        = useState(false)
 
     const isEdit = !!currentId
 
@@ -49,6 +100,11 @@ export default function DocumentoForm() {
     }, [valor, ajuste, tipoAjuste, tipoValorAjuste])
 
     useEffect(() => {
+        // Sempre busca config de assinatura
+        api.get("/documentos/configuracao")
+            .then((r) => setAssinaturaConfig(r.data))
+            .catch(() => setAssinaturaConfig(null))
+
         if (!currentId) {
             setModeloDocumentoId("")
             setEmitenteId("")
@@ -61,6 +117,11 @@ export default function DocumentoForm() {
             setNumeroParcelas("1")
             return
         }
+
+        // Busca assinatura atual (silencia 404)
+        api.get(`/documentos/${currentId}/assinatura`)
+            .then((r) => setAssinatura(r.data))
+            .catch(() => setAssinatura(null))
 
         setLoading(true)
         api.get(`/documentos/${currentId}`)
@@ -219,6 +280,67 @@ export default function DocumentoForm() {
             } else {
                 showMessage("error", "Erro inesperado ao cancelar documento")
             }
+        }
+    }
+
+    async function handleSolicitarAssinatura() {
+        setSolicitando(true)
+        try {
+            const res = await api.post(`/documentos/${currentId}/solicitar-assinatura`)
+            const link = `${window.location.origin}/assinar/${res.data.token}`
+            setLinkGerado(link)
+            // Recarrega assinatura
+            const aRes = await api.get(`/documentos/${currentId}/assinatura`)
+            setAssinatura(aRes.data)
+            showMessage("success", "Link de assinatura gerado!")
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                const errData = err.response?.data as ErrorResponse
+                showMessage("error", errData?.erro ?? "Erro ao solicitar assinatura")
+            } else {
+                showMessage("error", "Erro inesperado ao solicitar assinatura")
+            }
+        } finally {
+            setSolicitando(false)
+        }
+    }
+
+    async function handleAceitar() {
+        setAceitando(true)
+        try {
+            await api.patch(`/documentos/${currentId}/assinatura/aceitar`)
+            const aRes = await api.get(`/documentos/${currentId}/assinatura`)
+            setAssinatura(aRes.data)
+            showMessage("success", "Assinatura aceita!")
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                const errData = err.response?.data as ErrorResponse
+                showMessage("error", errData?.erro ?? "Erro ao aceitar assinatura")
+            } else {
+                showMessage("error", "Erro inesperado")
+            }
+        } finally {
+            setAceitando(false)
+        }
+    }
+
+    async function handleRejeitar() {
+        setRejeitando(true)
+        try {
+            await api.patch(`/documentos/${currentId}/assinatura/rejeitar`)
+            const aRes = await api.get(`/documentos/${currentId}/assinatura`)
+            setAssinatura(aRes.data)
+            setLinkGerado(null)
+            showMessage("success", "Assinatura rejeitada")
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                const errData = err.response?.data as ErrorResponse
+                showMessage("error", errData?.erro ?? "Erro ao rejeitar assinatura")
+            } else {
+                showMessage("error", "Erro inesperado")
+            }
+        } finally {
+            setRejeitando(false)
         }
     }
 
@@ -462,6 +584,16 @@ export default function DocumentoForm() {
                                 onClick={handleCancelarDoc}
                             />
                         )}
+                        {assinaturaConfig?.assinaturaDigital === "SIM" && isEdit && documento?.status === "EMITIDO" &&
+                         (!assinatura || assinatura.status === "REJEITADO") && (
+                            <TButton
+                                label  ="Solicitar Assinatura"
+                                variant="new"
+                                type   ="button"
+                                loading={solicitando}
+                                onClick={handleSolicitarAssinatura}
+                            />
+                        )}
                         <TButton label="Salvar" variant="save" type="submit" loading={saving} />
                         {isEdit && documento?.status !== "RASCUNHO" && (
                             <TButton
@@ -477,6 +609,72 @@ export default function DocumentoForm() {
 
             </TForm>
 
+            {/* Área de status da assinatura */}
+            {isEdit && assinaturaConfig?.assinaturaDigital === "SIM" && (
+                <div className="mt-4">
+                    {/* Link gerado - PENDENTE */}
+                    {assinatura?.status === "PENDENTE" && (
+                        <div className="border border-(--border) rounded-lg p-4 bg-(--bg-surface)">
+                            <p className="text-sm font-semibold text-(--text-primary) mb-2">Aguardando assinatura do cliente</p>
+                            <p className="text-xs text-(--text-secondary) mb-2">Envie o link abaixo para o cliente assinar:</p>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    readOnly
+                                    value={linkGerado ?? `${window.location.origin}/assinar/${assinatura.token}`}
+                                    className="flex-1 text-xs border border-(--border) rounded px-2 py-1 bg-white text-(--text-primary)"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const link = linkGerado ?? `${window.location.origin}/assinar/${assinatura.token}`
+                                        navigator.clipboard.writeText(link)
+                                        showMessage("success", "Link copiado!")
+                                    }}
+                                    className="text-xs px-3 py-1 border border-(--border) rounded hover:bg-(--bg-hover)"
+                                >
+                                    Copiar
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ASSINADO - aguardando revisão */}
+                    {assinatura?.status === "ASSINADO" && (
+                        <div className="border border-(--border) rounded-lg p-4">
+                            <p className="text-sm font-semibold text-(--text-primary) mb-3">Assinatura recebida — revise abaixo</p>
+                            <div className="max-w-xs border border-(--border) rounded bg-white">
+                                {assinatura.dadosAssinatura && (
+                                    <SignaturePreviewCanvas strokeData={assinatura.dadosAssinatura} />
+                                )}
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                                <TButton label="Aceitar Assinatura"  variant="save"  type="button" loading={aceitando}  onClick={handleAceitar}  />
+                                <TButton label="Rejeitar Assinatura" variant="block" type="button" loading={rejeitando} onClick={handleRejeitar} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ACEITO */}
+                    {assinatura?.status === "ACEITO" && (
+                        <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+                            <p className="text-sm font-semibold text-green-700 mb-2">Documento assinado e aceito</p>
+                            {assinatura.dadosAssinatura && (
+                                <div className="max-w-xs border border-green-300 rounded bg-white">
+                                    <SignaturePreviewCanvas strokeData={assinatura.dadosAssinatura} />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* REJEITADO */}
+                    {assinatura?.status === "REJEITADO" && (
+                        <div className="border border-orange-200 rounded-lg p-3 bg-orange-50">
+                            <p className="text-sm text-orange-700">Assinatura rejeitada. Clique em "Solicitar Assinatura" para gerar um novo link.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Prévia do documento */}
             {isEdit && documento?.conteudoGerado && (
                 <div className="mt-6">
@@ -484,10 +682,31 @@ export default function DocumentoForm() {
                         Prévia do Documento
                     </h3>
                     <div
-                        id                  ="documento-preview"
-                        className           ="border border-(--border) rounded-lg p-8 bg-white text-black min-h-[400px] prose max-w-none"
-                        dangerouslySetInnerHTML={{ __html: documento.conteudoGerado }}
-                    />
+                        id        ="documento-preview"
+                        className ="border border-(--border) rounded-lg p-8 bg-white text-black min-h-100 prose max-w-none"
+                    >
+                        <div dangerouslySetInnerHTML={{ __html: documento.conteudoGerado }} />
+
+                        {assinaturaConfig?.assinaturaDigital === "SIM" && (
+                            <div className="mt-16 flex justify-center not-prose">
+                                <div className="w-72 flex flex-col items-center">
+                                    <div className="w-full h-24">
+                                        {assinatura?.status === "ACEITO" && assinatura.dadosAssinatura
+                                            ? <SignaturePreviewCanvas strokeData={assinatura.dadosAssinatura} />
+                                            : <div className="w-full h-24" />
+                                        }
+                                    </div>
+                                    <div className="w-full border-t border-black" />
+                                    <p className="text-sm font-medium mt-1 text-center tracking-wide text-black">
+                                        {documento.clientePessoaNome.toUpperCase()}
+                                    </p>
+                                    <p className="text-xs text-center mt-0.5 text-black">
+                                        {formatarDataExtenso(documento.dataEmissao)}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </TPage>

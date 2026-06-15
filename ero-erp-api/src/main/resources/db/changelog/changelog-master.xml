@@ -66,4 +66,6 @@
     <include file="059-create-modelo-documento.xml"          relativeToChangelogFile="true" />
     <include file="060-create-documento.xml"                 relativeToChangelogFile="true" />
     <include file="061-alter-documento-add-pagamento.xml"    relativeToChangelogFile="true" />
+    <include file="062-create-configuracao-documento.xml"   relativeToChangelogFile="true" />
+    <include file="063-create-assinatura-documento.xml"     relativeToChangelogFile="true" />
 </databaseChangeLog>

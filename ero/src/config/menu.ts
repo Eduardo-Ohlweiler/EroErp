@@ -130,6 +130,14 @@ export const menu: MenuItem[] = [
         icon:  FaClipboardList,
         roles: ["SUPERADMIN", "ADMIN", "MODELO_DOCUMENTO", "MODELO_DOCUMENTO_GET"],
       },
+      {
+        label: "Auxiliar documentos",
+        icon:  FaCogs,
+        roles: ["SUPERADMIN", "ADMIN"],
+        children: [
+          { label: "Config. de Documentos", path: "/documentos/configuracao-documento", icon: FaCog, roles: ["SUPERADMIN", "ADMIN"] },
+        ],
+      },
     ],
   },
   {

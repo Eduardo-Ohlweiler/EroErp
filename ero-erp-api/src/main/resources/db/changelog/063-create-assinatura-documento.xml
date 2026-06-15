@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="063-create-assinatura-documento" author="eduardo">
+
+        <createTable tableName="assinatura_documento">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="documento_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="token" type="VARCHAR(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dados_assinatura" type="TEXT"/>
+            <column name="ip_assinante" type="VARCHAR(45)"/>
+            <column name="data_assinatura" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="assinatura_documento" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_assinatura_documento_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="assinatura_documento" baseColumnNames="documento_id"
+                referencedTableName="documento" referencedColumnNames="id"
+                constraintName="fk_assinatura_documento_documento"
+                onDelete="CASCADE"/>
+
+        <createIndex tableName="assinatura_documento" indexName="idx_assinatura_documento_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="assinatura_documento" indexName="idx_assinatura_documento_documento_id">
+            <column name="documento_id"/>
+        </createIndex>
+
+        <createIndex tableName="assinatura_documento" indexName="idx_assinatura_documento_token" unique="true">
+            <column name="token"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
