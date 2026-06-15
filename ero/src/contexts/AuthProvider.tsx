@@ -30,8 +30,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return user?.roles.includes(role) ?? false
   }
 
+  function updateUser(partial: Partial<User>) {
+    setUser((prev) => {
+      if (!prev) return prev
+      const updated = { ...prev, ...partial }
+      localStorage.setItem("user", JSON.stringify(updated))
+      return updated
+    })
+  }
+
   return (
-    <AuthContext.Provider value={{ user, signed: !!user, loading: false, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, signed: !!user, loading: false, login, logout, hasRole, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

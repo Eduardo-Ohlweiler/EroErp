@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom"
 import { useTheme }    from "../../hooks/useTheme"
 import { useAuth }     from "../../hooks/useAuth"
 import { TDropdown }   from "../tdropdown"
-import { FaUser, FaRightFromBracket } from "react-icons/fa6"
+import { FaUser, FaRightFromBracket, FaPenToSquare } from "react-icons/fa6"
 
 interface Props {
   toggleMenu: () => void
@@ -55,12 +55,12 @@ export default function Header({ toggleMenu }: Props) {
               icon:    null,
               onClick: () => {}
             },
-            // {
-            //   label:   "Editar perfil",
-            //   icon:    <FaPenToSquare size={14} />,
-            //   onClick: () => navigate("/perfil"),
-            //   divider: true
-            // },
+            {
+              label:   "Editar perfil",
+              icon:    <FaPenToSquare size={14} />,
+              onClick: () => navigate("/perfil"),
+              divider: true
+            },
             {
               label:   "Sair",
               icon:    <FaRightFromBracket size={14} />,

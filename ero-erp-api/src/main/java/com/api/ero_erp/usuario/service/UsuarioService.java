@@ -7,6 +7,7 @@ import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.role.entity.Role;
 import com.api.ero_erp.role.repository.RoleRepository;
+import com.api.ero_erp.usuario.dtos.PerfilUpdateDto;
 import com.api.ero_erp.usuario.dtos.UsuarioCreateDto;
 import com.api.ero_erp.usuario.dtos.UsuarioResponseDto;
 import com.api.ero_erp.usuario.dtos.UsuarioUpdateDto;
@@ -169,6 +170,43 @@ public class UsuarioService {
         }
 
         usuario.setUpdatedBy(updatedBy);
+
+        return usuarioMapper.toDTO(usuarioRepository.save(usuario));
+    }
+
+    @Transactional(readOnly = true)
+    public UsuarioResponseDto getPerfilLogado() {
+        Long id = securityUtils.getUsuarioIdLogado();
+        return this.findByIdResponse(id);
+    }
+
+    @Transactional
+    public UsuarioResponseDto updatePerfil(PerfilUpdateDto dto) {
+
+        Usuario usuario = this.findById(securityUtils.getUsuarioIdLogado());
+        if (usuario.getCliente() == null || !Boolean.TRUE.equals(usuario.getCliente().getAtivo()))
+            throw new ConflictException("Cliente inativo, verifique!");
+
+        if (dto.nome() != null && !dto.nome().isBlank())
+            usuario.setNome(dto.nome());
+
+        if (dto.telefone() != null && !dto.telefone().isBlank())
+            usuario.setTelefone(dto.telefone());
+
+        if (dto.email() != null && !dto.email().isBlank()) {
+            Optional<Usuario> salvo = usuarioRepository.findByEmailIgnoreCase(dto.email());
+            if (salvo.isPresent() && !salvo.get().getId().equals(usuario.getId()))
+                throw new ConflictException("Já existe outro usuário com esse email, verifique!");
+            usuario.setEmail(dto.email());
+        }
+
+        if (dto.novaSenha() != null && !dto.novaSenha().isBlank()) {
+            if (dto.senhaAtual() == null || !passwordEncoder.matches(dto.senhaAtual(), usuario.getSenha()))
+                throw new ConflictException("Senha atual incorreta, verifique!");
+            usuario.setSenha(passwordEncoder.encode(dto.novaSenha()));
+        }
+
+        usuario.setUpdatedBy(usuario);
 
         return usuarioMapper.toDTO(usuarioRepository.save(usuario));
     }

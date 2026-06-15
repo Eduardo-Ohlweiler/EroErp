@@ -82,6 +82,7 @@ import DocumentoForm                             from "../pages/documentos/Docum
 import DocumentoDashboard                        from "../pages/documentos/DocumentoDashboard"
 import ConfiguracaoDocumentoForm                 from "../pages/documentos/auxiliares/ConfiguracaoDocumentoForm"
 import AssinaturaPage                            from "../pages/documentos/assinatura/AssinaturaPage"
+import PerfilForm                                 from "../pages/perfil/PerfilForm"
 
 export function Router() {
   return (
@@ -273,6 +274,9 @@ export function Router() {
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
               <Route path="/documentos/configuracao-documento" element={<ConfiguracaoDocumentoForm />} />
             </Route>
+
+            {/* ── PERFIL (qualquer usuário autenticado) ── */}
+            <Route path="/perfil" element={<PerfilForm />} />
 
             <Route path="/" element={<DashBoard />} />
 

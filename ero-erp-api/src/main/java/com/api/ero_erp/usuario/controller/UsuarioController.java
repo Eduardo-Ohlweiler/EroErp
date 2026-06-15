@@ -1,5 +1,6 @@
 package com.api.ero_erp.usuario.controller;
 
+import com.api.ero_erp.usuario.dtos.PerfilUpdateDto;
 import com.api.ero_erp.usuario.dtos.UsuarioCreateDto;
 import com.api.ero_erp.usuario.dtos.UsuarioResponseDto;
 import com.api.ero_erp.usuario.dtos.UsuarioUpdateDto;
@@ -96,6 +97,20 @@ public class UsuarioController {
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(usuarioService.findByIdResponse(id));
+    }
+
+    @Operation(summary = "Dados do usuário logado", description = "Retorna os dados do próprio usuário autenticado")
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UsuarioResponseDto> getPerfil() {
+        return ResponseEntity.ok(usuarioService.getPerfilLogado());
+    }
+
+    @Operation(summary = "Atualiza os dados do próprio usuário logado", description = "Permite ao usuário editar nome, email, telefone e senha")
+    @PatchMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UsuarioResponseDto> updatePerfil(@Valid @RequestBody PerfilUpdateDto dto) {
+        return ResponseEntity.ok(usuarioService.updatePerfil(dto));
     }
 
     @Operation(summary = "Busca usuário por id")

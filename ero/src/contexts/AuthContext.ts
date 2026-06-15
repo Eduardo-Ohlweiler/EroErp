@@ -14,6 +14,7 @@ interface AuthContextData {
   login:    (email: string, senha: string) => Promise<void>
   logout:   () => void
   hasRole:  (role: string) => boolean
+  updateUser: (partial: Partial<User>) => void
 }
 
 export type { User, AuthContextData }

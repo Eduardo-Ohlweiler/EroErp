@@ -118,12 +118,11 @@ public class DocumentoService {
         Pessoa         clientePessoa  = findPessoa(dto.clientePessoaId(), clienteId);
         Estoque        estoque        = dto.estoqueId() != null ? findEstoque(dto.estoqueId(), clienteId) : null;
 
-        BigDecimal valor     = dto.valor()      != null ? dto.valor()      : BigDecimal.ZERO;
-        BigDecimal desconto  = dto.desconto()   != null ? dto.desconto()   : BigDecimal.ZERO;
-        BigDecimal acrescimo = dto.acrescimo()  != null ? dto.acrescimo()  : BigDecimal.ZERO;
-
-        TipoAjuste tipoDesc = dto.tipoDesconto()  != null ? dto.tipoDesconto()  : TipoAjuste.VALOR;
-        TipoAjuste tipoAcr  = dto.tipoAcrescimo() != null ? dto.tipoAcrescimo() : TipoAjuste.VALOR;
+        BigDecimal valor     = dto.valor()         != null ? dto.valor()         : BigDecimal.ZERO;
+        BigDecimal desconto  = dto.desconto()      != null ? dto.desconto()      : BigDecimal.ZERO;
+        BigDecimal acrescimo = dto.acrescimo()     != null ? dto.acrescimo()     : BigDecimal.ZERO;
+        TipoAjuste tipoDesc  = dto.tipoDesconto()  != null ? dto.tipoDesconto()  : TipoAjuste.VALOR;
+        TipoAjuste tipoAcr   = dto.tipoAcrescimo() != null ? dto.tipoAcrescimo() : TipoAjuste.VALOR;
 
         BigDecimal descontoEfetivo = TipoAjuste.PERCENTUAL.equals(tipoDesc)
                 ? valor.multiply(desconto).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
