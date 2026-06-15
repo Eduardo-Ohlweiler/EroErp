@@ -66,4 +66,27 @@ public interface ParcelaContaReceberRepository extends JpaRepository<ParcelaCont
             @Param("dataInicio") LocalDate dataInicio,
             @Param("dataFim") LocalDate dataFim
     );
+
+    // Fluxo de caixa (regime CAIXA) — parcelas efetivamente recebidas no periodo (status PAGO).
+    // Filtros opcionais por emitente e conta financeira. JOIN FETCH para evitar lazy.
+    @Query("""
+        SELECT p FROM ParcelaContaReceber p
+        JOIN FETCH p.contaReceber cr
+        JOIN FETCH cr.pessoa
+        LEFT JOIN FETCH cr.emitente em
+        LEFT JOIN FETCH em.pessoa
+        LEFT JOIN FETCH p.contaFinanceira
+        WHERE cr.cliente.id = :clienteId
+          AND p.status = com.api.ero_erp.financeiro.enums.StatusConta.PAGO
+          AND p.dataPagamento BETWEEN :ini AND :fim
+          AND (:emitenteId IS NULL OR cr.emitente.id = :emitenteId)
+          AND (:contaId IS NULL OR p.contaFinanceira.id = :contaId)
+    """)
+    List<ParcelaContaReceber> findRecebidasNoPeriodo(
+            @Param("clienteId") Long clienteId,
+            @Param("ini") LocalDate ini,
+            @Param("fim") LocalDate fim,
+            @Param("emitenteId") Long emitenteId,
+            @Param("contaId") Long contaId
+    );
 }

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -57,5 +58,23 @@ public interface ContaReceberRepository extends JpaRepository<ContaReceber, Long
             @Param("dataInicio") LocalDate dataInicio,
             @Param("dataFim") LocalDate dataFim,
             @Param("ativo") Boolean ativo
+    );
+
+    // Fluxo de caixa (regime COMPETENCIA) — contas emitidas no periodo (por data de emissao).
+    // Filtro opcional por emitente. JOIN FETCH para evitar lazy.
+    @Query("""
+        SELECT c FROM ContaReceber c
+        JOIN FETCH c.pessoa
+        LEFT JOIN FETCH c.emitente em
+        LEFT JOIN FETCH em.pessoa
+        WHERE c.cliente.id = :clienteId
+          AND c.data BETWEEN :ini AND :fim
+          AND (:emitenteId IS NULL OR c.emitente.id = :emitenteId)
+    """)
+    List<ContaReceber> findEmitidasNoPeriodo(
+            @Param("clienteId") Long clienteId,
+            @Param("ini") LocalDate ini,
+            @Param("fim") LocalDate fim,
+            @Param("emitenteId") Long emitenteId
     );
 }
