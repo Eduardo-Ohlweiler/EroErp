@@ -55,7 +55,10 @@ export function TDbCombo({
       return
     }
 
-    api.get(`${url}/${value}`)
+    const [baseUrl, queryString] = url.split("?")
+    const lookupUrl = queryString ? `${baseUrl}/${value}?${queryString}` : `${baseUrl}/${value}`
+
+    api.get(lookupUrl)
       .then((response) => {
         const item  = response.data
         const label = getDisplay(item)
@@ -79,12 +82,18 @@ export function TDbCombo({
     debounce.current = setTimeout(async () => {
       setLoading(true)
       try {
-        const params = new URLSearchParams(extraParams ?? {})
+        const [baseUrl, existingQuery] = url.split("?")
+        const params = new URLSearchParams(existingQuery ?? "")
+
+        if (extraParams) {
+          Object.entries(extraParams).forEach(([k, v]) => params.set(k, v))
+        }
         if (valor && searchField) {
           params.append(searchField, valor)
         }
 
-        const response = await api.get(`${url}?${params.toString()}`)
+        const queryStr = params.toString()
+        const response = await api.get(queryStr ? `${baseUrl}?${queryStr}` : baseUrl)
         const data = response.data
 
         setOptions(Array.isArray(data) ? data : data.content ?? [])

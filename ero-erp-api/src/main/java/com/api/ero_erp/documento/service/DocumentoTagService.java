@@ -78,7 +78,7 @@ public class DocumentoTagService {
 
                 // ── Estoque ───────────────────────────────────────────────────
                 .replace("[estoque_preco_venda]", estoque != null ? formatarMoeda(estoque.getPrecoVenda()) : "")
-                .replace("[estoque_quantidade]",  estoque != null ? String.valueOf(estoque.getQuantidade()) : "");
+                .replace("[estoque_quantidade]",  estoque != null ? estoque.getQuantidade().stripTrailingZeros().toPlainString() : "");
 
         result = result.replace("[contrato_forma_pagamento]",
                 doc.getFormaPagamento() != null ? doc.getFormaPagamento().getNome() : "");

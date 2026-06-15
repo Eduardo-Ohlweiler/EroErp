@@ -68,6 +68,12 @@ public class ModeloDocumentoService {
         return modeloDocumentoRepository.findAllSelectByClienteId(clienteId);
     }
 
+    @Transactional(readOnly = true)
+    public ModeloDocumentoSelectDto getSelectById(Long id) {
+        ModeloDocumento modelo = findById(id);
+        return new ModeloDocumentoSelectDto(modelo.getId(), modelo.getNome());
+    }
+
     @Transactional
     public ModeloDocumentoResponseDto create(ModeloDocumentoCreateDto dto) {
         Long clienteId = securityUtils.getClienteIdLogado();

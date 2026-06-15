@@ -47,6 +47,13 @@ public class ModeloDocumentoController {
         return modeloDocumentoService.getSelect();
     }
 
+    @Operation(summary = "Busca modelo de documento por id para seleção")
+    @GetMapping("/select/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'MODELO_DOCUMENTO', 'MODELO_DOCUMENTO_GET')")
+    public ResponseEntity<ModeloDocumentoSelectDto> selectById(@PathVariable Long id) {
+        return ResponseEntity.ok(modeloDocumentoService.getSelectById(id));
+    }
+
     @Operation(summary = "Busca modelo de documento por id")
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'MODELO_DOCUMENTO', 'MODELO_DOCUMENTO_GET')")

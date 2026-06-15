@@ -5,6 +5,7 @@ import type { Documento }                                        from "../../typ
 import { api }                                                   from "../../services/api"
 import axios                                                     from "axios"
 import type { ErrorResponse }                                    from "../../types/ErrorResponse"
+import { displayEmitente }                                       from "../../utils/pessoas"
 import { TPage }                                                 from "../../components/tpage"
 import { TForm, TFormActionsLeft, TFormActionsRight, TFormFooter } from "../../components/tform"
 import { TButton }                                               from "../../components/tbutton"
@@ -106,11 +107,6 @@ export default function DocumentoForm() {
             .catch(() => {})
     }, [estoqueId]) // eslint-disable-line
 
-    // Quando emitenteId muda, resetar estoqueId
-    useEffect(() => {
-        setEstoqueId("")
-    }, [emitenteId])
-
     function handleNovo() {
         setCurrentId(undefined)
         setDocumento(null)
@@ -174,7 +170,7 @@ export default function DocumentoForm() {
             }
 
             if (isEdit) {
-                await api.put(`/documentos/${currentId}`, payload)
+                await api.patch(`/documentos/${currentId}`, payload)
                 showMessage("success", "Documento salvo com sucesso!")
                 await reload(currentId!)
             } else {
@@ -294,12 +290,12 @@ export default function DocumentoForm() {
                             label       ="Emitente *"
                             url         ="/emitentes/select"
                             valueField  ="id"
-                            displayField="nome"
+                            displayField={displayEmitente}
                             searchField ="nome"
                             required
                             width       ="50%"
                             value       ={emitenteId}
-                            onChange    ={setEmitenteId}
+                            onChange    ={(val) => { setEmitenteId(val); setEstoqueId("") }}
                         />
                     </TCol>
                 </TRow>
