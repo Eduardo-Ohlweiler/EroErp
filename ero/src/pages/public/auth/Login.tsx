@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import { useAuth } from "../../../hooks/useAuth"
 import type { ErrorResponse } from "../../../types/ErrorResponse"
+import logoEro from "../../../assets/logo-ero.png"
 
 export function Login() {
 
@@ -49,8 +50,8 @@ export function Login() {
       <div className="w-full max-w-sm bg-(--bg-surface) border border-(--border) rounded-lg p-8 shadow-lg">
 
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-(--text-primary)">EroErp</h1>
-          <p className="text-sm text-(--text-muted) mt-1">
+          <img src={logoEro} alt="ERO Sistema" className="mx-auto w-44 h-auto object-contain" />
+          <p className="text-sm text-(--text-muted) mt-3">
             Acesse sua conta
           </p>
         </div>

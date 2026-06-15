@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom"
 import { menu } from "../../config/menu"
 import { useAuth } from "../../hooks/useAuth"
 import type { MenuItem } from "../../types/MenuItem"
+import logoEro from "../../assets/logo-ero.png"
 
 interface SideBarProps {
   collapsed:        boolean
@@ -219,7 +220,9 @@ export default function Sidebar({ collapsedDesktop, onClose }: SideBarProps) {
     >
       {/* LOGO */}
       <div className="px-4 py-5 text-lg font-semibold tracking-wide border-b border-(--border-strong) text-(--text-inverse) flex items-center justify-between">
-        <span>{collapsedDesktop ? "Ero" : "EroErp"}</span>
+        {collapsedDesktop
+          ? <span>Ero</span>
+          : <img src={logoEro} alt="ERO Sistema" className="h-9 w-auto object-contain" />}
 
         {/* botão fechar — só aparece no mobile */}
         <button
