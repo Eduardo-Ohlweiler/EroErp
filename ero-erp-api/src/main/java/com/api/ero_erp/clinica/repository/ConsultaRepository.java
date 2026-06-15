@@ -64,4 +64,26 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
             @Param("fim")        LocalDateTime  fim,
             @Param("nomePessoa") String         nomePessoa
     );
+
+    @Query("""
+            SELECT c FROM Consulta c
+            JOIN FETCH c.emitente em JOIN FETCH em.pessoa
+            JOIN FETCH c.pessoa
+            LEFT JOIN FETCH c.consultaPai
+            WHERE c.cliente.id = :clienteId
+            AND c.inicio >= :desde
+            AND c.inicio <= :ate
+            AND (:emitenteId IS NULL OR c.emitente.id = :emitenteId)
+            AND (:status IS NULL OR c.status = :status)
+            AND (:pessoaId IS NULL OR c.pessoa.id = :pessoaId)
+            ORDER BY c.inicio ASC
+            """)
+    List<Consulta> findForDashboardAnalitico(
+            @Param("clienteId")  Long           clienteId,
+            @Param("desde")      LocalDateTime  desde,
+            @Param("ate")        LocalDateTime  ate,
+            @Param("emitenteId") Long           emitenteId,
+            @Param("status")     StatusConsulta status,
+            @Param("pessoaId")   Long           pessoaId
+    );
 }

@@ -42,6 +42,26 @@ public interface ConsultaServicoRepository extends JpaRepository<ConsultaServico
 
     @Query("""
             SELECT cs FROM ConsultaServico cs
+            JOIN FETCH cs.produto p
+            JOIN FETCH cs.consulta c
+            JOIN FETCH c.pessoa
+            WHERE c.cliente.id = :clienteId
+            AND c.status = 'CONCLUIDA'
+            AND c.inicio >= :desde
+            AND c.inicio <= :ate
+            AND (:emitenteId IS NULL OR c.emitente.id = :emitenteId)
+            AND (:pessoaId IS NULL OR c.pessoa.id = :pessoaId)
+            """)
+    List<ConsultaServico> findForDashboardAnalitico(
+            @Param("clienteId")  Long          clienteId,
+            @Param("desde")      LocalDateTime desde,
+            @Param("ate")        LocalDateTime ate,
+            @Param("emitenteId") Long          emitenteId,
+            @Param("pessoaId")   Long          pessoaId
+    );
+
+    @Query("""
+            SELECT cs FROM ConsultaServico cs
             WHERE cs.id = :id
             AND cs.consulta.id = :consultaId
             AND cs.cliente.id = :clienteId
