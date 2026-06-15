@@ -89,6 +89,7 @@ export default function DocumentoForm() {
     const [solicitando,       setSolicitando]       = useState(false)
     const [aceitando,         setAceitando]         = useState(false)
     const [rejeitando,        setRejeitando]        = useState(false)
+    const [enviandoWhatsapp,  setEnviandoWhatsapp]  = useState(false)
 
     const isEdit = !!currentId
 
@@ -341,6 +342,25 @@ export default function DocumentoForm() {
             }
         } finally {
             setRejeitando(false)
+        }
+    }
+
+    async function handleEnviarWhatsapp() {
+        const link = linkGerado ?? (assinatura ? `${window.location.origin}/assinar/${assinatura.token}` : null)
+        if (!link) return
+        setEnviandoWhatsapp(true)
+        try {
+            await api.post(`/documentos/${currentId}/assinatura/enviar-whatsapp`, { link })
+            showMessage("success", "Link enviado por WhatsApp!")
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                const errData = err.response?.data as ErrorResponse
+                showMessage("error", errData?.erro ?? "Erro ao enviar WhatsApp")
+            } else {
+                showMessage("error", "Erro inesperado ao enviar WhatsApp")
+            }
+        } finally {
+            setEnviandoWhatsapp(false)
         }
     }
 
@@ -630,10 +650,17 @@ export default function DocumentoForm() {
                                         navigator.clipboard.writeText(link)
                                         showMessage("success", "Link copiado!")
                                     }}
-                                    className="text-xs px-3 py-1 border border-(--border) rounded hover:bg-(--bg-hover)"
+                                    className="text-xs px-3 py-1 border border-(--border) rounded hover:bg-(--bg-hover) whitespace-nowrap"
                                 >
                                     Copiar
                                 </button>
+                                <TButton
+                                    label  ={enviandoWhatsapp ? "Enviando..." : "Enviar Link"}
+                                    variant="save"
+                                    type   ="button"
+                                    loading={enviandoWhatsapp}
+                                    onClick={handleEnviarWhatsapp}
+                                />
                             </div>
                         </div>
                     )}

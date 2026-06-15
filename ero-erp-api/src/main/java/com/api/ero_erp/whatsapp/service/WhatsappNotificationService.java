@@ -252,6 +252,43 @@ public class WhatsappNotificationService {
         }
     }
 
+    public void enviarTextoParaCliente(Long pessoaId, Long clienteId, Long usuarioId, String mensagem) {
+        try {
+            WhatsappConfigGlobal configGlobal = configGlobalRepository.findFirstByAtivoTrue().orElse(null);
+            if (configGlobal == null) {
+                log.warn("Nenhuma configuração global de WhatsApp ativa. Mensagem não enviada.");
+                return;
+            }
+
+            Optional<WhatsappInstancia> instanciaOpt = instanciaRepository.findByUsuarioIdAndClienteId(usuarioId, clienteId);
+            if (instanciaOpt.isEmpty() || !Boolean.TRUE.equals(instanciaOpt.get().getAtivo())) {
+                log.warn("Instância WhatsApp inativa ou inexistente para usuário {} / cliente {}. Mensagem não enviada.", usuarioId, clienteId);
+                return;
+            }
+            WhatsappInstancia instancia = instanciaOpt.get();
+
+            String phone = telefoneRepository
+                    .findFirstByPessoaIdAndClienteIdAndTipoTelefoneId(pessoaId, clienteId, 2L)
+                    .map(t -> limparNumero(t.getNumero()))
+                    .orElse(null);
+
+            if (phone == null || phone.isBlank()) {
+                log.warn("Pessoa {} sem telefone WhatsApp cadastrado. Mensagem não enviada.", pessoaId);
+                return;
+            }
+
+            evolutionClient.enviar(
+                    configGlobal.getApiUrl(),
+                    instancia.getInstanceName(),
+                    instancia.getToken(),
+                    "55" + phone,
+                    mensagem
+            );
+        } catch (Exception e) {
+            log.warn("Falha ao enviar mensagem de texto via WhatsApp para pessoa {}: {}", pessoaId, e.getMessage());
+        }
+    }
+
     static String limparNumero(String numero) {
         return numero.replaceAll("\\D", "");
     }

@@ -1,6 +1,7 @@
 package com.api.ero_erp.assinatura.controller;
 
 import com.api.ero_erp.assinatura.dtos.AssinaturaDocumentoResponseDto;
+import com.api.ero_erp.assinatura.dtos.EnviarLinkAssinaturaDto;
 import com.api.ero_erp.assinatura.dtos.SolicitarAssinaturaResponseDto;
 import com.api.ero_erp.assinatura.service.AssinaturaDocumentoService;
 import org.springframework.http.ResponseEntity;
@@ -41,5 +42,15 @@ public class AssinaturaDocumentoController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AssinaturaDocumentoResponseDto> rejeitar(@PathVariable Long id) {
         return ResponseEntity.ok(service.rejeitar(id));
+    }
+
+    @PostMapping("/{id}/assinatura/enviar-whatsapp")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> enviarLinkWhatsapp(
+            @PathVariable Long id,
+            @RequestBody EnviarLinkAssinaturaDto dto
+    ) {
+        service.enviarLinkWhatsapp(id, dto.link());
+        return ResponseEntity.ok().build();
     }
 }

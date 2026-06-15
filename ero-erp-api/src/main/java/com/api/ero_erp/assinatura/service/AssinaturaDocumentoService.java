@@ -14,6 +14,7 @@ import com.api.ero_erp.documento.entity.Documento;
 import com.api.ero_erp.documento.service.DocumentoService;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.whatsapp.service.WhatsappNotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,17 +29,20 @@ public class AssinaturaDocumentoService {
     private final DocumentoService              documentoService;
     private final ClienteService                clienteService;
     private final SecurityUtils                 securityUtils;
+    private final WhatsappNotificationService   whatsappNotificationService;
 
     public AssinaturaDocumentoService(
             AssinaturaDocumentoRepository repository,
             DocumentoService              documentoService,
             ClienteService                clienteService,
-            SecurityUtils                 securityUtils
+            SecurityUtils                 securityUtils,
+            WhatsappNotificationService   whatsappNotificationService
     ) {
-        this.repository      = repository;
-        this.documentoService = documentoService;
-        this.clienteService  = clienteService;
-        this.securityUtils   = securityUtils;
+        this.repository                  = repository;
+        this.documentoService            = documentoService;
+        this.clienteService              = clienteService;
+        this.securityUtils               = securityUtils;
+        this.whatsappNotificationService = whatsappNotificationService;
     }
 
     @Transactional
@@ -96,6 +100,25 @@ public class AssinaturaDocumentoService {
 
         assinatura.setStatus(AssinaturaStatus.REJEITADO);
         return AssinaturaDocumentoMapper.toDto(repository.save(assinatura));
+    }
+
+    @Transactional(readOnly = true)
+    public void enviarLinkWhatsapp(Long documentoId, String link) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        Long usuarioId = securityUtils.getUsuarioIdLogado();
+
+        Documento documento = documentoService.findById(documentoId);
+
+        String nomeCliente = documento.getClientePessoa().getNome();
+        Long   pessoaId    = documento.getClientePessoa().getId();
+
+        String mensagem = "Olá, " + nomeCliente + "!\n\n"
+                + "Você recebeu um documento para assinar digitalmente.\n\n"
+                + "Acesse o link abaixo para realizar sua assinatura:\n"
+                + link + "\n\n"
+                + "Após assinar, aguarde a confirmação.";
+
+        whatsappNotificationService.enviarTextoParaCliente(pessoaId, clienteId, usuarioId, mensagem);
     }
 
     // === MÉTODOS PÚBLICOS (sem autenticação) ===
