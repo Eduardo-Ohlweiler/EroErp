@@ -121,26 +121,83 @@ public class ConsultaService {
         ).map(this::buildResponse);
     }
 
+    @Transactional(readOnly = true)
+    public List<CompromissoDisponivelDto> listarCompromissosDisponiveis() {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        return consultaRepository.findCompromissosDisponiveis(clienteId, LocalDateTime.now())
+                .stream()
+                .map(this::toCompromissoDisponivelDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CompromissoDisponivelDto buscarCompromissoDisponivel(Long id) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        Compromisso c = compromissoRepository.findByIdAndClienteId(id, clienteId)
+                .orElseThrow(() -> new NotFoundException("Compromisso não encontrado"));
+        return toCompromissoDisponivelDto(c);
+    }
+
+    private CompromissoDisponivelDto toCompromissoDisponivelDto(Compromisso c) {
+        Pessoa p         = c.getPessoa();
+        String nome      = p != null ? p.getNome() : null;
+        String documento = p == null ? null : (p.getCpf() != null ? p.getCpf() : p.getCnpj());
+        return new CompromissoDisponivelDto(
+                c.getId(),
+                c.getTitulo(),
+                c.getInicio(),
+                c.getFim(),
+                nome,
+                documento
+        );
+    }
+
     @Transactional
     public ConsultaResponseDto create(ConsultaCreateDto dto) {
-        if (!dto.fim().isAfter(dto.inicio()))
-            throw new BadRequestException("O horário de fim deve ser posterior ao de início");
-
         Long    clienteId = securityUtils.getClienteIdLogado();
         Cliente cliente   = clienteService.findById(clienteId);
         Usuario usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
         Emitente emitente = emitenteService.findById(dto.emitenteId());
         Pessoa   pessoa   = pessoaService.findById(dto.pessoaId());
 
-        // Cria o compromisso na agenda automaticamente
-        Compromisso compromisso = buildCompromisso(
-                "Consulta - " + pessoa.getNome(),
-                dto.inicio(), dto.fim(),
-                cliente, usuario, emitente, pessoa
-        );
-        compromissoRepository.save(compromisso);
-        compromisso.setCompromissoPai(compromisso);
-        compromissoRepository.save(compromisso);
+        Compromisso compromisso;
+
+        if (dto.compromissoId() != null) {
+            // Vincula a um compromisso já existente na agenda
+            compromisso = compromissoRepository.findByIdAndClienteId(dto.compromissoId(), clienteId)
+                    .orElseThrow(() -> new NotFoundException("Compromisso não encontrado"));
+
+            if (Boolean.TRUE.equals(compromisso.getCancelado()))
+                throw new BadRequestException("Não é possível vincular um compromisso cancelado");
+            if (Boolean.TRUE.equals(compromisso.getConcluido()))
+                throw new BadRequestException("Não é possível vincular um compromisso concluído");
+            if (consultaRepository.existsByCompromissoId(compromisso.getId()))
+                throw new BadRequestException("Compromisso já está vinculado a uma consulta");
+
+            // Padroniza o compromisso para consulta (mesmo comportamento do update)
+            compromisso.setTitulo("Consulta - " + pessoa.getNome());
+            compromisso.setEmitente(emitente);
+            compromisso.setPessoa(pessoa);
+            compromisso.setUpdatedBy(usuario);
+            if (compromisso.getCompromissoPai() == null)
+                compromisso.setCompromissoPai(compromisso);
+            compromissoRepository.save(compromisso);
+        } else {
+            // Cria o compromisso na agenda automaticamente
+            if (dto.inicio() == null || dto.fim() == null)
+                throw new BadRequestException("Início e fim são obrigatórios");
+            if (!dto.fim().isAfter(dto.inicio()))
+                throw new BadRequestException("O horário de fim deve ser posterior ao de início");
+
+            compromisso = buildCompromisso(
+                    "Consulta - " + pessoa.getNome(),
+                    dto.inicio(), dto.fim(),
+                    cliente, usuario, emitente, pessoa
+            );
+            compromissoRepository.save(compromisso);
+            compromisso.setCompromissoPai(compromisso);
+            compromissoRepository.save(compromisso);
+        }
 
         Consulta consulta = new Consulta();
         consulta.setCliente(cliente);
@@ -148,8 +205,8 @@ public class ConsultaService {
         consulta.setEmitente(emitente);
         consulta.setPessoa(pessoa);
         consulta.setStatus(StatusConsulta.AGENDADA);
-        consulta.setInicio(dto.inicio());
-        consulta.setFim(dto.fim());
+        consulta.setInicio(compromisso.getInicio());
+        consulta.setFim(compromisso.getFim());
         consulta.setObservacao(dto.observacao());
         consulta.setCreatedBy(usuario);
 

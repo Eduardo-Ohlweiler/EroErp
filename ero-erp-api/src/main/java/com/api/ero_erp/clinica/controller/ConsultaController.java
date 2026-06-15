@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/consultas")
@@ -43,6 +44,20 @@ public class ConsultaController {
             @RequestParam(required = false) String         nomePessoa
     ) {
         return consultaService.getAll(pageable, status, emitenteId, pessoaId, inicio, fim, nomePessoa);
+    }
+
+    @Operation(summary = "Lista compromissos da agenda disponíveis para vincular a uma consulta")
+    @GetMapping("/compromissos-disponiveis")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CLINICA', 'CLINICA_GET')")
+    public List<CompromissoDisponivelDto> compromissosDisponiveis() {
+        return consultaService.listarCompromissosDisponiveis();
+    }
+
+    @Operation(summary = "Busca um compromisso disponível por id (para exibir no seletor)")
+    @GetMapping("/compromissos-disponiveis/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CLINICA', 'CLINICA_GET')")
+    public CompromissoDisponivelDto compromissoDisponivel(@PathVariable Long id) {
+        return consultaService.buscarCompromissoDisponivel(id);
     }
 
     @Operation(summary = "Busca consulta por id")

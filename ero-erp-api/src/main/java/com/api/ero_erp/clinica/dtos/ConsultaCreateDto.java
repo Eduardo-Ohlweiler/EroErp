@@ -14,10 +14,14 @@ public record ConsultaCreateDto(
         @NotNull(message = "Pessoa (paciente) é obrigatória")
         Long pessoaId,
 
-        @NotNull(message = "Início é obrigatório")
+        // Compromisso da agenda a reaproveitar. Quando informado, o horário vem
+        // do compromisso e inicio/fim são ignorados. Quando nulo, um novo
+        // compromisso é criado a partir de inicio/fim.
+        Long compromissoId,
+
+        // Obrigatórios apenas quando compromissoId é nulo (validado na service).
         LocalDateTime inicio,
 
-        @NotNull(message = "Fim é obrigatório")
         LocalDateTime fim,
 
         String observacao,

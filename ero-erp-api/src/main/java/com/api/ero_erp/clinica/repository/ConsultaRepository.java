@@ -2,6 +2,7 @@ package com.api.ero_erp.clinica.repository;
 
 import com.api.ero_erp.clinica.entity.Consulta;
 import com.api.ero_erp.clinica.enums.StatusConsulta;
+import com.api.ero_erp.compromisso.entity.Compromisso;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -86,4 +87,25 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
             @Param("status")     StatusConsulta status,
             @Param("pessoaId")   Long           pessoaId
     );
+
+    // ── Compromissos da agenda disponíveis para vincular a uma consulta ─────────
+    // Futuros, não cancelados, não concluídos e que ainda não estão atrelados a
+    // nenhuma consulta. Mantido neste repositório (módulo clínica) porque a
+    // direção da dependência é clínica → compromisso.
+    @Query("""
+            SELECT c FROM Compromisso c
+                LEFT JOIN FETCH c.pessoa p
+            WHERE c.cliente.id = :clienteId
+                AND c.cancelado = false
+                AND c.concluido = false
+                AND c.inicio   >= :agora
+                AND NOT EXISTS (SELECT 1 FROM Consulta cons WHERE cons.compromisso.id = c.id)
+            ORDER BY c.inicio ASC
+            """)
+    List<Compromisso> findCompromissosDisponiveis(
+            @Param("clienteId") Long          clienteId,
+            @Param("agora")     LocalDateTime agora
+    );
+
+    boolean existsByCompromissoId(Long compromissoId);
 }

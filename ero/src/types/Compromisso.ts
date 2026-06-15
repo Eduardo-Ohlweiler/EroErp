@@ -33,6 +33,15 @@ export type TipoRecorrencia =
     | "SEMESTRAL"
     | "ANUAL";
 
+export interface CompromissoDisponivel {
+    id:              number;
+    titulo:          string;
+    inicio:          string;
+    fim:             string;
+    pessoaNome:      string | null;
+    pessoaDocumento: string | null;
+}
+
 export interface Evento {
     id:                 number;
     titulo:             string;

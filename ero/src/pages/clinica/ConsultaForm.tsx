@@ -26,7 +26,7 @@ import { TDbCombo }                                                 from "../../
 import { TDataGrid }                                                from "../../components/tdatagrid"
 import type { TDataGridColumn }                                     from "../../types/TDataGridColumn"
 import { useMessage }                                               from "../../hooks/useMessage"
-import { displayPessoa, displayEmitente }                          from "../../utils/pessoas"
+import { displayPessoa, displayEmitente, formatarDocumento }       from "../../utils/pessoas"
 import { useQuestion }                                              from "../../hooks/useQuestion"
 
 function toInputDT(iso: string | null | undefined) {
@@ -44,6 +44,23 @@ function defaultDT(offsetHours = 0) {
 }
 function fmtMoeda(v: number | null | undefined) {
   return (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+}
+function displayCompromisso(item: Record<string, unknown>) {
+  const titulo = String(item.titulo ?? "")
+  const iso    = item.inicio ? String(item.inicio) : ""
+  let label = titulo
+  if (iso) {
+    const d    = new Date(iso)
+    const data = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+    const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    label = `${titulo} — ${data} ${hora}`
+  }
+  const nome = item.pessoaNome ? String(item.pessoaNome) : ""
+  if (nome) {
+    const doc = item.pessoaDocumento ? formatarDocumento(String(item.pessoaDocumento)) : ""
+    label += ` · ${nome}${doc ? ` (${doc})` : ""}`
+  }
+  return label
 }
 function fmtQtd(v: number) {
   return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 3 })
@@ -175,6 +192,10 @@ export default function ConsultaForm() {
   const [tipoCalculoGeral, setTipoCalculoGeral] = useState("FIXO")
   const [valorAjusteGeral, setValorAjusteGeral] = useState("")
 
+  // Horário: "novo" cria um compromisso; "existente" reaproveita um da agenda
+  const [modoHorario,   setModoHorario]   = useState<"novo" | "existente">("novo")
+  const [compromissoId, setCompromissoId] = useState("")
+
   // modais
   const [servicoModal, setServicoModal] = useState<ServicoModal>(emptyServico)
   const [produtoModal, setProdutoModal] = useState<ProdutoModal>(emptyProduto)
@@ -239,20 +260,29 @@ export default function ConsultaForm() {
     setTipoAjusteGeral("")
     setTipoCalculoGeral("FIXO")
     setValorAjusteGeral("")
+    setModoHorario("novo")
+    setCompromissoId("")
     setFormKey(k => k + 1)
   }
 
   async function handleSubmit(data: Record<string, string>) {
     if (!emitenteId) { showMessage("error", "Emitente é obrigatório"); return }
     if (!pessoaId)   { showMessage("error", "Paciente é obrigatório");  return }
+
+    const usaCompromisso = !isEdit && modoHorario === "existente"
+    if (usaCompromisso && !compromissoId) {
+      showMessage("error", "Selecione um compromisso da agenda")
+      return
+    }
     setSaving(true)
     try {
       const payload = {
         emitenteId:       Number(emitenteId),
         pessoaId:         Number(pessoaId),
         fichaAnamneseId:  fichaAnamneseId ? Number(fichaAnamneseId) : null,
-        inicio:           fromInputDT(data.inicio),
-        fim:              fromInputDT(data.fim),
+        compromissoId:    usaCompromisso ? Number(compromissoId) : null,
+        inicio:           usaCompromisso ? null : fromInputDT(data.inicio),
+        fim:              usaCompromisso ? null : fromInputDT(data.fim),
         observacao:       data.observacao?.trim() || null,
         tipoAjusteGeral:  tipoAjusteGeral  || null,
         tipoCalculoGeral: tipoAjusteGeral  ? tipoCalculoGeral : null,
@@ -623,29 +653,69 @@ export default function ConsultaForm() {
         )}
 
         <TPanel title="Horário">
-          <TRow>
-            <TCol>
-              <TDateTime
-                name         ="inicio"
-                label        ="Início (*)"
-                required
-                disabled     ={isClosed}
-                width        ="260px"
-                defaultValue ={consulta ? toInputDT(consulta.inicio) : defaultDT(0)}
-              />
-            </TCol>
-            <TCol>
-              <TDateTime
-                name         ="fim"
-                label        ="Fim (*)"
-                required
-                disabled     ={isClosed}
-                width        ="260px"
-                defaultValue ={consulta ? toInputDT(consulta.fim) : defaultDT(1)}
-              />
-            </TCol>
-            <TSpace />
-          </TRow>
+          {/* Seletor de modo — apenas ao criar uma nova consulta */}
+          {!isEdit && (
+            <TRow>
+              <TCol>
+                <TCombo
+                  name         ="modoHorario"
+                  label        ="Como definir o horário"
+                  width        ="280px"
+                  defaultValue ={modoHorario}
+                  onChange     ={(val) => setModoHorario(val as "novo" | "existente")}
+                  options      ={[
+                    { value: "novo",      label: "Definir novo horário"      },
+                    { value: "existente", label: "Usar compromisso da agenda" },
+                  ]}
+                />
+              </TCol>
+              <TSpace />
+            </TRow>
+          )}
+
+          {(isEdit || modoHorario === "novo") ? (
+            <TRow>
+              <TCol>
+                <TDateTime
+                  name         ="inicio"
+                  label        ="Início (*)"
+                  required
+                  disabled     ={isClosed}
+                  width        ="260px"
+                  defaultValue ={consulta ? toInputDT(consulta.inicio) : defaultDT(0)}
+                />
+              </TCol>
+              <TCol>
+                <TDateTime
+                  name         ="fim"
+                  label        ="Fim (*)"
+                  required
+                  disabled     ={isClosed}
+                  width        ="260px"
+                  defaultValue ={consulta ? toInputDT(consulta.fim) : defaultDT(1)}
+                />
+              </TCol>
+              <TSpace />
+            </TRow>
+          ) : (
+            <TRow>
+              <TCol>
+                <TDbCombo
+                  name         ="compromissoId"
+                  label        ="Compromisso da agenda (*)"
+                  url          ="/consultas/compromissos-disponiveis"
+                  valueField   ="id"
+                  displayField ={displayCompromisso}
+                  placeholder  ="Selecione um compromisso disponível..."
+                  hint         ="Lista compromissos futuros ainda não vinculados a nenhuma consulta."
+                  width        ="100%"
+                  value        ={compromissoId}
+                  onChange     ={(val) => setCompromissoId(val)}
+                />
+              </TCol>
+              <TSpace />
+            </TRow>
+          )}
         </TPanel>
 
         <TRow>
