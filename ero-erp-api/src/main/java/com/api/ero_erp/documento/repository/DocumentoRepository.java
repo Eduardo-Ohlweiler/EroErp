@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -57,5 +58,21 @@ public interface DocumentoRepository extends JpaRepository<Documento, Long> {
             @Param("status")             DocumentoStatus status,
             @Param("dataEmissaoInicio")  LocalDate       dataEmissaoInicio,
             @Param("dataEmissaoFim")     LocalDate       dataEmissaoFim
+    );
+
+    @Query("""
+        SELECT d FROM Documento d
+        JOIN FETCH d.clientePessoa
+        JOIN FETCH d.emitente em JOIN FETCH em.pessoa
+        WHERE d.cliente.id = :clienteId
+          AND d.dataEmissao >= :desde
+          AND (:emitenteId IS NULL OR d.emitente.id = :emitenteId)
+          AND (:status IS NULL OR d.status = :status)
+    """)
+    List<Documento> findForDashboard(
+            @Param("clienteId")  Long            clienteId,
+            @Param("desde")      LocalDate       desde,
+            @Param("emitenteId") Long            emitenteId,
+            @Param("status")     DocumentoStatus status
     );
 }

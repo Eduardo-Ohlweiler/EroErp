@@ -5,7 +5,7 @@ export const menu: MenuItem[] = [
   {
     label: "Dashboards",
     icon:  FaTachometerAlt,
-    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET", "DOCUMENTO", "DOCUMENTO_GET"],
     children: [
       {
         label: "Geral",
@@ -24,6 +24,12 @@ export const menu: MenuItem[] = [
         path:  "/dashboards/financeiro",
         icon:  FaUniversity,
         roles: ["SUPERADMIN", "ADMIN", "FINANCEIRO", "FINANCEIRO_GET"],
+      },
+      {
+        label: "Contratos",
+        path:  "/dashboards/documentos",
+        icon:  FaFileInvoice,
+        roles: ["SUPERADMIN", "ADMIN", "DOCUMENTO", "DOCUMENTO_GET"],
       },
       {
         label: "Auxiliar Dashboards",

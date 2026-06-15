@@ -34,4 +34,12 @@ public interface EnderecoRepository extends JpaRepository<Endereco, Long> {
             @Param("id")        Long id,
             @Param("clienteId") Long clienteId
     );
+
+    @Query("""
+        SELECT e.pessoa.id, c.id, c.nome, est.sigla, e.principal
+        FROM Endereco e JOIN e.cidade c JOIN c.estado est
+        WHERE e.cliente.id = :clienteId
+        ORDER BY e.principal DESC
+    """)
+    List<Object[]> findCidadesPorPessoa(@Param("clienteId") Long clienteId);
 }

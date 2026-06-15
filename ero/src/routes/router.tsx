@@ -79,6 +79,7 @@ import ModeloDocumentoList                       from "../pages/documentos/model
 import ModeloDocumentoForm                       from "../pages/documentos/modelos/ModeloDocumentoForm"
 import DocumentoList                             from "../pages/documentos/DocumentoList"
 import DocumentoForm                             from "../pages/documentos/DocumentoForm"
+import DocumentoDashboard                        from "../pages/documentos/DocumentoDashboard"
 import ConfiguracaoDocumentoForm                 from "../pages/documentos/auxiliares/ConfiguracaoDocumentoForm"
 import AssinaturaPage                            from "../pages/documentos/assinatura/AssinaturaPage"
 
@@ -265,6 +266,7 @@ export function Router() {
               <Route path="/documentos"      element={<DocumentoList />} />
               <Route path="/documentos/novo" element={<DocumentoForm />} />
               <Route path="/documentos/:id"  element={<DocumentoForm />} />
+              <Route path="/dashboards/documentos" element={<DocumentoDashboard />} />
             </Route>
 
             {/* ── DOCUMENTOS AUXILIAR ── */}
