@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -226,6 +226,31 @@ export const menu: MenuItem[] = [
         path:  "/avaliacao/avaliacoes-fisicas",
         icon:  FaClipboardList,
         roles: ["SUPERADMIN", "ADMIN", "AVALIACAO_FISICA", "AVALIACAO_FISICA_GET"],
+      },
+    ],
+  },
+  {
+    label: "Pediatria",
+    icon:  FaBaby,
+    roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
+    children: [
+      {
+        label: "Calculadora",
+        path:  "/pediatria/calculadora",
+        icon:  FaCalculator,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
+      },
+      {
+        label: "Avaliações",
+        path:  "/pediatria/avaliacoes",
+        icon:  FaClipboardList,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
+      },
+      {
+        label: "Fórmulas Lácteas",
+        path:  "/pediatria/formulas-lacteas",
+        icon:  FaFlask,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
       },
     ],
   },

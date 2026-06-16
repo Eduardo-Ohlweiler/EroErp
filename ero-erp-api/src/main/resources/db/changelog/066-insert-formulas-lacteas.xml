@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="066-insert-formulas-lacteas" author="eduardo">
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="NAN 1"/>
+            <column name="kcal_por_100ml" valueNumeric="74.2"/>
+            <column name="proteina_por_100ml" valueNumeric="1.38"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="NAN 2"/>
+            <column name="kcal_por_100ml" valueNumeric="73.8"/>
+            <column name="proteina_por_100ml" valueNumeric="1.65"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="NAN SL"/>
+            <column name="kcal_por_100ml" valueNumeric="74.4"/>
+            <column name="proteina_por_100ml" valueNumeric="1.61"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="NEOCATE LCD"/>
+            <column name="kcal_por_100ml" valueNumeric="74.8"/>
+            <column name="proteina_por_100ml" valueNumeric="2.13"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="NEOCATE ADV"/>
+            <column name="kcal_por_100ml" valueNumeric="100"/>
+            <column name="proteina_por_100ml" valueNumeric="2.8"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="FORTINI"/>
+            <column name="kcal_por_100ml" valueNumeric="150"/>
+            <column name="proteina_por_100ml" valueNumeric="3.34"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="INFATRINE"/>
+            <column name="kcal_por_100ml" valueNumeric="100.8"/>
+            <column name="proteina_por_100ml" valueNumeric="2.6"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="PREGOMIN"/>
+            <column name="kcal_por_100ml" valueNumeric="66"/>
+            <column name="proteina_por_100ml" valueNumeric="1.8"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="NESTOGENO 1"/>
+            <column name="kcal_por_100ml" valueNumeric="67"/>
+            <column name="proteina_por_100ml" valueNumeric="1.4"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="formula_lactea">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="NESTOGENO 2"/>
+            <column name="kcal_por_100ml" valueNumeric="67"/>
+            <column name="proteina_por_100ml" valueNumeric="1.5"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

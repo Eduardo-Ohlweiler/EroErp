@@ -68,4 +68,8 @@
     <include file="061-alter-documento-add-pagamento.xml"    relativeToChangelogFile="true" />
     <include file="062-create-configuracao-documento.xml"   relativeToChangelogFile="true" />
     <include file="063-create-assinatura-documento.xml"     relativeToChangelogFile="true" />
+    <include file="064-insert-roles-pediatria.xml"          relativeToChangelogFile="true" />
+    <include file="065-create-pediatria.xml"                relativeToChangelogFile="true" />
+    <include file="066-insert-formulas-lacteas.xml"         relativeToChangelogFile="true" />
+    <include file="067-add-idade-semanas-avaliacao-pediatrica.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

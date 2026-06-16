@@ -1053,3 +1053,238 @@ export function gerarPdfAvaliacaoFisica(dados: DadosAvaliacaoFisica): string {
 
   return doc.output("datauristring").split(",")[1]
 }
+
+// ── LISTAGEM DE AVALIAÇÕES PEDIÁTRICAS ────────────────────────────────────────
+
+export interface DadosListaAvaliacoesPediatricas {
+  dataEmissao: string
+  filtros:     string
+  linhas: {
+    dataAvaliacao:   string
+    pessoaNome:      string
+    idadeMeses:      number | null
+    idadeSemanas:    number | null
+    peso:            number | null
+    imc:             number | null
+    classifImcIdade: string | null
+    formulaNome:     string | null
+  }[]
+}
+
+export function gerarPdfAvaliacoesPediatricas(dados: DadosListaAvaliacoesPediatricas): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+  const COR: [number, number, number] = [22, 130, 130]
+
+  const fmt = (v: number | null, dec = 1) =>
+    v == null || Number.isNaN(v) ? "—" : v.toFixed(dec)
+
+  let y = faixaTopo(doc, "AVALIAÇÕES PEDIÁTRICAS", `Emitido em ${fmtData(dados.dataEmissao)}`, COR)
+
+  // Resumo dos filtros aplicados
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  y = blocoTexto(doc, `Filtros: ${dados.filtros}`, mg, y, inner, 5)
+  doc.setTextColor(0, 0, 0)
+  y += 4
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Data", "Paciente", "Idade (m)", "Idade (sem)", "Peso", "IMC", "Classif. IMC", "Fórmula"]],
+    body: dados.linhas.map(l => [
+      fmtData(l.dataAvaliacao),
+      l.pessoaNome,
+      l.idadeMeses   != null ? String(l.idadeMeses)   : "—",
+      l.idadeSemanas != null ? String(l.idadeSemanas) : "—",
+      fmt(l.peso, 1),
+      fmt(l.imc, 1),
+      l.classifImcIdade ?? "—",
+      l.formulaNome ?? "—",
+    ]),
+    headStyles:   { fillColor: COR, fontSize: 8 },
+    bodyStyles:   { fontSize: 8 },
+    columnStyles: {
+      2: { halign: "center" },
+      3: { halign: "center" },
+      4: { halign: "right" },
+      5: { halign: "right" },
+    },
+    margin: { left: mg, right: mg },
+  })
+
+  return doc.output("datauristring").split(",")[1]
+}
+
+// ── RELATÓRIO NUTRICIONAL PEDIÁTRICO ──────────────────────────────────────────
+
+export interface DadosRelatorioPediatrico {
+  dataEmissao:          string          // YYYY-MM-DD
+  pacienteNome:         string | null   // opcional (Calculadora não tem paciente)
+  usuarioNome:          string | null
+  sexo:                 string          // "M" | "F"
+  idadeMeses:           number | null
+  pesoKg:               number | null
+  estaturaCm:           number | null
+  imc:                  number | null
+  classifPesoIdade:     string | null
+  classifEstaturaIdade: string | null
+  classifImcIdade:      string | null
+  vet:                  number | null
+  proteinaNecessidade:  number | null
+  formulaNome:          string | null
+  volumeMl:             number | null
+  frequenciaHoras:      number | null
+  vezesDia:             number | null
+  volumeTotal:          number | null
+  caloriasTotais:       number | null
+  proteinaTotal:        number | null
+  percCalorico:         number | null
+  percProteico:         number | null
+  observacoes?:         string | null
+}
+
+export function gerarPdfPediatria(dados: DadosRelatorioPediatrico): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+  const COR: [number, number, number] = [22, 130, 130]
+
+  const fmt = (v: number | null, dec = 1, suf = "") =>
+    v == null || Number.isNaN(v) ? "—" : `${v.toFixed(dec)}${suf}`
+
+  let y = faixaTopo(doc, "RELATÓRIO NUTRICIONAL PEDIÁTRICO",
+    dados.pacienteNome ?? "Cálculo rápido", COR)
+
+  // Referência
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  const ref = [
+    `Emitido em ${fmtData(dados.dataEmissao)}`,
+    dados.usuarioNome ? `Profissional: ${dados.usuarioNome}` : null,
+  ].filter(Boolean).join("  •  ")
+  doc.text(ref, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  // ── Caixa de métricas (Sexo / Idade / Peso / Estatura / IMC) ────────────────
+  const metrics: { label: string; valor: string }[] = [
+    { label: "Sexo",     valor: dados.sexo === "M" ? "Masculino" : "Feminino" },
+    { label: "Idade",    valor: dados.idadeMeses != null ? `${dados.idadeMeses} m` : "—" },
+    { label: "Peso",     valor: fmt(dados.pesoKg, 2, " kg") },
+    { label: "Estatura", valor: fmt(dados.estaturaCm, 1, " cm") },
+    { label: "IMC",      valor: fmt(dados.imc, 1) },
+  ]
+
+  doc.setFillColor(235, 248, 248)
+  doc.setDrawColor(...COR)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(mg, y, inner, 20, 3, 3, "FD")
+
+  const cellW = inner / metrics.length
+  metrics.forEach((m, i) => {
+    const cx = mg + i * cellW + cellW / 2
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(80, 80, 80)
+    doc.text(m.label, cx, y + 7, { align: "center" })
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COR)
+    doc.text(m.valor, cx, y + 15, { align: "center" })
+  })
+  doc.setTextColor(0, 0, 0)
+  y += 27
+
+  // ── Estado Nutricional (OMS) ────────────────────────────────────────────────
+  autoTable(doc, {
+    startY: y,
+    head: [["Estado Nutricional (OMS)", "Classificação"]],
+    body: [
+      ["Peso para a idade",     dados.classifPesoIdade     ?? "—"],
+      ["Estatura para a idade", dados.classifEstaturaIdade ?? "—"],
+      ["IMC para a idade",      dados.classifImcIdade      ?? "—"],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+    margin:       { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+  y += 5
+
+  // ── Necessidades Nutricionais (DRIs) ────────────────────────────────────────
+  autoTable(doc, {
+    startY: y,
+    head: [["Necessidades Nutricionais (DRIs)", "Valor"]],
+    body: [
+      ["VET — Valor Energético Total", fmt(dados.vet, 0, " kcal/dia")],
+      ["Proteína",                     fmt(dados.proteinaNecessidade, 1, " g/dia")],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 1: { halign: "right" } },
+    margin:       { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+  y += 5
+
+  // ── Dieta Prescrita (se houver fórmula) ─────────────────────────────────────
+  if (dados.formulaNome) {
+    if (y > 230) { doc.addPage(); y = 20 }
+    autoTable(doc, {
+      startY: y,
+      head: [["Dieta Prescrita", "Valor"]],
+      body: [
+        ["Fórmula láctea",        dados.formulaNome],
+        ["Volume por mamada",     fmt(dados.volumeMl, 0, " ml")],
+        ["Frequência",            fmt(dados.frequenciaHoras, 0, " h")],
+        ["Vezes ao dia",          fmt(dados.vezesDia, 0)],
+        ["Volume total",          fmt(dados.volumeTotal, 0, " ml/dia")],
+        ["Calorias totais",       fmt(dados.caloriasTotais, 0, " kcal/dia")],
+        ["Proteína total",        fmt(dados.proteinaTotal, 1, " g/dia")],
+        ["% Calórico (do VET)",   fmt(dados.percCalorico, 1, "%")],
+        ["% Proteico (da nec.)",  fmt(dados.percProteico, 1, "%")],
+      ],
+      headStyles:   { fillColor: COR, fontSize: 9 },
+      bodyStyles:   { fontSize: 9 },
+      columnStyles: { 1: { halign: "right" } },
+      margin:       { left: mg, right: mg },
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+    y += 5
+  }
+
+  // ── Observações ─────────────────────────────────────────────────────────────
+  if (dados.observacoes) {
+    if (y > 255) { doc.addPage(); y = 20 }
+    doc.setFillColor(245, 245, 245)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.text("OBSERVAÇÕES", mg + 2, y + 1.5)
+    y += 9
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    y = blocoTexto(doc, dados.observacoes, mg + 2, y, inner - 4, 5)
+    y += 4
+  }
+
+  // ── Nota de rodapé ──────────────────────────────────────────────────────────
+  if (y > 265) { doc.addPage(); y = 20 }
+  doc.setFontSize(7.5)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(120, 120, 120)
+  y = blocoTexto(doc,
+    "Estimativas baseadas nas curvas de crescimento da OMS e nas DRIs (2002). " +
+    "Estado nutricional calculado até 60 meses; VET até 35 meses; proteína até 36 meses. " +
+    "Este relatório não substitui a avaliação de um profissional de saúde.",
+    mg, y + 2, inner, 4)
+  doc.setTextColor(0, 0, 0)
+
+  return doc.output("datauristring").split(",")[1]
+}

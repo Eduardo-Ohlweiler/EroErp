@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="065-create-pediatria" author="eduardo">
+
+        <!-- ── FORMULA_LACTEA ─────────────────────────────────────────────── -->
+        <createTable tableName="formula_lactea">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <!-- nullable: NULL = fórmula global do sistema -->
+            <column name="cliente_id" type="BIGINT"/>
+
+            <column name="nome" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="kcal_por_100ml" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="proteina_por_100ml" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="formula_lactea" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_formula_lactea_cliente"
+                onDelete="RESTRICT"/>
+
+        <createIndex tableName="formula_lactea" indexName="idx_formula_lactea_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <!-- ── AVALIACAO_PEDIATRICA ───────────────────────────────────────── -->
+        <createTable tableName="avaliacao_pediatrica">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="usuario_id" type="BIGINT"/>
+
+            <column name="data_avaliacao" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- M | F -->
+            <column name="sexo" type="VARCHAR(1)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="idade_meses" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="peso" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="estatura" type="DECIMAL(5,2)"/>
+
+            <!-- Dieta / fórmula láctea (snapshot) -->
+            <column name="formula_lactea_id" type="BIGINT"/>
+            <column name="formula_nome" type="VARCHAR(255)"/>
+            <column name="formula_kcal_por_100ml" type="DECIMAL(10,2)"/>
+            <column name="formula_proteina_por_100ml" type="DECIMAL(10,2)"/>
+            <column name="volume_ml" type="DECIMAL(10,2)"/>
+            <column name="frequencia_horas" type="DECIMAL(10,2)"/>
+
+            <!-- Resultados (snapshot) -->
+            <column name="imc" type="DECIMAL(5,2)"/>
+            <column name="classif_peso_idade" type="VARCHAR(50)"/>
+            <column name="classif_estatura_idade" type="VARCHAR(50)"/>
+            <column name="classif_imc_idade" type="VARCHAR(50)"/>
+            <column name="vet" type="DECIMAL(10,2)"/>
+            <column name="proteina_necessidade" type="DECIMAL(10,2)"/>
+            <column name="vezes_dia" type="DECIMAL(10,2)"/>
+            <column name="volume_total" type="DECIMAL(10,2)"/>
+            <column name="calorias_totais" type="DECIMAL(10,2)"/>
+            <column name="proteina_total" type="DECIMAL(10,2)"/>
+            <column name="perc_calorico" type="DECIMAL(10,2)"/>
+            <column name="perc_proteico" type="DECIMAL(10,2)"/>
+            <column name="observacao" type="TEXT"/>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_pediatrica" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_avaliacao_pediatrica_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_pediatrica" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_avaliacao_pediatrica_pessoa"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_pediatrica" baseColumnNames="usuario_id"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_avaliacao_pediatrica_usuario"
+                onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_pediatrica" baseColumnNames="formula_lactea_id"
+                referencedTableName="formula_lactea" referencedColumnNames="id"
+                constraintName="fk_avaliacao_pediatrica_formula_lactea"
+                onDelete="SET NULL"/>
+
+        <createIndex tableName="avaliacao_pediatrica" indexName="idx_avaliacao_pediatrica_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="avaliacao_pediatrica" indexName="idx_avaliacao_pediatrica_pessoa_id">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

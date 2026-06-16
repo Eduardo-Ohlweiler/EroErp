@@ -63,6 +63,11 @@ import ExercicioForm                             from "../pages/gym/ExercicioFor
 import AvaliacaoFisicaList                       from "../pages/avaliacao/AvaliacaoFisicaList"
 import AvaliacaoFisicaForm                       from "../pages/avaliacao/AvaliacaoFisicaForm"
 import AvaliacaoFisicaEvolucao                   from "../pages/avaliacao/AvaliacaoFisicaEvolucao"
+import PediatriaCalculadora                       from "../pages/pediatria/PediatriaCalculadora"
+import AvaliacaoPediatricaList                    from "../pages/pediatria/AvaliacaoPediatricaList"
+import AvaliacaoPediatricaForm                    from "../pages/pediatria/AvaliacaoPediatricaForm"
+import FormulaLacteaList                          from "../pages/pediatria/FormulaLacteaList"
+import FormulaLacteaForm                          from "../pages/pediatria/FormulaLacteaForm"
 import ContaFinanceiraFormList                   from "../pages/financeiro/auxiliares/ContaFinanceiraFormList"
 import TipoCobrancaFormList                      from "../pages/financeiro/auxiliares/TipoCobrancaFormList"
 import FormaPagamentoFormList                    from "../pages/financeiro/auxiliares/FormaPagamentoFormList"
@@ -229,6 +234,17 @@ export function Router() {
               <Route path="/avaliacao/avaliacoes-fisicas/novo"                    element={<AvaliacaoFisicaForm />} />
               <Route path="/avaliacao/avaliacoes-fisicas/evolucao/:pessoaId"      element={<AvaliacaoFisicaEvolucao />} />
               <Route path="/avaliacao/avaliacoes-fisicas/:id"                     element={<AvaliacaoFisicaForm />} />
+            </Route>
+
+            {/* ── PEDIATRIA ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"]} />}>
+              <Route path="/pediatria/calculadora"            element={<PediatriaCalculadora />} />
+              <Route path="/pediatria/avaliacoes"             element={<AvaliacaoPediatricaList />} />
+              <Route path="/pediatria/avaliacoes/novo"        element={<AvaliacaoPediatricaForm />} />
+              <Route path="/pediatria/avaliacoes/:id"         element={<AvaliacaoPediatricaForm />} />
+              <Route path="/pediatria/formulas-lacteas"       element={<FormulaLacteaList />} />
+              <Route path="/pediatria/formulas-lacteas/novo"  element={<FormulaLacteaForm />} />
+              <Route path="/pediatria/formulas-lacteas/:id"   element={<FormulaLacteaForm />} />
             </Route>
 
             {/* ── DASHBOARDS AUXILIAR ── */}
