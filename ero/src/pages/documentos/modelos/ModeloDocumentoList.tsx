@@ -182,7 +182,7 @@ export default function ModeloDocumentoList() {
                             <TButton
                                 label  =""
                                 variant="edit"
-                                onClick={() => navigate(`/documentos/modelos/${row.id}`)}
+                                onClick={(e) => { e?.stopPropagation(); navigate(`/documentos/modelos/${row.id}`) }}
                             />
                             <TButton
                                 label  =""

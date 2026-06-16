@@ -230,7 +230,7 @@ export default function CidadeList() {
                             <TButton
                                 label   =""
                                 variant ="edit"
-                                onClick ={() => navigate("/cidades/novo")}
+                                onClick ={(e) => { e?.stopPropagation(); navigate(`/cidades/${row.id}`) }}
                             />
                             <TButton
                                 label   ={row.ativo ? ""  : ""}

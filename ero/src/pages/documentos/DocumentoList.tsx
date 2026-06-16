@@ -226,7 +226,7 @@ export default function DocumentoList() {
                         <TButton
                             label  =""
                             variant="edit"
-                            onClick={() => navigate(`/documentos/${row.id}`)}
+                            onClick={(e) => { e?.stopPropagation(); navigate(`/documentos/${row.id}`) }}
                         />
                     )}
                 />

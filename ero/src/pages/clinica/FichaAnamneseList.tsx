@@ -13,6 +13,7 @@ import { TButton }                                     from "../../components/tb
 import { TDataGrid }                                   from "../../components/tdatagrid"
 import { TDataGridFooter }                             from "../../components/tdatagridfooter"
 import { useMessage }                                  from "../../hooks/useMessage"
+import { useQuestion }                                 from "../../hooks/useQuestion"
 import { displayPessoa }                               from "../../utils/pessoas"
 import { FINALIDADE_LABEL, FINALIDADE_OPTIONS }        from "../../utils/anamnese"
 
@@ -36,6 +37,7 @@ const columns: TDataGridColumn<FichaAnamnesesSummary>[] = [
 export default function FichaAnamneseList() {
   const navigate        = useNavigate()
   const { showMessage } = useMessage()
+  const { ask }         = useQuestion()
 
   const [filtroPessoaId,  setFiltroPessoaId]  = useState("")
   const [filtroFinalidade, setFiltroFinalidade] = useState("")
@@ -81,6 +83,22 @@ export default function FichaAnamneseList() {
     setFiltroFinalidade("")
     setPage(0)
     load("", "", 0)
+  }
+
+  function handleExcluir(row: FichaAnamnesesSummary) {
+    ask(`Excluir a ficha de anamnese de "${row.pessoaNome}" (${fmtData(row.dataPreenchimento)})?`, [
+      { label: "Cancelar", variant: "cancel",  onClick: () => {} },
+      { label: "Excluir",  variant: "confirm", onClick: async () => {
+        try {
+          await api.delete(`/fichas-anamnese/${row.id}`)
+          showMessage("success", "Ficha de anamnese excluída com sucesso!")
+          load()
+        } catch (err) {
+          const data = (err as { response?: { data?: { erro?: string } } })?.response?.data
+          showMessage("error", data?.erro ?? "Erro ao excluir ficha de anamnese")
+        }
+      }},
+    ])
   }
 
   return (
@@ -130,10 +148,14 @@ export default function FichaAnamneseList() {
         loading      ={loading}
         emptyMessage ="Nenhuma ficha encontrada"
         onRowClick   ={(row) => navigate(`/clinica/fichas-anamnese/${row.id}`)}
-        actionsWidth ="80px"
+        actionsWidth ="100px"
         actions      ={(row) => (
-          <TButton label="" variant="edit"
-            onClick={(e) => { e?.stopPropagation(); navigate(`/clinica/fichas-anamnese/${row.id}`) }} />
+          <>
+            <TButton label="" variant="edit"
+              onClick={(e) => { e?.stopPropagation(); navigate(`/clinica/fichas-anamnese/${row.id}`) }} />
+            <TButton label="" variant="delete"
+              onClick={(e) => { e?.stopPropagation(); handleExcluir(row) }} />
+          </>
         )}
       />
 

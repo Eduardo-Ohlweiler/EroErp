@@ -108,4 +108,6 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
     );
 
     boolean existsByCompromissoId(Long compromissoId);
+
+    List<Consulta> findByFichaAnamneseId(Long fichaAnamneseId);
 }

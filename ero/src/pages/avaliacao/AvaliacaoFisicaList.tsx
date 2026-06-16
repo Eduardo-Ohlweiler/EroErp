@@ -147,13 +147,6 @@ export default function AvaliacaoFisicaList() {
     <TPage
       title  ="Avaliações Físicas"
       breadcrumb={["Avaliação Física", "Avaliações"]}
-      actions={
-        <TButton
-          label   ="Nova Avaliação"
-          variant ="save"
-          onClick ={() => navigate("/avaliacao/avaliacoes-fisicas/novo")}
-        />
-      }
     >
       <TForm onSubmit={handleFiltrar}>
         <TRow>
@@ -187,10 +180,12 @@ export default function AvaliacaoFisicaList() {
         </TRow>
         <TFormFooter>
           <TFormActionsLeft>
+            <TButton type="submit" label="Filtrar" />
             <TButton label="Limpar" variant="cancel" type="button" onClick={handleLimpar} />
           </TFormActionsLeft>
           <TFormActionsRight>
-            <TButton label="Filtrar" variant="save" type="submit" />
+            <TButton label="Nova Avaliação" variant="new" type="button"
+              onClick={() => navigate("/avaliacao/avaliacoes-fisicas/novo")} />
           </TFormActionsRight>
         </TFormFooter>
       </TForm>
@@ -203,8 +198,8 @@ export default function AvaliacaoFisicaList() {
         onRowClick={(row) => navigate(`/avaliacao/avaliacoes-fisicas/${row.id}`)}
         actions  ={(row) => (
           <>
-            <TButton label="Evolução" variant="secondary" onClick={() => navigate(`/avaliacao/avaliacoes-fisicas/evolucao/${row.pessoaId}`)} />
-            <TButton label="" variant="delete"    onClick={() => handleExcluir(row)} />
+            <TButton label="Evolução" variant="secondary" onClick={(e) => { e?.stopPropagation(); navigate(`/avaliacao/avaliacoes-fisicas/evolucao/${row.pessoaId}`) }} />
+            <TButton label="" variant="delete"    onClick={(e) => { e?.stopPropagation(); handleExcluir(row) }} />
           </>
         )}
       />
