@@ -80,6 +80,7 @@ export default function AvaliacaoFisicaForm() {
   const [idadeVal,           setIdadeVal]           = useState("")
   const [composicao,         setComposicao]         = useState<ComposicaoState>(emptyComposicao)
   const [composicaoEstimada, setComposicaoEstimada] = useState<Set<keyof ComposicaoState>>(new Set())
+  const [composicaoKey,      setComposicaoKey]      = useState(0)
   const [imcCalc,            setImcCalc]            = useState<string>("")
 
   useEffect(() => {
@@ -158,35 +159,34 @@ export default function AvaliacaoFisicaForm() {
       : (10 * p) + (6.25 * h) - (5 * i) - 161
     result.metabolismoBasal = Math.round(tmb).toString()
 
-    // Deurenberg (requer IMC válido)
+    // Deurenberg (requer IMC válido) — % gordura e massa gorda
     if (bmi > 0) {
       const bf = 1.20 * bmi + 0.23 * i - 10.8 * (masculino ? 1 : 0) - 5.4
       if (bf > 0 && bf < 100) {
         result.percentualGordura = bf.toFixed(1)
-        const mg = p * (bf / 100)
-        result.massaGordaKg = mg.toFixed(1)
-        // Hume
-        const ossea = masculino
-          ? (0.1948 * h) + (0.3238 * p) - 19.861
-          : (0.4734 * h) + (0.3171 * p) - 49.396
-        if (ossea > 0) {
-          result.massaOsseaKg = ossea.toFixed(1)
-          const mm = p - mg - ossea
-          if (mm > 0) result.massaMuscularKg = mm.toFixed(1)
-        }
+        result.massaGordaKg = (p * (bf / 100)).toFixed(1)
       }
     }
 
-    // Watson
+    // Massa óssea — regressão do peso do esqueleto (tipo ICRP)
+    const ossea = -0.25 + (0.046 * h) + (0.036 * p) - (0.012 * i)
+    if (ossea > 0) result.massaOsseaKg = ossea.toFixed(1)
+
+    // Massa muscular esquelética — Lee et al. (2000)
+    const alturaM = h / 100
+    const mm = (0.244 * p) + (7.80 * alturaM) + (6.6 * (masculino ? 1 : 0)) - (0.098 * i)
+    if (mm > 0) result.massaMuscularKg = mm.toFixed(1)
+
+    // Watson — água corporal total
     const tbw = masculino
-      ? 2.447 - (0.09145 * i) + (0.1074 * h) + (0.3362 * p)
+      ? 2.447 - (0.09156 * i) + (0.1074 * h) + (0.3362 * p)
       : -2.097 + (0.1069 * h) + (0.2466 * p)
     if (tbw > 0) result.aguaCorporalPercentual = ((tbw / p) * 100).toFixed(1)
 
     return result
   }
 
-  function aplicarEstimativas(peso: string, altura: string, idade: string, sexo: string, imc: string) {
+  function aplicarEstimativas(peso: string, altura: string, idade: string, sexo: string, imc: string, force = false) {
     const estimativas = calcularEstimativasBioimpedancia(peso, altura, idade, sexo, imc)
     if (Object.keys(estimativas).length === 0) return
 
@@ -194,7 +194,7 @@ export default function AvaliacaoFisicaForm() {
     const updates: Partial<ComposicaoState> = {}
 
     for (const [key, value] of Object.entries(estimativas) as [keyof ComposicaoState, string][]) {
-      if (!composicao[key]) {
+      if (force || !composicao[key]) {
         updates[key] = value
         novasEstimadas.add(key)
       }
@@ -203,6 +203,7 @@ export default function AvaliacaoFisicaForm() {
     if (Object.keys(updates).length > 0) {
       setComposicao(prev => ({ ...prev, ...updates }))
       setComposicaoEstimada(novasEstimadas)
+      setComposicaoKey(k => k + 1)
     }
   }
 
@@ -541,7 +542,7 @@ export default function AvaliacaoFisicaForm() {
                 variant="secondary"
                 type   ="button"
                 icon   ={<FaCalculator />}
-                onClick={() => aplicarEstimativas(pesoVal, alturaVal, idadeVal, sexoVal, imcCalc)}
+                onClick={() => aplicarEstimativas(pesoVal, alturaVal, idadeVal, sexoVal, imcCalc, true)}
               />
             )}
           </div>
@@ -560,7 +561,7 @@ export default function AvaliacaoFisicaForm() {
               const { name, label, placeholder } = meta[key]
               const estimado = composicaoEstimada.has(key)
               return (
-                <div key={key}>
+                <div key={`${key}-${composicaoKey}`}>
                   <TEntry
                     name        ={name}
                     label       ={label}
