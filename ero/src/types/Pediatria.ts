@@ -28,7 +28,6 @@ export interface AvaliacaoPediatricaSummary {
   pessoaNome:      string
   dataAvaliacao:   string
   idadeMeses:      number | null
-  idadeSemanas:    number | null
   peso:            number | null
   imc:             number | null
   classifImcIdade: string | null
@@ -43,7 +42,6 @@ export interface AvaliacaoPediatricaResponse {
   dataAvaliacao:            string
   sexo:                     Sexo
   idadeMeses:               number | null
-  idadeSemanas:             number | null
   peso:                     number | null
   estatura:                 number | null
   formulaLacteaId:          number | null
@@ -73,7 +71,6 @@ export interface AvaliacaoPediatricaPayload {
   dataAvaliacao:            string
   sexo:                     Sexo
   idadeMeses:               number | null
-  idadeSemanas?:            number | null
   peso:                     number | null
   estatura?:                number | null
   formulaLacteaId?:         number | null

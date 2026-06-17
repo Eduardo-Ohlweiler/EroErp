@@ -12,7 +12,6 @@ public record AvaliacaoPediatricaResponseDto(
         LocalDate     dataAvaliacao,
         String        sexo,
         Integer       idadeMeses,
-        Integer       idadeSemanas,
         BigDecimal    peso,
         BigDecimal    estatura,
         Long          formulaLacteaId,

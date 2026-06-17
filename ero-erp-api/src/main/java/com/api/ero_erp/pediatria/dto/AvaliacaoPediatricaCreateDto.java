@@ -29,9 +29,6 @@ public record AvaliacaoPediatricaCreateDto(
         @NotNull(message = "Idade em meses é obrigatória")
         Integer idadeMeses,
 
-        @Schema(description = "Idade em semanas — opcional")
-        Integer idadeSemanas,
-
         @Schema(description = "Peso em kg", example = "8.50")
         @NotNull(message = "Peso é obrigatório")
         BigDecimal peso,

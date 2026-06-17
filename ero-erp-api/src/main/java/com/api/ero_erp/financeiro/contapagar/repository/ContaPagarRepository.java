@@ -33,8 +33,8 @@ public interface ContaPagarRepository extends JpaRepository<ContaPagar, Long> {
           AND (:emitenteId IS NULL OR e.id = :emitenteId)
           AND (:pessoaId IS NULL OR p.id = :pessoaId)
           AND (:status IS NULL OR c.status = :status)
-          AND (:dataInicio IS NULL OR c.data >= :dataInicio)
-          AND (:dataFim IS NULL OR c.data <= :dataFim)
+          AND (CAST(:dataInicio AS date) IS NULL OR c.data >= :dataInicio)
+          AND (CAST(:dataFim AS date) IS NULL OR c.data <= :dataFim)
           AND (:ativo IS NULL OR c.ativo = :ativo)
     """,
     countQuery = """
@@ -45,8 +45,8 @@ public interface ContaPagarRepository extends JpaRepository<ContaPagar, Long> {
           AND (:emitenteId IS NULL OR e.id = :emitenteId)
           AND (:pessoaId IS NULL OR p.id = :pessoaId)
           AND (:status IS NULL OR c.status = :status)
-          AND (:dataInicio IS NULL OR c.data >= :dataInicio)
-          AND (:dataFim IS NULL OR c.data <= :dataFim)
+          AND (CAST(:dataInicio AS date) IS NULL OR c.data >= :dataInicio)
+          AND (CAST(:dataFim AS date) IS NULL OR c.data <= :dataFim)
           AND (:ativo IS NULL OR c.ativo = :ativo)
     """)
     Page<ContaPagar> findAllWithFilters(

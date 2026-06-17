@@ -40,9 +40,6 @@ public class AvaliacaoPediatrica extends BaseEntity {
     @Column(name = "idade_meses", nullable = false)
     private Integer idadeMeses;
 
-    @Column(name = "idade_semanas")
-    private Integer idadeSemanas;
-
     @Column(name = "peso", nullable = false, precision = 5, scale = 2)
     private BigDecimal peso;
 

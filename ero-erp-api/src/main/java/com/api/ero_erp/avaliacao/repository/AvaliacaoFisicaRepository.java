@@ -31,8 +31,8 @@ public interface AvaliacaoFisicaRepository extends JpaRepository<AvaliacaoFisica
         SELECT a FROM AvaliacaoFisica a
         WHERE a.cliente.id = :clienteId
           AND (:pessoaId IS NULL OR a.pessoa.id = :pessoaId)
-          AND (:dataInicio IS NULL OR a.dataAvaliacao >= :dataInicio)
-          AND (:dataFim IS NULL OR a.dataAvaliacao <= :dataFim)
+          AND (CAST(:dataInicio AS date) IS NULL OR a.dataAvaliacao >= :dataInicio)
+          AND (CAST(:dataFim AS date) IS NULL OR a.dataAvaliacao <= :dataFim)
         """)
     Page<AvaliacaoFisica> findAllWithFilters(
             Pageable pageable,

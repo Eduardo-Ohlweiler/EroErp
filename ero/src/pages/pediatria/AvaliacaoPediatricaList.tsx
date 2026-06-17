@@ -46,8 +46,6 @@ const columns: TDataGridColumn<AvaliacaoPediatricaSummary>[] = [
   { label: "Paciente", field: "pessoaNome" },
   { label: "Idade (meses)", width: "120px", align: "center",
     render: (row) => <span>{row.idadeMeses != null ? `${row.idadeMeses}` : "—"}</span> },
-  { label: "Idade (sem.)", width: "110px", align: "center",
-    render: (row) => <span>{row.idadeSemanas != null ? `${row.idadeSemanas}` : "—"}</span> },
   { label: "Peso", width: "90px", align: "center",
     render: (row) => <span>{row.peso != null ? `${Number(row.peso).toFixed(1)} kg` : "—"}</span> },
   { label: "IMC", width: "90px", align: "center",
@@ -68,8 +66,8 @@ export default function AvaliacaoPediatricaList() {
   const [filtroPessoaId, setFiltroPessoaId] = useState("")
   const [filtroInicio,   setFiltroInicio]   = useState("")
   const [filtroFim,      setFiltroFim]      = useState("")
-  const [filtroSemMin,   setFiltroSemMin]   = useState("")
-  const [filtroSemMax,   setFiltroSemMax]   = useState("")
+  const [filtroMesMin,   setFiltroMesMin]   = useState("")
+  const [filtroMesMax,   setFiltroMesMax]   = useState("")
   const [filtroFormulaId, setFiltroFormulaId] = useState("")
   const [formulaOptions, setFormulaOptions] = useState<{ value: string; label: string }[]>([])
   const [data,           setData]           = useState<AvaliacaoPediatricaSummary[]>([])
@@ -93,8 +91,8 @@ export default function AvaliacaoPediatricaList() {
     pessoaId:  string
     inicio:    string
     fim:       string
-    semMin:    string
-    semMax:    string
+    mesMin:    string
+    mesMax:    string
     formulaId: string
   }
 
@@ -107,8 +105,8 @@ export default function AvaliacaoPediatricaList() {
     if (f.pessoaId)  params.append("pessoaId",       f.pessoaId)
     if (f.inicio)    params.append("dataInicio",     f.inicio)
     if (f.fim)       params.append("dataFim",        f.fim)
-    if (f.semMin)    params.append("semanasMin",     f.semMin)
-    if (f.semMax)    params.append("semanasMax",     f.semMax)
+    if (f.mesMin)    params.append("mesesMin",       f.mesMin)
+    if (f.mesMax)    params.append("mesesMax",       f.mesMax)
     if (f.formulaId) params.append("formulaLacteaId", f.formulaId)
     return params
   }
@@ -116,7 +114,7 @@ export default function AvaliacaoPediatricaList() {
   function filtrosResumo(f: Filtros): string {
     const partes: string[] = []
     if (f.inicio || f.fim) partes.push(`Período: ${f.inicio ? formatarData(f.inicio) : "..."} a ${f.fim ? formatarData(f.fim) : "..."}`)
-    if (f.semMin || f.semMax) partes.push(`Semanas: ${f.semMin || "..."} a ${f.semMax || "..."}`)
+    if (f.mesMin || f.mesMax) partes.push(`Meses: ${f.mesMin || "..."} a ${f.mesMax || "..."}`)
     if (f.formulaId) partes.push(`Fórmula: ${formulaOptions.find(o => o.value === f.formulaId)?.label ?? f.formulaId}`)
     if (f.pessoaId) partes.push("Paciente filtrado")
     return partes.length ? partes.join("  •  ") : "Nenhum filtro aplicado"
@@ -142,8 +140,8 @@ export default function AvaliacaoPediatricaList() {
       pessoaId:  filtroPessoaId,
       inicio:    filtroInicio,
       fim:       filtroFim,
-      semMin:    filtroSemMin,
-      semMax:    filtroSemMax,
+      mesMin:    filtroMesMin,
+      mesMax:    filtroMesMax,
       formulaId: filtroFormulaId,
     }
   }
@@ -151,25 +149,25 @@ export default function AvaliacaoPediatricaList() {
   function handleFiltrar(formData: Record<string, string>) {
     const inicio = formData.dataInicio ?? ""
     const fim    = formData.dataFim    ?? ""
-    const semMin = formData.semanasMin ?? ""
-    const semMax = formData.semanasMax ?? ""
+    const mesMin = formData.mesesMin   ?? ""
+    const mesMax = formData.mesesMax   ?? ""
     setFiltroInicio(inicio)
     setFiltroFim(fim)
-    setFiltroSemMin(semMin)
-    setFiltroSemMax(semMax)
+    setFiltroMesMin(mesMin)
+    setFiltroMesMax(mesMax)
     setPage(0)
-    load({ pessoaId: filtroPessoaId, inicio, fim, semMin, semMax, formulaId: filtroFormulaId }, 0)
+    load({ pessoaId: filtroPessoaId, inicio, fim, mesMin, mesMax, formulaId: filtroFormulaId }, 0)
   }
 
   function handleLimpar() {
     setFiltroPessoaId("")
     setFiltroInicio("")
     setFiltroFim("")
-    setFiltroSemMin("")
-    setFiltroSemMax("")
+    setFiltroMesMin("")
+    setFiltroMesMax("")
     setFiltroFormulaId("")
     setPage(0)
-    load({ pessoaId: "", inicio: "", fim: "", semMin: "", semMax: "", formulaId: "" }, 0)
+    load({ pessoaId: "", inicio: "", fim: "", mesMin: "", mesMax: "", formulaId: "" }, 0)
   }
 
   async function fetchTodos(f: Filtros): Promise<AvaliacaoPediatricaSummary[]> {
@@ -194,7 +192,6 @@ export default function AvaliacaoPediatricaList() {
           dataAvaliacao:   l.dataAvaliacao,
           pessoaNome:      l.pessoaNome,
           idadeMeses:      l.idadeMeses,
-          idadeSemanas:    l.idadeSemanas,
           peso:            l.peso,
           imc:             l.imc,
           classifImcIdade: l.classifImcIdade,
@@ -216,22 +213,23 @@ export default function AvaliacaoPediatricaList() {
       const linhas = await fetchTodos(f)
       if (linhas.length === 0) { showMessage("warning", "Nenhuma avaliação para exportar"); return }
 
+      // Todos os campos entre aspas — protege a vírgula decimal (ex.: "7,5") de ser
+      // interpretada como separador de coluna no Excel/LibreOffice pt-BR.
       const aspas = (v: string) => `"${v.replace(/"/g, '""')}"`
       const numCsv = (v: number | null, dec = 1) =>
         v == null || Number.isNaN(Number(v)) ? "" : Number(v).toFixed(dec).replace(".", ",")
       const intCsv = (v: number | null) => v == null ? "" : String(v)
 
-      const header = ["Data", "Paciente", "Idade (meses)", "Idade (semanas)", "Peso (kg)", "IMC", "Classif. IMC", "Fórmula"]
+      const header = ["Data", "Paciente", "Idade (meses)", "Peso (kg)", "IMC", "Classif. IMC", "Fórmula"]
       const rows = linhas.map(l => [
-        aspas(formatarData(l.dataAvaliacao)),
-        aspas(l.pessoaNome ?? ""),
+        formatarData(l.dataAvaliacao),
+        l.pessoaNome ?? "",
         intCsv(l.idadeMeses),
-        intCsv(l.idadeSemanas),
         numCsv(l.peso, 1),
         numCsv(l.imc, 1),
-        aspas(l.classifImcIdade ?? ""),
-        aspas(l.formulaNome ?? ""),
-      ].join(";"))
+        l.classifImcIdade ?? "",
+        l.formulaNome ?? "",
+      ].map(aspas).join(";"))
 
       const conteudo = "﻿" + [header.map(aspas).join(";"), ...rows].join("\r\n")
       const blob = new Blob([conteudo], { type: "text/csv;charset=utf-8" })
@@ -297,12 +295,12 @@ export default function AvaliacaoPediatricaList() {
             />
           </TCol>
           <TCol flex={1}>
-            <TEntry name="semanasMin" label="De (semanas)" mask="numero"
-              width="100%" defaultValue={filtroSemMin} onChange={setFiltroSemMin} />
+            <TEntry name="mesesMin" label="De (meses)" mask="numero"
+              width="100%" defaultValue={filtroMesMin} onChange={setFiltroMesMin} />
           </TCol>
           <TCol flex={1}>
-            <TEntry name="semanasMax" label="Até (semanas)" mask="numero"
-              width="100%" defaultValue={filtroSemMax} onChange={setFiltroSemMax} />
+            <TEntry name="mesesMax" label="Até (meses)" mask="numero"
+              width="100%" defaultValue={filtroMesMax} onChange={setFiltroMesMax} />
           </TCol>
         </TRow>
         <TFormFooter>

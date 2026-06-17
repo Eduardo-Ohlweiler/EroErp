@@ -71,5 +71,4 @@
     <include file="064-insert-roles-pediatria.xml"          relativeToChangelogFile="true" />
     <include file="065-create-pediatria.xml"                relativeToChangelogFile="true" />
     <include file="066-insert-formulas-lacteas.xml"         relativeToChangelogFile="true" />
-    <include file="067-add-idade-semanas-avaliacao-pediatrica.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

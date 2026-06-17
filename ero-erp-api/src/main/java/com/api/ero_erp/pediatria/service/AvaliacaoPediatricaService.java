@@ -54,12 +54,12 @@ public class AvaliacaoPediatricaService {
             LocalDate dataInicio,
             LocalDate dataFim,
             Long      formulaLacteaId,
-            Integer   semanasMin,
-            Integer   semanasMax
+            Integer   mesesMin,
+            Integer   mesesMax
     ) {
         Long clienteId = securityUtils.getClienteIdLogado();
         return repository.findAllWithFilters(pageable, clienteId, pessoaId, dataInicio, dataFim,
-                        formulaLacteaId, semanasMin, semanasMax)
+                        formulaLacteaId, mesesMin, mesesMax)
                 .map(this::toSummaryDto);
     }
 
@@ -86,7 +86,6 @@ public class AvaliacaoPediatricaService {
         avaliacao.setDataAvaliacao(dto.dataAvaliacao());
         avaliacao.setSexo(dto.sexo());
         avaliacao.setIdadeMeses(dto.idadeMeses());
-        avaliacao.setIdadeSemanas(dto.idadeSemanas());
         avaliacao.setPeso(dto.peso());
         avaliacao.setEstatura(dto.estatura());
         avaliacao.setFormulaLactea(resolveFormula(dto.formulaLacteaId(), cliente.getId()));
@@ -123,7 +122,6 @@ public class AvaliacaoPediatricaService {
         if (dto.dataAvaliacao() != null)           avaliacao.setDataAvaliacao(dto.dataAvaliacao());
         if (dto.sexo() != null)                    avaliacao.setSexo(dto.sexo());
         if (dto.idadeMeses() != null)              avaliacao.setIdadeMeses(dto.idadeMeses());
-        if (dto.idadeSemanas() != null)            avaliacao.setIdadeSemanas(dto.idadeSemanas());
         if (dto.peso() != null)                    avaliacao.setPeso(dto.peso());
         if (dto.estatura() != null)                avaliacao.setEstatura(dto.estatura());
         if (dto.formulaLacteaId() != null)         avaliacao.setFormulaLactea(resolveFormula(dto.formulaLacteaId(), clienteId));
@@ -174,7 +172,6 @@ public class AvaliacaoPediatricaService {
                 a.getDataAvaliacao(),
                 a.getSexo(),
                 a.getIdadeMeses(),
-                a.getIdadeSemanas(),
                 a.getPeso(),
                 a.getEstatura(),
                 a.getFormulaLactea() != null ? a.getFormulaLactea().getId() : null,
@@ -208,7 +205,6 @@ public class AvaliacaoPediatricaService {
                 a.getPessoa().getNome(),
                 a.getDataAvaliacao(),
                 a.getIdadeMeses(),
-                a.getIdadeSemanas(),
                 a.getPeso(),
                 a.getImc(),
                 a.getClassifImcIdade(),

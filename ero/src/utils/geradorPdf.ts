@@ -1063,7 +1063,6 @@ export interface DadosListaAvaliacoesPediatricas {
     dataAvaliacao:   string
     pessoaNome:      string
     idadeMeses:      number | null
-    idadeSemanas:    number | null
     peso:            number | null
     imc:             number | null
     classifImcIdade: string | null
@@ -1093,12 +1092,11 @@ export function gerarPdfAvaliacoesPediatricas(dados: DadosListaAvaliacoesPediatr
 
   autoTable(doc, {
     startY: y,
-    head: [["Data", "Paciente", "Idade (m)", "Idade (sem)", "Peso", "IMC", "Classif. IMC", "Fórmula"]],
+    head: [["Data", "Paciente", "Idade (m)", "Peso", "IMC", "Classif. IMC", "Fórmula"]],
     body: dados.linhas.map(l => [
       fmtData(l.dataAvaliacao),
       l.pessoaNome,
-      l.idadeMeses   != null ? String(l.idadeMeses)   : "—",
-      l.idadeSemanas != null ? String(l.idadeSemanas) : "—",
+      l.idadeMeses != null ? String(l.idadeMeses) : "—",
       fmt(l.peso, 1),
       fmt(l.imc, 1),
       l.classifImcIdade ?? "—",
@@ -1108,9 +1106,8 @@ export function gerarPdfAvaliacoesPediatricas(dados: DadosListaAvaliacoesPediatr
     bodyStyles:   { fontSize: 8 },
     columnStyles: {
       2: { halign: "center" },
-      3: { halign: "center" },
+      3: { halign: "right" },
       4: { halign: "right" },
-      5: { halign: "right" },
     },
     margin: { left: mg, right: mg },
   })

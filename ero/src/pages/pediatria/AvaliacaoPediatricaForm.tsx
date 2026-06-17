@@ -60,17 +60,6 @@ function calcularIdadeMeses(dataNascimento: string, dataRef: string): number | n
   return meses < 0 ? null : meses
 }
 
-// diferença em semanas (dias / 7, arredondado para baixo) entre nascimento e referência
-function calcularIdadeSemanas(dataNascimento: string, dataRef: string): number | null {
-  if (!dataNascimento || !dataRef) return null
-  const nasc = new Date(dataNascimento + "T00:00:00")
-  const ref  = new Date(dataRef + "T00:00:00")
-  if (Number.isNaN(nasc.getTime()) || Number.isNaN(ref.getTime())) return null
-  const diffDias = Math.floor((ref.getTime() - nasc.getTime()) / 86_400_000)
-  if (diffDias < 0) return null
-  return Math.floor(diffDias / 7)
-}
-
 export default function AvaliacaoPediatricaForm() {
   const { id: idParam } = useParams<{ id: string }>()
   const navigate        = useNavigate()
@@ -86,7 +75,6 @@ export default function AvaliacaoPediatricaForm() {
   const [dataVal,   setDataVal]   = useState(hoje())
   const [sexoVal,   setSexoVal]   = useState<Sexo>("M")
   const [idadeVal,  setIdadeVal]  = useState("")
-  const [semanasVal, setSemanasVal] = useState("")
   const [pesoVal,   setPesoVal]   = useState("")
   const [estVal,    setEstVal]    = useState("")
   const [formulaId, setFormulaId] = useState("")
@@ -120,7 +108,6 @@ export default function AvaliacaoPediatricaForm() {
       setDataVal(a.dataAvaliacao)
       setSexoVal(a.sexo ?? "M")
       setIdadeVal(a.idadeMeses   != null ? String(a.idadeMeses)   : "")
-      setSemanasVal(a.idadeSemanas != null ? String(a.idadeSemanas) : "")
       setPesoVal(a.peso       != null ? String(a.peso)       : "")
       setEstVal(a.estatura    != null ? String(a.estatura)   : "")
       setFormulaId(a.formulaLacteaId != null ? String(a.formulaLacteaId) : "")
@@ -209,10 +196,8 @@ export default function AvaliacaoPediatricaForm() {
       const nasc = res.data?.dataNascimento
       if (typeof nasc === "string" && nasc) {
         setDataNascimentoPaciente(nasc)
-        const meses   = calcularIdadeMeses(nasc, dataVal)
-        const semanas = calcularIdadeSemanas(nasc, dataVal)
-        if (meses   != null) setIdadeVal(String(meses))
-        if (semanas != null) setSemanasVal(String(semanas))
+        const meses = calcularIdadeMeses(nasc, dataVal)
+        if (meses != null) setIdadeVal(String(meses))
         // Remonta os inputs para refletir os valores preenchidos automaticamente.
         setFormKey(k => k + 1)
       } else {
@@ -226,10 +211,8 @@ export default function AvaliacaoPediatricaForm() {
   function handleDataChange(v: string) {
     setDataVal(v)
     if (dataNascimentoPaciente) {
-      const meses   = calcularIdadeMeses(dataNascimentoPaciente, v)
-      const semanas = calcularIdadeSemanas(dataNascimentoPaciente, v)
-      if (meses   != null) setIdadeVal(String(meses))
-      if (semanas != null) setSemanasVal(String(semanas))
+      const meses = calcularIdadeMeses(dataNascimentoPaciente, v)
+      if (meses != null) setIdadeVal(String(meses))
       // Remonta os inputs para refletir os valores recalculados.
       setFormKey(k => k + 1)
     }
@@ -250,7 +233,6 @@ export default function AvaliacaoPediatricaForm() {
       dataAvaliacao:            formData.dataAvaliacao,
       sexo:                     sexoVal,
       idadeMeses:               num(idadeVal),
-      idadeSemanas:             num(semanasVal),
       peso:                     num(pesoVal),
       estatura:                 num(estVal),
       formulaLacteaId:          formula ? formula.id : null,
@@ -379,17 +361,6 @@ export default function AvaliacaoPediatricaForm() {
                 mask        ="numero"
                 defaultValue={idadeVal}
                 onChange    ={setIdadeVal}
-              />
-            </TCol>
-            <TCol>
-              <TEntry
-                name        ="idadeSemanas"
-                label       ="Idade (semanas)"
-                placeholder ="Ex: 32"
-                width       ="100%"
-                mask        ="numero"
-                defaultValue={semanasVal}
-                onChange    ={setSemanasVal}
               />
             </TCol>
             <TCol>

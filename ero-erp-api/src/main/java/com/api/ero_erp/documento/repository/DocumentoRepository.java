@@ -47,8 +47,8 @@ public interface DocumentoRepository extends JpaRepository<Documento, Long> {
           AND (:emitenteId IS NULL OR d.emitente.id = :emitenteId)
           AND (:clientePessoaNome IS NULL OR LOWER(d.clientePessoa.nome) LIKE LOWER(CONCAT('%', CAST(:clientePessoaNome AS string), '%')))
           AND (:status IS NULL OR d.status = :status)
-          AND (:dataEmissaoInicio IS NULL OR d.dataEmissao >= :dataEmissaoInicio)
-          AND (:dataEmissaoFim IS NULL OR d.dataEmissao <= :dataEmissaoFim)
+          AND (CAST(:dataEmissaoInicio AS date) IS NULL OR d.dataEmissao >= :dataEmissaoInicio)
+          AND (CAST(:dataEmissaoFim AS date) IS NULL OR d.dataEmissao <= :dataEmissaoFim)
     """)
     Page<Documento> findAllWithFilters(
             Pageable pageable,

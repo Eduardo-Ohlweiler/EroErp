@@ -40,10 +40,10 @@ public class AvaliacaoPediatricaController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
             @RequestParam(required = false) Long formulaLacteaId,
-            @RequestParam(required = false) Integer semanasMin,
-            @RequestParam(required = false) Integer semanasMax
+            @RequestParam(required = false) Integer mesesMin,
+            @RequestParam(required = false) Integer mesesMax
     ) {
-        return service.getAll(pageable, pessoaId, dataInicio, dataFim, formulaLacteaId, semanasMin, semanasMax);
+        return service.getAll(pageable, pessoaId, dataInicio, dataFim, formulaLacteaId, mesesMin, mesesMax);
     }
 
     @GetMapping("/{id}")

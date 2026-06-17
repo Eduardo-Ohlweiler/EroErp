@@ -9,7 +9,6 @@ public record AvaliacaoPediatricaSummaryDto(
         String     pessoaNome,
         LocalDate  dataAvaliacao,
         Integer    idadeMeses,
-        Integer    idadeSemanas,
         BigDecimal peso,
         BigDecimal imc,
         String     classifImcIdade,

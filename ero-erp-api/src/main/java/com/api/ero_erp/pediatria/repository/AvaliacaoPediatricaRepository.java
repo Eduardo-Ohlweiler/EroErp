@@ -18,11 +18,11 @@ public interface AvaliacaoPediatricaRepository extends JpaRepository<AvaliacaoPe
         SELECT a FROM AvaliacaoPediatrica a
         WHERE a.cliente.id = :clienteId
           AND (:pessoaId IS NULL OR a.pessoa.id = :pessoaId)
-          AND (:dataInicio IS NULL OR a.dataAvaliacao >= :dataInicio)
-          AND (:dataFim IS NULL OR a.dataAvaliacao <= :dataFim)
+          AND (CAST(:dataInicio AS date) IS NULL OR a.dataAvaliacao >= :dataInicio)
+          AND (CAST(:dataFim AS date) IS NULL OR a.dataAvaliacao <= :dataFim)
           AND (:formulaLacteaId IS NULL OR a.formulaLactea.id = :formulaLacteaId)
-          AND (:semanasMin IS NULL OR a.idadeSemanas >= :semanasMin)
-          AND (:semanasMax IS NULL OR a.idadeSemanas <= :semanasMax)
+          AND (:mesesMin IS NULL OR a.idadeMeses >= :mesesMin)
+          AND (:mesesMax IS NULL OR a.idadeMeses <= :mesesMax)
         """)
     Page<AvaliacaoPediatrica> findAllWithFilters(
             Pageable pageable,
@@ -31,8 +31,8 @@ public interface AvaliacaoPediatricaRepository extends JpaRepository<AvaliacaoPe
             @Param("dataInicio")      LocalDate dataInicio,
             @Param("dataFim")         LocalDate dataFim,
             @Param("formulaLacteaId") Long      formulaLacteaId,
-            @Param("semanasMin")      Integer   semanasMin,
-            @Param("semanasMax")      Integer   semanasMax
+            @Param("mesesMin")        Integer   mesesMin,
+            @Param("mesesMax")        Integer   mesesMax
     );
 
     @Query("""

@@ -33,8 +33,8 @@ public interface ParcelaContaPagarRepository extends JpaRepository<ParcelaContaP
           AND (:emitenteId IS NULL OR e.id = :emitenteId)
           AND (:pessoaId IS NULL OR pes.id = :pessoaId)
           AND (:status IS NULL OR CAST(p.status AS string) = :status)
-          AND (:dataVencDe IS NULL OR p.dataVencimento >= :dataVencDe)
-          AND (:dataVencAte IS NULL OR p.dataVencimento <= :dataVencAte)
+          AND (CAST(:dataVencDe AS date) IS NULL OR p.dataVencimento >= :dataVencDe)
+          AND (CAST(:dataVencAte AS date) IS NULL OR p.dataVencimento <= :dataVencAte)
         ORDER BY p.dataVencimento ASC
     """)
     List<ParcelaContaPagar> findForPagarContas(
