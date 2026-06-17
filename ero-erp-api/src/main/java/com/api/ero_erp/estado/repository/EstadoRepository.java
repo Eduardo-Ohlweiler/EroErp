@@ -1,7 +1,6 @@
 package com.api.ero_erp.estado.repository;
 
 import com.api.ero_erp.estado.entity.Estado;
-import com.api.ero_erp.tipoendereco.entity.TipoEndereco;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

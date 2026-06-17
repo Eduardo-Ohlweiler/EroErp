@@ -68,6 +68,8 @@ import AvaliacaoPediatricaList                    from "../pages/pediatria/Avali
 import AvaliacaoPediatricaForm                    from "../pages/pediatria/AvaliacaoPediatricaForm"
 import FormulaLacteaList                          from "../pages/pediatria/FormulaLacteaList"
 import FormulaLacteaForm                          from "../pages/pediatria/FormulaLacteaForm"
+import PediatriaPacienteDashboard                 from "../pages/pediatria/PediatriaPacienteDashboard"
+import PediatriaGeralDashboard                    from "../pages/pediatria/PediatriaGeralDashboard"
 import ContaFinanceiraFormList                   from "../pages/financeiro/auxiliares/ContaFinanceiraFormList"
 import TipoCobrancaFormList                      from "../pages/financeiro/auxiliares/TipoCobrancaFormList"
 import FormaPagamentoFormList                    from "../pages/financeiro/auxiliares/FormaPagamentoFormList"
@@ -245,6 +247,8 @@ export function Router() {
               <Route path="/pediatria/formulas-lacteas"       element={<FormulaLacteaList />} />
               <Route path="/pediatria/formulas-lacteas/novo"  element={<FormulaLacteaForm />} />
               <Route path="/pediatria/formulas-lacteas/:id"   element={<FormulaLacteaForm />} />
+              <Route path="/pediatria/painel-paciente"        element={<PediatriaPacienteDashboard />} />
+              <Route path="/dashboards/pediatria"             element={<PediatriaGeralDashboard />} />
             </Route>
 
             {/* ── DASHBOARDS AUXILIAR ── */}

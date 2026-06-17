@@ -4,7 +4,6 @@ import com.api.ero_erp.pessoa.dtos.PessoaCreateDto;
 import com.api.ero_erp.pessoa.dtos.PessoaResponseDto;
 import com.api.ero_erp.pessoa.dtos.PessoaSelectDto;
 import com.api.ero_erp.pessoa.dtos.PessoaUpdateDto;
-import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.pessoa.service.PessoaService;
 import io.swagger.v3.oas.annotations.Operation;

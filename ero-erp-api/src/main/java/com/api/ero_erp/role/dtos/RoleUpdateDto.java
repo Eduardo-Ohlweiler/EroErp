@@ -1,7 +1,6 @@
 package com.api.ero_erp.role.dtos;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class RoleUpdateDto {

@@ -46,6 +46,13 @@ public class FormulaLacteaController {
         return service.findForSelect();
     }
 
+    @GetMapping("/select/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PEDIATRIA', 'PEDIATRIA_GET')")
+    @Operation(summary = "Busca fórmula láctea por ID para seletores (do tenant ou global)")
+    public FormulaLacteaResponseDto selectById(@PathVariable Long id) {
+        return service.findById(id);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PEDIATRIA', 'PEDIATRIA_GET')")
     @Operation(summary = "Busca fórmula láctea por ID (do tenant ou global)")

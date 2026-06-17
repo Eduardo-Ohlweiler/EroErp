@@ -1,11 +1,11 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
     label: "Dashboards",
     icon:  FaTachometerAlt,
-    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET", "DOCUMENTO", "DOCUMENTO_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET", "DOCUMENTO", "DOCUMENTO_GET", "PEDIATRIA", "PEDIATRIA_GET"],
     children: [
       {
         label: "Geral",
@@ -30,6 +30,12 @@ export const menu: MenuItem[] = [
         path:  "/dashboards/documentos",
         icon:  FaFileInvoice,
         roles: ["SUPERADMIN", "ADMIN", "DOCUMENTO", "DOCUMENTO_GET"],
+      },
+      {
+        label: "Pediatria",
+        path:  "/dashboards/pediatria",
+        icon:  FaBaby,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
       },
       {
         label: "Auxiliar Dashboards",
@@ -234,6 +240,12 @@ export const menu: MenuItem[] = [
     icon:  FaBaby,
     roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
     children: [
+      {
+        label: "Painel do Paciente",
+        path:  "/pediatria/painel-paciente",
+        icon:  FaChartLine,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
+      },
       {
         label: "Calculadora",
         path:  "/pediatria/calculadora",

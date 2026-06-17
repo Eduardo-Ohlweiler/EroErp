@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -43,5 +44,29 @@ public interface AvaliacaoPediatricaRepository extends JpaRepository<AvaliacaoPe
     Optional<AvaliacaoPediatrica> findByIdAndClienteId(
             @Param("id")        Long id,
             @Param("clienteId") Long clienteId
+    );
+
+    @Query("""
+        SELECT a FROM AvaliacaoPediatrica a
+        JOIN FETCH a.pessoa p
+        LEFT JOIN FETCH a.formulaLactea f
+        WHERE a.cliente.id = :clienteId
+          AND (:pessoaId IS NULL OR a.pessoa.id = :pessoaId)
+          AND a.dataAvaliacao BETWEEN :desde AND :ate
+          AND (:formulaLacteaId IS NULL OR a.formulaLactea.id = :formulaLacteaId)
+          AND (:mesesMin IS NULL OR a.idadeMeses >= :mesesMin)
+          AND (:mesesMax IS NULL OR a.idadeMeses <= :mesesMax)
+          AND (:sexo IS NULL OR UPPER(a.sexo) = UPPER(CAST(:sexo AS string)))
+        ORDER BY a.idadeMeses ASC, a.dataAvaliacao ASC
+        """)
+    List<AvaliacaoPediatrica> findForDashboard(
+            @Param("clienteId")       Long      clienteId,
+            @Param("pessoaId")        Long      pessoaId,
+            @Param("desde")           LocalDate desde,
+            @Param("ate")             LocalDate ate,
+            @Param("formulaLacteaId") Long      formulaLacteaId,
+            @Param("mesesMin")        Integer   mesesMin,
+            @Param("mesesMax")        Integer   mesesMax,
+            @Param("sexo")            String    sexo
     );
 }
