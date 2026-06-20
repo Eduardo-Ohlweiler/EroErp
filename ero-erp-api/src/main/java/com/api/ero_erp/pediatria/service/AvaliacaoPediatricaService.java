@@ -17,10 +17,12 @@ import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.service.UsuarioService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class AvaliacaoPediatricaService {
@@ -61,6 +63,23 @@ public class AvaliacaoPediatricaService {
         return repository.findAllWithFilters(pageable, clienteId, pessoaId, dataInicio, dataFim,
                         formulaLacteaId, mesesMin, mesesMax)
                 .map(this::toSummaryDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AvaliacaoPediatricaResponseDto> getAllForExport(
+            Long      pessoaId,
+            LocalDate dataInicio,
+            LocalDate dataFim,
+            Long      formulaLacteaId,
+            Integer   mesesMin,
+            Integer   mesesMax
+    ) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        return repository.findAllWithFilters(
+                        Pageable.unpaged(Sort.by(Sort.Direction.DESC, "dataAvaliacao")),
+                        clienteId, pessoaId, dataInicio, dataFim, formulaLacteaId, mesesMin, mesesMax)
+                .map(this::toResponseDto)
+                .getContent();
     }
 
     @Transactional(readOnly = true)

@@ -2,7 +2,7 @@ import { useState, useEffect }                                    from "react"
 import { FaFilePdf, FaFileCsv }                                    from "react-icons/fa"
 import { useNavigate }                                            from "react-router-dom"
 import { api }                                                     from "../../services/api"
-import type { AvaliacaoPediatricaSummary }                         from "../../types/Pediatria"
+import type { AvaliacaoPediatricaSummary, AvaliacaoPediatricaResponse } from "../../types/Pediatria"
 import type { TDataGridColumn }                                    from "../../types/TDataGridColumn"
 import { TPage }                                                   from "../../components/tpage"
 import { TForm, TFormActionsLeft, TFormActionsRight, TFormFooter } from "../../components/tform"
@@ -18,7 +18,8 @@ import { TDataGridFooter }                                         from "../../c
 import { useMessage }                                              from "../../hooks/useMessage"
 import { useQuestion }                                             from "../../hooks/useQuestion"
 import { displayPessoa }                                           from "../../utils/pessoas"
-import { gerarPdfAvaliacoesPediatricas }                          from "../../utils/geradorPdf"
+import { gerarPdfLista }                                          from "../../utils/geradorPdf"
+import { exportarCsv }                                            from "../../utils/exportarPlanilha"
 
 function formatarData(iso: string): string {
   if (!iso) return "—"
@@ -56,6 +57,51 @@ const columns: TDataGridColumn<AvaliacaoPediatricaSummary>[] = [
         {row.classifImcIdade ?? "—"}
       </span>
     ) },
+]
+
+// ── Exportação (PDF + CSV) — descritor único de colunas completas, em sincronia ──
+// pdf usa "—" para nulos; csv usa "" e vírgula decimal (pt-BR).
+function pdfNum(v: number | null, dec = 1): string {
+  return v == null || Number.isNaN(Number(v)) ? "—" : Number(v).toFixed(dec)
+}
+function csvNum(v: number | null, dec = 1): string {
+  return v == null || Number.isNaN(Number(v)) ? "" : Number(v).toFixed(dec).replace(".", ",")
+}
+function intPdf(v: number | null): string { return v == null ? "—" : String(v) }
+function intCsv(v: number | null): string { return v == null ? "" : String(v) }
+function sexoLabel(s: string | null): string { return s === "M" ? "Masculino" : s === "F" ? "Feminino" : "" }
+
+interface ColExport {
+  header: string
+  align?: "left" | "right" | "center"
+  pdf: (l: AvaliacaoPediatricaResponse) => string
+  csv: (l: AvaliacaoPediatricaResponse) => string
+}
+
+const EXPORT_COLS: ColExport[] = [
+  { header: "Data",                   pdf: l => formatarData(l.dataAvaliacao), csv: l => formatarData(l.dataAvaliacao) },
+  { header: "Paciente",               pdf: l => l.pessoaNome ?? "—",           csv: l => l.pessoaNome ?? "" },
+  { header: "Sexo", align: "center",  pdf: l => sexoLabel(l.sexo) || "—",      csv: l => sexoLabel(l.sexo) },
+  { header: "Idade (meses)", align: "right", pdf: l => intPdf(l.idadeMeses), csv: l => intCsv(l.idadeMeses) },
+  { header: "Peso (kg)",     align: "right", pdf: l => pdfNum(l.peso, 1),    csv: l => csvNum(l.peso, 1) },
+  { header: "Estatura (cm)", align: "right", pdf: l => pdfNum(l.estatura, 1), csv: l => csvNum(l.estatura, 1) },
+  { header: "IMC",           align: "right", pdf: l => pdfNum(l.imc, 1),     csv: l => csvNum(l.imc, 1) },
+  { header: "Peso/idade",      pdf: l => l.classifPesoIdade ?? "—",     csv: l => l.classifPesoIdade ?? "" },
+  { header: "Estatura/idade",  pdf: l => l.classifEstaturaIdade ?? "—", csv: l => l.classifEstaturaIdade ?? "" },
+  { header: "IMC/idade",       pdf: l => l.classifImcIdade ?? "—",      csv: l => l.classifImcIdade ?? "" },
+  { header: "VET (kcal)",        align: "right", pdf: l => pdfNum(l.vet, 0),                 csv: l => csvNum(l.vet, 0) },
+  { header: "Proteína nec. (g)", align: "right", pdf: l => pdfNum(l.proteinaNecessidade, 1), csv: l => csvNum(l.proteinaNecessidade, 1) },
+  { header: "Fórmula",      pdf: l => l.formulaNome ?? "—", csv: l => l.formulaNome ?? "" },
+  { header: "Kcal/100ml", align: "right", pdf: l => pdfNum(l.formulaKcalPor100ml, 1),     csv: l => csvNum(l.formulaKcalPor100ml, 1) },
+  { header: "Prot/100ml", align: "right", pdf: l => pdfNum(l.formulaProteinaPor100ml, 2), csv: l => csvNum(l.formulaProteinaPor100ml, 2) },
+  { header: "Volume (ml)",        align: "right", pdf: l => pdfNum(l.volumeMl, 0),       csv: l => csvNum(l.volumeMl, 0) },
+  { header: "Freq. (h)",          align: "right", pdf: l => pdfNum(l.frequenciaHoras, 0), csv: l => csvNum(l.frequenciaHoras, 0) },
+  { header: "Vezes/dia",          align: "right", pdf: l => pdfNum(l.vezesDia, 1),       csv: l => csvNum(l.vezesDia, 1) },
+  { header: "Volume total (ml)",  align: "right", pdf: l => pdfNum(l.volumeTotal, 0),    csv: l => csvNum(l.volumeTotal, 0) },
+  { header: "Calorias totais (kcal)", align: "right", pdf: l => pdfNum(l.caloriasTotais, 0), csv: l => csvNum(l.caloriasTotais, 0) },
+  { header: "Proteína total (g)", align: "right", pdf: l => pdfNum(l.proteinaTotal, 1),  csv: l => csvNum(l.proteinaTotal, 1) },
+  { header: "% Calórico", align: "right", pdf: l => l.percCalorico != null ? `${pdfNum(l.percCalorico, 1)}%` : "—", csv: l => csvNum(l.percCalorico, 1) },
+  { header: "% Proteico", align: "right", pdf: l => l.percProteico != null ? `${pdfNum(l.percProteico, 1)}%` : "—", csv: l => csvNum(l.percProteico, 1) },
 ]
 
 export default function AvaliacaoPediatricaList() {
@@ -170,10 +216,16 @@ export default function AvaliacaoPediatricaList() {
     load({ pessoaId: "", inicio: "", fim: "", mesMin: "", mesMax: "", formulaId: "" }, 0)
   }
 
-  async function fetchTodos(f: Filtros): Promise<AvaliacaoPediatricaSummary[]> {
-    const params = buildParams(f, 0, 1000)
-    const res = await api.get(`/avaliacoes-pediatricas?${params.toString()}`)
-    return res.data.content ?? []
+  async function fetchTodos(f: Filtros): Promise<AvaliacaoPediatricaResponse[]> {
+    const params = new URLSearchParams()
+    if (f.pessoaId)  params.append("pessoaId",        f.pessoaId)
+    if (f.inicio)    params.append("dataInicio",      f.inicio)
+    if (f.fim)       params.append("dataFim",         f.fim)
+    if (f.mesMin)    params.append("mesesMin",        f.mesMin)
+    if (f.mesMax)    params.append("mesesMax",        f.mesMax)
+    if (f.formulaId) params.append("formulaLacteaId", f.formulaId)
+    const res = await api.get(`/avaliacoes-pediatricas/export?${params.toString()}`)
+    return res.data ?? []
   }
 
   function nomeArquivo(ext: string): string {
@@ -185,18 +237,12 @@ export default function AvaliacaoPediatricaList() {
     try {
       const linhas = await fetchTodos(f)
       if (linhas.length === 0) { showMessage("warning", "Nenhuma avaliação para exportar"); return }
-      const b64 = gerarPdfAvaliacoesPediatricas({
+      const b64 = gerarPdfLista({
+        titulo:      "AVALIAÇÕES PEDIÁTRICAS",
         dataEmissao: hojeISO(),
         filtros:     filtrosResumo(f),
-        linhas: linhas.map(l => ({
-          dataAvaliacao:   l.dataAvaliacao,
-          pessoaNome:      l.pessoaNome,
-          idadeMeses:      l.idadeMeses,
-          peso:            l.peso,
-          imc:             l.imc,
-          classifImcIdade: l.classifImcIdade,
-          formulaNome:     l.formulaNome,
-        })),
+        colunas:     EXPORT_COLS.map(c => ({ header: c.header, align: c.align })),
+        linhas:      linhas.map(l => EXPORT_COLS.map(c => c.pdf(l))),
       })
       const link    = document.createElement("a")
       link.href     = `data:application/pdf;base64,${b64}`
@@ -212,32 +258,11 @@ export default function AvaliacaoPediatricaList() {
     try {
       const linhas = await fetchTodos(f)
       if (linhas.length === 0) { showMessage("warning", "Nenhuma avaliação para exportar"); return }
-
-      // Todos os campos entre aspas — protege a vírgula decimal (ex.: "7,5") de ser
-      // interpretada como separador de coluna no Excel/LibreOffice pt-BR.
-      const aspas = (v: string) => `"${v.replace(/"/g, '""')}"`
-      const numCsv = (v: number | null, dec = 1) =>
-        v == null || Number.isNaN(Number(v)) ? "" : Number(v).toFixed(dec).replace(".", ",")
-      const intCsv = (v: number | null) => v == null ? "" : String(v)
-
-      const header = ["Data", "Paciente", "Idade (meses)", "Peso (kg)", "IMC", "Classif. IMC", "Fórmula"]
-      const rows = linhas.map(l => [
-        formatarData(l.dataAvaliacao),
-        l.pessoaNome ?? "",
-        intCsv(l.idadeMeses),
-        numCsv(l.peso, 1),
-        numCsv(l.imc, 1),
-        l.classifImcIdade ?? "",
-        l.formulaNome ?? "",
-      ].map(aspas).join(";"))
-
-      const conteudo = "﻿" + [header.map(aspas).join(";"), ...rows].join("\r\n")
-      const blob = new Blob([conteudo], { type: "text/csv;charset=utf-8" })
-      const link = document.createElement("a")
-      link.href     = URL.createObjectURL(blob)
-      link.download = nomeArquivo("csv")
-      link.click()
-      URL.revokeObjectURL(link.href)
+      exportarCsv(
+        nomeArquivo("csv"),
+        EXPORT_COLS.map(c => c.header),
+        linhas.map(l => EXPORT_COLS.map(c => c.csv(l))),
+      )
     } catch {
       showMessage("error", "Erro ao gerar CSV")
     }

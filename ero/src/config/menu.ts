@@ -1,11 +1,11 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine, FaUtensils, FaPills, FaHeartbeat /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
     label: "Dashboards",
     icon:  FaTachometerAlt,
-    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET", "DOCUMENTO", "DOCUMENTO_GET", "PEDIATRIA", "PEDIATRIA_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET", "DOCUMENTO", "DOCUMENTO_GET", "PEDIATRIA", "PEDIATRIA_GET", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
     children: [
       {
         label: "Geral",
@@ -36,6 +36,12 @@ export const menu: MenuItem[] = [
         path:  "/dashboards/pediatria",
         icon:  FaBaby,
         roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
+      },
+      {
+        label: "Terapia Nutricional",
+        path:  "/dashboards/terapia-nutricional",
+        icon:  FaUtensils,
+        roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
       },
       {
         label: "Auxiliar Dashboards",
@@ -263,6 +269,68 @@ export const menu: MenuItem[] = [
         path:  "/pediatria/formulas-lacteas",
         icon:  FaFlask,
         roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
+      },
+    ],
+  },
+  {
+    label: "Terapia Nutricional",
+    icon:  FaUtensils,
+    roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+    children: [
+      {
+        label: "Painel de Avaliação",
+        path:  "/terapia-nutricional/painel-paciente",
+        icon:  FaChartLine,
+        roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+      },
+      {
+        label: "Painel de Acompanhamento Diário",
+        path:  "/terapia-nutricional/painel-acompanhamento",
+        icon:  FaHeartbeat,
+        roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+      },
+      {
+        label: "Calculadora",
+        path:  "/terapia-nutricional/calculadora",
+        icon:  FaCalculator,
+        roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+      },
+      {
+        label: "Avaliações",
+        path:  "/terapia-nutricional/avaliacoes",
+        icon:  FaClipboardList,
+        roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+      },
+      {
+        label: "Acompanhamento Diário",
+        path:  "/terapia-nutricional/acompanhamento",
+        icon:  FaFileAlt,
+        roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+      },
+      {
+        label: "Ferramentas Clínicas",
+        path:  "/terapia-nutricional/ferramentas",
+        icon:  FaStethoscope,
+        roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+      },
+      {
+        label: "Auxiliar",
+        icon:  FaCogs,
+        roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+        children: [
+          {
+            label: "Fórmulas Enterais",
+            path:  "/terapia-nutricional/formulas-enterais",
+            icon:  FaFlask,
+            roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+          },
+          {
+            label: "Suplementos",
+            path:  "/terapia-nutricional/suplementos",
+            icon:  FaPills,
+            roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+          },
+        ],
       },
     ],
   },

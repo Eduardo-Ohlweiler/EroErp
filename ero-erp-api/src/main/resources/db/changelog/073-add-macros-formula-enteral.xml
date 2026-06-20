@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="073-add-macros-formula-enteral" author="eduardo">
+
+        <!-- Macros adicionais por fórmula (aba "Dietas consulta" da planilha) -->
+        <addColumn tableName="formula_enteral">
+            <column name="cho"          type="DECIMAL(10,2)"/>
+            <column name="lip"          type="DECIMAL(10,2)"/>
+            <column name="fibras"       type="DECIMAL(10,2)"/>
+            <column name="potassio"     type="DECIMAL(10,2)"/>
+            <column name="osmolaridade" type="DECIMAL(10,2)"/>
+        </addColumn>
+
+        <!-- Osmolaridade dos suplementos (faltava na fase 1) -->
+        <addColumn tableName="suplemento">
+            <column name="osmolaridade" type="DECIMAL(10,2)"/>
+        </addColumn>
+
+    </changeSet>
+
+</databaseChangeLog>

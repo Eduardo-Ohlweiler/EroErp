@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="068-create-terapia-nutricional-cadastros" author="eduardo">
+
+        <!-- ── FORMULA_ENTERAL ────────────────────────────────────────────── -->
+        <createTable tableName="formula_enteral">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <!-- nullable: NULL = fórmula global do sistema -->
+            <column name="cliente_id" type="BIGINT"/>
+
+            <column name="nome" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="densidade_kcal_ml" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="proteina_g_l" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="categoria" type="VARCHAR(50)"/>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="formula_enteral" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_formula_enteral_cliente"
+                onDelete="RESTRICT"/>
+
+        <createIndex tableName="formula_enteral" indexName="idx_formula_enteral_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <!-- ── SUPLEMENTO ─────────────────────────────────────────────────── -->
+        <createTable tableName="suplemento">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <!-- nullable: NULL = suplemento global do sistema -->
+            <column name="cliente_id" type="BIGINT"/>
+
+            <column name="nome" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="qtd_g" type="DECIMAL(10,2)"/>
+            <column name="kcal" type="DECIMAL(10,2)"/>
+            <column name="ptn" type="DECIMAL(10,2)"/>
+            <column name="cho" type="DECIMAL(10,2)"/>
+            <column name="acucar" type="DECIMAL(10,2)"/>
+            <column name="lip" type="DECIMAL(10,2)"/>
+            <column name="sodio" type="DECIMAL(10,2)"/>
+            <column name="potassio" type="DECIMAL(10,2)"/>
+            <column name="fosforo" type="DECIMAL(10,2)"/>
+            <column name="ferro" type="DECIMAL(10,2)"/>
+            <column name="fibras" type="DECIMAL(10,2)"/>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="suplemento" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_suplemento_cliente"
+                onDelete="RESTRICT"/>
+
+        <createIndex tableName="suplemento" indexName="idx_suplemento_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

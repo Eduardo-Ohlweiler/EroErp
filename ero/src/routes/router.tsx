@@ -70,6 +70,19 @@ import FormulaLacteaList                          from "../pages/pediatria/Formu
 import FormulaLacteaForm                          from "../pages/pediatria/FormulaLacteaForm"
 import PediatriaPacienteDashboard                 from "../pages/pediatria/PediatriaPacienteDashboard"
 import PediatriaGeralDashboard                    from "../pages/pediatria/PediatriaGeralDashboard"
+import CalculadoraNutricional                      from "../pages/terapia-nutricional/CalculadoraNutricional"
+import FormulaEnteralList                          from "../pages/terapia-nutricional/FormulaEnteralList"
+import FormulaEnteralForm                          from "../pages/terapia-nutricional/FormulaEnteralForm"
+import SuplementoList                              from "../pages/terapia-nutricional/SuplementoList"
+import SuplementoForm                              from "../pages/terapia-nutricional/SuplementoForm"
+import AvaliacaoNutricionalList                     from "../pages/terapia-nutricional/AvaliacaoNutricionalList"
+import AvaliacaoNutricionalForm                     from "../pages/terapia-nutricional/AvaliacaoNutricionalForm"
+import TerapiaNutricionalPacienteDashboard          from "../pages/terapia-nutricional/TerapiaNutricionalPacienteDashboard"
+import TerapiaNutricionalAcompanhamentoDashboard     from "../pages/terapia-nutricional/TerapiaNutricionalAcompanhamentoDashboard"
+import TerapiaNutricionalGeralDashboard             from "../pages/terapia-nutricional/TerapiaNutricionalGeralDashboard"
+import FerramentasClinicas                          from "../pages/terapia-nutricional/FerramentasClinicas"
+import RegistroDiarioUtiList                         from "../pages/terapia-nutricional/RegistroDiarioUtiList"
+import RegistroDiarioUtiForm                         from "../pages/terapia-nutricional/RegistroDiarioUtiForm"
 import ContaFinanceiraFormList                   from "../pages/financeiro/auxiliares/ContaFinanceiraFormList"
 import TipoCobrancaFormList                      from "../pages/financeiro/auxiliares/TipoCobrancaFormList"
 import FormaPagamentoFormList                    from "../pages/financeiro/auxiliares/FormaPagamentoFormList"
@@ -249,6 +262,27 @@ export function Router() {
               <Route path="/pediatria/formulas-lacteas/:id"   element={<FormulaLacteaForm />} />
               <Route path="/pediatria/painel-paciente"        element={<PediatriaPacienteDashboard />} />
               <Route path="/dashboards/pediatria"             element={<PediatriaGeralDashboard />} />
+            </Route>
+
+            {/* ── TERAPIA NUTRICIONAL ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"]} />}>
+              <Route path="/terapia-nutricional/painel-paciente"        element={<TerapiaNutricionalPacienteDashboard />} />
+              <Route path="/terapia-nutricional/painel-acompanhamento"  element={<TerapiaNutricionalAcompanhamentoDashboard />} />
+              <Route path="/terapia-nutricional/calculadora"            element={<CalculadoraNutricional />} />
+              <Route path="/terapia-nutricional/avaliacoes"             element={<AvaliacaoNutricionalList />} />
+              <Route path="/terapia-nutricional/avaliacoes/novo"        element={<AvaliacaoNutricionalForm />} />
+              <Route path="/terapia-nutricional/avaliacoes/:id"         element={<AvaliacaoNutricionalForm />} />
+              <Route path="/terapia-nutricional/formulas-enterais"      element={<FormulaEnteralList />} />
+              <Route path="/terapia-nutricional/formulas-enterais/novo" element={<FormulaEnteralForm />} />
+              <Route path="/terapia-nutricional/formulas-enterais/:id"  element={<FormulaEnteralForm />} />
+              <Route path="/terapia-nutricional/suplementos"            element={<SuplementoList />} />
+              <Route path="/terapia-nutricional/suplementos/novo"       element={<SuplementoForm />} />
+              <Route path="/terapia-nutricional/suplementos/:id"        element={<SuplementoForm />} />
+              <Route path="/terapia-nutricional/ferramentas"            element={<FerramentasClinicas />} />
+              <Route path="/terapia-nutricional/acompanhamento"         element={<RegistroDiarioUtiList />} />
+              <Route path="/terapia-nutricional/acompanhamento/novo"    element={<RegistroDiarioUtiForm />} />
+              <Route path="/terapia-nutricional/acompanhamento/:id"     element={<RegistroDiarioUtiForm />} />
+              <Route path="/dashboards/terapia-nutricional"             element={<TerapiaNutricionalGeralDashboard />} />
             </Route>
 
             {/* ── DASHBOARDS AUXILIAR ── */}

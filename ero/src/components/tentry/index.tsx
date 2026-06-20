@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-type MaskType = "cpf" | "cnpj" | "telefone" | "celular" | "cep" | "data" | "hora" | "moeda" | "numero" | "numerodecimal" | "numerodecimal2"
+type MaskType = "cpf" | "cnpj" | "telefone" | "celular" | "cep" | "data" | "hora" | "moeda" | "numero" | "numerodecimal" | "numerodecimal2" | "numerosinal"
 
 function applyMask(value: string, mask: MaskType): string {
   const onlyDigits = value.replace(/\D/g, "")
@@ -66,6 +66,12 @@ function applyMask(value: string, mask: MaskType): string {
       return num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }
 
+    // numerosinal: inteiro com sinal opcional (ex.: -200) — campos que aceitam negativos (balanço hídrico)
+    case "numerosinal": {
+      const neg = value.trimStart().startsWith("-")
+      return (neg ? "-" : "") + onlyDigits.slice(0, 9)
+    }
+
     default:
       return value
   }
@@ -125,6 +131,13 @@ function getRawValue(masked: string, mask: MaskType): string {
       return num.toFixed(2)
     }
 
+    // numerosinal: "-200" → "-200" (vazio se só houver o sinal)
+    case "numerosinal": {
+      const neg    = masked.trimStart().startsWith("-")
+      const digits = masked.replace(/\D/g, "")
+      return digits ? (neg ? "-" : "") + digits : ""
+    }
+
     default:
       return masked
   }
@@ -167,6 +180,12 @@ function toDisplay(value: string, mask: MaskType): string {
         return num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       }
       return applyMask(value, mask)
+    }
+
+    // numerosinal: recebe -200 (ou -200.00) → exibe -200 (inteiro com sinal)
+    case "numerosinal": {
+      const num = parseFloat(value)
+      return isNaN(num) ? "" : String(Math.round(num))
     }
 
     // demais: aplica máscara normalmente

@@ -1054,6 +1054,268 @@ export function gerarPdfAvaliacaoFisica(dados: DadosAvaliacaoFisica): string {
   return doc.output("datauristring").split(",")[1]
 }
 
+// ── RELATÓRIO DE TERAPIA NUTRICIONAL ──────────────────────────────────────────
+
+export interface DadosRelatorioNutricional {
+  dataEmissao:   string         // YYYY-MM-DD
+  pacienteNome:  string | null
+  usuarioNome:   string | null
+  sexo:          string         // "M" | "F"
+  idade:         number | null  // anos
+  pesoAtual:     number | null
+  altura:        number | null
+  // Antropometria
+  imc:                number | null
+  classifImcOms:      string | null
+  classifImcOpas:     string | null
+  pesoIdeal:          number | null
+  pesoAjustado:       number | null
+  percPerdaPeso:      number | null
+  classifPerdaPeso:   string | null
+  percAdequacaoCb:    number | null
+  classifAdequacaoCb: string | null
+  classifDeplecaoCp:  string | null
+  // Necessidades
+  kcalMin:   number | null
+  kcalMax:   number | null
+  ptnMin:    number | null
+  ptnMax:    number | null
+  kcalTotal: number | null
+  ptnTotal:  number | null
+  // Dieta enteral
+  formulaNome:  string | null
+  modoDieta:    string | null  // "CONTINUO" | "INTERMITENTE"
+  vt:           number | null
+  kcalDieta:    number | null
+  ptnDieta:     number | null
+  percVct:      number | null
+  percPtn:      number | null
+  volumePleno:  number | null
+  ptnPleno?:       number | null
+  ptnSuplementar?: number | null
+  progressao?:     { dia: number; pct: number; kcalDia: number; volume: number | null }[]
+  moduloProteico?: { nome: string; gramas: number; kcalAdicionada: number }[]
+  // Hidratação
+  necHidricaMin:   number | null
+  necHidricaIdeal: number | null
+  aguaDieta:       number | null
+  aguaExtraIdeal:  number | null
+  observacoes?:    string | null
+}
+
+export function gerarPdfNutricional(dados: DadosRelatorioNutricional): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+  const COR: [number, number, number] = [60, 90, 150]
+
+  const fmt = (v: number | null, dec = 1, suf = "") =>
+    v == null || Number.isNaN(v) ? "—" : `${v.toFixed(dec)}${suf}`
+
+  let y = faixaTopo(doc, "RELATÓRIO DE TERAPIA NUTRICIONAL",
+    dados.pacienteNome ?? "Cálculo rápido", COR)
+
+  // Referência
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  const ref = [
+    `Emitido em ${fmtData(dados.dataEmissao)}`,
+    dados.usuarioNome ? `Profissional: ${dados.usuarioNome}` : null,
+  ].filter(Boolean).join("  •  ")
+  doc.text(ref, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  // ── Caixa de métricas ───────────────────────────────────────────────────────
+  const metrics: { label: string; valor: string }[] = [
+    { label: "Sexo",   valor: dados.sexo === "M" ? "Masculino" : "Feminino" },
+    { label: "Idade",  valor: dados.idade != null ? `${dados.idade} anos` : "—" },
+    { label: "Peso",   valor: fmt(dados.pesoAtual, 1, " kg") },
+    { label: "Altura", valor: fmt(dados.altura, 1, " cm") },
+    { label: "IMC",    valor: fmt(dados.imc, 1) },
+  ]
+
+  doc.setFillColor(238, 242, 250)
+  doc.setDrawColor(...COR)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(mg, y, inner, 20, 3, 3, "FD")
+
+  const cellW = inner / metrics.length
+  metrics.forEach((m, i) => {
+    const cx = mg + i * cellW + cellW / 2
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(80, 80, 80)
+    doc.text(m.label, cx, y + 7, { align: "center" })
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COR)
+    doc.text(m.valor, cx, y + 15, { align: "center" })
+  })
+  doc.setTextColor(0, 0, 0)
+  y += 27
+
+  // ── Antropometria & estado nutricional ──────────────────────────────────────
+  autoTable(doc, {
+    startY: y,
+    head: [["Antropometria & Estado Nutricional", "Valor"]],
+    body: [
+      ["Classificação IMC (OMS)",   dados.classifImcOms ?? "—"],
+      ["Classificação IMC (OPAS)",  dados.classifImcOpas ?? "—"],
+      ["Peso ideal",                fmt(dados.pesoIdeal, 1, " kg")],
+      ["Peso ajustado",             fmt(dados.pesoAjustado, 1, " kg")],
+      ["% Perda de peso",           fmt(dados.percPerdaPeso, 1, " %")],
+      ["Classif. perda de peso",    dados.classifPerdaPeso ?? "—"],
+      ["% Adequação CB",            fmt(dados.percAdequacaoCb, 1, " %")],
+      ["Classif. CB",               dados.classifAdequacaoCb ?? "—"],
+      ["Depleção da panturrilha",   dados.classifDeplecaoCp ?? "—"],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 1: { halign: "right" } },
+    margin:       { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+  y += 5
+
+  // ── Necessidades nutricionais ───────────────────────────────────────────────
+  if (y > 220) { doc.addPage(); y = 20 }
+  autoTable(doc, {
+    startY: y,
+    head: [["Necessidades Nutricionais", "Valor"]],
+    body: [
+      ["Energia (mínima)",        fmt(dados.kcalMin, 0, " kcal/dia")],
+      ["Energia (máxima)",        fmt(dados.kcalMax, 0, " kcal/dia")],
+      ["Proteína (mínima)",       fmt(dados.ptnMin, 1, " g/dia")],
+      ["Proteína (máxima)",       fmt(dados.ptnMax, 1, " g/dia")],
+      ["Energia personalizada",   fmt(dados.kcalTotal, 0, " kcal/dia")],
+      ["Proteína personalizada",  fmt(dados.ptnTotal, 1, " g/dia")],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 1: { halign: "right" } },
+    margin:       { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+  y += 5
+
+  // ── Dieta enteral ───────────────────────────────────────────────────────────
+  if (dados.formulaNome) {
+    if (y > 220) { doc.addPage(); y = 20 }
+    autoTable(doc, {
+      startY: y,
+      head: [["Dieta Enteral", "Valor"]],
+      body: [
+        ["Fórmula",            dados.formulaNome],
+        ["Modo de infusão",    dados.modoDieta === "CONTINUO" ? "Contínuo" : dados.modoDieta === "INTERMITENTE" ? "Intermitente" : "—"],
+        ["Volume total (dia)", fmt(dados.vt, 0, " ml")],
+        ["Calorias",           fmt(dados.kcalDieta, 0, " kcal/dia")],
+        ["Proteína",           fmt(dados.ptnDieta, 1, " g/dia")],
+        ["% VCT (da meta)",    fmt(dados.percVct, 1, " %")],
+        ["% PTN (da meta)",    fmt(dados.percPtn, 1, " %")],
+        ["Volume pleno",       fmt(dados.volumePleno, 0, " ml")],
+        ["Proteína no vol. pleno", fmt(dados.ptnPleno ?? null, 1, " g/dia")],
+        ["Proteína suplementar",   fmt(dados.ptnSuplementar ?? null, 1, " g/dia")],
+      ],
+      headStyles:   { fillColor: COR, fontSize: 9 },
+      bodyStyles:   { fontSize: 9 },
+      columnStyles: { 1: { halign: "right" } },
+      margin:       { left: mg, right: mg },
+    })
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+    y += 5
+
+    // Modelo de progressão (1º–4º dia)
+    const prog = dados.progressao ?? []
+    if (prog.length > 0) {
+      if (y > 220) { doc.addPage(); y = 20 }
+      const diaLabel: Record<number, string> = { 25: "1º dia", 50: "2º dia", 75: "3º dia", 100: "4º dia" }
+      autoTable(doc, {
+        startY: y,
+        head: [["Progressão", "% da meta", "Calorias do dia", "Volume"]],
+        body: prog.map(p => [
+          diaLabel[p.pct] ?? `Dia ${p.dia}`,
+          `${p.pct}%`,
+          fmt(p.kcalDia, 0, " kcal"),
+          fmt(p.volume, 1, " ml"),
+        ]),
+        headStyles:   { fillColor: COR, fontSize: 9 },
+        bodyStyles:   { fontSize: 9 },
+        columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" } },
+        margin:       { left: mg, right: mg },
+      })
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+      y += 5
+    }
+
+    // Módulo proteico sugerido
+    const mods = dados.moduloProteico ?? []
+    if (mods.length > 0 && dados.ptnSuplementar != null && dados.ptnSuplementar > 0) {
+      if (y > 220) { doc.addPage(); y = 20 }
+      autoTable(doc, {
+        startY: y,
+        head: [["Módulo proteico sugerido", "Quantidade/dia", "Calorias adicionais"]],
+        body: mods.map(m => [m.nome, fmt(m.gramas, 1, " g"), fmt(m.kcalAdicionada, 0, " kcal")]),
+        headStyles:   { fillColor: COR, fontSize: 9 },
+        bodyStyles:   { fontSize: 9 },
+        columnStyles: { 1: { halign: "right" }, 2: { halign: "right" } },
+        margin:       { left: mg, right: mg },
+      })
+      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+      y += 5
+    }
+  }
+
+  // ── Hidratação ──────────────────────────────────────────────────────────────
+  if (y > 230) { doc.addPage(); y = 20 }
+  autoTable(doc, {
+    startY: y,
+    head: [["Hidratação", "Valor"]],
+    body: [
+      ["Necessidade hídrica (mínima)", fmt(dados.necHidricaMin, 0, " ml/dia")],
+      ["Necessidade hídrica (ideal)",  fmt(dados.necHidricaIdeal, 0, " ml/dia")],
+      ["Água proveniente da dieta",    fmt(dados.aguaDieta, 0, " ml/dia")],
+      ["Água extra (ideal)",           fmt(dados.aguaExtraIdeal, 0, " ml/dia")],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 1: { halign: "right" } },
+    margin:       { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+  y += 5
+
+  // ── Observações ─────────────────────────────────────────────────────────────
+  if (dados.observacoes) {
+    if (y > 255) { doc.addPage(); y = 20 }
+    doc.setFillColor(245, 245, 245)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.text("OBSERVAÇÕES", mg + 2, y + 1.5)
+    y += 9
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    y = blocoTexto(doc, dados.observacoes, mg + 2, y, inner - 4, 5)
+    y += 4
+  }
+
+  // ── Nota de rodapé ──────────────────────────────────────────────────────────
+  if (y > 265) { doc.addPage(); y = 20 }
+  doc.setFontSize(7.5)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(120, 120, 120)
+  y = blocoTexto(doc,
+    "Estimativas baseadas em equações de Chumlea, Jung e Rabito e nas classificações OMS/OPAS. " +
+    "Este relatório não substitui a avaliação de um profissional de saúde.",
+    mg, y + 2, inner, 4)
+  doc.setTextColor(0, 0, 0)
+
+  return doc.output("datauristring").split(",")[1]
+}
+
 // ── LISTAGEM DE AVALIAÇÕES PEDIÁTRICAS ────────────────────────────────────────
 
 export interface DadosListaAvaliacoesPediatricas {
@@ -1110,6 +1372,66 @@ export function gerarPdfAvaliacoesPediatricas(dados: DadosListaAvaliacoesPediatr
       4: { halign: "right" },
     },
     margin: { left: mg, right: mg },
+  })
+
+  return doc.output("datauristring").split(",")[1]
+}
+
+// ── LISTAGEM GENÉRICA (relatório de qualquer lista) ───────────────────────────
+
+export interface ColunaLista {
+  header: string
+  align?: "left" | "right" | "center"
+}
+
+export interface DadosListaGenerica {
+  titulo:      string
+  dataEmissao: string          // YYYY-MM-DD
+  filtros:     string
+  colunas:     ColunaLista[]
+  linhas:      string[][]       // células já formatadas como string pelo chamador
+}
+
+/**
+ * Gera um PDF de listagem genérico, no mesmo visual de gerarPdfAvaliacoesPediatricas:
+ * faixa de topo com título + data de emissão, linha de filtros e um autoTable.
+ * Quando há muitas colunas, reduz a fonte e habilita quebra de linha para caber em A4.
+ */
+export function gerarPdfLista(dados: DadosListaGenerica): string {
+  // Em paisagem cabem mais colunas; usamos landscape quando há muitas colunas.
+  const muitasColunas = dados.colunas.length > 8
+  const doc   = new jsPDF({ unit: "mm", format: "a4", orientation: muitasColunas ? "landscape" : "portrait" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = muitasColunas ? 10 : 18
+  const inner = L - mg * 2
+  const COR: [number, number, number] = [22, 130, 130]
+
+  let y = faixaTopo(doc, dados.titulo, `Emitido em ${fmtData(dados.dataEmissao)}`, COR)
+
+  // Resumo dos filtros aplicados
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  y = blocoTexto(doc, `Filtros: ${dados.filtros}`, mg, y, inner, 5)
+  doc.setTextColor(0, 0, 0)
+  y += 4
+
+  const fontSize = muitasColunas ? 7 : 8
+
+  const columnStyles: Record<number, { halign: "left" | "right" | "center" }> = {}
+  dados.colunas.forEach((c, i) => {
+    if (c.align && c.align !== "left") columnStyles[i] = { halign: c.align }
+  })
+
+  autoTable(doc, {
+    startY:       y,
+    head:         [dados.colunas.map(c => c.header)],
+    body:         dados.linhas,
+    headStyles:   { fillColor: COR, fontSize },
+    bodyStyles:   { fontSize },
+    styles:       { overflow: "linebreak", cellPadding: 1.5 },
+    columnStyles,
+    margin:       { left: mg, right: mg },
   })
 
   return doc.output("datauristring").split(",")[1]

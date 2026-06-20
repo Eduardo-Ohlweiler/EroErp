@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="071-create-avaliacao-nutricional-uti" author="eduardo">
+
+        <!-- ── AVALIACAO_NUTRICIONAL_UTI ──────────────────────────────────── -->
+        <createTable tableName="avaliacao_nutricional_uti">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="usuario_id" type="BIGINT"/>
+
+            <column name="data_avaliacao" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Entradas antropometria -->
+            <column name="sexo" type="VARCHAR(1)"/>
+            <column name="raca" type="VARCHAR(10)"/>
+            <column name="idade" type="INTEGER"/>
+            <column name="cb" type="DECIMAL(10,2)"/>
+            <column name="cp" type="DECIMAL(10,2)"/>
+            <column name="ca" type="DECIMAL(10,2)"/>
+            <column name="aj" type="DECIMAL(10,2)"/>
+            <column name="peso_atual" type="DECIMAL(10,2)"/>
+            <column name="peso_usual" type="DECIMAL(10,2)"/>
+            <column name="altura" type="DECIMAL(10,2)"/>
+
+            <!-- Resultados antropometria -->
+            <column name="altura_estimada" type="DECIMAL(10,2)"/>
+            <column name="peso_estimado_chumlea" type="DECIMAL(10,2)"/>
+            <column name="peso_estimado_jung" type="DECIMAL(10,2)"/>
+            <column name="peso_estimado_rabito" type="DECIMAL(10,2)"/>
+            <column name="imc" type="DECIMAL(10,2)"/>
+            <column name="peso_ideal" type="DECIMAL(10,2)"/>
+            <column name="peso_ideal_imc25" type="DECIMAL(10,2)"/>
+            <column name="peso_ajustado" type="DECIMAL(10,2)"/>
+            <column name="perc_perda_peso" type="DECIMAL(10,2)"/>
+            <column name="perc_adequacao_cb" type="DECIMAL(10,2)"/>
+            <column name="classif_imc_oms" type="VARCHAR(50)"/>
+            <column name="classif_imc_opas" type="VARCHAR(50)"/>
+            <column name="classif_perda_peso" type="VARCHAR(50)"/>
+            <column name="classif_adequacao_cb" type="VARCHAR(50)"/>
+            <column name="classif_deplecao_cp" type="VARCHAR(50)"/>
+
+            <!-- Necessidades -->
+            <column name="fase" type="VARCHAR(20)"/>
+            <column name="kcal_kg_alvo" type="DECIMAL(10,2)"/>
+            <column name="ptn_kg_alvo" type="DECIMAL(10,2)"/>
+            <column name="kcal_min" type="DECIMAL(10,2)"/>
+            <column name="kcal_max" type="DECIMAL(10,2)"/>
+            <column name="ptn_min" type="DECIMAL(10,2)"/>
+            <column name="ptn_max" type="DECIMAL(10,2)"/>
+            <column name="kcal_total" type="DECIMAL(10,2)"/>
+            <column name="ptn_total" type="DECIMAL(10,2)"/>
+            <column name="ptn_hd_intermitente" type="DECIMAL(10,2)"/>
+            <column name="ptn_hd_continua" type="DECIMAL(10,2)"/>
+
+            <!-- Dieta enteral -->
+            <column name="formula_enteral_id" type="BIGINT"/>
+            <column name="formula_nome" type="VARCHAR(255)"/>
+            <column name="formula_densidade_kcal_ml" type="DECIMAL(10,2)"/>
+            <column name="formula_proteina_g_l" type="DECIMAL(10,2)"/>
+            <column name="modo_dieta" type="VARCHAR(20)"/>
+            <column name="volume_dieta" type="DECIMAL(10,2)"/>
+            <column name="tempo_dieta" type="DECIMAL(10,2)"/>
+            <column name="dieta_vt" type="DECIMAL(10,2)"/>
+            <column name="dieta_kcal" type="DECIMAL(10,2)"/>
+            <column name="dieta_ptn" type="DECIMAL(10,2)"/>
+            <column name="dieta_kcal_kg" type="DECIMAL(10,2)"/>
+            <column name="dieta_ptn_kg" type="DECIMAL(10,2)"/>
+            <column name="dieta_perc_vct" type="DECIMAL(10,2)"/>
+            <column name="dieta_perc_ptn" type="DECIMAL(10,2)"/>
+            <column name="dieta_volume_pleno" type="DECIMAL(10,2)"/>
+
+            <!-- Hidratação -->
+            <column name="hidratacao_volume_dieta" type="DECIMAL(10,2)"/>
+            <column name="hidratacao_nec_min" type="DECIMAL(10,2)"/>
+            <column name="hidratacao_nec_ideal" type="DECIMAL(10,2)"/>
+            <column name="hidratacao_agua_dieta" type="DECIMAL(10,2)"/>
+            <column name="hidratacao_agua_extra_min" type="DECIMAL(10,2)"/>
+            <column name="hidratacao_agua_extra_ideal" type="DECIMAL(10,2)"/>
+
+            <column name="observacao" type="TEXT"/>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_nutricional_uti" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_avaliacao_nutricional_uti_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_nutricional_uti" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_avaliacao_nutricional_uti_pessoa"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_nutricional_uti" baseColumnNames="usuario_id"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_avaliacao_nutricional_uti_usuario"
+                onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+                baseTableName="avaliacao_nutricional_uti" baseColumnNames="formula_enteral_id"
+                referencedTableName="formula_enteral" referencedColumnNames="id"
+                constraintName="fk_avaliacao_nutricional_uti_formula_enteral"
+                onDelete="SET NULL"/>
+
+        <createIndex tableName="avaliacao_nutricional_uti" indexName="idx_avaliacao_nutricional_uti_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="avaliacao_nutricional_uti" indexName="idx_avaliacao_nutricional_uti_pessoa_id">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

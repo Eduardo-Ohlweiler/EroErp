@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="070-insert-suplementos" author="eduardo">
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Diamax"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="200"/>
+            <column name="ptn" valueNumeric="8.8"/>
+            <column name="cho" valueNumeric="20"/>
+            <column name="acucar" valueNumeric="0.4"/>
+            <column name="lip" valueNumeric="9.4"/>
+            <column name="sodio" valueNumeric="134"/>
+            <column name="potassio" valueNumeric="272"/>
+            <column name="fosforo" valueNumeric="142"/>
+            <column name="ferro" valueNumeric="2.2"/>
+            <column name="fibras" valueNumeric="3"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Energyzip"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="300"/>
+            <column name="ptn" valueNumeric="12"/>
+            <column name="cho" valueNumeric="40"/>
+            <column name="acucar" valueNumeric="13"/>
+            <column name="lip" valueNumeric="10.4"/>
+            <column name="sodio" valueNumeric="298"/>
+            <column name="potassio" valueNumeric="454"/>
+            <column name="ferro" valueNumeric="2.6"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Fresubin 2kcal Neutro"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="400"/>
+            <column name="ptn" valueNumeric="20"/>
+            <column name="cho" valueNumeric="44"/>
+            <column name="acucar" valueNumeric="7"/>
+            <column name="lip" valueNumeric="15.6"/>
+            <column name="sodio" valueNumeric="120"/>
+            <column name="potassio" valueNumeric="320"/>
+            <column name="fosforo" valueNumeric="240"/>
+            <column name="ferro" valueNumeric="5"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Fresubin 3.2kcal"/>
+            <column name="qtd_g" valueNumeric="125"/>
+            <column name="kcal" valueNumeric="400"/>
+            <column name="ptn" valueNumeric="20"/>
+            <column name="cho" valueNumeric="35"/>
+            <column name="lip" valueNumeric="20"/>
+            <column name="sodio" valueNumeric="140"/>
+            <column name="potassio" valueNumeric="390"/>
+            <column name="fosforo" valueNumeric="140"/>
+            <column name="ferro" valueNumeric="6"/>
+            <column name="fibras" valueNumeric="0.62"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Fresubin Energy"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="300"/>
+            <column name="ptn" valueNumeric="11.2"/>
+            <column name="cho" valueNumeric="38"/>
+            <column name="acucar" valueNumeric="11"/>
+            <column name="lip" valueNumeric="11.6"/>
+            <column name="sodio" valueNumeric="160"/>
+            <column name="potassio" valueNumeric="270"/>
+            <column name="fosforo" valueNumeric="160"/>
+            <column name="ferro" valueNumeric="4"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Fresubin Jucy"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="300"/>
+            <column name="ptn" valueNumeric="8"/>
+            <column name="cho" valueNumeric="67"/>
+            <column name="lip" valueNumeric="0"/>
+            <column name="sodio" valueNumeric="12"/>
+            <column name="potassio" valueNumeric="14"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Fresubin Protein Energy"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="300"/>
+            <column name="ptn" valueNumeric="20"/>
+            <column name="cho" valueNumeric="24"/>
+            <column name="acucar" valueNumeric="14.6"/>
+            <column name="lip" valueNumeric="13.4"/>
+            <column name="sodio" valueNumeric="116"/>
+            <column name="potassio" valueNumeric="292"/>
+            <column name="fosforo" valueNumeric="240"/>
+            <column name="ferro" valueNumeric="5"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Glucerna 1.5"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="306"/>
+            <column name="ptn" valueNumeric="15"/>
+            <column name="cho" valueNumeric="26"/>
+            <column name="acucar" valueNumeric="12.2"/>
+            <column name="lip" valueNumeric="15"/>
+            <column name="sodio" valueNumeric="240"/>
+            <column name="potassio" valueNumeric="330"/>
+            <column name="fosforo" valueNumeric="200"/>
+            <column name="ferro" valueNumeric="1.7"/>
+            <column name="fibras" valueNumeric="3.4"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Impact"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="214"/>
+            <column name="ptn" valueNumeric="13"/>
+            <column name="cho" valueNumeric="14"/>
+            <column name="acucar" valueNumeric="0"/>
+            <column name="lip" valueNumeric="5.6"/>
+            <column name="sodio" valueNumeric="120"/>
+            <column name="potassio" valueNumeric="420"/>
+            <column name="fosforo" valueNumeric="170"/>
+            <column name="ferro" valueNumeric="2.6"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Just Protein"/>
+            <column name="qtd_g" valueNumeric="20"/>
+            <column name="kcal" valueNumeric="69.3"/>
+            <column name="ptn" valueNumeric="17.33"/>
+            <column name="cho" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Novasource Proline"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="274"/>
+            <column name="ptn" valueNumeric="20"/>
+            <column name="cho" valueNumeric="32"/>
+            <column name="acucar" valueNumeric="3"/>
+            <column name="lip" valueNumeric="7.4"/>
+            <column name="sodio" valueNumeric="200"/>
+            <column name="potassio" valueNumeric="310"/>
+            <column name="fosforo" valueNumeric="190"/>
+            <column name="ferro" valueNumeric="3.2"/>
+            <column name="fibras" valueNumeric="1"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Novasource Ren"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="400"/>
+            <column name="ptn" valueNumeric="14.8"/>
+            <column name="cho" valueNumeric="40"/>
+            <column name="acucar" valueNumeric="11.8"/>
+            <column name="lip" valueNumeric="20"/>
+            <column name="sodio" valueNumeric="280"/>
+            <column name="potassio" valueNumeric="300"/>
+            <column name="fosforo" valueNumeric="190"/>
+            <column name="ferro" valueNumeric="4"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Novasource Senior pó s/sabor"/>
+            <column name="qtd_g" valueNumeric="27.5"/>
+            <column name="kcal" valueNumeric="116.05"/>
+            <column name="ptn" valueNumeric="9.9"/>
+            <column name="cho" valueNumeric="9.9"/>
+            <column name="lip" valueNumeric="4.12"/>
+            <column name="sodio" valueNumeric="50"/>
+            <column name="potassio" valueNumeric="137.5"/>
+            <column name="fosforo" valueNumeric="110"/>
+            <column name="ferro" valueNumeric="1.95"/>
+            <column name="fibras" valueNumeric="1.1"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Novasourse Senior"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="198"/>
+            <column name="ptn" valueNumeric="16"/>
+            <column name="cho" valueNumeric="19"/>
+            <column name="acucar" valueNumeric="1.2"/>
+            <column name="lip" valueNumeric="6.4"/>
+            <column name="sodio" valueNumeric="154"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutren 1.5"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="308"/>
+            <column name="ptn" valueNumeric="11.2"/>
+            <column name="cho" valueNumeric="44"/>
+            <column name="acucar" valueNumeric="16"/>
+            <column name="lip" valueNumeric="9.6"/>
+            <column name="sodio" valueNumeric="140"/>
+            <column name="potassio" valueNumeric="160"/>
+            <column name="fosforo" valueNumeric="170"/>
+            <column name="ferro" valueNumeric="4.4"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutren 1.5 Protein"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="296"/>
+            <column name="ptn" valueNumeric="20"/>
+            <column name="cho" valueNumeric="22"/>
+            <column name="acucar" valueNumeric="17.8"/>
+            <column name="lip" valueNumeric="14.4"/>
+            <column name="sodio" valueNumeric="224"/>
+            <column name="potassio" valueNumeric="394"/>
+            <column name="fosforo" valueNumeric="288"/>
+            <column name="ferro" valueNumeric="3.6"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutren 2.0"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="400"/>
+            <column name="ptn" valueNumeric="17.2"/>
+            <column name="cho" valueNumeric="12"/>
+            <column name="acucar" valueNumeric="12"/>
+            <column name="lip" valueNumeric="19.2"/>
+            <column name="potassio" valueNumeric="460"/>
+            <column name="fosforo" valueNumeric="160"/>
+            <column name="ferro" valueNumeric="6"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutren Control"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="212"/>
+            <column name="ptn" valueNumeric="15"/>
+            <column name="cho" valueNumeric="14.4"/>
+            <column name="acucar" valueNumeric="4.6"/>
+            <column name="lip" valueNumeric="10"/>
+            <column name="sodio" valueNumeric="144"/>
+            <column name="fosforo" valueNumeric="170"/>
+            <column name="ferro" valueNumeric="2.8"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutren Forfity Pó"/>
+            <column name="qtd_g" valueNumeric="30"/>
+            <column name="kcal" valueNumeric="132"/>
+            <column name="ptn" valueNumeric="9"/>
+            <column name="cho" valueNumeric="11"/>
+            <column name="acucar" valueNumeric="0.8"/>
+            <column name="lip" valueNumeric="5.6"/>
+            <column name="sodio" valueNumeric="35"/>
+            <column name="fosforo" valueNumeric="111"/>
+            <column name="ferro" valueNumeric="2.9"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutren Fresh Chá de limão"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="272"/>
+            <column name="ptn" valueNumeric="10"/>
+            <column name="cho" valueNumeric="58"/>
+            <column name="acucar" valueNumeric="16.4"/>
+            <column name="lip" valueNumeric="0"/>
+            <column name="sodio" valueNumeric="90"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutren Ultra"/>
+            <column name="qtd_g" valueNumeric="125"/>
+            <column name="kcal" valueNumeric="278.7"/>
+            <column name="ptn" valueNumeric="20"/>
+            <column name="cho" valueNumeric="18.7"/>
+            <column name="acucar" valueNumeric="11.87"/>
+            <column name="lip" valueNumeric="13.75"/>
+            <column name="sodio" valueNumeric="212.5"/>
+            <column name="potassio" valueNumeric="277.5"/>
+            <column name="fosforo" valueNumeric="191.25"/>
+            <column name="ferro" valueNumeric="1.87"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutri enteral 1.5"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="300"/>
+            <column name="ptn" valueNumeric="12.8"/>
+            <column name="cho" valueNumeric="42"/>
+            <column name="lip" valueNumeric="8.4"/>
+            <column name="sodio" valueNumeric="180"/>
+            <column name="potassio" valueNumeric="340"/>
+            <column name="fosforo" valueNumeric="140"/>
+            <column name="ferro" valueNumeric="2.8"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutridrink"/>
+            <column name="qtd_g" valueNumeric="200"/>
+            <column name="kcal" valueNumeric="300"/>
+            <column name="ptn" valueNumeric="18.4"/>
+            <column name="cho" valueNumeric="17"/>
+            <column name="lip" valueNumeric="10.4"/>
+            <column name="sodio" valueNumeric="120"/>
+            <column name="potassio" valueNumeric="416"/>
+            <column name="fosforo" valueNumeric="330"/>
+            <column name="ferro" valueNumeric="3.2"/>
+            <column name="fibras" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutren Just Protein"/>
+            <column name="qtd_g" valueNumeric="15"/>
+            <column name="kcal" valueNumeric="52"/>
+            <column name="ptn" valueNumeric="13"/>
+            <column name="cho" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Fresubin Protein Powder"/>
+            <column name="qtd_g" valueNumeric="12"/>
+            <column name="kcal" valueNumeric="41.6"/>
+            <column name="ptn" valueNumeric="10.4"/>
+            <column name="cho" valueNumeric="0"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="suplemento">
+            <column name="cliente_id" value="null"/>
+            <column name="nome" value="Nutridrink Protein"/>
+            <column name="qtd_g" valueNumeric="20"/>
+            <column name="kcal" valueNumeric="62.64"/>
+            <column name="ptn" valueNumeric="6"/>
+            <column name="cho" valueNumeric="9.66"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -46,6 +46,20 @@ public class AvaliacaoPediatricaController {
         return service.getAll(pageable, pessoaId, dataInicio, dataFim, formulaLacteaId, mesesMin, mesesMax);
     }
 
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PEDIATRIA', 'PEDIATRIA_GET')")
+    @Operation(summary = "Lista completa (sem paginação) para exportação PDF/planilha")
+    public ResponseEntity<java.util.List<AvaliacaoPediatricaResponseDto>> export(
+            @RequestParam(required = false) Long pessoaId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) Long formulaLacteaId,
+            @RequestParam(required = false) Integer mesesMin,
+            @RequestParam(required = false) Integer mesesMax
+    ) {
+        return ResponseEntity.ok(service.getAllForExport(pessoaId, dataInicio, dataFim, formulaLacteaId, mesesMin, mesesMax));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PEDIATRIA', 'PEDIATRIA_GET')")
     @Operation(summary = "Busca avaliação pediátrica por ID")

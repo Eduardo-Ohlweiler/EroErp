@@ -71,4 +71,12 @@
     <include file="064-insert-roles-pediatria.xml"          relativeToChangelogFile="true" />
     <include file="065-create-pediatria.xml"                relativeToChangelogFile="true" />
     <include file="066-insert-formulas-lacteas.xml"         relativeToChangelogFile="true" />
+    <include file="067-insert-roles-terapia-nutricional.xml" relativeToChangelogFile="true" />
+    <include file="068-create-terapia-nutricional-cadastros.xml" relativeToChangelogFile="true" />
+    <include file="069-insert-formulas-enterais.xml"        relativeToChangelogFile="true" />
+    <include file="070-insert-suplementos.xml"              relativeToChangelogFile="true" />
+    <include file="071-create-avaliacao-nutricional-uti.xml" relativeToChangelogFile="true" />
+    <include file="072-create-registro-diario-uti.xml"      relativeToChangelogFile="true" />
+    <include file="073-add-macros-formula-enteral.xml"      relativeToChangelogFile="true" />
+    <include file="074-update-macros-globais.xml"           relativeToChangelogFile="true" />
 </databaseChangeLog>

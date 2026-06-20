@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="072-create-registro-diario-uti" author="eduardo">
+
+        <!-- ── REGISTRO_DIARIO_UTI ─────────────────────────────────────────── -->
+        <createTable tableName="registro_diario_uti">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="data" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Ficha clínica diária -->
+            <column name="dieta" type="VARCHAR(255)"/>
+            <column name="hgt" type="VARCHAR(255)"/>
+            <column name="vm_o2" type="VARCHAR(255)"/>
+            <column name="pa" type="VARCHAR(50)"/>
+
+            <!-- Laboratório -->
+            <column name="mg" type="DECIMAL(10,2)"/>
+            <column name="k" type="DECIMAL(10,2)"/>
+            <column name="na" type="DECIMAL(10,2)"/>
+            <column name="lact" type="DECIMAL(10,2)"/>
+            <column name="pcr" type="DECIMAL(10,2)"/>
+            <column name="ph" type="DECIMAL(10,2)"/>
+            <column name="pco2" type="DECIMAL(10,2)"/>
+            <column name="hco3" type="DECIMAL(10,2)"/>
+
+            <!-- Balanço / eliminações -->
+            <column name="bh" type="DECIMAL(10,2)"/>
+            <column name="diurese" type="DECIMAL(10,2)"/>
+            <column name="evacuacao" type="VARCHAR(100)"/>
+
+            <!-- TNE prescrito x infundido -->
+            <column name="perc_recebido_ne" type="DECIMAL(10,2)"/>
+            <column name="vol_prescrito_24h" type="DECIMAL(10,2)"/>
+            <column name="vol_recebido_24h" type="DECIMAL(10,2)"/>
+
+            <!-- Controle de ingestão oral (% por refeição) -->
+            <column name="cafe_manha" type="DECIMAL(10,2)"/>
+            <column name="lanche_manha" type="DECIMAL(10,2)"/>
+            <column name="almoco" type="DECIMAL(10,2)"/>
+            <column name="lanche_tarde" type="DECIMAL(10,2)"/>
+            <column name="jantar" type="DECIMAL(10,2)"/>
+            <column name="ceia" type="DECIMAL(10,2)"/>
+
+            <column name="observacao" type="TEXT"/>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="registro_diario_uti" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_registro_diario_uti_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="registro_diario_uti" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_registro_diario_uti_pessoa"
+                onDelete="RESTRICT"/>
+
+        <createIndex tableName="registro_diario_uti" indexName="idx_registro_diario_uti_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="registro_diario_uti" indexName="idx_registro_diario_uti_pessoa_id">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="074-update-macros-globais" author="eduardo">
+
+        <!-- Macros das fórmulas enterais globais (CHO, LIP, Fibras, K, Osmolaridade)
+             — dados da aba "Dietas consulta". cliente_id IS NULL = global. -->
+        <sql>
+            UPDATE formula_enteral SET cho=140, lip=47,  fibras=0,  potassio=1950, osmolaridade=333 WHERE nome='Novasource Senior' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=138, lip=34,  fibras=0,  potassio=1250, osmolaridade=220 WHERE nome='Fresubin Original' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=130, lip=34,  fibras=13, potassio=1550, osmolaridade=285 WHERE nome='Fresubin Original Fibre' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=121, lip=36,  fibras=20, potassio=1330, osmolaridade=410 WHERE nome='Fresubin Soya Fibre' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=140, lip=41,  fibras=20, potassio=2230, osmolaridade=345 WHERE nome='Fresubin 1.2 HP Fibre' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=120, lip=39,  fibras=0,  potassio=1500, osmolaridade=255 WHERE nome='Nutrison 1.0' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=170, lip=37,  fibras=0,  potassio=1700, osmolaridade=305 WHERE nome='Nutri enteral Soya' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=120, lip=39,  fibras=15, potassio=1500, osmolaridade=255 WHERE nome='Nutrison Multifiber' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=170, lip=40,  fibras=18, potassio=1330, osmolaridade=305 WHERE nome='Nutri enteral Soya Fiber' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=160, lip=46,  fibras=15, potassio=1700, osmolaridade=305 WHERE nome='Isosource Mix' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=170, lip=39,  fibras=0,  potassio=1900, osmolaridade=276 WHERE nome='Isosource Soya' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=170, lip=43,  fibras=17, potassio=1950, osmolaridade=321 WHERE nome='Isosource Soya Fiber' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=160, lip=41,  fibras=0,  potassio=2040, osmolaridade=328 WHERE nome='Trophic Basic' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=170, lip=39,  fibras=20, potassio=2340, osmolaridade=334 WHERE nome='Trophic Fiber' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=170, lip=39,  fibras=0,  potassio=2320, osmolaridade=354 WHERE nome='Trophic Soya' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=180, lip=58,  fibras=15, potassio=2070, osmolaridade=325 WHERE nome='Fresubin Energy Fibre' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=170, lip=58,  fibras=0,  potassio=2340, osmolaridade=300 WHERE nome='Fresubin HP Energy' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=210, lip=45,  fibras=8,  potassio=2400, osmolaridade=450 WHERE nome='Isosource 1.5' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=120, lip=80,  fibras=0,  potassio=2100, osmolaridade=283 WHERE nome='Novasource Hi Protein' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=180, lip=58,  fibras=0,  potassio=2010, osmolaridade=360 WHERE nome='Nutrison Energy' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=180, lip=58,  fibras=15, potassio=2010, osmolaridade=390 WHERE nome='Nutrison Energy Multifiber' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=210, lip=42,  fibras=0,  potassio=1700, osmolaridade=330 WHERE nome='Nutri Enteral 1.5' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=200, lip=50,  fibras=0,  potassio=2250, osmolaridade=476 WHERE nome='Trophic 1.5' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=190, lip=50,  fibras=0,  potassio=2570, osmolaridade=426 WHERE nome='Trophic EP' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=210, lip=49,  fibras=0,  potassio=3000, osmolaridade=411 WHERE nome='Trophic 1.5 Soya' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=87.5,  lip=50,  fibras=0,  potassio=1700, osmolaridade=395 WHERE nome='Fresubin 2kcal HP (500ml)' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=83.5,  lip=50,  fibras=15, potassio=1700, osmolaridade=395 WHERE nome='Fresubin 2kcal HP Fibre(500ml)' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=92.5,  lip=46,  fibras=15, potassio=1430, osmolaridade=345 WHERE nome='Diben' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=131, lip=70,  fibras=23, potassio=1800, osmolaridade=450 WHERE nome='Diben HP' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=95,  lip=60,  fibras=15, potassio=2800, osmolaridade=337 WHERE nome='Novasource GC' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=120, lip=45,  fibras=12, potassio=2250, osmolaridade=271 WHERE nome='Novasource GC HP' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=130, lip=74,  fibras=15, potassio=2500, osmolaridade=352 WHERE nome='Novasource GC 1.5' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=110, lip=43,  fibras=15, potassio=1590, osmolaridade=275 WHERE nome='Diamax' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=200, lip=100, fibras=0,  potassio=1500, osmolaridade=739 WHERE nome='Novasource Ren' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=180, lip=60,  fibras=20, potassio=1630, osmolaridade=436 WHERE nome='Novasource GI control' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=130, lip=30,  fibras=15, potassio=1650, osmolaridade=351 WHERE nome='Novasource Proline' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=120, lip=33,  fibras=0,  potassio=2070, osmolaridade=270 WHERE nome='Reconvan' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=174, lip=47,  fibras=20, potassio=1200, osmolaridade=330 WHERE nome='Fresubin Hepa' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=118, lip=67,  fibras=24, potassio=1280, osmolaridade=340 WHERE nome='Fresubin Lipid' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=140, lip=64,  fibras=0,  potassio=1900, osmolaridade=393 WHERE nome='Impact 1.5' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=140, lip=28,  fibras=0,  potassio=2100, osmolaridade=350 WHERE nome='Impact' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=150, lip=49,  fibras=0,  potassio=1500, osmolaridade=350 WHERE nome='Peptamen HN' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=130, lip=40,  fibras=0,  potassio=1100, osmolaridade=260 WHERE nome='Peptamen pó' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=72,  lip=38,  fibras=5,  potassio=1500, osmolaridade=266 WHERE nome='Peptamen Intense' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=180, lip=56,  fibras=0,  potassio=2150, osmolaridade=436 WHERE nome='Peptamen 1.5' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=90,  lip=28,  fibras=0,  potassio=2000, osmolaridade=300 WHERE nome='Survimed OPD' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=183, lip=37,  fibras=0,  potassio=2600, osmolaridade=370 WHERE nome='Survimed OPD HN' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=126, lip=100, fibras=0,  potassio=8360, osmolaridade=326 WHERE nome='Peptimax pó' AND cliente_id IS NULL;
+            UPDATE formula_enteral SET cho=180, lip=170, fibras=0,  potassio=1500, osmolaridade=455 WHERE nome='Nutrison Advanced Peptisorb' AND cliente_id IS NULL;
+
+            -- Osmolaridade dos suplementos globais informada na planilha (demais = NI/null)
+            UPDATE suplemento SET osmolaridade=495 WHERE nome='Fresubin 2kcal Neutro' AND cliente_id IS NULL;
+            UPDATE suplemento SET osmolaridade=390 WHERE nome='Fresubin Energy' AND cliente_id IS NULL;
+            UPDATE suplemento SET osmolaridade=680 WHERE nome='Fresubin Jucy' AND cliente_id IS NULL;
+            UPDATE suplemento SET osmolaridade=440 WHERE nome='Fresubin Protein Energy' AND cliente_id IS NULL;
+            UPDATE suplemento SET osmolaridade=614 WHERE nome='Glucerna 1.5' AND cliente_id IS NULL;
+            UPDATE suplemento SET osmolaridade=297 WHERE nome='Impact' AND cliente_id IS NULL;
+            UPDATE suplemento SET osmolaridade=740 WHERE nome='Novasource Ren' AND cliente_id IS NULL;
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>
