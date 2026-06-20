@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="075-create-login-log" author="eduardo">
+
+        <!-- ── LOGIN_LOG ──────────────────────────────────────────────────── -->
+        <createTable tableName="login_log">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="usuario_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="data_login" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="data_logout" type="TIMESTAMP"/>
+
+            <column name="tipo_logout" type="VARCHAR(20)"/>
+
+            <column name="endereco_ip" type="VARCHAR(45)"/>
+
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="login_log" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_login_log_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="login_log" baseColumnNames="usuario_id"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_login_log_usuario"
+                onDelete="RESTRICT"/>
+
+        <createIndex tableName="login_log" indexName="idx_login_log_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="login_log" indexName="idx_login_log_usuario_id">
+            <column name="usuario_id"/>
+        </createIndex>
+
+        <createIndex tableName="login_log" indexName="idx_login_log_data_login">
+            <column name="data_login"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

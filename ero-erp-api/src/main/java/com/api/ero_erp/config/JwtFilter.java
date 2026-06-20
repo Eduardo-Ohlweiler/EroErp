@@ -2,9 +2,12 @@ package com.api.ero_erp.config;
 
 import com.api.ero_erp.exceptions.ErrorResponse;
 import com.api.ero_erp.exceptions.UnauthorizedException;
+import com.api.ero_erp.loginlog.entity.TipoLogout;
+import com.api.ero_erp.loginlog.service.LoginLogService;
 import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,14 +35,17 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil           jwtUtil;
     private final UsuarioRepository usuarioRepository;
+    private final LoginLogService   loginLogService;
     private final ObjectMapper      mapper = new ObjectMapper();
 
     public JwtFilter(
             JwtUtil jwtUtil,
-            UsuarioRepository usuarioRepository
+            UsuarioRepository usuarioRepository,
+            LoginLogService loginLogService
     ) {
         this.jwtUtil            = jwtUtil;
         this.usuarioRepository  = usuarioRepository;
+        this.loginLogService    = loginLogService;
     }
 
     @Override
@@ -54,6 +62,7 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 Long id             = jwtUtil.getId(token);
                 List<String> roles  = jwtUtil.getRoles(token);
+                Long sessionId      = jwtUtil.getSessionId(token);
 
                 Usuario usuario = usuarioRepository.findByIdWithDetails(id).orElse(null);
                 if (usuario == null || !usuario.getAtivo()) {
@@ -70,13 +79,21 @@ public class JwtFilter extends OncePerRequestFilter {
                         .collect(Collectors.toList());
 
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                    Authentication auth = new UsernamePasswordAuthenticationToken(
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                             id, null, authorities
                     );
+                    auth.setDetails(sessionId);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
 
             } catch (ExpiredJwtException e) {
+                // logout implícito: fecha a sessão correspondente ao token expirado
+                Claims claims    = e.getClaims();
+                Long sessionId   = jwtUtil.extrairSessionId(claims);
+                LocalDateTime expiracao = claims.getExpiration().toInstant()
+                        .atZone(ZoneId.systemDefault()).toLocalDateTime();
+                loginLogService.fecharSessao(sessionId, expiracao, TipoLogout.EXPIRACAO);
+
                 SecurityContextHolder.clearContext();
                 escreverErro(response, "Token expirado");
                 return;

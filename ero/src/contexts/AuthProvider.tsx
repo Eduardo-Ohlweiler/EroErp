@@ -20,10 +20,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(loggedUser)
   }
 
-  function logout() {
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
-    setUser(null)
+  async function logout() {
+    try {
+      // registra o horário de logout no servidor (token ainda presente)
+      await api.post("/auth/logout")
+    } catch {
+      // logout é sempre concluído no cliente, mesmo se a chamada falhar
+    } finally {
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      setUser(null)
+    }
   }
 
   function hasRole(role: string) {

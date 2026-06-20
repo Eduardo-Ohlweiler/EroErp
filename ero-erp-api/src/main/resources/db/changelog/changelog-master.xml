@@ -79,4 +79,5 @@
     <include file="072-create-registro-diario-uti.xml"      relativeToChangelogFile="true" />
     <include file="073-add-macros-formula-enteral.xml"      relativeToChangelogFile="true" />
     <include file="074-update-macros-globais.xml"           relativeToChangelogFile="true" />
+    <include file="075-create-login-log.xml"                relativeToChangelogFile="true" />
 </databaseChangeLog>
