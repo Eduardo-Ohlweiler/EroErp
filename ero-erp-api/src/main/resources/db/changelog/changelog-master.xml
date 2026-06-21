@@ -80,4 +80,6 @@
     <include file="073-add-macros-formula-enteral.xml"      relativeToChangelogFile="true" />
     <include file="074-update-macros-globais.xml"           relativeToChangelogFile="true" />
     <include file="075-create-login-log.xml"                relativeToChangelogFile="true" />
+    <include file="076-insert-roles-otorrino.xml"           relativeToChangelogFile="true" />
+    <include file="077-create-otorrino-audiometria.xml"     relativeToChangelogFile="true" />
 </databaseChangeLog>
