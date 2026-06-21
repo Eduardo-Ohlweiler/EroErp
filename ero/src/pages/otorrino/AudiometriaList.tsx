@@ -14,6 +14,7 @@ import { TDataGrid }                                               from "../../c
 import { TDataGridFooter }                                         from "../../components/tdatagridfooter"
 import { useMessage }                                              from "../../hooks/useMessage"
 import { useQuestion }                                             from "../../hooks/useQuestion"
+import { TSpace } from "../../components/tspace"
 
 function formatarData(iso: string): string {
   if (!iso) return "—"
@@ -146,15 +147,18 @@ export default function AudiometriaList() {
       <TForm onSubmit={handleFiltrar}>
         <TRow>
           <TCol flex={2}>
-            <TEntry name="nome" label="Paciente" width="100%"
+            <TEntry name="nome" label="Paciente" width="50%"
               placeholder="Filtrar por nome..." defaultValue={filtroNome} onChange={setFiltroNome} />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol flex={1}>
             <TDate name="dataInicio" label="Data Inicial" defaultValue={filtroInicio} />
           </TCol>
           <TCol flex={1}>
             <TDate name="dataFim" label="Data Final" defaultValue={filtroFim} />
           </TCol>
+          <TSpace />
         </TRow>
         <TFormFooter>
           <TFormActionsLeft>

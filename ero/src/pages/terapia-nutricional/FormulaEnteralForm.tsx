@@ -12,6 +12,7 @@ import { TEntry }                                                  from "../../c
 import { TCombo }                                                  from "../../components/tcombo"
 import { TButton }                                                 from "../../components/tbutton"
 import { useMessage }                                              from "../../hooks/useMessage"
+import { TSpace } from "../../components/tspace"
 
 function num(v: string): number | null {
   if (!v || v.trim() === "") return null
@@ -101,13 +102,13 @@ export default function FormulaEnteralForm() {
       <TForm key={formKey} onSubmit={handleSubmit}>
         <TRow>
           <TCol>
-            <TEntry name="nome" label="Nome" required width="60%"
+            <TEntry name="nome" label="Nome" required width="50%"
               defaultValue={formula?.nome} />
           </TCol>
         </TRow>
         <TRow>
           <TCol>
-            <TEntry name="categoria" label="Categoria" width="100%"
+            <TEntry name="categoria" label="Categoria" width="50%"
               placeholder="Ex: Hipercalórica, Padrão..."
               defaultValue={formula?.categoria ?? ""} />
           </TCol>
@@ -123,28 +124,36 @@ export default function FormulaEnteralForm() {
               placeholder="Ex: 60" width="200px"
               defaultValue={formula?.proteinaGL != null ? String(formula.proteinaGL) : ""} />
           </TCol>
+          <TSpace />
         </TRow>
         <TRow>
           <TCol>
-            <TEntry name="cho" label="Carboidrato (g/L)" width="100%" placeholder="Ex: 170"
+            <TEntry name="cho" label="Carboidrato (g/L)" width="200px" placeholder="Ex: 170"
               defaultValue={formula?.cho != null ? String(formula.cho) : ""} />
           </TCol>
           <TCol>
-            <TEntry name="lip" label="Lipídio (g/L)" width="100%" placeholder="Ex: 45"
+            <TEntry name="lip" label="Lipídio (g/L)" width="200px" placeholder="Ex: 45"
               defaultValue={formula?.lip != null ? String(formula.lip) : ""} />
           </TCol>
+          <TSpace />
+        </TRow>
+        <TRow>
           <TCol>
-            <TEntry name="fibras" label="Fibras (g/L)" width="100%" placeholder="Ex: 15"
+            <TEntry name="fibras" label="Fibras (g/L)" width="200px" placeholder="Ex: 15"
               defaultValue={formula?.fibras != null ? String(formula.fibras) : ""} />
           </TCol>
           <TCol>
-            <TEntry name="potassio" label="Potássio (mg/L)" width="100%" placeholder="Ex: 1500"
+            <TEntry name="potassio" label="Potássio (mg/L)" width="200px" placeholder="Ex: 1500"
               defaultValue={formula?.potassio != null ? String(formula.potassio) : ""} />
           </TCol>
+          <TSpace />
+        </TRow>
+        <TRow>
           <TCol>
-            <TEntry name="osmolaridade" label="Osmolaridade (mOsm/L)" width="100%" placeholder="Ex: 350"
+            <TEntry name="osmolaridade" label="Osmolaridade (mOsm/L)" width="200px" placeholder="Ex: 350"
               defaultValue={formula?.osmolaridade != null ? String(formula.osmolaridade) : ""} />
           </TCol>
+
         </TRow>
         <TRow>
           <TCol>

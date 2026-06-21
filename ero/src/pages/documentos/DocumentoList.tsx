@@ -158,7 +158,7 @@ export default function DocumentoList() {
                             label       ="Cliente"
                             placeholder ="Filtrar por cliente..."
                             defaultValue={filtroCliente}
-                            width       ="100%"
+                            width       ="50%"
                         />
                     </TCol>
                 </TRow>
@@ -181,7 +181,7 @@ export default function DocumentoList() {
                         <TDate
                             name        ="dataEmissaoInicio"
                             label       ="Data emissão de"
-                            width       ="160px"
+                            //width       ="160px"
                             defaultValue={filtroDataInicio}
                             onChange    ={setFiltroDataInicio}
                         />
@@ -190,7 +190,7 @@ export default function DocumentoList() {
                         <TDate
                             name        ="dataEmissaoFim"
                             label       ="Data emissão até"
-                            width       ="160px"
+                            //width       ="160px"
                             defaultValue={filtroDataFim}
                             onChange    ={setFiltroDataFim}
                         />

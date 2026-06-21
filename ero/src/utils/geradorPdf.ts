@@ -1977,3 +1977,284 @@ export function gerarPdfAudiometria(dados: DadosRelatorioAudiometria): string {
 
   return doc.output("datauristring").split(",")[1]
 }
+
+// ── LAUDO DESCRITIVO OTORRINO (Nasofibroscopia / Laringoscopia / etc.) ──────────
+
+export interface DadosLaudoOtorrino {
+  dataEmissao:  string          // YYYY-MM-DD
+  pacienteNome: string
+  usuarioNome:  string | null
+  dataExame:    string          // YYYY-MM-DD
+  tipoExame:    string          // label amigável
+  laudo:        string | null
+  conclusao:    string | null
+  cid:          string | null
+}
+
+export function gerarPdfLaudoOtorrino(dados: DadosLaudoOtorrino): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+  const COR: [number, number, number] = [37, 99, 235]
+
+  // 1. Faixa de topo
+  let y = faixaTopo(doc, `LAUDO — ${dados.tipoExame}`, dados.pacienteNome ?? "—", COR)
+
+  // 2. Referência centralizada
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  const ref = [
+    `Exame em ${fmtData(dados.dataExame)}`,
+    `Emitido em ${fmtData(dados.dataEmissao)}`,
+    dados.usuarioNome ? `Profissional: ${dados.usuarioNome}` : null,
+  ].filter(Boolean).join("  •  ")
+  doc.text(ref, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  // 3. Seção Laudo
+  doc.setFillColor(245, 245, 245)
+  doc.rect(mg, y - 3, inner, 7, "F")
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "bold")
+  doc.text("LAUDO", mg + 2, y + 1.5)
+  y += 9
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  y = blocoTexto(doc, dados.laudo?.trim() || "—", mg + 2, y, inner - 4, 5)
+  y += 6
+
+  // 4. Seção Conclusão
+  if (y > 250) { doc.addPage(); y = 20 }
+  doc.setFillColor(245, 245, 245)
+  doc.rect(mg, y - 3, inner, 7, "F")
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "bold")
+  doc.text("CONCLUSÃO", mg + 2, y + 1.5)
+  y += 9
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  y = blocoTexto(doc, dados.conclusao?.trim() || "—", mg + 2, y, inner - 4, 5)
+  y += 6
+
+  // 5. CID (se houver)
+  if (dados.cid && dados.cid.trim()) {
+    if (y > 265) { doc.addPage(); y = 20 }
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COR)
+    doc.text(`CID: ${dados.cid.trim()}`, mg + 2, y + 1.5)
+    doc.setTextColor(0, 0, 0)
+    y += 8
+  }
+
+  // 6. Nota de rodapé
+  if (y > 272) { doc.addPage(); y = 20 }
+  doc.setFontSize(7.5)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(120, 120, 120)
+  blocoTexto(doc,
+    "Este laudo não substitui a avaliação de um profissional de saúde habilitado.",
+    mg, y + 2, inner, 4)
+  doc.setTextColor(0, 0, 0)
+
+  return doc.output("datauristring").split(",")[1]
+}
+
+// ── IMITANCIOMETRIA / TIMPANOMETRIA ──────────────────────────────────────────────
+
+export interface DadosImitanciometria {
+  dataEmissao:       string          // YYYY-MM-DD
+  pacienteNome:      string
+  usuarioNome:       string | null
+  dataExame:         string          // YYYY-MM-DD
+  curvaOd:           string | null   // A | As | Ad | B | C
+  curvaOe:           string | null
+  picoPressaoOdDapa: number | null
+  picoPressaoOeDapa: number | null
+  complacenciaOdMl:  number | null
+  complacenciaOeMl:  number | null
+  volumeCanalOdMl:   number | null
+  volumeCanalOeMl:   number | null
+  reflexoIpsiOd:     string | null   // PRESENTE | AUSENTE | NAO_TESTADO
+  reflexoContraOd:   string | null
+  reflexoIpsiOe:     string | null
+  reflexoContraOe:   string | null
+  observacao:        string | null
+}
+
+export function gerarPdfImitanciometria(dados: DadosImitanciometria): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const COR: [number, number, number] = [37, 99, 235]
+
+  const curvaLabel = (c: string | null) =>
+    c == null || c === "" ? "—" : `Tipo ${c}`
+  const reflexoLabel = (r: string | null) =>
+    r === "PRESENTE" ? "Presente" : r === "AUSENTE" ? "Ausente" : r === "NAO_TESTADO" ? "Não testado" : "—"
+  const fmt = (v: number | null, suf = "") =>
+    v == null || Number.isNaN(v) ? "—" : `${v}${suf}`
+
+  // 1. Faixa de topo
+  let y = faixaTopo(doc, "IMITANCIOMETRIA", dados.pacienteNome ?? "—", COR)
+
+  // 2. Referência centralizada
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  const ref = [
+    `Exame em ${fmtData(dados.dataExame)}`,
+    `Emitido em ${fmtData(dados.dataEmissao)}`,
+    dados.usuarioNome ? `Profissional: ${dados.usuarioNome}` : null,
+  ].filter(Boolean).join("  •  ")
+  doc.text(ref, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 8
+
+  // 3. Timpanometria (por orelha)
+  autoTable(doc, {
+    startY: y,
+    head: [["Timpanometria", "Orelha Direita (OD)", "Orelha Esquerda (OE)"]],
+    body: [
+      ["Curva (Jerger)",         curvaLabel(dados.curvaOd),                 curvaLabel(dados.curvaOe)],
+      ["Pico de pressão (daPa)", fmt(dados.picoPressaoOdDapa),              fmt(dados.picoPressaoOeDapa)],
+      ["Complacência (ml)",      fmt(dados.complacenciaOdMl),               fmt(dados.complacenciaOeMl)],
+      ["Volume do CAE (ml)",     fmt(dados.volumeCanalOdMl),                fmt(dados.volumeCanalOeMl)],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 0: { fontStyle: "bold" }, 1: { halign: "center" }, 2: { halign: "center" } },
+    margin:       { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+  y += 6
+
+  // 4. Reflexo estapédico
+  autoTable(doc, {
+    startY: y,
+    head: [["Reflexo estapédico", "Orelha Direita (OD)", "Orelha Esquerda (OE)"]],
+    body: [
+      ["Ipsilateral",   reflexoLabel(dados.reflexoIpsiOd),   reflexoLabel(dados.reflexoIpsiOe)],
+      ["Contralateral", reflexoLabel(dados.reflexoContraOd), reflexoLabel(dados.reflexoContraOe)],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 0: { fontStyle: "bold" }, 1: { halign: "center" }, 2: { halign: "center" } },
+    margin:       { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+  y += 6
+
+  // 5. Observações
+  if (dados.observacao && dados.observacao.trim()) {
+    const inner = L - mg * 2
+    if (y > 255) { doc.addPage(); y = 20 }
+    doc.setFillColor(245, 245, 245)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.text("OBSERVAÇÕES", mg + 2, y + 1.5)
+    y += 9
+    doc.setFont("helvetica", "normal")
+    y = blocoTexto(doc, dados.observacao.trim(), mg + 2, y, inner - 4, 5)
+  }
+
+  return doc.output("datauristring").split(",")[1]
+}
+
+// ── ESCALA / QUESTIONÁRIO APLICADO ──────────────────────────────────────────────
+
+export interface DadosEscalaOtorrino {
+  dataEmissao:      string          // YYYY-MM-DD
+  pacienteNome:     string
+  usuarioNome:      string | null
+  dataAplicacao:    string          // YYYY-MM-DD
+  questionarioNome: string
+  scoreTotal:       number | null
+  classificacao:    string | null
+  interpretacao:    string | null
+  respostas:        { enunciado: string; valor: number }[]
+}
+
+export function gerarPdfEscala(dados: DadosEscalaOtorrino): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+  const COR: [number, number, number] = [37, 99, 235]
+
+  // 1. Faixa de topo
+  let y = faixaTopo(doc, `ESCALA — ${dados.questionarioNome}`, dados.pacienteNome ?? "—", COR)
+
+  // 2. Referência centralizada
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  const ref = [
+    `Aplicada em ${fmtData(dados.dataAplicacao)}`,
+    `Emitido em ${fmtData(dados.dataEmissao)}`,
+    dados.usuarioNome ? `Profissional: ${dados.usuarioNome}` : null,
+  ].filter(Boolean).join("  •  ")
+  doc.text(ref, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  // 3. Caixa de resultado (Score / Classificação)
+  const metrics: { label: string; valor: string }[] = [
+    { label: "Score total",   valor: dados.scoreTotal != null ? String(dados.scoreTotal) : "—" },
+    { label: "Classificação", valor: dados.classificacao ?? "—" },
+  ]
+
+  doc.setFillColor(240, 247, 255)
+  doc.setDrawColor(...COR)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(mg, y, inner, 20, 3, 3, "FD")
+
+  const cellW = inner / metrics.length
+  metrics.forEach((m, i) => {
+    const cx = mg + i * cellW + cellW / 2
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(80, 80, 80)
+    doc.text(m.label, cx, y + 7, { align: "center" })
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COR)
+    doc.text(m.valor, cx, y + 15, { align: "center" })
+  })
+  doc.setTextColor(0, 0, 0)
+  y += 27
+
+  // 4. Interpretação
+  if (dados.interpretacao && dados.interpretacao.trim()) {
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "normal")
+    y = blocoTexto(doc, dados.interpretacao.trim(), mg, y, inner, 5)
+    y += 5
+  }
+
+  // 5. Tabela de respostas
+  if (y > 240) { doc.addPage(); y = 20 }
+  autoTable(doc, {
+    startY: y,
+    head: [["#", "Item", "Resposta"]],
+    body: dados.respostas.map((r, idx) => [
+      String(idx + 1),
+      r.enunciado,
+      String(r.valor),
+    ]),
+    headStyles:   { fillColor: COR, fontSize: 8 },
+    bodyStyles:   { fontSize: 8 },
+    columnStyles: {
+      0: { halign: "center", cellWidth: 10 },
+      1: { halign: "left" },
+      2: { halign: "center", cellWidth: 22, fontStyle: "bold" },
+    },
+    margin: { left: mg, right: mg },
+  })
+
+  return doc.output("datauristring").split(",")[1]
+}

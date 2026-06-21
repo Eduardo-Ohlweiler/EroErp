@@ -214,7 +214,7 @@ export default function FormulaEnteralList() {
         <TRow>
           <TCol>
             <TEntry name="nome" label="Nome" placeholder="Filtrar por nome..."
-              width="100%" defaultValue={filtroNome} />
+              width="50%" defaultValue={filtroNome} />
           </TCol>
         </TRow>
         <TFormFooter>

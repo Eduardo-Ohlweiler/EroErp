@@ -191,8 +191,11 @@ export default function RegistroDiarioUtiForm() {
                 value       ={pessoaId}
                 onChange    ={(v) => setPessoaId(v)}
                 placeholder ="Buscar paciente..."
+                width="50%"
               />
             </TCol>
+          </TRow>
+          <TRow>
             <TCol flex={1}>
               <TDate name="data" label="Data" required defaultValue={dataVal} onChange={setDataVal} />
             </TCol>

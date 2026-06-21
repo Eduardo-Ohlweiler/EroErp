@@ -287,11 +287,11 @@ export default function AudiometriaForm() {
       if (idParam) {
         await api.put(`/otorrino/audiometrias/${idParam}`, payload)
         showMessage("success", "Audiometria atualizada com sucesso!")
-        navigate("/otorrino/audiometrias")
+        await carregar(idParam)   // recarrega para refletir média/grau/tipo recalculados
       } else {
-        await api.post<AudiometriaResponse>("/otorrino/audiometrias", payload)
+        const res = await api.post<AudiometriaResponse>("/otorrino/audiometrias", payload)
         showMessage("success", "Audiometria criada com sucesso!")
-        navigate("/otorrino/audiometrias")
+        navigate(`/otorrino/audiometrias/${res.data.id}`, { replace: true })
       }
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.data) {

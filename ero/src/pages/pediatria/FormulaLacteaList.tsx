@@ -106,7 +106,7 @@ export default function FormulaLacteaList() {
               name        ="nome"
               label       ="Nome"
               placeholder ="Filtrar por nome..."
-              width       ="100%"
+              width       ="50%"
               defaultValue={filtroNome}
             />
           </TCol>

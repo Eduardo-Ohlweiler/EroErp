@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+      Seed dos 5 questionários globais de otorrinolaringologia (cliente_id NULL).
+      Como os ids são BIGSERIAL, opções e itens referenciam o questionário por
+      subselect pelo código:  valueComputed="(SELECT id FROM questionario WHERE codigo='...')"
+    -->
+    <changeSet id="080-insert-questionarios-otorrino" author="eduardo">
+
+        <!-- ════════════════════ CABEÇALHOS ════════════════════ -->
+        <insert tableName="questionario">
+            <column name="cliente_id" value="null"/>
+            <column name="codigo" value="THI"/>
+            <column name="nome" value="Tinnitus Handicap Inventory (THI)"/>
+            <column name="descricao" value="Impacto do zumbido na qualidade de vida"/>
+            <column name="instrucao" value="Responda cada questão pensando em como o zumbido tem afetado você."/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="questionario">
+            <column name="cliente_id" value="null"/>
+            <column name="codigo" value="DHI"/>
+            <column name="nome" value="Dizziness Handicap Inventory (DHI)"/>
+            <column name="descricao" value="Impacto da tontura/vertigem"/>
+            <column name="instrucao" value="Responda considerando apenas o seu problema de tontura/desequilíbrio."/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="questionario">
+            <column name="cliente_id" value="null"/>
+            <column name="codigo" value="EPWORTH"/>
+            <column name="nome" value="Escala de Sonolência de Epworth"/>
+            <column name="descricao" value="Sonolência diurna excessiva"/>
+            <column name="instrucao" value="Qual a chance de você cochilar nas situações abaixo (e não apenas se sentir cansado)?"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="questionario">
+            <column name="cliente_id" value="null"/>
+            <column name="codigo" value="NOSE"/>
+            <column name="nome" value="NOSE — Avaliação de Obstrução Nasal"/>
+            <column name="descricao" value="Gravidade da obstrução nasal"/>
+            <column name="instrucao" value="Nas últimas semanas, quanto cada problema afetou você?"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <insert tableName="questionario">
+            <column name="cliente_id" value="null"/>
+            <column name="codigo" value="SNOT22"/>
+            <column name="nome" value="SNOT-22"/>
+            <column name="descricao" value="Qualidade de vida em doenças nasossinusais"/>
+            <column name="instrucao" value="Considerando como você tem estado, classifique a gravidade de cada item."/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <!-- ════════════════════ OPÇÕES ════════════════════ -->
+
+        <!-- THI -->
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/>
+            <column name="ordem" valueNumeric="1"/><column name="rotulo" value="Não"/><column name="valor" valueNumeric="0"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/>
+            <column name="ordem" valueNumeric="2"/><column name="rotulo" value="Às vezes"/><column name="valor" valueNumeric="2"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/>
+            <column name="ordem" valueNumeric="3"/><column name="rotulo" value="Sim"/><column name="valor" valueNumeric="4"/>
+        </insert>
+
+        <!-- DHI -->
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/>
+            <column name="ordem" valueNumeric="1"/><column name="rotulo" value="Não"/><column name="valor" valueNumeric="0"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/>
+            <column name="ordem" valueNumeric="2"/><column name="rotulo" value="Às vezes"/><column name="valor" valueNumeric="2"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/>
+            <column name="ordem" valueNumeric="3"/><column name="rotulo" value="Sim"/><column name="valor" valueNumeric="4"/>
+        </insert>
+
+        <!-- EPWORTH -->
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/>
+            <column name="ordem" valueNumeric="1"/><column name="rotulo" value="Nenhuma chance de cochilar"/><column name="valor" valueNumeric="0"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/>
+            <column name="ordem" valueNumeric="2"/><column name="rotulo" value="Pequena chance"/><column name="valor" valueNumeric="1"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/>
+            <column name="ordem" valueNumeric="3"/><column name="rotulo" value="Moderada chance"/><column name="valor" valueNumeric="2"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/>
+            <column name="ordem" valueNumeric="4"/><column name="rotulo" value="Alta chance"/><column name="valor" valueNumeric="3"/>
+        </insert>
+
+        <!-- NOSE -->
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/>
+            <column name="ordem" valueNumeric="1"/><column name="rotulo" value="Sem problema"/><column name="valor" valueNumeric="0"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/>
+            <column name="ordem" valueNumeric="2"/><column name="rotulo" value="Problema muito leve"/><column name="valor" valueNumeric="1"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/>
+            <column name="ordem" valueNumeric="3"/><column name="rotulo" value="Problema moderado"/><column name="valor" valueNumeric="2"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/>
+            <column name="ordem" valueNumeric="4"/><column name="rotulo" value="Problema razoavelmente grave"/><column name="valor" valueNumeric="3"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/>
+            <column name="ordem" valueNumeric="5"/><column name="rotulo" value="Problema grave"/><column name="valor" valueNumeric="4"/>
+        </insert>
+
+        <!-- SNOT22 -->
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/>
+            <column name="ordem" valueNumeric="1"/><column name="rotulo" value="Sem problema"/><column name="valor" valueNumeric="0"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/>
+            <column name="ordem" valueNumeric="2"/><column name="rotulo" value="Problema muito leve"/><column name="valor" valueNumeric="1"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/>
+            <column name="ordem" valueNumeric="3"/><column name="rotulo" value="Problema leve"/><column name="valor" valueNumeric="2"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/>
+            <column name="ordem" valueNumeric="4"/><column name="rotulo" value="Problema moderado"/><column name="valor" valueNumeric="3"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/>
+            <column name="ordem" valueNumeric="5"/><column name="rotulo" value="Problema grave"/><column name="valor" valueNumeric="4"/>
+        </insert>
+        <insert tableName="questionario_opcao">
+            <column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/>
+            <column name="ordem" valueNumeric="6"/><column name="rotulo" value="O pior problema possível"/><column name="valor" valueNumeric="5"/>
+        </insert>
+
+        <!-- ════════════════════ ITENS THI ════════════════════ -->
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="1"/><column name="dominio" value="F"/><column name="enunciado" value="É difícil se concentrar por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="2"/><column name="dominio" value="F"/><column name="enunciado" value="A intensidade do zumbido faz com que seja difícil ouvir as pessoas?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="3"/><column name="dominio" value="E"/><column name="enunciado" value="O zumbido deixa você nervoso(a)?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="4"/><column name="dominio" value="F"/><column name="enunciado" value="O zumbido deixa você confuso(a)?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="5"/><column name="dominio" value="C"/><column name="enunciado" value="Você se sente desesperado(a) por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="6"/><column name="dominio" value="E"/><column name="enunciado" value="Você se queixa muito do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="7"/><column name="dominio" value="F"/><column name="enunciado" value="Você tem dificuldade para pegar no sono por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="8"/><column name="dominio" value="C"/><column name="enunciado" value="Você sente que não consegue se livrar do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="9"/><column name="dominio" value="F"/><column name="enunciado" value="O zumbido interfere na sua capacidade de aproveitar atividades sociais?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="10"/><column name="dominio" value="E"/><column name="enunciado" value="Você se sente frustrado(a) por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="11"/><column name="dominio" value="C"/><column name="enunciado" value="Você acha que tem uma doença grave por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="12"/><column name="dominio" value="F"/><column name="enunciado" value="O zumbido torna difícil aproveitar a vida?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="13"/><column name="dominio" value="F"/><column name="enunciado" value="O zumbido interfere nas suas tarefas em casa ou no trabalho?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="14"/><column name="dominio" value="F"/><column name="enunciado" value="Você se sente irritado(a) com frequência por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="15"/><column name="dominio" value="F"/><column name="enunciado" value="É difícil ler por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="16"/><column name="dominio" value="E"/><column name="enunciado" value="Você fica chateado(a) por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="17"/><column name="dominio" value="E"/><column name="enunciado" value="Você sente que o zumbido prejudica seus relacionamentos pessoais?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="18"/><column name="dominio" value="F"/><column name="enunciado" value="É difícil tirar a atenção do zumbido e se concentrar em outras coisas?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="19"/><column name="dominio" value="C"/><column name="enunciado" value="Você sente que não tem controle sobre o zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="20"/><column name="dominio" value="F"/><column name="enunciado" value="Você se sente cansado(a) com frequência por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="21"/><column name="dominio" value="E"/><column name="enunciado" value="Você se sente deprimido(a) por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="22"/><column name="dominio" value="E"/><column name="enunciado" value="Você se sente ansioso(a) por causa do zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="23"/><column name="dominio" value="C"/><column name="enunciado" value="Você sente que não consegue mais suportar o zumbido?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="24"/><column name="dominio" value="F"/><column name="enunciado" value="O zumbido piora quando você está sob estresse?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='THI')"/><column name="ordem" valueNumeric="25"/><column name="dominio" value="E"/><column name="enunciado" value="O zumbido faz você se sentir inseguro(a)?"/></insert>
+
+        <!-- ════════════════════ ITENS DHI ════════════════════ -->
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="1"/><column name="dominio" value="P"/><column name="enunciado" value="Olhar para cima piora a sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="2"/><column name="dominio" value="E"/><column name="enunciado" value="Você se sente frustrado(a) por causa da sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="3"/><column name="dominio" value="F"/><column name="enunciado" value="Você restringe suas viagens de trabalho ou lazer por causa da sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="4"/><column name="dominio" value="P"/><column name="enunciado" value="Caminhar pelo corredor de um supermercado piora a sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="5"/><column name="dominio" value="F"/><column name="enunciado" value="Você tem dificuldade para deitar-se ou levantar-se da cama por causa da tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="6"/><column name="dominio" value="F"/><column name="enunciado" value="Sua tontura restringe sua participação em atividades sociais (sair para jantar, cinema, dançar, festas)?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="7"/><column name="dominio" value="F"/><column name="enunciado" value="Você tem dificuldade para ler por causa da sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="8"/><column name="dominio" value="P"/><column name="enunciado" value="Atividades mais intensas (esporte, dança, tarefas domésticas) pioram a sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="9"/><column name="dominio" value="E"/><column name="enunciado" value="Você tem medo de sair de casa sem alguém que o(a) acompanhe por causa da tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="10"/><column name="dominio" value="E"/><column name="enunciado" value="Você se sente envergonhado(a) diante de outras pessoas por causa da tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="11"/><column name="dominio" value="P"/><column name="enunciado" value="Movimentos rápidos da cabeça pioram a sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="12"/><column name="dominio" value="F"/><column name="enunciado" value="Você evita lugares altos por causa da sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="13"/><column name="dominio" value="P"/><column name="enunciado" value="Virar-se na cama piora a sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="14"/><column name="dominio" value="F"/><column name="enunciado" value="É difícil realizar tarefas domésticas pesadas por causa da tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="15"/><column name="dominio" value="E"/><column name="enunciado" value="Você teme que as pessoas pensem que você está embriagado(a) por causa da tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="16"/><column name="dominio" value="F"/><column name="enunciado" value="É difícil sair para caminhar sozinho(a) por causa da tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="17"/><column name="dominio" value="P"/><column name="enunciado" value="Caminhar pela calçada piora a sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="18"/><column name="dominio" value="E"/><column name="enunciado" value="É difícil se concentrar por causa da sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="19"/><column name="dominio" value="F"/><column name="enunciado" value="É difícil caminhar pela sua casa no escuro por causa da tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="20"/><column name="dominio" value="E"/><column name="enunciado" value="Você tem medo de ficar em casa sozinho(a) por causa da tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="21"/><column name="dominio" value="E"/><column name="enunciado" value="Você se sente incapacitado(a) por causa da sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="22"/><column name="dominio" value="E"/><column name="enunciado" value="Sua tontura prejudicou suas relações com familiares e amigos?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="23"/><column name="dominio" value="E"/><column name="enunciado" value="Você se sente deprimido(a) por causa da sua tontura?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="24"/><column name="dominio" value="F"/><column name="enunciado" value="Sua tontura atrapalha seu trabalho ou responsabilidades em casa?"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='DHI')"/><column name="ordem" valueNumeric="25"/><column name="dominio" value="P"/><column name="enunciado" value="Abaixar-se piora a sua tontura?"/></insert>
+
+        <!-- ════════════════════ ITENS EPWORTH ════════════════════ -->
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/><column name="ordem" valueNumeric="1"/><column name="enunciado" value="Sentado(a) e lendo"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/><column name="ordem" valueNumeric="2"/><column name="enunciado" value="Assistindo à televisão"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/><column name="ordem" valueNumeric="3"/><column name="enunciado" value="Sentado(a), quieto(a), em um lugar público (sala de espera, cinema, teatro, reunião)"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/><column name="ordem" valueNumeric="4"/><column name="enunciado" value="Como passageiro(a) em um carro por uma hora, sem parar"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/><column name="ordem" valueNumeric="5"/><column name="enunciado" value="Deitado(a) para descansar à tarde, quando as circunstâncias permitem"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/><column name="ordem" valueNumeric="6"/><column name="enunciado" value="Sentado(a) conversando com alguém"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/><column name="ordem" valueNumeric="7"/><column name="enunciado" value="Sentado(a) calmamente após o almoço, sem ter bebido álcool"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='EPWORTH')"/><column name="ordem" valueNumeric="8"/><column name="enunciado" value="Em um carro, parado(a) por alguns minutos no trânsito"/></insert>
+
+        <!-- ════════════════════ ITENS NOSE ════════════════════ -->
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/><column name="ordem" valueNumeric="1"/><column name="enunciado" value="Congestão ou entupimento nasal"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/><column name="ordem" valueNumeric="2"/><column name="enunciado" value="Obstrução ou bloqueio nasal"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/><column name="ordem" valueNumeric="3"/><column name="enunciado" value="Dificuldade para respirar pelo nariz"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/><column name="ordem" valueNumeric="4"/><column name="enunciado" value="Dificuldade para dormir por causa do nariz"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='NOSE')"/><column name="ordem" valueNumeric="5"/><column name="enunciado" value="Incapacidade de obter ar suficiente pelo nariz durante esforço ou exercício"/></insert>
+
+        <!-- ════════════════════ ITENS SNOT22 ════════════════════ -->
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="1"/><column name="enunciado" value="Necessidade de assoar o nariz"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="2"/><column name="enunciado" value="Espirros"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="3"/><column name="enunciado" value="Coriza (nariz escorrendo)"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="4"/><column name="enunciado" value="Obstrução/entupimento nasal"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="5"/><column name="enunciado" value="Redução do olfato e do paladar"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="6"/><column name="enunciado" value="Tosse"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="7"/><column name="enunciado" value="Secreção pós-nasal (catarro escorrendo na garganta)"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="8"/><column name="enunciado" value="Secreção nasal espessa"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="9"/><column name="enunciado" value="Sensação de ouvido cheio/tampado"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="10"/><column name="enunciado" value="Tontura"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="11"/><column name="enunciado" value="Dor no ouvido"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="12"/><column name="enunciado" value="Dor ou pressão facial"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="13"/><column name="enunciado" value="Dificuldade para pegar no sono"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="14"/><column name="enunciado" value="Acordar durante a noite"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="15"/><column name="enunciado" value="Falta de uma boa noite de sono"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="16"/><column name="enunciado" value="Acordar cansado(a)"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="17"/><column name="enunciado" value="Cansaço (fadiga) durante o dia"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="18"/><column name="enunciado" value="Redução da produtividade"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="19"/><column name="enunciado" value="Redução da concentração"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="20"/><column name="enunciado" value="Sentir-se frustrado(a)/inquieto(a)/irritado(a)"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="21"/><column name="enunciado" value="Sentir-se triste"/></insert>
+        <insert tableName="questionario_item"><column name="questionario_id" valueComputed="(SELECT id FROM questionario WHERE codigo='SNOT22')"/><column name="ordem" valueNumeric="22"/><column name="enunciado" value="Sentir-se envergonhado(a)"/></insert>
+
+    </changeSet>
+
+</databaseChangeLog>

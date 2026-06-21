@@ -6,5 +6,6 @@ public enum TipoFinalidade {
     DENTISTA,
     PODOLOGIA,
     NUTRICAO,
-    VETERINARIA
+    VETERINARIA,
+    OTORRINO
 }

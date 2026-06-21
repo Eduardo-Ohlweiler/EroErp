@@ -16,6 +16,7 @@ import { TEntry }                                                from "../../com
 import { TDbCombo }                                              from "../../components/tdbcombo"
 import { TCombo }                                                from "../../components/tcombo"
 import { TDate }                                                 from "../../components/tdate"
+import { TSpace } from "../../components/tspace"
 
 function formatarDataExtenso(dataStr?: string): string {
     if (!dataStr) return ""
@@ -536,7 +537,7 @@ export default function DocumentoForm() {
                             name        ="numeroParcelas"
                             label       ="Nº Parcelas"
                             mask        ="numero"
-                            width       ="120px"
+                            width       ="200px"
                             defaultValue={numeroParcelas}
                             onChange    ={setNumeroParcelas}
                         />
@@ -546,10 +547,11 @@ export default function DocumentoForm() {
                             name        ="dataEmissao"
                             label       ="Data de Emissão *"
                             required
-                            width       ="200px"
+                            //width       ="200px"
                             defaultValue={documento?.dataEmissao}
                         />
                     </TCol>
+                    <TSpace />
                 </TRow>
 
                 {/* Linha 8 — Forma de Pagamento */}

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+      Seed do template global (cliente_id NULL) de anamnese otorrinolaringológica.
+      Finalidade 'OTORRINO' (adicionada ao enum TipoFinalidade no backend).
+      Reaproveita o sistema de anamnese dinâmica já existente (templates por finalidade).
+    -->
+    <changeSet id="082-insert-template-anamnese-otorrino" author="eduardo">
+
+        <sql splitStatements="true">
+            INSERT INTO template_anamnese (nome, finalidade, descricao, ativo, created_at)
+            VALUES ('Anamnese Otorrinolaringológica', 'OTORRINO',
+                    'Ficha de anamnese para avaliação otorrinolaringológica (otológica, nasal, faríngo-laríngea e do sono).',
+                    true, NOW());
+
+            INSERT INTO campo_anamnese (template_id, secao, rotulo, tipo, opcoes, ordem, obrigatorio, ativo, created_at)
+            VALUES
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Queixa Principal', 'Queixa principal', 'TEXTO_LONGO', NULL, 1, true, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Queixa Principal', 'Tempo de evolução', 'TEXTO', NULL, 2, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Queixa Principal', 'História da doença atual', 'TEXTO_LONGO', NULL, 3, false, true, NOW()),
+
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Otológicos', 'Perda auditiva', 'OPCOES', '["Não","Sim - unilateral","Sim - bilateral"]', 4, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Otológicos', 'Zumbido', 'OPCOES', '["Não","Sim - unilateral","Sim - bilateral"]', 5, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Otológicos', 'Tontura ou vertigem', 'OPCOES', '["Não","Sim"]', 6, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Otológicos', 'Otalgia (dor de ouvido)', 'OPCOES', '["Não","Sim - unilateral","Sim - bilateral"]', 7, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Otológicos', 'Otorreia (secreção no ouvido)', 'OPCOES', '["Não","Sim"]', 8, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Otológicos', 'Plenitude auricular (ouvido tampado)', 'CHECKBOX', NULL, 9, false, true, NOW()),
+
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Nasais', 'Obstrução nasal', 'OPCOES', '["Não","Sim - unilateral","Sim - bilateral"]', 10, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Nasais', 'Rinorreia (coriza)', 'OPCOES', '["Não","Hialina","Purulenta"]', 11, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Nasais', 'Espirros ou prurido nasal', 'CHECKBOX', NULL, 12, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Nasais', 'Redução do olfato', 'CHECKBOX', NULL, 13, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Nasais', 'Epistaxe (sangramento nasal)', 'CHECKBOX', NULL, 14, false, true, NOW()),
+
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Faríngeos e Laríngeos', 'Odinofagia (dor de garganta)', 'CHECKBOX', NULL, 15, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Faríngeos e Laríngeos', 'Disfonia (rouquidão)', 'OPCOES', '["Não","Sim"]', 16, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Faríngeos e Laríngeos', 'Disfagia (dificuldade para engolir)', 'CHECKBOX', NULL, 17, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Faríngeos e Laríngeos', 'Tosse crônica', 'CHECKBOX', NULL, 18, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sintomas Faríngeos e Laríngeos', 'Pigarro', 'CHECKBOX', NULL, 19, false, true, NOW()),
+
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sono e Respiração', 'Ronco', 'OPCOES', '["Não","Ocasional","Frequente"]', 20, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sono e Respiração', 'Apneia presenciada durante o sono', 'CHECKBOX', NULL, 21, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Sono e Respiração', 'Sonolência diurna excessiva', 'CHECKBOX', NULL, 22, false, true, NOW()),
+
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Antecedentes e Hábitos', 'Exposição a ruído ocupacional', 'CHECKBOX', NULL, 23, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Antecedentes e Hábitos', 'Tabagismo', 'OPCOES', '["Não","Sim","Ex-tabagista"]', 24, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Antecedentes e Hábitos', 'Cirurgias otorrinolaringológicas prévias', 'TEXTO_LONGO', NULL, 25, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Antecedentes e Hábitos', 'Medicações em uso', 'TEXTO_LONGO', NULL, 26, false, true, NOW()),
+            ((SELECT id FROM template_anamnese WHERE finalidade='OTORRINO' AND cliente_id IS NULL LIMIT 1),
+             'Antecedentes e Hábitos', 'Observações', 'TEXTO_LONGO', NULL, 27, false, true, NOW());
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

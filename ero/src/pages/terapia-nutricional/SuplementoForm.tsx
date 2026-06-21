@@ -12,6 +12,7 @@ import { TEntry }                                                  from "../../c
 import { TCombo }                                                  from "../../components/tcombo"
 import { TButton }                                                 from "../../components/tbutton"
 import { useMessage }                                              from "../../hooks/useMessage"
+import { TSpace } from "../../components/tspace"
 
 function num(v: string): number | null {
   if (!v || v.trim() === "") return null
@@ -103,62 +104,74 @@ export default function SuplementoForm() {
       <TForm key={formKey} onSubmit={handleSubmit}>
         <TRow>
           <TCol>
-            <TEntry name="nome" label="Nome" required width="60%" defaultValue={suple?.nome} />
+            <TEntry name="nome" label="Nome" required width="50%" defaultValue={suple?.nome} />
           </TCol>
         </TRow>
         <TRow>
           <TCol>
-            <TEntry name="qtdG" label="Porção (g)" placeholder="Ex: 200" width="180px"
+            <TEntry name="qtdG" label="Porção (g)" placeholder="Ex: 200" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.qtdG)} />
           </TCol>
           <TCol>
-            <TEntry name="kcal" label="Calorias (kcal)" placeholder="Ex: 300" width="180px"
+            <TEntry name="kcal" label="Calorias (kcal)" placeholder="Ex: 300" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.kcal)} />
           </TCol>
+          <TSpace />
+        </TRow>
+        <TRow>
           <TCol>
-            <TEntry name="ptn" label="Proteína (g)" placeholder="Ex: 20" width="180px"
+            <TEntry name="ptn" label="Proteína (g)" placeholder="Ex: 20" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.ptn)} />
           </TCol>
           <TCol>
-            <TEntry name="cho" label="Carboidrato (g)" placeholder="Ex: 40" width="180px"
+            <TEntry name="cho" label="Carboidrato (g)" placeholder="Ex: 40" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.cho)} />
           </TCol>
+          <TSpace />
         </TRow>
         <TRow>
           <TCol>
-            <TEntry name="acucar" label="Açúcar (g)" placeholder="Ex: 10" width="180px"
+            <TEntry name="acucar" label="Açúcar (g)" placeholder="Ex: 10" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.acucar)} />
           </TCol>
           <TCol>
-            <TEntry name="lip" label="Lipídios (g)" placeholder="Ex: 8" width="180px"
+            <TEntry name="lip" label="Lipídios (g)" placeholder="Ex: 8" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.lip)} />
           </TCol>
-          <TCol>
-            <TEntry name="fibras" label="Fibras (g)" placeholder="Ex: 3" width="180px"
-              mask="numerodecimal2" defaultValue={dv(suple?.fibras)} />
-          </TCol>
-          <TCol>
-            <TEntry name="sodio" label="Sódio (mg)" placeholder="Ex: 150" width="180px"
-              mask="numerodecimal2" defaultValue={dv(suple?.sodio)} />
-          </TCol>
+          <TSpace />
         </TRow>
         <TRow>
           <TCol>
-            <TEntry name="potassio" label="Potássio (mg)" placeholder="Ex: 200" width="180px"
+            <TEntry name="fibras" label="Fibras (g)" placeholder="Ex: 3" width="200px"
+              mask="numerodecimal2" defaultValue={dv(suple?.fibras)} />
+          </TCol>
+          <TCol>
+            <TEntry name="sodio" label="Sódio (mg)" placeholder="Ex: 150" width="200px"
+              mask="numerodecimal2" defaultValue={dv(suple?.sodio)} />
+          </TCol>
+          <TSpace />
+        </TRow>
+        <TRow>
+          <TCol>
+            <TEntry name="potassio" label="Potássio (mg)" placeholder="Ex: 200" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.potassio)} />
           </TCol>
           <TCol>
-            <TEntry name="fosforo" label="Fósforo (mg)" placeholder="Ex: 100" width="180px"
+            <TEntry name="fosforo" label="Fósforo (mg)" placeholder="Ex: 100" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.fosforo)} />
           </TCol>
+          <TSpace />
+        </TRow>
+        <TRow>
           <TCol>
-            <TEntry name="ferro" label="Ferro (mg)" placeholder="Ex: 5" width="180px"
+            <TEntry name="ferro" label="Ferro (mg)" placeholder="Ex: 5" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.ferro)} />
           </TCol>
           <TCol>
-            <TEntry name="osmolaridade" label="Osmolaridade (mOsm/L)" placeholder="Ex: 440" width="180px"
+            <TEntry name="osmolaridade" label="Osmolaridade (mOsm/L)" placeholder="Ex: 440" width="200px"
               mask="numerodecimal2" defaultValue={dv(suple?.osmolaridade)} />
           </TCol>
+          <TSpace />
         </TRow>
         <TRow>
           <TCol>

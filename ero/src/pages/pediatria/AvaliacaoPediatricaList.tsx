@@ -20,6 +20,7 @@ import { useQuestion }                                             from "../../h
 import { displayPessoa }                                           from "../../utils/pessoas"
 import { gerarPdfLista }                                          from "../../utils/geradorPdf"
 import { exportarCsv }                                            from "../../utils/exportarPlanilha"
+import { TSpace } from "../../components/tspace"
 
 function formatarData(iso: string): string {
   if (!iso) return "—"
@@ -298,13 +299,8 @@ export default function AvaliacaoPediatricaList() {
               value        ={filtroPessoaId}
               onChange     ={(v) => setFiltroPessoaId(v)}
               placeholder  ="Filtrar por paciente..."
+              width="50%"
             />
-          </TCol>
-          <TCol flex={1}>
-            <TDate name="dataInicio" label="Data Inicial" defaultValue={filtroInicio} />
-          </TCol>
-          <TCol flex={1}>
-            <TDate name="dataFim" label="Data Final" defaultValue={filtroFim} />
           </TCol>
         </TRow>
         <TRow>
@@ -312,21 +308,33 @@ export default function AvaliacaoPediatricaList() {
             <TCombo
               name        ="formulaLacteaId"
               label       ="Fórmula Láctea"
-              width       ="100%"
+              width       ="50%"
               placeholder ="Filtrar por fórmula..."
               options     ={formulaOptions}
               defaultValue={filtroFormulaId}
               onChange    ={(v) => setFiltroFormulaId(v)}
             />
           </TCol>
+        </TRow>
+        <TRow>
+          <TCol flex={1}>
+            <TDate name="dataInicio" label="Data Inicial" defaultValue={filtroInicio} />
+          </TCol>
+          <TCol flex={1}>
+            <TDate name="dataFim" label="Data Final" defaultValue={filtroFim} />
+          </TCol>
+          <TSpace />
+        </TRow>
+        <TRow>
           <TCol flex={1}>
             <TEntry name="mesesMin" label="De (meses)" mask="numero"
-              width="100%" defaultValue={filtroMesMin} onChange={setFiltroMesMin} />
+              width="200px" defaultValue={filtroMesMin} onChange={setFiltroMesMin} />
           </TCol>
           <TCol flex={1}>
             <TEntry name="mesesMax" label="Até (meses)" mask="numero"
-              width="100%" defaultValue={filtroMesMax} onChange={setFiltroMesMax} />
+              width="200px" defaultValue={filtroMesMax} onChange={setFiltroMesMax} />
           </TCol>
+          <TSpace />
         </TRow>
         <TFormFooter>
           <TFormActionsLeft>

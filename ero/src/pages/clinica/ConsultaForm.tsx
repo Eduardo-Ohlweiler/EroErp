@@ -1,4 +1,5 @@
 import { useEffect, useState }                                     from "react"
+import type { Dispatch, SetStateAction }                           from "react"
 import { useNavigate, useParams }                                   from "react-router-dom"
 import axios                                                        from "axios"
 import { api }                                                      from "../../services/api"
@@ -9,7 +10,7 @@ import type {
   StatusConsulta,
 } from "../../types/Clinica"
 import type { FichaAnamnesesSummary } from "../../types/Anamnese"
-import type { AudiometriaSummary }    from "../../types/Otorrino"
+import type { AudiometriaSummary, ImitanciometriaSummary, QuestionarioAplicadoSummary, ExameLaudoSummary, TipoExameLaudo } from "../../types/Otorrino"
 import type { ErrorResponse }                                       from "../../types/ErrorResponse"
 import { TPage }                                                    from "../../components/tpage"
 import { TForm, TFormActionsLeft, TFormActionsRight, TFormFooter }  from "../../components/tform"
@@ -77,11 +78,29 @@ const GRAU_LABEL: Record<string, string> = {
 function grauTxt(g: string | null) {
   return g ? (GRAU_LABEL[g] ?? g) : "—"
 }
+function fmtDataExame(iso: string | null) {
+  return iso ? new Date(iso + "T00:00").toLocaleDateString("pt-BR") : "—"
+}
 function labelAudiometria(a: AudiometriaSummary) {
-  const data = a.dataExame
-    ? new Date(a.dataExame + "T00:00").toLocaleDateString("pt-BR")
-    : "—"
-  return `Audiometria — ${data} · OD: ${grauTxt(a.grauOd)} / OE: ${grauTxt(a.grauOe)}`
+  return `Audiometria — ${fmtDataExame(a.dataExame)} · OD: ${grauTxt(a.grauOd)} / OE: ${grauTxt(a.grauOe)}`
+}
+function labelImitanciometria(i: ImitanciometriaSummary) {
+  return `Imitanciometria — ${fmtDataExame(i.dataExame)} · OD: ${i.curvaOd ?? "—"} / OE: ${i.curvaOe ?? "—"}`
+}
+const TIPO_LAUDO_LABEL: Record<TipoExameLaudo, string> = {
+  NASOFIBROSCOPIA:    "Nasofibroscopia",
+  LARINGOSCOPIA:      "Laringoscopia",
+  VIDEOLARINGOSCOPIA: "Videolaringoscopia",
+  RINOSCOPIA:         "Rinoscopia",
+  OUTRO:              "Outro",
+}
+function labelLaudo(l: ExameLaudoSummary) {
+  return `${TIPO_LAUDO_LABEL[l.tipoExame] ?? l.tipoExame} — ${fmtDataExame(l.dataExame)}`
+}
+function labelEscala(q: QuestionarioAplicadoSummary) {
+  const score = q.scoreTotal != null ? q.scoreTotal : "—"
+  const classif = q.classificacao ?? "—"
+  return `${q.questionarioNome} — ${fmtDataExame(q.dataAplicacao)} · Score ${score} (${classif})`
 }
 
 function calcTotal(
@@ -211,6 +230,21 @@ export default function ConsultaForm() {
   const [audiometriaOptions,        setAudiometriaOptions]        = useState<AudiometriaSummary[]>([])
   const [audiometriasSelecionadas,  setAudiometriasSelecionadas]  = useState<Set<number>>(new Set())
   const [vinculadasOriginais,       setVinculadasOriginais]       = useState<Set<number>>(new Set())
+
+  // Imitanciometrias do paciente (módulo Otorrino) — só aparecem se houver alguma
+  const [imitanciometriaOptions,        setImitanciometriaOptions]        = useState<ImitanciometriaSummary[]>([])
+  const [imitanciometriasSelecionadas,  setImitanciometriasSelecionadas]  = useState<Set<number>>(new Set())
+  const [imitanciometriasOriginais,     setImitanciometriasOriginais]     = useState<Set<number>>(new Set())
+
+  // Escalas (questionários aplicados) do paciente (módulo Otorrino) — só aparecem se houver alguma
+  const [escalaOptions,        setEscalaOptions]        = useState<QuestionarioAplicadoSummary[]>([])
+  const [escalasSelecionadas,  setEscalasSelecionadas]  = useState<Set<number>>(new Set())
+  const [escalasOriginais,     setEscalasOriginais]     = useState<Set<number>>(new Set())
+
+  // Laudos descritivos do paciente (módulo Otorrino) — só aparecem se houver algum
+  const [laudoOptions,        setLaudoOptions]        = useState<ExameLaudoSummary[]>([])
+  const [laudosSelecionadas,  setLaudosSelecionadas]  = useState<Set<number>>(new Set())
+  const [laudosOriginais,     setLaudosOriginais]     = useState<Set<number>>(new Set())
   const [tipoAjusteGeral,  setTipoAjusteGeral]  = useState("")
   const [tipoCalculoGeral, setTipoCalculoGeral] = useState("FIXO")
   const [valorAjusteGeral, setValorAjusteGeral] = useState("")
@@ -266,15 +300,52 @@ export default function ConsultaForm() {
     }
   }
 
-  async function loadAudiometriasVinculadas(cId: string) {
+  async function loadImitanciometriaOptions(pId: string) {
+    if (!pId) { setImitanciometriaOptions([]); return }
     try {
-      const r = await api.get<AudiometriaSummary[]>(`/otorrino/audiometrias/por-consulta/${cId}`)
-      const ids = new Set(r.data.map(a => a.id))
-      setAudiometriasSelecionadas(ids)
-      setVinculadasOriginais(new Set(ids))
+      const r = await api.get<ImitanciometriaSummary[]>(`/otorrino/imitanciometrias/por-pessoa/${pId}`)
+      setImitanciometriaOptions(r.data)
     } catch {
-      setAudiometriasSelecionadas(new Set())
-      setVinculadasOriginais(new Set())
+      setImitanciometriaOptions([])
+    }
+  }
+
+  async function loadEscalaOptions(pId: string) {
+    if (!pId) { setEscalaOptions([]); return }
+    try {
+      const r = await api.get<QuestionarioAplicadoSummary[]>(`/otorrino/questionarios-aplicados/por-pessoa/${pId}`)
+      setEscalaOptions(r.data)
+    } catch {
+      setEscalaOptions([])
+    }
+  }
+
+  async function loadLaudoOptions(pId: string) {
+    if (!pId) { setLaudoOptions([]); return }
+    try {
+      const r = await api.get<ExameLaudoSummary[]>(`/otorrino/exames-laudo/por-pessoa/${pId}`)
+      setLaudoOptions(r.data)
+    } catch {
+      setLaudoOptions([])
+    }
+  }
+
+  // Carrega os ids já vinculados de um tipo de exame (por-consulta) e popula
+  // tanto a seleção atual quanto o snapshot "original" usado no diff do salvar.
+  async function loadVinculadas(
+    endpoint: string,
+    cId: string,
+    setSelecionadas: (s: Set<number>) => void,
+    setOriginais:    (s: Set<number>) => void,
+  ) {
+    try {
+      const r = await api.get<{ id: number }[]>(`/otorrino/${endpoint}/por-consulta/${cId}`)
+      const ids = new Set(r.data.map(x => x.id))
+      setSelecionadas(new Set(ids))
+      setOriginais(new Set(ids))
+    } catch {
+      setSelecionadas(new Set())
+      setOriginais(new Set())
     }
   }
 
@@ -288,7 +359,13 @@ export default function ConsultaForm() {
     setValorAjusteGeral(data.valorAjusteGeral != null ? String(data.valorAjusteGeral) : "")
     await loadFichaOptions(String(data.pessoaId))
     await loadAudiometriaOptions(String(data.pessoaId))
-    await loadAudiometriasVinculadas(String(data.id))
+    await loadImitanciometriaOptions(String(data.pessoaId))
+    await loadEscalaOptions(String(data.pessoaId))
+    await loadLaudoOptions(String(data.pessoaId))
+    await loadVinculadas("audiometrias", String(data.id), setAudiometriasSelecionadas, setVinculadasOriginais)
+    await loadVinculadas("imitanciometrias", String(data.id), setImitanciometriasSelecionadas, setImitanciometriasOriginais)
+    await loadVinculadas("questionarios-aplicados", String(data.id), setEscalasSelecionadas, setEscalasOriginais)
+    await loadVinculadas("exames-laudo", String(data.id), setLaudosSelecionadas, setLaudosOriginais)
     setFormKey(k => k + 1)
   }
 
@@ -307,6 +384,15 @@ export default function ConsultaForm() {
     setAudiometriaOptions([])
     setAudiometriasSelecionadas(new Set())
     setVinculadasOriginais(new Set())
+    setImitanciometriaOptions([])
+    setImitanciometriasSelecionadas(new Set())
+    setImitanciometriasOriginais(new Set())
+    setEscalaOptions([])
+    setEscalasSelecionadas(new Set())
+    setEscalasOriginais(new Set())
+    setLaudoOptions([])
+    setLaudosSelecionadas(new Set())
+    setLaudosOriginais(new Set())
     setTipoAjusteGeral("")
     setTipoCalculoGeral("FIXO")
     setValorAjusteGeral("")
@@ -340,13 +426,13 @@ export default function ConsultaForm() {
       }
       if (isEdit) {
         await api.put(`/consultas/${currentId}`, payload)
-        await sincronizarAudiometrias(Number(currentId))
+        await sincronizarExames(Number(currentId))
         showMessage("success", "Consulta atualizada com sucesso!")
         await reload(currentId!)
       } else {
         const res = await api.post<ConsultaResponse>("/consultas", payload)
         const novoId = String(res.data.id)
-        await sincronizarAudiometrias(res.data.id)
+        await sincronizarExames(res.data.id)
         showMessage("success", "Consulta agendada com sucesso!")
         setCurrentId(novoId)
         await reload(novoId)
@@ -363,25 +449,45 @@ export default function ConsultaForm() {
     }
   }
 
-  // Vincula/desvincula audiometrias conforme o diff com o estado original.
-  // Roda DEPOIS de salvar a consulta; o vínculo mora no lado da audiometria.
-  async function sincronizarAudiometrias(consultaId: number) {
-    const aVincular   = [...audiometriasSelecionadas].filter(id => !vinculadasOriginais.has(id))
-    const aDesvincular = [...vinculadasOriginais].filter(id => !audiometriasSelecionadas.has(id))
-    if (aVincular.length === 0 && aDesvincular.length === 0) return
+  // Vincula/desvincula um tipo de exame conforme o diff com o estado original.
+  // Roda DEPOIS de salvar a consulta; o vínculo mora no lado do exame (consulta_id).
+  // Retorna true em caso de erro, para que o chamador acumule um único aviso.
+  async function sincronizarTipo(
+    endpoint:     string,
+    consultaId:   number,
+    selecionadas: Set<number>,
+    originais:    Set<number>,
+  ): Promise<boolean> {
+    const aVincular    = [...selecionadas].filter(id => !originais.has(id))
+    const aDesvincular = [...originais].filter(id => !selecionadas.has(id))
+    if (aVincular.length === 0 && aDesvincular.length === 0) return false
     try {
       await Promise.all([
-        ...aVincular  .map(id => api.put(`/otorrino/audiometrias/${id}/consulta`, { consultaId })),
-        ...aDesvincular.map(id => api.put(`/otorrino/audiometrias/${id}/consulta`, { consultaId: null })),
+        ...aVincular   .map(id => api.put(`/otorrino/${endpoint}/${id}/consulta`, { consultaId })),
+        ...aDesvincular.map(id => api.put(`/otorrino/${endpoint}/${id}/consulta`, { consultaId: null })),
       ])
+      return false
     } catch {
-      // a consulta já foi salva — não quebra o fluxo principal
-      showMessage("warning", "Consulta salva, mas houve erro ao vincular as audiometrias.")
+      return true
     }
   }
 
-  function toggleAudiometria(id: number) {
-    setAudiometriasSelecionadas(prev => {
+  // Sincroniza audiometrias, imitanciometrias e escalas de uma vez.
+  async function sincronizarExames(consultaId: number) {
+    const erros = await Promise.all([
+      sincronizarTipo("audiometrias",            consultaId, audiometriasSelecionadas,    vinculadasOriginais),
+      sincronizarTipo("imitanciometrias",        consultaId, imitanciometriasSelecionadas, imitanciometriasOriginais),
+      sincronizarTipo("questionarios-aplicados", consultaId, escalasSelecionadas,          escalasOriginais),
+      sincronizarTipo("exames-laudo",            consultaId, laudosSelecionadas,           laudosOriginais),
+    ])
+    if (erros.some(Boolean)) {
+      // a consulta já foi salva — não quebra o fluxo principal
+      showMessage("warning", "Consulta salva, mas houve erro ao vincular um ou mais exames.")
+    }
+  }
+
+  function toggleSelecionado(id: number, setSelecionadas: Dispatch<SetStateAction<Set<number>>>) {
+    setSelecionadas(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -706,6 +812,12 @@ export default function ConsultaForm() {
                 loadFichaOptions(val)
                 setAudiometriasSelecionadas(new Set())
                 loadAudiometriaOptions(val)
+                setImitanciometriasSelecionadas(new Set())
+                loadImitanciometriaOptions(val)
+                setEscalasSelecionadas(new Set())
+                loadEscalaOptions(val)
+                setLaudosSelecionadas(new Set())
+                loadLaudoOptions(val)
               }}
             />
           </TCol>
@@ -748,10 +860,88 @@ export default function ConsultaForm() {
                     type      ="checkbox"
                     checked   ={audiometriasSelecionadas.has(a.id)}
                     disabled  ={isClosed}
-                    onChange  ={() => toggleAudiometria(a.id)}
+                    onChange  ={() => toggleSelecionado(a.id, setAudiometriasSelecionadas)}
                     className ="w-4 h-4 cursor-pointer accent-(--accent)"
                   />
                   {labelAudiometria(a)}
+                </label>
+              ))}
+            </div>
+          </TPanel>
+        )}
+
+        {pessoaId && imitanciometriaOptions.length > 0 && (
+          <TPanel title={`Imitanciometrias${imitanciometriasSelecionadas.size ? ` (${imitanciometriasSelecionadas.size} selecionada${imitanciometriasSelecionadas.size > 1 ? "s" : ""})` : ""}`}>
+            <p className="text-xs text-(--text-muted)">
+              Vincule a esta consulta as imitanciometrias do paciente registradas no módulo Otorrino.
+            </p>
+            <div className="flex flex-col gap-2">
+              {imitanciometriaOptions.map(i => (
+                <label
+                  key       ={i.id}
+                  className ={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary)
+                    ${isClosed ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
+                >
+                  <input
+                    type      ="checkbox"
+                    checked   ={imitanciometriasSelecionadas.has(i.id)}
+                    disabled  ={isClosed}
+                    onChange  ={() => toggleSelecionado(i.id, setImitanciometriasSelecionadas)}
+                    className ="w-4 h-4 cursor-pointer accent-(--accent)"
+                  />
+                  {labelImitanciometria(i)}
+                </label>
+              ))}
+            </div>
+          </TPanel>
+        )}
+
+        {pessoaId && escalaOptions.length > 0 && (
+          <TPanel title={`Escalas${escalasSelecionadas.size ? ` (${escalasSelecionadas.size} selecionada${escalasSelecionadas.size > 1 ? "s" : ""})` : ""}`}>
+            <p className="text-xs text-(--text-muted)">
+              Vincule a esta consulta as escalas (questionários) aplicadas ao paciente no módulo Otorrino.
+            </p>
+            <div className="flex flex-col gap-2">
+              {escalaOptions.map(q => (
+                <label
+                  key       ={q.id}
+                  className ={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary)
+                    ${isClosed ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
+                >
+                  <input
+                    type      ="checkbox"
+                    checked   ={escalasSelecionadas.has(q.id)}
+                    disabled  ={isClosed}
+                    onChange  ={() => toggleSelecionado(q.id, setEscalasSelecionadas)}
+                    className ="w-4 h-4 cursor-pointer accent-(--accent)"
+                  />
+                  {labelEscala(q)}
+                </label>
+              ))}
+            </div>
+          </TPanel>
+        )}
+
+        {pessoaId && laudoOptions.length > 0 && (
+          <TPanel title={`Laudos${laudosSelecionadas.size ? ` (${laudosSelecionadas.size} selecionado${laudosSelecionadas.size > 1 ? "s" : ""})` : ""}`}>
+            <p className="text-xs text-(--text-muted)">
+              Vincule a esta consulta os laudos descritivos do paciente registrados no módulo Otorrino.
+            </p>
+            <div className="flex flex-col gap-2">
+              {laudoOptions.map(l => (
+                <label
+                  key       ={l.id}
+                  className ={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary)
+                    ${isClosed ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
+                >
+                  <input
+                    type      ="checkbox"
+                    checked   ={laudosSelecionadas.has(l.id)}
+                    disabled  ={isClosed}
+                    onChange  ={() => toggleSelecionado(l.id, setLaudosSelecionadas)}
+                    className ="w-4 h-4 cursor-pointer accent-(--accent)"
+                  />
+                  {labelLaudo(l)}
                 </label>
               ))}
             </div>

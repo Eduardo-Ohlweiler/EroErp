@@ -69,4 +69,36 @@ public interface AudiometriaRepository extends JpaRepository<Audiometria, Long> 
             @Param("consultaId") Long consultaId,
             @Param("clienteId")  Long clienteId
     );
+
+    // ── Dashboard ──────────────────────────────────────────────────────────────
+
+    @Query("""
+        SELECT a FROM Audiometria a
+        JOIN FETCH a.pessoa
+        WHERE a.cliente.id = :clienteId
+          AND a.pessoa.id = :pessoaId
+          AND a.dataExame >= :dataInicio
+          AND a.dataExame <= :dataFim
+        ORDER BY a.dataExame ASC
+        """)
+    List<Audiometria> findByPessoaIdAndClienteIdAndDataExameBetween(
+            @Param("pessoaId")   Long      pessoaId,
+            @Param("clienteId")  Long      clienteId,
+            @Param("dataInicio") LocalDate dataInicio,
+            @Param("dataFim")    LocalDate dataFim
+    );
+
+    @Query("""
+        SELECT a FROM Audiometria a
+        JOIN FETCH a.pessoa
+        WHERE a.cliente.id = :clienteId
+          AND a.dataExame >= :dataInicio
+          AND a.dataExame <= :dataFim
+        ORDER BY a.dataExame ASC
+        """)
+    List<Audiometria> findByClienteIdAndDataExameBetween(
+            @Param("clienteId")  Long      clienteId,
+            @Param("dataInicio") LocalDate dataInicio,
+            @Param("dataFim")    LocalDate dataFim
+    );
 }

@@ -5,7 +5,7 @@ export const menu: MenuItem[] = [
   {
     label: "Dashboards",
     icon:  FaTachometerAlt,
-    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET", "DOCUMENTO", "DOCUMENTO_GET", "PEDIATRIA", "PEDIATRIA_GET", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET", "DOCUMENTO", "DOCUMENTO_GET", "PEDIATRIA", "PEDIATRIA_GET", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET", "OTORRINO", "OTORRINO_GET"],
     children: [
       {
         label: "Geral",
@@ -42,6 +42,12 @@ export const menu: MenuItem[] = [
         path:  "/dashboards/terapia-nutricional",
         icon:  FaUtensils,
         roles: ["SUPERADMIN", "ADMIN", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET"],
+      },
+      {
+        label: "Otorrino",
+        path:  "/dashboards/otorrino",
+        icon:  FaAssistiveListeningSystems,
+        roles: ["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"],
       },
       {
         label: "Auxiliar Dashboards",
@@ -278,8 +284,32 @@ export const menu: MenuItem[] = [
     roles: ["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"],
     children: [
       {
+        label: "Painel do Paciente",
+        path:  "/otorrino/painel-paciente",
+        icon:  FaChartLine,
+        roles: ["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"],
+      },
+      {
         label: "Audiometrias",
         path:  "/otorrino/audiometrias",
+        icon:  FaAssistiveListeningSystems,
+        roles: ["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"],
+      },
+      {
+        label: "Imitanciometrias",
+        path:  "/otorrino/imitanciometrias",
+        icon:  FaAssistiveListeningSystems,
+        roles: ["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"],
+      },
+      {
+        label: "Escalas e Questionários",
+        path:  "/otorrino/escalas",
+        icon:  FaAssistiveListeningSystems,
+        roles: ["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"],
+      },
+      {
+        label: "Laudos (Nasofibro/Laringo)",
+        path:  "/otorrino/laudos",
         icon:  FaAssistiveListeningSystems,
         roles: ["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"],
       },

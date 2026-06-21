@@ -73,6 +73,14 @@ import PediatriaPacienteDashboard                 from "../pages/pediatria/Pedia
 import PediatriaGeralDashboard                    from "../pages/pediatria/PediatriaGeralDashboard"
 import AudiometriaList                             from "../pages/otorrino/AudiometriaList"
 import AudiometriaForm                             from "../pages/otorrino/AudiometriaForm"
+import ImitanciometriaList                         from "../pages/otorrino/ImitanciometriaList"
+import ImitanciometriaForm                         from "../pages/otorrino/ImitanciometriaForm"
+import QuestionarioAplicadoList                    from "../pages/otorrino/QuestionarioAplicadoList"
+import QuestionarioAplicadoForm                    from "../pages/otorrino/QuestionarioAplicadoForm"
+import ExameLaudoList                              from "../pages/otorrino/ExameLaudoList"
+import ExameLaudoForm                              from "../pages/otorrino/ExameLaudoForm"
+import OtorrinoPacienteDashboard                   from "../pages/otorrino/OtorrinoPacienteDashboard"
+import OtorrinoGeralDashboard                      from "../pages/otorrino/OtorrinoGeralDashboard"
 import CalculadoraNutricional                      from "../pages/terapia-nutricional/CalculadoraNutricional"
 import FormulaEnteralList                          from "../pages/terapia-nutricional/FormulaEnteralList"
 import FormulaEnteralForm                          from "../pages/terapia-nutricional/FormulaEnteralForm"
@@ -274,6 +282,17 @@ export function Router() {
               <Route path="/otorrino/audiometrias"       element={<AudiometriaList />} />
               <Route path="/otorrino/audiometrias/nova"  element={<AudiometriaForm />} />
               <Route path="/otorrino/audiometrias/:id"   element={<AudiometriaForm />} />
+              <Route path="/otorrino/imitanciometrias"      element={<ImitanciometriaList />} />
+              <Route path="/otorrino/imitanciometrias/nova" element={<ImitanciometriaForm />} />
+              <Route path="/otorrino/imitanciometrias/:id"  element={<ImitanciometriaForm />} />
+              <Route path="/otorrino/escalas"      element={<QuestionarioAplicadoList />} />
+              <Route path="/otorrino/escalas/nova" element={<QuestionarioAplicadoForm />} />
+              <Route path="/otorrino/escalas/:id"  element={<QuestionarioAplicadoForm />} />
+              <Route path="/otorrino/laudos"       element={<ExameLaudoList />} />
+              <Route path="/otorrino/laudos/novo"  element={<ExameLaudoForm />} />
+              <Route path="/otorrino/laudos/:id"   element={<ExameLaudoForm />} />
+              <Route path="/otorrino/painel-paciente" element={<OtorrinoPacienteDashboard />} />
+              <Route path="/dashboards/otorrino"      element={<OtorrinoGeralDashboard />} />
             </Route>
 
             {/* ── TERAPIA NUTRICIONAL ── */}

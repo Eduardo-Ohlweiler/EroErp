@@ -82,4 +82,9 @@
     <include file="075-create-login-log.xml"                relativeToChangelogFile="true" />
     <include file="076-insert-roles-otorrino.xml"           relativeToChangelogFile="true" />
     <include file="077-create-otorrino-audiometria.xml"     relativeToChangelogFile="true" />
+    <include file="078-create-otorrino-imitanciometria.xml" relativeToChangelogFile="true" />
+    <include file="079-create-otorrino-questionarios.xml"   relativeToChangelogFile="true" />
+    <include file="080-insert-questionarios-otorrino.xml"   relativeToChangelogFile="true" />
+    <include file="081-create-otorrino-exame-laudo.xml"     relativeToChangelogFile="true" />
+    <include file="082-insert-template-anamnese-otorrino.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

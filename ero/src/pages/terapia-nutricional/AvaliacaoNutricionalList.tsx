@@ -18,6 +18,7 @@ import { useQuestion }                                             from "../../h
 import { displayPessoa }                                           from "../../utils/pessoas"
 import { gerarPdfLista }                                          from "../../utils/geradorPdf"
 import { exportarCsv }                                            from "../../utils/exportarPlanilha"
+import { TSpace } from "../../components/tspace"
 
 function formatarData(iso: string): string {
   if (!iso) return "—"
@@ -248,14 +249,18 @@ export default function AvaliacaoNutricionalList() {
               value        ={filtroPessoaId}
               onChange     ={(v) => setFiltroPessoaId(v)}
               placeholder  ="Filtrar por paciente..."
+              width="50%"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol flex={1}>
             <TDate name="dataInicio" label="Data Inicial" defaultValue={filtroInicio} />
           </TCol>
           <TCol flex={1}>
             <TDate name="dataFim" label="Data Final" defaultValue={filtroFim} />
           </TCol>
+          <TSpace />
         </TRow>
         <TFormFooter>
           <TFormActionsLeft>
