@@ -1607,3 +1607,373 @@ export function gerarPdfPediatria(dados: DadosRelatorioPediatrico): string {
 
   return doc.output("datauristring").split(",")[1]
 }
+
+// ── LAUDO DE AUDIOMETRIA ───────────────────────────────────────────────────────
+
+interface LimiarAudiometria {
+  orelha:      "OD" | "OE"
+  via:         "AEREA" | "OSSEA"
+  frequencia:  number
+  limiarDb:    number | null
+  mascarado:   boolean
+  semResposta: boolean
+}
+
+export interface DadosRelatorioAudiometria {
+  dataEmissao:  string          // YYYY-MM-DD
+  pacienteNome: string | null
+  usuarioNome:  string | null
+  dataExame:    string          // YYYY-MM-DD
+  srtOdDb:      number | null
+  srtOeDb:      number | null
+  irfOdPerc:    number | null
+  irfOePerc:    number | null
+  mediaOd:      number | null
+  mediaOe:      number | null
+  grauOd:       string | null
+  grauOe:       string | null
+  tipoPerdaOd:  string | null
+  tipoPerdaOe:  string | null
+  norma:        string | null
+  observacao:   string | null
+  limiares:     LimiarAudiometria[]
+}
+
+// Frequências do audiograma (categórico, igualmente espaçadas)
+const AUDIO_FREQS  = [250, 500, 1000, 2000, 3000, 4000, 6000, 8000]
+const AUDIO_LABELS = ["250", "500", "1k", "2k", "3k", "4k", "6k", "8k"]
+
+const COR_OD_PDF: [number, number, number] = [239, 68, 68]  // vermelho
+const COR_OE_PDF: [number, number, number] = [59, 130, 246] // azul
+
+/**
+ * Desenha UM audiograma de uma orelha numa área (x, y, w, h) em mm.
+ * Eixo X categórico (frequências); eixo Y de dB invertido (-10 topo, 120 base).
+ * Via aérea: linha sólida + símbolo (O para OD, X para OE).
+ * Via óssea:  linha tracejada + símbolo (< para OD, > para OE).
+ * Sem resposta: símbolo com seta para baixo, sem conectar.
+ */
+function desenharAudiograma(
+  doc: jsPDF,
+  x: number, y: number, w: number, h: number,
+  limiares: LimiarAudiometria[],
+  orelha: "OD" | "OE",
+  cor: [number, number, number],
+) {
+  const DB_MIN = -10
+  const DB_MAX = 120
+
+  // área de plotagem interna (margem para rótulos do eixo Y à esquerda e do X embaixo)
+  const padL = 9   // espaço p/ rótulos dB
+  const padB = 6   // espaço p/ rótulos de frequência
+  const padT = 2
+  const padR = 3
+  const plotX = x + padL
+  const plotY = y + padT
+  const plotW = w - padL - padR
+  const plotH = h - padT - padB
+
+  // mapeia (freq, dB) → ponto (mm) dentro da área de plotagem
+  const idxFreq = (f: number) => AUDIO_FREQS.indexOf(f)
+  const px = (f: number) => {
+    const i = idxFreq(f)
+    return plotX + (i / (AUDIO_FREQS.length - 1)) * plotW
+  }
+  const py = (db: number) =>
+    plotY + ((db - DB_MIN) / (DB_MAX - DB_MIN)) * plotH
+
+  // ── Grade horizontal (a cada 10 dB) + rótulos ──────────────────────────────
+  doc.setLineWidth(0.15)
+  doc.setFontSize(5.5)
+  doc.setFont("helvetica", "normal")
+  for (let db = DB_MIN; db <= DB_MAX; db += 10) {
+    const yy = py(db)
+    // linha de grade — mais clara nos intermediários, um pouco mais forte a cada 20
+    if (db % 20 === 0) doc.setDrawColor(190, 190, 190)
+    else               doc.setDrawColor(225, 225, 225)
+    doc.line(plotX, yy, plotX + plotW, yy)
+    // rótulo dB (apenas a cada 20 p/ não poluir)
+    if (db % 20 === 0) {
+      doc.setTextColor(130, 130, 130)
+      doc.text(String(db), plotX - 1.5, yy + 1.2, { align: "right" })
+    }
+  }
+
+  // ── Grade vertical (em cada frequência) + rótulos ──────────────────────────
+  AUDIO_FREQS.forEach((f, i) => {
+    const xx = px(f)
+    doc.setDrawColor(225, 225, 225)
+    doc.line(xx, plotY, xx, plotY + plotH)
+    doc.setTextColor(130, 130, 130)
+    doc.text(AUDIO_LABELS[i], xx, plotY + plotH + 4, { align: "center" })
+  })
+
+  // ── Moldura ─────────────────────────────────────────────────────────────────
+  doc.setDrawColor(120, 120, 120)
+  doc.setLineWidth(0.3)
+  doc.rect(plotX, plotY, plotW, plotH)
+
+  // ── Símbolos ──────────────────────────────────────────────────────────────
+  const s = 1.6 // meio-tamanho do símbolo em mm
+
+  const simboloVA = (cx: number, cy: number) => {
+    doc.setDrawColor(...cor)
+    doc.setLineWidth(0.5)
+    if (orelha === "OD") {
+      doc.circle(cx, cy, s, "S")                 // "O"
+    } else {
+      doc.line(cx - s, cy - s, cx + s, cy + s)   // "X"
+      doc.line(cx - s, cy + s, cx + s, cy - s)
+    }
+  }
+  const simboloVO = (cx: number, cy: number) => {
+    doc.setDrawColor(...cor)
+    doc.setLineWidth(0.5)
+    if (orelha === "OD") {
+      // "<" (abre p/ direita)
+      doc.line(cx + s, cy - s, cx - s, cy)
+      doc.line(cx - s, cy, cx + s, cy + s)
+    } else {
+      // ">" (abre p/ esquerda)
+      doc.line(cx - s, cy - s, cx + s, cy)
+      doc.line(cx + s, cy, cx - s, cy + s)
+    }
+  }
+  const setaParaBaixo = (cx: number, cy: number) => {
+    doc.setDrawColor(...cor)
+    doc.setLineWidth(0.4)
+    const a = cy + s + 0.5
+    const b = a + 2.5
+    doc.line(cx, a, cx, b)
+    doc.line(cx, b, cx - 1, b - 1)
+    doc.line(cx, b, cx + 1, b - 1)
+  }
+
+  // pontos da orelha, separados por via
+  const pontos = (via: "AEREA" | "OSSEA") =>
+    limiares
+      .filter(l => l.orelha === orelha && l.via === via)
+      .sort((p, q) => idxFreq(p.frequencia) - idxFreq(q.frequencia))
+
+  // desenha uma via: linha conectando os pontos válidos + símbolos
+  const desenharVia = (via: "AEREA" | "OSSEA") => {
+    const ps = pontos(via)
+    // segmentos de linha apenas entre pontos com valor e com resposta
+    const conectaveis = ps.filter(l => l.limiarDb != null && !l.semResposta)
+
+    if (conectaveis.length > 1) {
+      doc.setDrawColor(...cor)
+      doc.setLineWidth(0.4)
+      if (via === "OSSEA") doc.setLineDashPattern([1, 1], 0)
+      for (let i = 0; i < conectaveis.length - 1; i++) {
+        const a = conectaveis[i], b = conectaveis[i + 1]
+        doc.line(px(a.frequencia), py(a.limiarDb as number),
+                 px(b.frequencia), py(b.limiarDb as number))
+      }
+      if (via === "OSSEA") doc.setLineDashPattern([], 0)
+    }
+
+    // símbolos
+    for (const l of ps) {
+      if (l.semResposta) {
+        // posiciona no fundo da escala quando sem resposta e sem valor
+        const db = l.limiarDb != null ? l.limiarDb : DB_MAX
+        const cx = px(l.frequencia), cy = py(db)
+        if (via === "AEREA") simboloVA(cx, cy)
+        else                 simboloVO(cx, cy)
+        setaParaBaixo(cx, cy)
+        continue
+      }
+      if (l.limiarDb == null) continue
+      const cx = px(l.frequencia), cy = py(l.limiarDb)
+      if (via === "AEREA") simboloVA(cx, cy)
+      else                 simboloVO(cx, cy)
+    }
+  }
+
+  desenharVia("AEREA")
+  desenharVia("OSSEA")
+
+  // restaura padrões
+  doc.setLineDashPattern([], 0)
+  doc.setTextColor(0, 0, 0)
+}
+
+const GRAU_LABEL_PDF: Record<string, string> = {
+  NORMAL: "Normal", LEVE: "Leve", MODERADA: "Moderada", SEVERA: "Severa", PROFUNDA: "Profunda",
+}
+const TIPO_LABEL_PDF: Record<string, string> = {
+  NORMAL: "Normal", CONDUTIVA: "Condutiva", NEUROSSENSORIAL: "Neurossensorial", MISTA: "Mista",
+}
+
+export function gerarPdfAudiometria(dados: DadosRelatorioAudiometria): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+  const COR: [number, number, number] = [37, 99, 235]
+
+  const fmt = (v: number | null, dec = 1, suf = "") =>
+    v == null || Number.isNaN(v) ? "—" : `${v.toFixed(dec)}${suf}`
+  const fmtGrau = (g: string | null) => (g ? GRAU_LABEL_PDF[g] ?? g : "—")
+  const fmtTipo = (t: string | null) => (t ? TIPO_LABEL_PDF[t] ?? t : "—")
+
+  // célula da tabela de limiares
+  const celula = (orelha: "OD" | "OE", via: "AEREA" | "OSSEA", freq: number): string => {
+    const l = dados.limiares.find(
+      x => x.orelha === orelha && x.via === via && x.frequencia === freq)
+    if (!l) return "—"
+    let base: string
+    if (l.semResposta)            base = "SR"
+    else if (l.limiarDb == null)  base = "—"
+    else                          base = String(l.limiarDb)
+    return l.mascarado ? `${base} *` : base
+  }
+
+  // 1. Faixa de topo
+  let y = faixaTopo(doc, "LAUDO DE AUDIOMETRIA", dados.pacienteNome ?? "—", COR)
+
+  // 2. Referência centralizada
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  const ref = [
+    `Exame em ${fmtData(dados.dataExame)}`,
+    `Emitido em ${fmtData(dados.dataEmissao)}`,
+    dados.usuarioNome ? `Profissional: ${dados.usuarioNome}` : null,
+  ].filter(Boolean).join("  •  ")
+  doc.text(ref, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 8
+
+  // 3. Audiogramas lado a lado (OD à esquerda, OE à direita)
+  const gap     = 8
+  const graphW  = (inner - gap) / 2
+  const graphH  = 60
+
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(...COR_OD_PDF)
+  doc.text("Orelha Direita (OD)", mg + graphW / 2, y, { align: "center" })
+  doc.setTextColor(...COR_OE_PDF)
+  doc.text("Orelha Esquerda (OE)", mg + graphW + gap + graphW / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 3
+
+  desenharAudiograma(doc, mg, y, graphW, graphH, dados.limiares, "OD", COR_OD_PDF)
+  desenharAudiograma(doc, mg + graphW + gap, y, graphW, graphH, dados.limiares, "OE", COR_OE_PDF)
+  y += graphH + 3
+
+  // legenda dos símbolos
+  doc.setFontSize(7)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  doc.text(
+    "O / <  Via aérea/óssea OD     X / >  Via aérea/óssea OE     SR  sem resposta     *  mascarado",
+    L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 6
+
+  // 4. Tabela de limiares
+  autoTable(doc, {
+    startY: y,
+    head: [["Via", ...AUDIO_LABELS]],
+    body: [
+      ["OD · Aérea", ...AUDIO_FREQS.map(f => celula("OD", "AEREA", f))],
+      ["OD · Óssea", ...AUDIO_FREQS.map(f => celula("OD", "OSSEA", f))],
+      ["OE · Aérea", ...AUDIO_FREQS.map(f => celula("OE", "AEREA", f))],
+      ["OE · Óssea", ...AUDIO_FREQS.map(f => celula("OE", "OSSEA", f))],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 8, halign: "center" },
+    bodyStyles:   { fontSize: 8 },
+    columnStyles: {
+      0: { halign: "left", fontStyle: "bold" },
+      1: { halign: "center" }, 2: { halign: "center" }, 3: { halign: "center" },
+      4: { halign: "center" }, 5: { halign: "center" }, 6: { halign: "center" },
+      7: { halign: "center" }, 8: { halign: "center" },
+    },
+    margin: { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+  y += 5
+
+  // 5. Resultados por orelha
+  if (y > 230) { doc.addPage(); y = 20 }
+  autoTable(doc, {
+    startY: y,
+    head: [["Resultado", "Orelha Direita (OD)", "Orelha Esquerda (OE)"]],
+    body: [
+      ["Média (dB)",     fmt(dados.mediaOd, 1), fmt(dados.mediaOe, 1)],
+      ["Grau da perda",  fmtGrau(dados.grauOd), fmtGrau(dados.grauOe)],
+      ["Tipo de perda",  fmtTipo(dados.tipoPerdaOd), fmtTipo(dados.tipoPerdaOe)],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 9, halign: "center" },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: {
+      0: { fontStyle: "bold" },
+      1: { halign: "center" },
+      2: { halign: "center" },
+    },
+    margin: { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+
+  if (dados.norma) {
+    doc.setFontSize(7.5)
+    doc.setFont("helvetica", "italic")
+    doc.setTextColor(120, 120, 120)
+    doc.text(`Classificação: ${dados.norma}`, mg, y + 4)
+    doc.setTextColor(0, 0, 0)
+    y += 4
+  }
+  y += 5
+
+  // 6. Logoaudiometria (SRT / IRF)
+  if (y > 235) { doc.addPage(); y = 20 }
+  autoTable(doc, {
+    startY: y,
+    head: [["Logoaudiometria", "Orelha Direita (OD)", "Orelha Esquerda (OE)"]],
+    body: [
+      ["SRT (dB)", fmt(dados.srtOdDb, 0), fmt(dados.srtOeDb, 0)],
+      ["IRF (%)",  fmt(dados.irfOdPerc, 0), fmt(dados.irfOePerc, 0)],
+    ],
+    headStyles:   { fillColor: COR, fontSize: 9, halign: "center" },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: {
+      0: { fontStyle: "bold" },
+      1: { halign: "center" },
+      2: { halign: "center" },
+    },
+    margin: { left: mg, right: mg },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30
+  y += 5
+
+  // 7. Observações
+  if (dados.observacao) {
+    if (y > 255) { doc.addPage(); y = 20 }
+    doc.setFillColor(245, 245, 245)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.text("OBSERVAÇÕES", mg + 2, y + 1.5)
+    y += 9
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    y = blocoTexto(doc, dados.observacao, mg + 2, y, inner - 4, 5)
+    y += 4
+  }
+
+  // 8. Nota de rodapé
+  if (y > 270) { doc.addPage(); y = 20 }
+  doc.setFontSize(7.5)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(120, 120, 120)
+  blocoTexto(doc,
+    "Limiares em dB NA. Símbolos conforme convenção ASHA. " +
+    "Este laudo não substitui a avaliação de um profissional de saúde habilitado.",
+    mg, y + 2, inner, 4)
+  doc.setTextColor(0, 0, 0)
+
+  return doc.output("datauristring").split(",")[1]
+}

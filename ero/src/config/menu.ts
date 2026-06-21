@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine, FaUtensils, FaPills, FaHeartbeat /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine, FaUtensils, FaPills, FaHeartbeat, FaAssistiveListeningSystems /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -269,6 +269,19 @@ export const menu: MenuItem[] = [
         path:  "/pediatria/formulas-lacteas",
         icon:  FaFlask,
         roles: ["SUPERADMIN", "ADMIN", "PEDIATRIA", "PEDIATRIA_GET"],
+      },
+    ],
+  },
+  {
+    label: "Otorrinolaringologia",
+    icon:  FaAssistiveListeningSystems,
+    roles: ["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"],
+    children: [
+      {
+        label: "Audiometrias",
+        path:  "/otorrino/audiometrias",
+        icon:  FaAssistiveListeningSystems,
+        roles: ["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"],
       },
     ],
   },

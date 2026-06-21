@@ -9,6 +9,7 @@ import type {
   StatusConsulta,
 } from "../../types/Clinica"
 import type { FichaAnamnesesSummary } from "../../types/Anamnese"
+import type { AudiometriaSummary }    from "../../types/Otorrino"
 import type { ErrorResponse }                                       from "../../types/ErrorResponse"
 import { TPage }                                                    from "../../components/tpage"
 import { TForm, TFormActionsLeft, TFormActionsRight, TFormFooter }  from "../../components/tform"
@@ -64,6 +65,23 @@ function displayCompromisso(item: Record<string, unknown>) {
 }
 function fmtQtd(v: number) {
   return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 3 })
+}
+
+const GRAU_LABEL: Record<string, string> = {
+  NORMAL:    "Normal",
+  LEVE:      "Leve",
+  MODERADA:  "Moderada",
+  SEVERA:    "Severa",
+  PROFUNDA:  "Profunda",
+}
+function grauTxt(g: string | null) {
+  return g ? (GRAU_LABEL[g] ?? g) : "—"
+}
+function labelAudiometria(a: AudiometriaSummary) {
+  const data = a.dataExame
+    ? new Date(a.dataExame + "T00:00").toLocaleDateString("pt-BR")
+    : "—"
+  return `Audiometria — ${data} · OD: ${grauTxt(a.grauOd)} / OE: ${grauTxt(a.grauOe)}`
 }
 
 function calcTotal(
@@ -188,6 +206,11 @@ export default function ConsultaForm() {
   const [pessoaId,         setPessoaId]         = useState("")
   const [fichaAnamneseId,  setFichaAnamneseId]  = useState("")
   const [fichaOptions,     setFichaOptions]     = useState<{ value: string; label: string }[]>([])
+
+  // Audiometrias do paciente (módulo Otorrino) — só aparecem se houver alguma
+  const [audiometriaOptions,        setAudiometriaOptions]        = useState<AudiometriaSummary[]>([])
+  const [audiometriasSelecionadas,  setAudiometriasSelecionadas]  = useState<Set<number>>(new Set())
+  const [vinculadasOriginais,       setVinculadasOriginais]       = useState<Set<number>>(new Set())
   const [tipoAjusteGeral,  setTipoAjusteGeral]  = useState("")
   const [tipoCalculoGeral, setTipoCalculoGeral] = useState("FIXO")
   const [valorAjusteGeral, setValorAjusteGeral] = useState("")
@@ -233,6 +256,28 @@ export default function ConsultaForm() {
     }
   }
 
+  async function loadAudiometriaOptions(pId: string) {
+    if (!pId) { setAudiometriaOptions([]); return }
+    try {
+      const r = await api.get<AudiometriaSummary[]>(`/otorrino/audiometrias/por-pessoa/${pId}`)
+      setAudiometriaOptions(r.data)
+    } catch {
+      setAudiometriaOptions([])
+    }
+  }
+
+  async function loadAudiometriasVinculadas(cId: string) {
+    try {
+      const r = await api.get<AudiometriaSummary[]>(`/otorrino/audiometrias/por-consulta/${cId}`)
+      const ids = new Set(r.data.map(a => a.id))
+      setAudiometriasSelecionadas(ids)
+      setVinculadasOriginais(new Set(ids))
+    } catch {
+      setAudiometriasSelecionadas(new Set())
+      setVinculadasOriginais(new Set())
+    }
+  }
+
   async function loadConsulta(data: ConsultaResponse) {
     setConsulta(data)
     setEmitenteId(String(data.emitenteId))
@@ -242,6 +287,8 @@ export default function ConsultaForm() {
     setTipoCalculoGeral(data.tipoCalculoGeral ?? "FIXO")
     setValorAjusteGeral(data.valorAjusteGeral != null ? String(data.valorAjusteGeral) : "")
     await loadFichaOptions(String(data.pessoaId))
+    await loadAudiometriaOptions(String(data.pessoaId))
+    await loadAudiometriasVinculadas(String(data.id))
     setFormKey(k => k + 1)
   }
 
@@ -257,6 +304,9 @@ export default function ConsultaForm() {
     setPessoaId("")
     setFichaAnamneseId("")
     setFichaOptions([])
+    setAudiometriaOptions([])
+    setAudiometriasSelecionadas(new Set())
+    setVinculadasOriginais(new Set())
     setTipoAjusteGeral("")
     setTipoCalculoGeral("FIXO")
     setValorAjusteGeral("")
@@ -290,12 +340,14 @@ export default function ConsultaForm() {
       }
       if (isEdit) {
         await api.put(`/consultas/${currentId}`, payload)
+        await sincronizarAudiometrias(Number(currentId))
         showMessage("success", "Consulta atualizada com sucesso!")
         await reload(currentId!)
       } else {
         const res = await api.post<ConsultaResponse>("/consultas", payload)
-        showMessage("success", "Consulta agendada com sucesso!")
         const novoId = String(res.data.id)
+        await sincronizarAudiometrias(res.data.id)
+        showMessage("success", "Consulta agendada com sucesso!")
         setCurrentId(novoId)
         await reload(novoId)
       }
@@ -309,6 +361,32 @@ export default function ConsultaForm() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // Vincula/desvincula audiometrias conforme o diff com o estado original.
+  // Roda DEPOIS de salvar a consulta; o vínculo mora no lado da audiometria.
+  async function sincronizarAudiometrias(consultaId: number) {
+    const aVincular   = [...audiometriasSelecionadas].filter(id => !vinculadasOriginais.has(id))
+    const aDesvincular = [...vinculadasOriginais].filter(id => !audiometriasSelecionadas.has(id))
+    if (aVincular.length === 0 && aDesvincular.length === 0) return
+    try {
+      await Promise.all([
+        ...aVincular  .map(id => api.put(`/otorrino/audiometrias/${id}/consulta`, { consultaId })),
+        ...aDesvincular.map(id => api.put(`/otorrino/audiometrias/${id}/consulta`, { consultaId: null })),
+      ])
+    } catch {
+      // a consulta já foi salva — não quebra o fluxo principal
+      showMessage("warning", "Consulta salva, mas houve erro ao vincular as audiometrias.")
+    }
+  }
+
+  function toggleAudiometria(id: number) {
+    setAudiometriasSelecionadas(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   // ── Ações de status ────────────────────────────────────────────────────────
@@ -626,6 +704,8 @@ export default function ConsultaForm() {
                 setPessoaId(val)
                 setFichaAnamneseId("")
                 loadFichaOptions(val)
+                setAudiometriasSelecionadas(new Set())
+                loadAudiometriaOptions(val)
               }}
             />
           </TCol>
@@ -650,6 +730,32 @@ export default function ConsultaForm() {
             </TCol>
             <TSpace />
           </TRow>
+        )}
+
+        {pessoaId && audiometriaOptions.length > 0 && (
+          <TPanel title={`Audiometrias${audiometriasSelecionadas.size ? ` (${audiometriasSelecionadas.size} selecionada${audiometriasSelecionadas.size > 1 ? "s" : ""})` : ""}`}>
+            <p className="text-xs text-(--text-muted)">
+              Vincule a esta consulta as audiometrias do paciente registradas no módulo Otorrino.
+            </p>
+            <div className="flex flex-col gap-2">
+              {audiometriaOptions.map(a => (
+                <label
+                  key       ={a.id}
+                  className ={`flex items-center gap-2 cursor-pointer select-none text-sm text-(--text-secondary)
+                    ${isClosed ? "opacity-50 cursor-not-allowed" : "hover:text-(--text-primary)"}`}
+                >
+                  <input
+                    type      ="checkbox"
+                    checked   ={audiometriasSelecionadas.has(a.id)}
+                    disabled  ={isClosed}
+                    onChange  ={() => toggleAudiometria(a.id)}
+                    className ="w-4 h-4 cursor-pointer accent-(--accent)"
+                  />
+                  {labelAudiometria(a)}
+                </label>
+              ))}
+            </div>
+          </TPanel>
         )}
 
         <TPanel title="Horário">

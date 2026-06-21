@@ -71,6 +71,8 @@ import FormulaLacteaList                          from "../pages/pediatria/Formu
 import FormulaLacteaForm                          from "../pages/pediatria/FormulaLacteaForm"
 import PediatriaPacienteDashboard                 from "../pages/pediatria/PediatriaPacienteDashboard"
 import PediatriaGeralDashboard                    from "../pages/pediatria/PediatriaGeralDashboard"
+import AudiometriaList                             from "../pages/otorrino/AudiometriaList"
+import AudiometriaForm                             from "../pages/otorrino/AudiometriaForm"
 import CalculadoraNutricional                      from "../pages/terapia-nutricional/CalculadoraNutricional"
 import FormulaEnteralList                          from "../pages/terapia-nutricional/FormulaEnteralList"
 import FormulaEnteralForm                          from "../pages/terapia-nutricional/FormulaEnteralForm"
@@ -265,6 +267,13 @@ export function Router() {
               <Route path="/pediatria/formulas-lacteas/:id"   element={<FormulaLacteaForm />} />
               <Route path="/pediatria/painel-paciente"        element={<PediatriaPacienteDashboard />} />
               <Route path="/dashboards/pediatria"             element={<PediatriaGeralDashboard />} />
+            </Route>
+
+            {/* ── OTORRINOLARINGOLOGIA ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "OTORRINO", "OTORRINO_GET"]} />}>
+              <Route path="/otorrino/audiometrias"       element={<AudiometriaList />} />
+              <Route path="/otorrino/audiometrias/nova"  element={<AudiometriaForm />} />
+              <Route path="/otorrino/audiometrias/:id"   element={<AudiometriaForm />} />
             </Route>
 
             {/* ── TERAPIA NUTRICIONAL ── */}
