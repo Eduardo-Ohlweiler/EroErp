@@ -168,7 +168,7 @@ export default function DocumentoForm() {
                 }
             })
             .catch(() => {})
-    }, [estoqueId]) // eslint-disable-line
+    }, [estoqueId])
 
     function handleNovo() {
         setCurrentId(undefined)
