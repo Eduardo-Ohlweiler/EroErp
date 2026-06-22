@@ -102,7 +102,8 @@ export default function ClienteForm() {
               required
               maxLength={255}
               defaultValue={cliente?.nome}
-              width="60%"
+              width="50%"
+              minWidth="200px"
             />
           </TCol>
         </TRow>
@@ -115,7 +116,8 @@ export default function ClienteForm() {
               required
               maxLength={255}
               defaultValue={cliente?.email}
-              width="60%"
+              width="50%"
+              minWidth="200px"
             />
           </TCol>
         </TRow>

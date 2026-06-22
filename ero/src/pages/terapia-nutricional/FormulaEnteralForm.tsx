@@ -102,13 +102,13 @@ export default function FormulaEnteralForm() {
       <TForm key={formKey} onSubmit={handleSubmit}>
         <TRow>
           <TCol>
-            <TEntry name="nome" label="Nome" required width="50%"
+            <TEntry name="nome" label="Nome" required width="50% " minWidth="200px"
               defaultValue={formula?.nome} />
           </TCol>
         </TRow>
         <TRow>
           <TCol>
-            <TEntry name="categoria" label="Categoria" width="50%"
+            <TEntry name="categoria" label="Categoria" width="50%" minWidth="200px"
               placeholder="Ex: Hipercalórica, Padrão..."
               defaultValue={formula?.categoria ?? ""} />
           </TCol>

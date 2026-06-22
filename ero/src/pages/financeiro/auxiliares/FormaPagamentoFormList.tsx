@@ -158,7 +158,8 @@ export default function FormaPagamentoFormList() {
                             required
                             maxLength    ={150}
                             defaultValue ={nome}
-                            width        ="60%"
+                            width        ="50%"
+                            minWidth     ="200px"
                         />
                     </TCol>
                 </TRow>
@@ -172,7 +173,8 @@ export default function FormaPagamentoFormList() {
                             displayField ="nome"
                             value        ={tipoCobrancaId}
                             required
-                            width        ="300px"
+                            width        ="200px"
+                            minWidth     ="200px"
                             onChange     ={(val) => setTipoCobrancaId(val)}
                         />
                     </TCol>
@@ -187,7 +189,7 @@ export default function FormaPagamentoFormList() {
                             displayField ="nome"
                             value        ={contaFinanceiraId}
                             required
-                            width        ="300px"
+                            width        ="200px"
                             onChange     ={(val) => setContaFinanceiraId(val)}
                         />
                     </TCol>

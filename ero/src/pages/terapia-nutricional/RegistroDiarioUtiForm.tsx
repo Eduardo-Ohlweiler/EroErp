@@ -192,6 +192,7 @@ export default function RegistroDiarioUtiForm() {
                 onChange    ={(v) => setPessoaId(v)}
                 placeholder ="Buscar paciente..."
                 width="50%"
+                minWidth="200px"
               />
             </TCol>
           </TRow>

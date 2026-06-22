@@ -300,6 +300,7 @@ export default function AvaliacaoPediatricaList() {
               onChange     ={(v) => setFiltroPessoaId(v)}
               placeholder  ="Filtrar por paciente..."
               width="50%"
+              minWidth="200px"
             />
           </TCol>
         </TRow>
@@ -309,6 +310,7 @@ export default function AvaliacaoPediatricaList() {
               name        ="formulaLacteaId"
               label       ="Fórmula Láctea"
               width       ="50%"
+              minWidth    ="200px"
               placeholder ="Filtrar por fórmula..."
               options     ={formulaOptions}
               defaultValue={filtroFormulaId}

@@ -336,8 +336,12 @@ export default function AudiometriaForm() {
                 value       ={pessoaId}
                 onChange    ={(v) => setPessoaId(v)}
                 placeholder ="Buscar paciente..."
+                width       ="50%"
+                minWidth    ="200px"
               />
             </TCol>
+          </TRow>
+          <TRow>
             <TCol flex={1}>
               <TDate
                 name        ="dataExame"

@@ -124,7 +124,7 @@ export default function EstoqueList() {
               displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Todos..."
-              width        ="350px"
+              width        ="50%"
               value        ={filtroEmitenteId}
               onChange     ={(val) => setFiltroEmitenteId(val)}
             />
@@ -146,7 +146,7 @@ export default function EstoqueList() {
             <TCombo
               name        ="bloqueado"
               label       ="Status"
-              width       ="160px"
+              width       ="200px"
               defaultValue={filtroBloqueado}
               options     ={[
                 { value: "",      label: "Todos"     },

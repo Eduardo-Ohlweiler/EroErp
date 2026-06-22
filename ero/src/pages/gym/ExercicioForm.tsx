@@ -113,7 +113,8 @@ export default function ExercicioForm() {
               name        ="nome"
               label       ="Nome (*)"
               required
-              width       ="60%"
+              width       ="50%"
+              minWidth    ="200px"
               defaultValue={exercicio?.nome}
             />
           </TCol>
@@ -123,7 +124,8 @@ export default function ExercicioForm() {
             <TText
               name        ="descricao"
               label       ="Descrição"
-              width       ="100%"
+              width       ="50%"
+              minWidth    ="200px"
               height      ="80px"
               defaultValue={exercicio?.descricao ?? ""}
             />

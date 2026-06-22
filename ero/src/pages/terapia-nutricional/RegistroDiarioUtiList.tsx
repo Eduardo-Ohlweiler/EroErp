@@ -260,6 +260,7 @@ export default function RegistroDiarioUtiList() {
               onChange     ={(v) => setFiltroPessoaId(v)}
               placeholder  ="Filtrar por paciente..."
               width="50%"
+              minWidth="200px"
             />
           </TCol>
         </TRow>

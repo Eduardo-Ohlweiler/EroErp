@@ -133,7 +133,8 @@ export default function TipoCobrancaFormList() {
                             required
                             maxLength    ={100}
                             defaultValue ={nome}
-                            width        ="60%"
+                            width        ="50%"
+                            minWidth     ="200px"
                         />
                     </TCol>
                 </TRow>

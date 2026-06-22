@@ -16,6 +16,7 @@ import { TDataGridFooter }                                        from "../../co
 import { useMessage }                                             from "../../hooks/useMessage"
 import { useQuestion }                                            from "../../hooks/useQuestion"
 import { displayPessoa }                                          from "../../utils/pessoas"
+import { TSpace } from "../../components/tspace"
 
 function formatarData(iso: string): string {
   if (!iso) return "—"
@@ -161,8 +162,12 @@ export default function AvaliacaoFisicaList() {
               value        ={filtroPessoaId}
               onChange     ={(v) => setFiltroPessoaId(v)}
               placeholder  ="Filtrar por paciente..."
+              width        ="50%"
+              minWidth     ="200px"
             />
           </TCol>
+        </TRow>
+        <TRow>
           <TCol flex={1}>
             <TDate
               name        ="dataInicio"
@@ -177,6 +182,7 @@ export default function AvaliacaoFisicaList() {
               defaultValue={filtroFim}
             />
           </TCol>
+          <TSpace />
         </TRow>
         <TFormFooter>
           <TFormActionsLeft>

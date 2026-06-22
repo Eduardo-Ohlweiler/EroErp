@@ -132,7 +132,8 @@ export default function UsuarioForm() {
                         <TDbCombo
                             name        ="clienteId"
                             label       ="Cliente"
-                            width       ="60%"
+                            width       ="50%"
+                            minWidth    ="200px"
                             url         ="/clientes/select"
                             valueField  ="id"
                             displayField="nome"
@@ -150,7 +151,8 @@ export default function UsuarioForm() {
                             name     ="nome"
                             label    ="Nome"
                             required
-                            width    ="60%"
+                            width    ="50%"
+                            minWidth ="200px"
                             maxLength={255}
                             defaultValue={usuario?.nome}
                         />
@@ -162,7 +164,8 @@ export default function UsuarioForm() {
                             name     ="email"
                             label    ="E-mail"
                             type     ="email"
-                            width    ="60%"
+                            width    ="50%"
+                            minWidth ="200px"
                             required
                             maxLength={255}
                             defaultValue={usuario?.email}

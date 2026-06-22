@@ -12,6 +12,7 @@ interface TComboProps {
   required?:    boolean
   disabled?:    boolean
   width?:       string
+  minWidth?:    string
   hint?:        string
   onChange?:    (value: string) => void
 }
@@ -25,11 +26,12 @@ export function TCombo({
   required,
   disabled,
   width = "100%",
+  minWidth,
   hint,
   onChange
 }: TComboProps) {
   return (
-    <div className="flex flex-col gap-1 max-w-full" style={{ width }}>
+    <div className="flex flex-col gap-1 max-w-full" style={{ width, minWidth }}>
 
       <label className="text-sm text-(--text-secondary)">
         {label}

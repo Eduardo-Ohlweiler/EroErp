@@ -246,7 +246,7 @@ export default function EmitenteFormList() {
                             searchField  ="nome"
                             placeholder  ="Selecione a pessoa emitente..."
                             required
-                            width        ="60%"
+                            width        ="50%"
                             value        ={pessoaId}
                             onChange     ={(val) => setPessoaId(val)}
                         />

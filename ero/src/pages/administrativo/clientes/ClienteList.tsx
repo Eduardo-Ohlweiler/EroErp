@@ -57,6 +57,7 @@ export default function ClienteList() {
 
   useEffect(() => {
     load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   async function load(nome = filtroNome, email = filtroEmail, pagina = page) {
@@ -136,7 +137,8 @@ export default function ClienteList() {
                         label="Nome"
                         placeholder="Filtrar por nome..."
                         defaultValue={filtroNome}
-                        width="100%"
+                        width="50%"
+                        minWidth="200px"
                     />
                 </TCol>
             </TRow>
@@ -147,7 +149,8 @@ export default function ClienteList() {
                         label="E-mail"
                         placeholder="Filtrar por e-mail..."
                         defaultValue={filtroEmail}
-                        width="100%"
+                        width="50%"
+                        minWidth="200px"
                     />
                 </TCol>
             </TRow>

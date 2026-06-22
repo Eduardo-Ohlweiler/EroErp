@@ -149,6 +149,7 @@ export default function ProdutoList() {
               label       ="Nome"
               placeholder ="Filtrar por nome..."
               width       ="50%"
+              minWidth    ="250px"
               defaultValue={filtroNome}
             />
           </TCol>
@@ -206,7 +207,7 @@ export default function ProdutoList() {
             <TCombo
               name        ="bloqueado"
               label       ="Status"
-              width       ="160px"
+              width       ="200px"
               defaultValue={filtroBloqueado}
               options     ={[
                 { value: "",      label: "Todos"     },

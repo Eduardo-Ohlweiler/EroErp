@@ -123,7 +123,8 @@ export default function WhatsappInstanciaForm() {
               maxLength    ={100}
               placeholder  ="Ex: Comercial, Suporte..."
               defaultValue ={instancia?.nome}
-              width        ="60%"
+              width        ="50%"
+              minWidth     ="200px"
             />
           </TCol>
         </TRow>
@@ -137,7 +138,8 @@ export default function WhatsappInstanciaForm() {
               maxLength    ={100}
               placeholder  ="Ex: minha-empresa-comercial"
               defaultValue ={instancia?.instanceName}
-              width        ="60%"
+              width        ="50%"
+              minWidth     ="200px"
             />
           </TCol>
         </TRow>
@@ -151,7 +153,8 @@ export default function WhatsappInstanciaForm() {
                   displayField ="nome"
                   searchField  ="nome"
                   placeholder  ="Selecione o usuário..."
-                  width        ="60%"
+                  width        ="50%"
+                  minWidth     ="200px"
                   value        ={usuarioId}
                   onChange     ={(val) => setUsuarioId(val)}
               />
@@ -164,7 +167,8 @@ export default function WhatsappInstanciaForm() {
               label        ="Token da instância"
               maxLength    ={500}
               defaultValue ={instancia?.token}
-              width        ="60%"
+              width        ="50%"
+              minWidth     ="200px"
             />
           </TCol>
         </TRow>
@@ -211,7 +215,7 @@ export default function WhatsappInstanciaForm() {
                 name         ="createdAt"
                 label        ="Criado em"
                 disabled
-                width        ="160px"
+                width        ="200px"
                 defaultValue ={instancia?.createdAt
                   ? new Date(instancia.createdAt).toLocaleString("pt-BR")
                   : "—"}
@@ -222,7 +226,7 @@ export default function WhatsappInstanciaForm() {
                 name         ="updatedAt"
                 label        ="Alterado em"
                 disabled
-                width        ="160px"
+                width        ="200px"
                 defaultValue ={instancia?.updatedAt
                   ? new Date(instancia.updatedAt).toLocaleString("pt-BR")
                   : "—"}

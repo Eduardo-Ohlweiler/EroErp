@@ -13,6 +13,7 @@ interface TDbComboProps {
   required?:     boolean
   disabled?:     boolean
   width?:        string
+  minWidth?:     string
   hint?:         string
   minLength?:    number
   extraParams?:  Record<string, string>
@@ -31,6 +32,7 @@ export function TDbCombo({
   required,
   disabled,
   width        = "100%",
+  minWidth,
   hint,
   minLength    = 0,
   extraParams,
@@ -154,7 +156,7 @@ export function TDbCombo({
   }
 
   return (
-    <div className="flex flex-col gap-1 relative max-w-full" style={{ width }}>
+    <div className="flex flex-col gap-1 relative max-w-full" style={{ width, minWidth }}>
 
       <label className="text-sm text-(--text-secondary)">
         {label}

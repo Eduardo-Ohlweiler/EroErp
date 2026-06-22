@@ -163,7 +163,8 @@ export default function ContaPagarList() {
                             valueField   ="id"
                             displayField ={displayEmitente}
                             value        ={filtroEmitenteId}
-                            width        ="100%"
+                            width        ="50%"
+                            minWidth     ="200px"
                             onChange     ={(val) => setFiltroEmitenteId(val)}
                         />
                     </TCol>
@@ -177,7 +178,8 @@ export default function ContaPagarList() {
                             valueField   ="id"
                             displayField ={displayPessoa}
                             value        ={filtroPessoaId}
-                            width        ="100%"
+                            width        ="50%"
+                            minWidth     ="200px"
                             onChange     ={(val) => setFiltroPessoaId(val)}
                         />
                     </TCol>
@@ -187,7 +189,7 @@ export default function ContaPagarList() {
                         <TCombo
                             name         ="status"
                             label        ="Status"
-                            width        ="180px"
+                            width        ="200px"
                             defaultValue ={filtroStatus}
                             options      ={STATUS_OPTIONS}
                             onChange     ={(val) => setFiltroStatus(val)}
@@ -199,7 +201,7 @@ export default function ContaPagarList() {
                         <TDate
                             name         ="dataInicio"
                             label        ="Data de"
-                            width        ="160px"
+                            width        ="200px"
                             defaultValue ={filtroDataInicio}
                             onChange     ={setFiltroDataInicio}
                         />
@@ -208,7 +210,7 @@ export default function ContaPagarList() {
                         <TDate
                             name         ="dataFim"
                             label        ="Data até"
-                            width        ="160px"
+                            width        ="200px"
                             defaultValue ={filtroDataFim}
                             onChange     ={setFiltroDataFim}
                         />

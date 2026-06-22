@@ -172,6 +172,7 @@ export default function PediatriaGeralDashboard() {
     const [sexo,      setSexo]      = useState("")
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true)
 
         const faixa  = FAIXAS_MES[faixaIdx]

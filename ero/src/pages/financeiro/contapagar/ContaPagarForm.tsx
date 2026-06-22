@@ -368,6 +368,7 @@ export default function ContaPagarForm() {
                             displayField ={displayEmitente}
                             value        ={emitenteId}
                             width        ="50%"
+                            minWidth     ="200px"
                             onChange     ={(val) => setEmitenteId(val)}
                         />
                     </TCol>
@@ -383,6 +384,7 @@ export default function ContaPagarForm() {
                             value        ={pessoaId}
                             required
                             width        ="50%"
+                            minWidth     ="200px"
                             onChange     ={(val) => setPessoaId(val)}
                         />
                     </TCol>
@@ -393,7 +395,7 @@ export default function ContaPagarForm() {
                             name         ="data"
                             label        ="Data de Emissão"
                             required
-                            width        ="160px"
+                            width        ="200px"
                             defaultValue ={data}
                             onChange     ={setData}
                         />
@@ -404,7 +406,7 @@ export default function ContaPagarForm() {
                             label        ="Valor Total"
                             mask         ="moeda"
                             required
-                            width        ="160px"
+                            width        ="200px"
                             defaultValue ={conta ? String(conta.valorTotal) : ""}
                             onChange     ={setValorTotal}
                         />
@@ -417,7 +419,8 @@ export default function ContaPagarForm() {
                             name         ="descricao"
                             label        ="Descrição"
                             maxLength    ={255}
-                            width        ="60%"
+                            width        ="50%"
+                            minWidth     ="200px"
                             defaultValue ={conta?.descricao ?? ""}
                         />
                     </TCol>
@@ -427,7 +430,8 @@ export default function ContaPagarForm() {
                         <TEntry
                             name         ="observacao"
                             label        ="Observação"
-                            width        ="60%"
+                            width        ="50%"
+                            minWidth     ="200px"
                             defaultValue ={conta?.observacao ?? ""}
                         />
                     </TCol>
@@ -449,7 +453,7 @@ export default function ContaPagarForm() {
                             <TCombo
                                 name         ="ativo"
                                 label        ="Situação"
-                                width        ="160px"
+                                width        ="200px"
                                 defaultValue ={conta?.ativo ? "true" : "false"}
                                 options      ={[
                                     { value: "true",  label: "Ativo"   },

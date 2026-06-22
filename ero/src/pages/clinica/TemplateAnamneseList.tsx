@@ -91,7 +91,8 @@ export default function TemplateAnamneseList() {
               name        ="nome"
               label       ="Nome"
               placeholder ="Filtrar por nome..."
-              width       ="100%"
+              width       ="50%"
+              minWidth    ="200px"
               defaultValue={filtroNome}
             />
           </TCol>
@@ -101,7 +102,8 @@ export default function TemplateAnamneseList() {
             <TCombo
               name        ="finalidade"
               label       ="Finalidade"
-              width       ="100%"
+              width       ="50%"
+              minWidth    ="200px"
               defaultValue={filtroFinalidade}
               options     ={[{ value: "", label: "Todas" }, ...FINALIDADE_OPTIONS]}
             />

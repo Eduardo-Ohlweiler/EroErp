@@ -142,7 +142,8 @@ export default function ConsultaList() {
               name        ="nomePessoa"
               label       ="Paciente"
               placeholder ="Filtrar por nome..."
-              width       ="300px"
+              width       ="50%"
+              minWidth    ="200px"
               defaultValue={filtroNomePessoa}
             />
           </TCol>
@@ -157,7 +158,8 @@ export default function ConsultaList() {
               displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Todos..."
-              width        ="300px"
+              width        ="50%"
+              minWidth     ="200px"
               value        ={filtroEmitenteId}
               onChange     ={(val) => setFiltroEmitenteId(val)}
             />
@@ -168,7 +170,7 @@ export default function ConsultaList() {
             <TCombo
               name        ="status"
               label       ="Status"
-              width       ="160px"
+              width       ="200px"
               defaultValue={filtroStatus}
               options     ={[
                 { value: "",               label: "Todos"          },
@@ -185,7 +187,7 @@ export default function ConsultaList() {
             <TDate
               name        ="inicio"
               label       ="Data de (início)"
-              width       ="160px"
+              width       ="200px"
               defaultValue={filtroInicio}
             />
           </TCol>
@@ -193,7 +195,7 @@ export default function ConsultaList() {
             <TDate
               name        ="fim"
               label       ="Data até (fim)"
-              width       ="160px"
+              width       ="200px"
               defaultValue={filtroFim}
             />
           </TCol>

@@ -91,7 +91,7 @@ export default function TransferenciaList() {
               displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Todos..."
-              width        ="350px"
+              width        ="50%"
               value        ={filtroEmitenteId}
               onChange     ={(val) => setFiltroEmitenteId(val)}
             />
@@ -107,7 +107,7 @@ export default function TransferenciaList() {
               displayField ="nome"
               searchField  ="nome"
               placeholder  ="Todos..."
-              width        ="350px"
+              width        ="50%"
               value        ={filtroProdutoId}
               onChange     ={(val) => setFiltroProdutoId(val)}
             />

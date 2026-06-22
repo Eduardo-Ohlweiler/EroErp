@@ -112,7 +112,8 @@ export default function PlanoTreinoList() {
               name        ="nome"
               label       ="Nome"
               placeholder ="Filtrar por nome..."
-              width       ="100%"
+              width       ="50%"
+              minWidth    ="200px"
               defaultValue={filtroNome}
             />
           </TCol>
@@ -127,7 +128,8 @@ export default function PlanoTreinoList() {
               displayField ={displayPessoa}
               searchField  ="nome"
               placeholder  ="Filtrar por aluno..."
-              width        ="100%"
+              width        ="50%"
+              minWidth     ="200px"
               value        ={filtroPessoaId}
               onChange     ={(val) => {
                 setFiltroPessoaId(val)

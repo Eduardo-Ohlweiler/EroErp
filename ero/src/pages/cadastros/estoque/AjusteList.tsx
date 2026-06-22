@@ -91,7 +91,7 @@ export default function AjusteList() {
               displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Todos..."
-              width        ="350px"
+              width        ="50%"
               value        ={filtroEmitenteId}
               onChange     ={(val) => setFiltroEmitenteId(val)}
             />

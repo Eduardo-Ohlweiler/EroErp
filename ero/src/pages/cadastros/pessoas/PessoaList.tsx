@@ -196,6 +196,7 @@ export default function PessoaList() {
                             placeholder ="Filtrar por nome..."
                             defaultValue={filtroNome}
                             width       ="50%"
+                            minWidth    ="200px"
                         />
                     </TCol>
                 </TRow>
@@ -246,7 +247,7 @@ export default function PessoaList() {
                             displayField="nome"
                             searchField ="nome"
                             placeholder ="Todos..."
-                            width       ="250px"
+                            width       ="200px"
                             value       ={filtroTipoCad}
                             onChange    ={setFiltroTipoCad}
                         />

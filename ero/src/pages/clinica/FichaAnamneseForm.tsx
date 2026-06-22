@@ -455,13 +455,13 @@ export default function FichaAnamneseForm() {
               searchField  ="nome"
               placeholder  ="Selecione o paciente..."
               required
-              width        ="100%"
+              width        ="50%"
+              minWidth     ="200px"
               disabled     ={isEdit}
               value        ={pessoaId}
               onChange     ={(val) => setPessoaId(val)}
             />
           </TCol>
-          <TSpace />
         </TRow>
         <TRow>
           <TCol>
@@ -473,19 +473,19 @@ export default function FichaAnamneseForm() {
               displayField ={displayEmitente}
               searchField  ="nome"
               placeholder  ="Selecione o emitente (opcional)..."
-              width        ="100%"
+              width        ="50%"
+              minWidth     ="200px"
               value        ={emitenteId}
               onChange     ={(val) => setEmitenteId(val)}
             />
           </TCol>
-          <TSpace />
         </TRow>
         <TRow>
           <TCol>
             <TCombo
               name        ="finalidade"
               label       ="Especialidade (*)"
-              width       ="260px"
+              width       ="200px"
               defaultValue={finalidade}
               disabled    ={isEdit}
               onChange    ={isEdit ? undefined : handleFinalidadeChange}
@@ -496,7 +496,7 @@ export default function FichaAnamneseForm() {
             <TDate
               name        ="dataPreenchimento"
               label       ="Data de Preenchimento (*)"
-              width       ="180px"
+              width       ="200px"
               defaultValue={ficha?.dataPreenchimento ?? hoje()}
             />
           </TCol>
@@ -508,12 +508,12 @@ export default function FichaAnamneseForm() {
               name        ="observacoes"
               label       ="Observações"
               placeholder ="Observações gerais sobre a ficha..."
-              width       ="100%"
+              width       ="50%"
+              minWidth    ="200px"
               height      ="80px"
               defaultValue={ficha?.observacoes ?? ""}
             />
           </TCol>
-          <TSpace />
         </TRow>
 
         {/* ── Indicador de carregamento do template ── */}

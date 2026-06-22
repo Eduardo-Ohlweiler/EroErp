@@ -12,6 +12,7 @@ import { TEntry }                                                  from "../../c
 import { TCombo }                                                  from "../../components/tcombo"
 import { TButton }                                                 from "../../components/tbutton"
 import { useMessage }                                              from "../../hooks/useMessage"
+import { TSpace } from "../../components/tspace"
 
 function num(v: string): number | null {
   if (!v || v.trim() === "") return null
@@ -99,7 +100,8 @@ export default function FormulaLacteaForm() {
               name        ="nome"
               label       ="Nome"
               required
-              width       ="60%"
+              width       ="50%"
+              minWidth    ="200px"
               defaultValue={formula?.nome}
             />
           </TCol>
@@ -125,6 +127,7 @@ export default function FormulaLacteaForm() {
               defaultValue={formula?.proteinaPor100ml != null ? String(formula.proteinaPor100ml) : ""}
             />
           </TCol>
+          <TSpace />
         </TRow>
         <TRow>
           <TCol>

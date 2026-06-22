@@ -124,9 +124,11 @@ export default function TerapiaNutricionalPacienteDashboard() {
 
     useEffect(() => {
         if (!pessoaId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setData(null)
             return
         }
+
         setLoading(true)
         const params = new URLSearchParams()
         params.set("pessoaId", pessoaId)

@@ -126,7 +126,7 @@ export default function MarcaFormList() {
               required
               maxLength    ={100}
               defaultValue ={nome}
-              width        ="60%"
+              width        ="50%"
             />
           </TCol>
         </TRow>

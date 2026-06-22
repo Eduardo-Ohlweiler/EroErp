@@ -264,7 +264,8 @@ export default function TemplateAnamneseForm() {
               name        ="nome"
               label       ="Nome (*)"
               required
-              width       ="60%"
+              width       ="50%"
+              minWidth    ="200px"
               defaultValue={template?.nome}
             />
           </TCol>
@@ -274,7 +275,7 @@ export default function TemplateAnamneseForm() {
             <TCombo
               name        ="finalidade"
               label       ="Finalidade (*)"
-              width       ="260px"
+              width       ="200px"
               defaultValue={template?.finalidade ?? ""}
               options     ={[{ value: "", label: "Selecione..." }, ...FINALIDADE_OPTIONS]}
             />
@@ -298,12 +299,12 @@ export default function TemplateAnamneseForm() {
             <TText
               name        ="descricao"
               label       ="Descrição"
-              width       ="100%"
+              width       ="50%"
+              minWidth    ="200px"
               height      ="80px"
               defaultValue={template?.descricao ?? ""}
             />
           </TCol>
-          <TSpace />
         </TRow>
 
         {/* ── Campos do formulário ── */}

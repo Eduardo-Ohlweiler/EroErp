@@ -6,6 +6,7 @@ interface TTextProps {
   defaultValue?:  string
   disabled?:      boolean
   width?:         string
+  minWidth?:      string
   height?:        string
   hint?:          string
   maxLength?:     number
@@ -21,6 +22,7 @@ export function TText({
   defaultValue,
   disabled,
   width = "100%",
+  minWidth,
   height = "120px",
   hint,
   maxLength,
@@ -28,7 +30,7 @@ export function TText({
   onChange
 }: TTextProps) {
   return (
-    <div className="flex flex-col gap-1" style={{ width }}>
+    <div className="flex flex-col gap-1" style={{ width, minWidth }}>
 
       <label className="text-sm text-(--text-secondary)">
         {label}

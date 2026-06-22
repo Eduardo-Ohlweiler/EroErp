@@ -114,7 +114,8 @@ export default function FichaAnamneseList() {
               displayField ={displayPessoa}
               searchField  ="nome"
               placeholder  ="Todos os pacientes..."
-              width        ="100%"
+              width        ="50%"
+              minWidth     ="200px"
               value        ={filtroPessoaId}
               onChange     ={(val) => setFiltroPessoaId(val)}
             />
@@ -125,7 +126,8 @@ export default function FichaAnamneseList() {
             <TCombo
               name        ="finalidade"
               label       ="Especialidade"
-              width       ="100%"
+              width       ="50%"
+              minWidth    ="200px"
               defaultValue={filtroFinalidade}
               options     ={[{ value: "", label: "Todas" }, ...FINALIDADE_OPTIONS]}
             />

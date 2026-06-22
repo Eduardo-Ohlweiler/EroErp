@@ -198,7 +198,7 @@ export default function TransferenciaEntreContas() {
                                     displayField ="nome"
                                     value        ={contaOrigemId}
                                     required
-                                    width        ="260px"
+                                    width        ="200px"
                                     onChange     ={(val) => setContaOrigemId(val)}
                                 />
                             </TCol>
@@ -213,7 +213,7 @@ export default function TransferenciaEntreContas() {
                                     displayField ="nome"
                                     value        ={contaDestinoId}
                                     required
-                                    width        ="260px"
+                                    width        ="200px"
                                     onChange     ={(val) => setContaDestinoId(val)}
                                 />
                             </TCol>
@@ -225,7 +225,7 @@ export default function TransferenciaEntreContas() {
                                     label        ="Valor"
                                     mask         ="moeda"
                                     required
-                                    width        ="150px"
+                                    width        ="200px"
                                     defaultValue ={valor}
                                     onChange     ={setValor}
                                 />
@@ -236,7 +236,8 @@ export default function TransferenciaEntreContas() {
                                 <TEntry
                                     name         ="descricao"
                                     label        ="Descrição"
-                                    width        ="60%"
+                                    width        ="50%"
+                                    minWidth     ="200px"
                                     defaultValue ={descricao}
                                     onChange     ={setDescricao}
                                 />
@@ -248,7 +249,7 @@ export default function TransferenciaEntreContas() {
                                     name         ="data"
                                     label        ="Data"
                                     required
-                                    width        ="160px"
+                                    width        ="200px"
                                     defaultValue ={data}
                                     onChange     ={setData}
                                 />

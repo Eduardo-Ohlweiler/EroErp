@@ -115,7 +115,8 @@ export default function WhatsappInstanciaList() {
               name        ="nome"
               label       ="Nome"
               placeholder ="Filtrar por nome..."
-              width       ="60%"
+              width       ="50%"
+              minWidth     ="200px"
             />
           </TCol>
         </TRow>

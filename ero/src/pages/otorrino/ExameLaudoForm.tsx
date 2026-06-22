@@ -161,13 +161,19 @@ export default function ExameLaudoForm() {
                 value       ={pessoaId}
                 onChange    ={(v) => setPessoaId(v)}
                 placeholder ="Buscar paciente..."
+                width       ="50%"
+                minWidth    ="200px"
               />
             </TCol>
+          </TRow>
+          <TRow>
             <TCol flex={2}>
-              <TCombo name="tipoExame" label="Tipo de Exame" width="100%"
+              <TCombo name="tipoExame" label="Tipo de Exame" width="50% " minWidth="200px"
                 options={TIPO_OPTIONS} placeholder="Selecione o tipo..."
                 defaultValue={tipo} onChange={setTipo} />
             </TCol>
+          </TRow>
+          <TRow>
             <TCol flex={1}>
               <TDate
                 name        ="dataExame"

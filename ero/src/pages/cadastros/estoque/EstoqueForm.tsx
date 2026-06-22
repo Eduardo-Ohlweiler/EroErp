@@ -188,7 +188,7 @@ export default function EstoqueForm() {
               mask         ="numerodecimal"
               hint         ="Quando o estoque atingir este valor, aparece um alerta no dashboard"
               defaultValue ={quantidadeMinima}
-              width        ="220px"
+              width        ="200px"
             />
           </TCol>
         </TRow>
@@ -198,7 +198,7 @@ export default function EstoqueForm() {
             <TCombo
               name         ="baixarEstoque"
               label        ="Baixar Estoque"
-              width        ="160px"
+              width        ="200px"
               defaultValue ={baixarEstoque}
               onChange     ={setBaixarEstoque}
               options      ={[

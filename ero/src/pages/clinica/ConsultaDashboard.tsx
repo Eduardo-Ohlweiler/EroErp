@@ -122,6 +122,7 @@ export default function ConsultaDashboard() {
     const [pessoaId,   setPessoaId]   = useState("")
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true)
 
         const params = new URLSearchParams()

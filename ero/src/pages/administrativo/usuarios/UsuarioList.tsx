@@ -140,7 +140,8 @@ export default function UsuarioList() {
               displayField="nome"
               searchField ="nome"
               placeholder ="Todos os clientes..."
-              width       ="60%"
+              width       ="50%"
+              minWidth    ="200px"
               value       ={filtroCliente}              
               onChange    ={setFiltroCliente}        
             />
@@ -153,7 +154,8 @@ export default function UsuarioList() {
               name        ="nome"
               label       ="Nome"
               placeholder ="Filtrar por nome..."
-              width       ="60%"
+              width       ="50%"
+              minWidth    ="200px"
             />
           </TCol>
         </TRow>
@@ -164,7 +166,8 @@ export default function UsuarioList() {
               name        ="email"
               label       ="E-mail"
               placeholder ="Filtrar por e-mail..."
-              width       ="60%"
+              width       ="50%"
+              minWidth    ="200px"
             />
           </TCol>
         </TRow>

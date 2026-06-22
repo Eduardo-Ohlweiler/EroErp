@@ -125,6 +125,7 @@ export default function DocumentoDashboard() {
     const [cidadeOptions, setCidadeOptions] = useState<CidadeOption[]>([])
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true)
 
         const params = new URLSearchParams()

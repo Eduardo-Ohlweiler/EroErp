@@ -309,10 +309,12 @@ export default function PediatriaPacienteDashboard() {
     useEffect(() => {
         // GATE: sem paciente não chama API
         if (!pessoaId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setData(null)
             return
         }
 
+         
         setLoading(true)
 
         const faixa  = FAIXAS_MES[faixaIdx]

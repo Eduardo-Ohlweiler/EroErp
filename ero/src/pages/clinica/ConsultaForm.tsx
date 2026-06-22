@@ -699,7 +699,7 @@ export default function ConsultaForm() {
         tipoAjuste:  produtoModal.tipoAjuste  || null,
         tipoCalculo: produtoModal.tipoAjuste  ? produtoModal.tipoCalculo : null,
         valorAjuste: produtoModal.tipoAjuste && produtoModal.valorAjuste
-                       ? Number(produtoModal.valorAjuste) : null,
+                        ? Number(produtoModal.valorAjuste) : null,
       }
       if (produtoModal.editId) {
         await api.put(`/consultas/${currentId}/produtos/${produtoModal.editId}`, payload)
@@ -784,13 +784,13 @@ export default function ConsultaForm() {
               searchField  ="nome"
               placeholder  ="Selecione o emitente..."
               required
-              width        ="100%"
+              width        ="50%"
+              minWidth     ="200px"
               disabled     ={isClosed}
               value        ={emitenteId}
               onChange     ={(val) => setEmitenteId(val)}
             />
           </TCol>
-          <TSpace />
         </TRow>
         <TRow>
           <TCol>
@@ -803,7 +803,8 @@ export default function ConsultaForm() {
               searchField  ="nome"
               placeholder  ="Selecione o paciente..."
               required
-              width        ="100%"
+              width        ="50%"
+              minWidth     ="200px"
               disabled     ={isClosed}
               value        ={pessoaId}
               onChange     ={(val) => {
@@ -821,7 +822,6 @@ export default function ConsultaForm() {
               }}
             />
           </TCol>
-          <TSpace />
         </TRow>
 
         {pessoaId && (
@@ -830,7 +830,8 @@ export default function ConsultaForm() {
               <TCombo
                 name         ="fichaAnamneseId"
                 label        ="Ficha de Anamnese (opcional)"
-                width        ="100%"
+                width        ="50%"
+                minWidth     ="200px"
                 disabled     ={isClosed}
                 defaultValue ={fichaAnamneseId}
                 onChange     ={(val) => setFichaAnamneseId(val)}
@@ -840,7 +841,6 @@ export default function ConsultaForm() {
                 ]}
               />
             </TCol>
-            <TSpace />
           </TRow>
         )}
 
@@ -977,7 +977,7 @@ export default function ConsultaForm() {
                   label        ="Início (*)"
                   required
                   disabled     ={isClosed}
-                  width        ="260px"
+                  width        ="200px"
                   defaultValue ={consulta ? toInputDT(consulta.inicio) : defaultDT(0)}
                 />
               </TCol>
@@ -987,7 +987,7 @@ export default function ConsultaForm() {
                   label        ="Fim (*)"
                   required
                   disabled     ={isClosed}
-                  width        ="260px"
+                  width        ="200px"
                   defaultValue ={consulta ? toInputDT(consulta.fim) : defaultDT(1)}
                 />
               </TCol>
@@ -1004,12 +1004,12 @@ export default function ConsultaForm() {
                   displayField ={displayCompromisso}
                   placeholder  ="Selecione um compromisso disponível..."
                   hint         ="Lista compromissos futuros ainda não vinculados a nenhuma consulta."
-                  width        ="100%"
+                  width        ="50%"
+                  minWidth     ="200px"
                   value        ={compromissoId}
                   onChange     ={(val) => setCompromissoId(val)}
                 />
               </TCol>
-              <TSpace />
             </TRow>
           )}
         </TPanel>
@@ -1023,12 +1023,12 @@ export default function ConsultaForm() {
               maxLength   ={2000}
               disabled    ={isClosed}
               defaultValue={consulta?.observacao ?? ""}
-              width       ="100%"
+              width       ="50%"
+              minWidth    ="200px"
               height      ="80px"
               resize      ="vertical"
             />
           </TCol>
-          <TSpace />
         </TRow>
 
         {/* ── Serviços ── */}

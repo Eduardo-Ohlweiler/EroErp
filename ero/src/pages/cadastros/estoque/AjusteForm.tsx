@@ -68,9 +68,19 @@ export default function AjusteForm() {
               searchField  ="produtoNome"
               placeholder  ="Buscar produto no estoque..."
               required
-              width        ="60%"
+              width        ="50%"
               value        ={estoqueId}
               onChange     ={(val) => setEstoqueId(val)}
+            />
+          </TCol>
+        </TRow>
+        <TRow>
+          <TCol>
+            <TEntry
+              name         ="motivo"
+              label        ="Motivo do Ajuste"
+              maxLength    ={255}
+              width        ="50%"
             />
           </TCol>
         </TRow>
@@ -85,17 +95,6 @@ export default function AjusteForm() {
             />
           </TCol>
         </TRow>
-        <TRow>
-          <TCol>
-            <TEntry
-              name         ="motivo"
-              label        ="Motivo do Ajuste"
-              maxLength    ={255}
-              width        ="50%"
-            />
-          </TCol>
-        </TRow>
-
         <TFormFooter>
           <TFormActionsLeft>
             <TButton label="Voltar" variant="cancel" type="button"

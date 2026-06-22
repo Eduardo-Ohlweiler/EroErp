@@ -100,7 +100,8 @@ export default function RefeicaoList() {
               name        ="nome"
               label       ="Nome"
               placeholder ="Filtrar por nome..."
-              width       ="100%"
+              width       ="50%"
+              minWidth    ="200px"
               defaultValue={filtroNome}
             />
           </TCol>

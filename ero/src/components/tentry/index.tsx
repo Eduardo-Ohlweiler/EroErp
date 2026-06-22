@@ -203,6 +203,7 @@ interface TEntryProps {
   defaultValue?: string
   disabled?:     boolean
   width?:        string
+  minWidth?:     string
   hint?:         string
   maxLength?:    number
   mask?:         MaskType
@@ -219,6 +220,7 @@ export function TEntry({
   disabled,
   hint,
   width        = "100%",
+  minWidth,
   maxLength,
   mask,
   onChange
@@ -257,7 +259,7 @@ export function TEntry({
   }
 
   return (
-    <div className="flex flex-col gap-1 max-w-full" style={{ width }}>
+    <div className="flex flex-col gap-1 max-w-full" style={{ width, minWidth }}>
 
       <label className="text-sm text-(--text-secondary)">
         {label}

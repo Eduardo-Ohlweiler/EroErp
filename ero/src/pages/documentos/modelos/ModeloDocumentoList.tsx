@@ -135,7 +135,8 @@ export default function ModeloDocumentoList() {
                             label       ="Nome"
                             placeholder ="Filtrar por nome..."
                             defaultValue={filtroNome}
-                            width       ="100%"
+                            width       ="50%"
+                            minWidth    ="200px"
                         />
                     </TCol>
                 </TRow>

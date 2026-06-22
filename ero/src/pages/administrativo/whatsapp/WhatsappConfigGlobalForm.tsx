@@ -95,7 +95,8 @@ export default function WhatsappConfigGlobalForm() {
               maxLength    ={255}
               placeholder  ="https://evolution.meuservidor.com"
               defaultValue ={config?.apiUrl}
-              width        ="60%"
+              width        ="50%"
+              minWidth     ="200px"
             />
           </TCol>
         </TRow>
@@ -109,7 +110,8 @@ export default function WhatsappConfigGlobalForm() {
               maxLength    ={500}
               placeholder  ="minha-api-key-secreta"
               defaultValue ={config?.apiKey}
-              width        ="60%"
+              width        ="50%"
+              minWidth     ="200px"
             />
           </TCol>
         </TRow>

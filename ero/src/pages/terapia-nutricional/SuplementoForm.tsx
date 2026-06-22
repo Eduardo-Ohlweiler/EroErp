@@ -104,7 +104,7 @@ export default function SuplementoForm() {
       <TForm key={formKey} onSubmit={handleSubmit}>
         <TRow>
           <TCol>
-            <TEntry name="nome" label="Nome" required width="50%" defaultValue={suple?.nome} />
+            <TEntry name="nome" label="Nome" required width="50%"  minWidth="200px" defaultValue={suple?.nome} />
           </TCol>
         </TRow>
         <TRow>

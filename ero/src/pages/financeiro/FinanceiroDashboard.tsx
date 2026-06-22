@@ -172,7 +172,9 @@ export default function FinanceiroDashboard() {
 
     // ── posição atual: carrega uma vez no mount ────────────────────────────────
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true)
+         
         setError(false)
         api.get<FinanceiroDashboardDto>("/financeiro/dashboard")
             .then(r => setDashboard(r.data))
@@ -185,6 +187,7 @@ export default function FinanceiroDashboard() {
 
     // ── fluxo: refaz quando filtros/regime mudam ───────────────────────────────
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoadingFluxo(true)
 
         const params = new URLSearchParams()

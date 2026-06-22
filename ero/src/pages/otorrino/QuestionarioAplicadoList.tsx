@@ -132,13 +132,13 @@ export default function QuestionarioAplicadoList() {
       <TForm onSubmit={handleFiltrar}>
         <TRow>
           <TCol flex={2}>
-            <TEntry name="nome" label="Paciente" width="50%"
+            <TEntry name="nome" label="Paciente" width="50%" minWidth="200px"
               placeholder="Filtrar por nome..." defaultValue={filtroNome} onChange={setFiltroNome} />
           </TCol>
         </TRow>
         <TRow>
           <TCol flex={2}>
-            <TCombo name="codigo" label="Escala" width="50%"
+            <TCombo name="codigo" label="Escala" width="50%" minWidth="200px"
               options={ESCALA_OPTIONS} placeholder="Todas as escalas"
               defaultValue={filtroCodigo} onChange={setFiltroCodigo} />
           </TCol>

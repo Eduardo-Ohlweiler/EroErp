@@ -284,7 +284,7 @@ export default function LancamentosFinanceiros() {
                             <TCombo
                                 name         ="tipo"
                                 label        ="Tipo"
-                                width        ="260px"
+                                width        ="200px"
                                 required
                                 defaultValue ={tipo}
                                 options      ={TIPO_OPTIONS}
@@ -302,7 +302,7 @@ export default function LancamentosFinanceiros() {
                                 displayField ="nome"
                                 value        ={contaFinanceiraId}
                                 required
-                                width        ="260px"
+                                width        ="200px"
                                 onChange     ={(val) => setContaFinanceiraId(val)}
                             />
                         </TCol>
@@ -314,7 +314,7 @@ export default function LancamentosFinanceiros() {
                                 label        ="Valor"
                                 mask         ="moeda"
                                 required
-                                width        ="150px"
+                                width        ="200px"
                                 defaultValue ={valor}
                                 onChange     ={setValor}
                             />
@@ -325,7 +325,8 @@ export default function LancamentosFinanceiros() {
                             <TEntry
                                 name         ="descricao"
                                 label        ="Descrição"
-                                width        ="60%"
+                                width        ="50%"
+                                minWidth     ="200px"
                                 defaultValue ={descricao}
                                 onChange     ={setDescricao}
                             />
@@ -337,7 +338,7 @@ export default function LancamentosFinanceiros() {
                                 name         ="data"
                                 label        ="Data"
                                 required
-                                width        ="160px"
+                                width        ="200px"
                                 defaultValue ={data}
                                 onChange     ={setData}
                             />

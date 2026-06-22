@@ -129,6 +129,7 @@ export default function OtorrinoGeralDashboard() {
     const [periodo, setPeriodo] = useState(365)   // default: 12 meses
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true)
         api.get<OtorrinoGeralDashboardDto>(`/otorrino/dashboard/geral?dias=${periodo}`)
             .then(r => setData(r.data))

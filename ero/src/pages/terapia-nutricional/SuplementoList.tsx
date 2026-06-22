@@ -217,7 +217,7 @@ export default function SuplementoList() {
         <TRow>
           <TCol>
             <TEntry name="nome" label="Nome" placeholder="Filtrar por nome..."
-              width="50%" defaultValue={filtroNome} />
+              width="50%" minWidth="200px" defaultValue={filtroNome} />
           </TCol>
         </TRow>
         <TFormFooter>

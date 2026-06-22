@@ -481,7 +481,8 @@ export default function PessoaForm() {
                             label="Nome"
                             required
                             maxLength={255}
-                            width="60%"
+                            width="50%"
+                            minWidth="200px"
                             defaultValue={pessoa?.nome}
                         />
                     </TCol>
@@ -493,7 +494,7 @@ export default function PessoaForm() {
                             label="Data de Nascimento"
                             mask="data"
                             defaultValue={dataNascimento}
-                            width="180px"
+                            width="200px"
                         />
                     </TCol>
                 </TRow>
@@ -507,7 +508,7 @@ export default function PessoaForm() {
                                 disabled     ={tipoPessoa !== "PESSOA_FISICA"}
                                 defaultValue ={cpf}
                                 onChange     ={setCpf}
-                                width        ="180px"
+                                width        ="200px"
                             />
                         </TCol>
                     </TRow>
@@ -520,7 +521,7 @@ export default function PessoaForm() {
                                 disabled     ={tipoPessoa !== "PESSOA_FISICA"}
                                 defaultValue ={rg}
                                 onChange     ={setRg}
-                                width        ="160px"
+                                width        ="200px"
                             />
                         </TCol>
                     </TRow>
@@ -533,7 +534,7 @@ export default function PessoaForm() {
                                 disabled     ={tipoPessoa !== "PESSOA_FISICA"}
                                 defaultValue ={cnh}
                                 onChange     ={setCnh}
-                                width        ="180px"
+                                width        ="200px"
                             />
                         </TCol>
                         <TCol>
@@ -544,7 +545,7 @@ export default function PessoaForm() {
                                 disabled     ={tipoPessoa !== "PESSOA_FISICA"}
                                 defaultValue ={cnhCategoria}
                                 onChange     ={setCnhCategoria}
-                                width        ="120px"
+                                width        ="100px"
                             />
                         </TCol>
                         <TCol>
@@ -555,7 +556,7 @@ export default function PessoaForm() {
                                 disabled     ={tipoPessoa !== "PESSOA_FISICA"}
                                 defaultValue ={cnhValidade}
                                 onChange     ={setCnhValidade}
-                                width        ="180px"
+                                width        ="200px"
                             />
                         </TCol>
                         <TSpace />
@@ -607,7 +608,8 @@ export default function PessoaForm() {
                                 name         ="razaoSocial"
                                 label        ="Razão Social"
                                 maxLength    ={255}
-                                width="60%"
+                                width        ="50%"
+                                minWidth     ="200px"
                                 disabled     ={tipoPessoa !== "PESSOA_JURIDICA"}
                                 defaultValue ={razaoSocial}
                                 onChange     ={setRazaoSocial}
@@ -620,7 +622,8 @@ export default function PessoaForm() {
                                 name         ="nomeFantasia"
                                 label        ="Nome Fantasia"
                                 maxLength    ={255}
-                                width="60%"
+                                width        ="50%"
+                                minWidth     ="200px"
                                 disabled     ={tipoPessoa !== "PESSOA_JURIDICA"}
                                 defaultValue ={nomeFantasia}
                                 onChange     ={setNomeFantasia}

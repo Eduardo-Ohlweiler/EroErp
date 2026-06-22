@@ -144,7 +144,7 @@ export default function SubgrupoFormList() {
               searchField  ="nome"
               placeholder  ="Selecione o grupo..."
               required
-              width        ="60%"
+              width        ="50%"
               value        ={grupoId}
               onChange     ={(val) => setGrupoId(val)}
             />
@@ -158,7 +158,7 @@ export default function SubgrupoFormList() {
               required
               maxLength    ={100}
               defaultValue ={nome}
-              width        ="60%"
+              width        ="50%"
             />
           </TCol>
         </TRow>

@@ -49,6 +49,7 @@ export default function ContaFinanceiraFormList() {
 
     useEffect(() => {
         loadGrid()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page])
 
     async function loadGrid(pagina = page) {
@@ -133,7 +134,8 @@ export default function ContaFinanceiraFormList() {
                             required
                             maxLength    ={150}
                             defaultValue ={nome}
-                            width        ="60%"
+                            width        ="50%"
+                            minWidth     ="200px"
                         />
                     </TCol>
                 </TRow>
