@@ -11,14 +11,14 @@ export function TPanel({ title, children, collapsed = false }: TPanelProps) {
   const [open, setOpen] = useState(!collapsed)
 
   return (
-    <div className="border border-[var(--border)] rounded-lg">
+    <div className="border border-(--border) rounded-lg">
 
       <button
         type      ="button"
         onClick   ={() => setOpen((prev) => !prev)}
         className ={`w-full flex items-center justify-between px-4 py-3
-          bg-[var(--metal-700)] text-[var(--text-inverse)] text-sm font-medium
-          hover:bg-[var(--metal-600)] transition
+          bg-(--metal-700) text-(--text-inverse) text-sm font-medium
+          hover:bg-(--metal-600) transition
           ${open ? "rounded-t-lg" : "rounded-lg"}`}
       >
         <span>{title}</span>
