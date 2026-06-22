@@ -53,6 +53,7 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
             AND c.inicio >= :inicio
             AND c.inicio <= :fim
             AND (:nomePessoa IS NULL OR LOWER(p.nome) LIKE LOWER(CONCAT('%', CAST(:nomePessoa AS string), '%')))
+            AND (:faturado IS NULL OR c.faturado = :faturado)
             ORDER BY c.createdAt DESC
             """)
     Page<Consulta> findAllWithFilters(
@@ -63,7 +64,8 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
             @Param("pessoaId")   Long           pessoaId,
             @Param("inicio")     LocalDateTime  inicio,
             @Param("fim")        LocalDateTime  fim,
-            @Param("nomePessoa") String         nomePessoa
+            @Param("nomePessoa") String         nomePessoa,
+            @Param("faturado")   Boolean        faturado
     );
 
     @Query("""

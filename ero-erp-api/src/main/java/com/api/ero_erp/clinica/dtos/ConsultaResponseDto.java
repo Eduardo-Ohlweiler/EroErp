@@ -28,6 +28,9 @@ public record ConsultaResponseDto(
         String                        observacao,
         String                        motivoCancelamento,
 
+        // Faturamento
+        boolean                       faturado,
+
         // Reconsulta
         Long                          consultaPaiId,
 

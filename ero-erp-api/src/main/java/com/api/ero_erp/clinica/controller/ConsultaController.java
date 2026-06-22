@@ -41,9 +41,10 @@ public class ConsultaController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fim,
-            @RequestParam(required = false) String         nomePessoa
+            @RequestParam(required = false) String         nomePessoa,
+            @RequestParam(required = false) Boolean        faturado
     ) {
-        return consultaService.getAll(pageable, status, emitenteId, pessoaId, inicio, fim, nomePessoa);
+        return consultaService.getAll(pageable, status, emitenteId, pessoaId, inicio, fim, nomePessoa, faturado);
     }
 
     @Operation(summary = "Lista compromissos da agenda disponíveis para vincular a uma consulta")
@@ -96,6 +97,13 @@ public class ConsultaController {
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CLINICA')")
     public ResponseEntity<ConsultaResponseDto> concluir(@PathVariable Long id) {
         return ResponseEntity.ok(consultaService.concluir(id));
+    }
+
+    @Operation(summary = "Marca a consulta como faturada (conclui antes, se ainda em atendimento)")
+    @PatchMapping("/{id}/faturar")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CLINICA')")
+    public ResponseEntity<ConsultaResponseDto> faturar(@PathVariable Long id) {
+        return ResponseEntity.ok(consultaService.faturar(id));
     }
 
     @Operation(summary = "Cancela a consulta")

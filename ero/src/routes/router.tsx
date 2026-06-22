@@ -57,6 +57,7 @@ import PlanoAlimentarList                        from "../pages/clinica/PlanoAli
 import PlanoAlimentarForm                        from "../pages/clinica/PlanoAlimentarForm"
 import RefeicaoList                              from "../pages/clinica/RefeicaoList"
 import RefeicaoForm                              from "../pages/clinica/RefeicaoForm"
+import ConfiguracaoConsultaForm                  from "../pages/clinica/ConfiguracaoConsultaForm"
 import PlanoTreinoList                           from "../pages/gym/PlanoTreinoList"
 import PlanoTreinoForm                           from "../pages/gym/PlanoTreinoForm"
 import ExercicioList                             from "../pages/gym/ExercicioList"
@@ -244,6 +245,11 @@ export function Router() {
               <Route path="/clinica/refeicoes"                  element={<RefeicaoList />} />
               <Route path="/clinica/refeicoes/nova"             element={<RefeicaoForm />} />
               <Route path="/clinica/refeicoes/:id"              element={<RefeicaoForm />} />
+            </Route>
+
+            {/* ── CLÍNICA AUXILIAR ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
+              <Route path="/clinica/configuracao-consulta" element={<ConfiguracaoConsultaForm />} />
             </Route>
 
             {/* ── GYM ── */}

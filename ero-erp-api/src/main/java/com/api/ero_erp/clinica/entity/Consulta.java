@@ -47,6 +47,9 @@ public class Consulta extends BaseEntity {
     @Column(name = "motivo_cancelamento", length = 500)
     private String motivoCancelamento;
 
+    @Column(name = "faturado", nullable = false)
+    private Boolean faturado = false;
+
     @Column(name = "inicio", nullable = false)
     private LocalDateTime inicio;
 
@@ -83,5 +86,7 @@ public class Consulta extends BaseEntity {
         super.prePersist();
         if (this.status == null)
             this.status = StatusConsulta.AGENDADA;
+        if (this.faturado == null)
+            this.faturado = false;
     }
 }

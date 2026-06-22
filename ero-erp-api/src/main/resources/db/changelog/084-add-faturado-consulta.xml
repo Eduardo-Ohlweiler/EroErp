@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="084-add-faturado-consulta" author="eduardo">
+        <addColumn tableName="consulta">
+            <column name="faturado" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Backfill: consultas já concluídas (fluxo antigo) sempre passaram pelo faturamento -->
+    <changeSet id="084-backfill-faturado-concluidas" author="eduardo">
+        <update tableName="consulta">
+            <column name="faturado" valueBoolean="true"/>
+            <where>status = 'CONCLUIDA'</where>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>

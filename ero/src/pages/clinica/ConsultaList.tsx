@@ -58,6 +58,15 @@ const columns: TDataGridColumn<ConsultaResponse>[] = [
       </span>
     )
   },
+  { label: "Faturamento", width: "120px", align: "center",
+    render: (row) => row.status === "CONCLUIDA"
+      ? (
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium text-white ${row.faturado ? "bg-green-600" : "bg-amber-500"}`}>
+          {row.faturado ? "Faturado" : "Pendente"}
+        </span>
+      )
+      : <span className="text-(--text-muted)">—</span>
+  },
 ]
 
 export default function ConsultaList() {
@@ -67,6 +76,7 @@ export default function ConsultaList() {
   const [filtroNomePessoa, setFiltroNomePessoa] = useState("")
   const [filtroEmitenteId, setFiltroEmitenteId] = useState("")
   const [filtroStatus,     setFiltroStatus]     = useState("")
+  const [filtroFaturado,   setFiltroFaturado]   = useState("")
   const [filtroInicio,     setFiltroInicio]     = useState("")
   const [filtroFim,        setFiltroFim]        = useState("")
   const [data,             setData]             = useState<ConsultaResponse[]>([])
@@ -85,7 +95,8 @@ export default function ConsultaList() {
     status     = filtroStatus,
     inicio     = filtroInicio,
     fim        = filtroFim,
-    pagina     = page
+    pagina     = page,
+    faturado   = filtroFaturado
   ) {
     setLoading(true)
     try {
@@ -93,6 +104,7 @@ export default function ConsultaList() {
       if (nomePessoa) params.append("nomePessoa", nomePessoa)
       if (emitenteId) params.append("emitenteId", emitenteId)
       if (status)     params.append("status",     status)
+      if (faturado)   params.append("faturado",   faturado)
       if (inicio)     params.append("inicio",     `${inicio}T00:00:00`)
       if (fim)        params.append("fim",         `${fim}T23:59:59`)
 
@@ -110,6 +122,7 @@ export default function ConsultaList() {
   function handleFiltrar(formData: Record<string, string>) {
     setFiltroNomePessoa(formData.nomePessoa ?? "")
     setFiltroStatus(formData.status ?? "")
+    setFiltroFaturado(formData.faturado ?? "")
     setFiltroInicio(formData.inicio ?? "")
     setFiltroFim(formData.fim ?? "")
     setPage(0)
@@ -119,7 +132,8 @@ export default function ConsultaList() {
       formData.status,
       formData.inicio,
       formData.fim,
-      0
+      0,
+      formData.faturado
     )
   }
 
@@ -127,10 +141,11 @@ export default function ConsultaList() {
     setFiltroNomePessoa("")
     setFiltroEmitenteId("")
     setFiltroStatus("")
+    setFiltroFaturado("")
     setFiltroInicio("")
     setFiltroFim("")
     setPage(0)
-    load("", "", "", "", "", 0)
+    load("", "", "", "", "", 0, "")
   }
 
   return (
@@ -181,6 +196,20 @@ export default function ConsultaList() {
               ]}
             />
           </TCol>
+          <TCol>
+            <TCombo
+              name        ="faturado"
+              label       ="Faturamento"
+              width       ="200px"
+              defaultValue={filtroFaturado}
+              options     ={[
+                { value: "",      label: "Todos"    },
+                { value: "true",  label: "Faturado" },
+                { value: "false", label: "Pendente" },
+              ]}
+            />
+          </TCol>
+          <TSpace />
         </TRow>
         <TRow>
           <TCol>

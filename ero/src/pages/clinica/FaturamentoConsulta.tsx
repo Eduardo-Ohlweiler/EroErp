@@ -176,7 +176,7 @@ export default function FaturamentoConsulta() {
                 })),
             })
 
-            await api.patch(`/consultas/${id}/concluir`)
+            await api.patch(`/consultas/${id}/faturar`)
 
             // ── Gera e baixa PDF de faturamento ──────────────────────────────
             const dadosFat = {

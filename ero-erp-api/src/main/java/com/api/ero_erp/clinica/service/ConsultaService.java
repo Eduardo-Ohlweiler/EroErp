@@ -111,13 +111,14 @@ public class ConsultaService {
             Long           pessoaId,
             LocalDateTime  inicio,
             LocalDateTime  fim,
-            String         nomePessoa
+            String         nomePessoa,
+            Boolean        faturado
     ) {
         Long          clienteId   = securityUtils.getClienteIdLogado();
         LocalDateTime inicioFinal = (inicio != null) ? inicio : LocalDateTime.of(1900, 1, 1, 0, 0);
         LocalDateTime fimFinal    = (fim    != null) ? fim    : LocalDateTime.of(2100, 12, 31, 23, 59, 59);
         return consultaRepository.findAllWithFilters(
-                pageable, clienteId, status, emitenteId, pessoaId, inicioFinal, fimFinal, nomePessoa
+                pageable, clienteId, status, emitenteId, pessoaId, inicioFinal, fimFinal, nomePessoa, faturado
         ).map(this::buildResponse);
     }
 
@@ -299,7 +300,6 @@ public class ConsultaService {
     public ConsultaResponseDto concluir(Long id) {
         Long     clienteId = securityUtils.getClienteIdLogado();
         Consulta consulta  = findById(id);
-        Cliente  cliente   = clienteService.findById(clienteId);
         Usuario  usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
 
         if (consulta.getStatus() == StatusConsulta.CONCLUIDA)
@@ -307,21 +307,51 @@ public class ConsultaService {
         if (consulta.getStatus() == StatusConsulta.CANCELADA)
             throw new BadRequestException("Não é possível concluir uma consulta cancelada");
 
+        aplicarConclusao(consulta, clienteId, usuario);
+        consulta.setUpdatedBy(usuario);
+
+        return buildResponse(consultaRepository.save(consulta));
+    }
+
+    @Transactional
+    public ConsultaResponseDto faturar(Long id) {
+        Long     clienteId = securityUtils.getClienteIdLogado();
+        Consulta consulta  = findById(id);
+        Usuario  usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
+
+        if (consulta.getStatus() == StatusConsulta.CANCELADA)
+            throw new BadRequestException("Não é possível faturar uma consulta cancelada");
+        if (consulta.getStatus() == StatusConsulta.AGENDADA)
+            throw new BadRequestException("Inicie e conclua o atendimento antes de faturar");
+        if (Boolean.TRUE.equals(consulta.getFaturado()))
+            throw new BadRequestException("Consulta já está faturada");
+
+        // Se ainda estiver em atendimento, conclui agora (status + baixa de estoque + compromisso)
+        if (consulta.getStatus() == StatusConsulta.EM_ATENDIMENTO)
+            aplicarConclusao(consulta, clienteId, usuario);
+
+        consulta.setFaturado(true);
+        consulta.setUpdatedBy(usuario);
+
+        return buildResponse(consultaRepository.save(consulta));
+    }
+
+    /** Conclui a consulta: baixa estoque dos produtos consumidos, marca CONCLUIDA e conclui o compromisso vinculado. */
+    private void aplicarConclusao(Consulta consulta, Long clienteId, Usuario usuario) {
         // Baixa estoque para os produtos consumidos (baixarEstoque=true)
-        List<ConsultaProduto> paraBaixar = produtoConsumidoRepository.findParaBaixarEstoque(id);
+        List<ConsultaProduto> paraBaixar = produtoConsumidoRepository.findParaBaixarEstoque(consulta.getId());
         for (ConsultaProduto cp : paraBaixar) {
             estoqueService.baixarEstoquePorConsumo(
                     clienteId,
                     cp.getEmitente().getId(),
                     cp.getProduto().getId(),
                     cp.getQuantidade(),
-                    "Consumo na consulta #" + id,
+                    "Consumo na consulta #" + consulta.getId(),
                     usuario
             );
         }
 
         consulta.setStatus(StatusConsulta.CONCLUIDA);
-        consulta.setUpdatedBy(usuario);
 
         // Conclui o compromisso vinculado
         if (consulta.getCompromisso() != null) {
@@ -330,8 +360,6 @@ public class ConsultaService {
             c.setUpdatedBy(usuario);
             compromissoRepository.save(c);
         }
-
-        return buildResponse(consultaRepository.save(consulta));
     }
 
     @Transactional

@@ -264,6 +264,9 @@ export default function ConsultaForm() {
   const [reconsultaFim,    setReconsultaFim]    = useState("")
   const [reconsultaSaving, setReconsultaSaving] = useState(false)
 
+  // Configuração "Faturar ao concluir": SIM | NAO | PERGUNTAR (fallback PERGUNTAR)
+  const [faturarConfig, setFaturarConfig] = useState<"SIM" | "NAO" | "PERGUNTAR">("PERGUNTAR")
+
   const isEdit   = !!currentId
   const isClosed = consulta?.status === "CONCLUIDA" || consulta?.status === "CANCELADA"
 
@@ -276,6 +279,15 @@ export default function ConsultaForm() {
       .finally(() => setLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentId])
+
+  // Carrega a configuração "Faturar ao concluir" (fallback PERGUNTAR quando não há registro)
+  useEffect(() => {
+    api.get("/consultas/configuracao")
+      .then(r => {
+        if (r.data?.faturarAoConcluir) setFaturarConfig(r.data.faturarAoConcluir)
+      })
+      .catch(() => {})
+  }, [])
 
   async function loadFichaOptions(pId: string) {
     if (!pId) { setFichaOptions([]); return }
@@ -515,7 +527,7 @@ export default function ConsultaForm() {
     ])
   }
 
-  function handleConcluir(total: number) {
+  function irParaFaturamento(total: number) {
     navigate(`/clinica/consultas/${currentId}/faturamento`, {
       state: {
         pessoaId:          consulta!.pessoaId,
@@ -527,6 +539,35 @@ export default function ConsultaForm() {
         totalGeral:        total,
       }
     })
+  }
+
+  async function concluirSemFaturar() {
+    try {
+      await api.patch(`/consultas/${currentId}/concluir`)
+      showMessage("success", "Consulta concluída!")
+      await reload(currentId!)
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const d = err.response?.data as ErrorResponse
+        showMessage("error", d?.erro ?? "Erro ao concluir")
+      }
+    }
+  }
+
+  function handleConcluir(total: number) {
+    if (faturarConfig === "NAO") {
+      concluirSemFaturar()
+      return
+    }
+    if (faturarConfig === "PERGUNTAR") {
+      ask("Deseja faturar a consulta agora?", [
+        { label: "Apenas concluir", variant: "cancel",  onClick: () => concluirSemFaturar() },
+        { label: "Faturar",         variant: "confirm", onClick: () => irParaFaturamento(total) },
+      ])
+      return
+    }
+    // SIM (ou fallback): mantém o comportamento atual
+    irParaFaturamento(total)
   }
 
   async function handleCancelar() {
@@ -1209,6 +1250,9 @@ export default function ConsultaForm() {
             )}
             {isEdit && consulta?.status === "EM_ATENDIMENTO" && (
               <TButton label="Concluir"            variant="save"   onClick={() => handleConcluir(totalGeral)} />
+            )}
+            {isEdit && consulta?.status === "CONCLUIDA" && !consulta?.faturado && (
+              <TButton label="Faturar"             variant="save"   onClick={() => irParaFaturamento(totalGeral)} />
             )}
             {isEdit && (consulta?.status === "CONCLUIDA" || consulta?.status === "EM_ATENDIMENTO") && (
               <TButton label="Gerar Reconsulta" variant="new" onClick={() => {

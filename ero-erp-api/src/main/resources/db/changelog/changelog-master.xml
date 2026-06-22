@@ -87,4 +87,6 @@
     <include file="080-insert-questionarios-otorrino.xml"   relativeToChangelogFile="true" />
     <include file="081-create-otorrino-exame-laudo.xml"     relativeToChangelogFile="true" />
     <include file="082-insert-template-anamnese-otorrino.xml" relativeToChangelogFile="true" />
+    <include file="083-create-configuracao-consulta.xml"     relativeToChangelogFile="true" />
+    <include file="084-add-faturado-consulta.xml"           relativeToChangelogFile="true" />
 </databaseChangeLog>

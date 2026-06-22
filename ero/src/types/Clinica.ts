@@ -50,6 +50,7 @@ export interface ConsultaResponse {
     fim:                 string
     observacao:          string | null
     motivoCancelamento:  string | null
+    faturado:            boolean
     consultaPaiId:       number | null
     servicos:            ConsultaServicoResponse[]
     produtos:            ConsultaProdutoResponse[]

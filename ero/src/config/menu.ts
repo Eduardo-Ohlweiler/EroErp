@@ -204,6 +204,12 @@ export const menu: MenuItem[] = [
             icon:  FaCog,
             roles: ["SUPERADMIN", "ADMIN", "REFEICAO", "REFEICAO_GET"],
           },
+          {
+            label: "Configuração Consulta",
+            path:  "/clinica/configuracao-consulta",
+            icon:  FaCog,
+            roles: ["SUPERADMIN", "ADMIN"],
+          },
         ],
       },
     ],
