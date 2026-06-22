@@ -390,7 +390,7 @@ export default function DocumentoForm() {
         return (
             <TPage title="Carregando..." breadcrumb={["Documentos", "Documentos"]}>
                 <div className="flex justify-center py-12">
-                    <span className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+                    <span className="w-6 h-6 border-2 border-(--accent) border-t-transparent rounded-full animate-spin" />
                 </div>
             </TPage>
         )

@@ -49,6 +49,7 @@ export default function TipoCobrancaFormList() {
 
     useEffect(() => {
         loadGrid()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page])
 
     async function loadGrid(pagina = page) {

@@ -47,6 +47,7 @@ export default function CategoriaFormList() {
   const [totalElements, setTotalElements] = useState(0)
   const pageSize = 15
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadGrid() }, [page])
 
   async function loadGrid(pagina = page) {

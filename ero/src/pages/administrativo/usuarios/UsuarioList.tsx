@@ -55,6 +55,7 @@ export default function UsuarioList() {
 
   useEffect(() => {
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
 
   async function load(
