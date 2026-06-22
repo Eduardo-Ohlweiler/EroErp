@@ -58,6 +58,12 @@ import PlanoAlimentarForm                        from "../pages/clinica/PlanoAli
 import RefeicaoList                              from "../pages/clinica/RefeicaoList"
 import RefeicaoForm                              from "../pages/clinica/RefeicaoForm"
 import ConfiguracaoConsultaForm                  from "../pages/clinica/ConfiguracaoConsultaForm"
+import VendaPdvList                              from "../pages/pedidos/VendaPdvList"
+import PedidoForm                                from "../pages/pedidos/PedidoForm"
+import FaturamentoPedido                         from "../pages/pedidos/FaturamentoPedido"
+import TipoPedidoList                            from "../pages/pedidos/auxiliares/TipoPedidoList"
+import TipoPedidoForm                            from "../pages/pedidos/auxiliares/TipoPedidoForm"
+import ConfiguracaoPedidoForm                    from "../pages/pedidos/auxiliares/ConfiguracaoPedidoForm"
 import PlanoTreinoList                           from "../pages/gym/PlanoTreinoList"
 import PlanoTreinoForm                           from "../pages/gym/PlanoTreinoForm"
 import ExercicioList                             from "../pages/gym/ExercicioList"
@@ -250,6 +256,18 @@ export function Router() {
             {/* ── CLÍNICA AUXILIAR ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
               <Route path="/clinica/configuracao-consulta" element={<ConfiguracaoConsultaForm />} />
+            </Route>
+
+            {/* ── PEDIDOS (Venda PDV) ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"]} />}>
+              <Route path="/pedidos"                   element={<VendaPdvList />} />
+              <Route path="/pedidos/novo"              element={<PedidoForm />} />
+              <Route path="/pedidos/:id"               element={<PedidoForm />} />
+              <Route path="/pedidos/:id/faturamento"   element={<FaturamentoPedido />} />
+              <Route path="/pedidos/tipos"             element={<TipoPedidoList />} />
+              <Route path="/pedidos/tipos/novo"        element={<TipoPedidoForm />} />
+              <Route path="/pedidos/tipos/:id"         element={<TipoPedidoForm />} />
+              <Route path="/pedidos/configuracao"      element={<ConfiguracaoPedidoForm />} />
             </Route>
 
             {/* ── GYM ── */}

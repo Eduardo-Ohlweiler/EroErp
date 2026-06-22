@@ -44,6 +44,7 @@ public class ConsultaMapper {
                 consulta.getObservacao(),
                 consulta.getMotivoCancelamento(),
                 consulta.getFaturado() != null && consulta.getFaturado(),
+                consulta.getContaReceberId(),
                 consulta.getConsultaPai() != null ? consulta.getConsultaPai().getId() : null,
                 servicos.stream().map(ConsultaMapper::toServicoDto).toList(),
                 produtos.stream().map(ConsultaMapper::toProdutoDto).toList(),

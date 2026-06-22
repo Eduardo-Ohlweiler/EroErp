@@ -29,7 +29,15 @@ import { TDataGrid }                                                from "../../
 import type { TDataGridColumn }                                     from "../../types/TDataGridColumn"
 import { useMessage }                                               from "../../hooks/useMessage"
 import { displayPessoa, displayEmitente, formatarDocumento }       from "../../utils/pessoas"
+import { gerarPdfFaturamento }                                     from "../../utils/geradorPdf"
 import { useQuestion }                                              from "../../hooks/useQuestion"
+
+function baixarPdf(base64: string, nomeArquivo: string) {
+  const link = document.createElement("a")
+  link.href = `data:application/pdf;base64,${base64}`
+  link.download = nomeArquivo
+  link.click()
+}
 
 function toInputDT(iso: string | null | undefined) {
   if (!iso) return ""
@@ -188,7 +196,6 @@ interface ProdutoModal {
   open:         boolean
   editId:       number | null
   produtoId:    string
-  emitenteId:   string
   quantidade:   string
   preco:        string
   loadingPreco: boolean
@@ -204,7 +211,7 @@ const emptyServico: ServicoModal = {
   tipoAjuste: "", tipoCalculo: "FIXO", valorAjuste: "", saving: false,
 }
 const emptyProduto: ProdutoModal = {
-  open: false, editId: null, produtoId: "", emitenteId: "", quantidade: "1",
+  open: false, editId: null, produtoId: "", quantidade: "1",
   preco: "0", loadingPreco: false,
   tipoAjuste: "", tipoCalculo: "FIXO", valorAjuste: "", saving: false,
 }
@@ -528,6 +535,16 @@ export default function ConsultaForm() {
   }
 
   function irParaFaturamento(total: number) {
+    const itens = [
+      ...(consulta!.servicos ?? []).map(s => ({
+        descricao: s.produtoNome, tipo: "Serviço",
+        quantidade: s.quantidade, precoUnitario: s.precoUnitario, total: s.total,
+      })),
+      ...(consulta!.produtos ?? []).map(p => ({
+        descricao: p.produtoNome, tipo: "Produto",
+        quantidade: p.quantidade, precoUnitario: p.precoUnitario, total: p.total,
+      })),
+    ]
     navigate(`/clinica/consultas/${currentId}/faturamento`, {
       state: {
         pessoaId:          consulta!.pessoaId,
@@ -537,6 +554,7 @@ export default function ConsultaForm() {
         emitenteNome:      consulta!.emitenteNome     ?? null,
         emitenteDocumento: consulta!.emitenteDocumento ?? null,
         totalGeral:        total,
+        itens,
       }
     })
   }
@@ -552,6 +570,53 @@ export default function ConsultaForm() {
         showMessage("error", d?.erro ?? "Erro ao concluir")
       }
     }
+  }
+
+  async function handleGerarPdf() {
+    if (!consulta) return
+    const itens = [
+      ...(consulta.servicos ?? []).map(s => ({
+        descricao: s.produtoNome, tipo: "Serviço",
+        quantidade: s.quantidade, precoUnitario: s.precoUnitario, total: s.total,
+      })),
+      ...(consulta.produtos ?? []).map(p => ({
+        descricao: p.produtoNome, tipo: "Produto",
+        quantidade: p.quantidade, precoUnitario: p.precoUnitario, total: p.total,
+      })),
+    ]
+    let parcelas: {
+      numeroParcela: number; dataVencimento: string; valor: string
+      pago: boolean; dataPagamento: string; valorPago: string
+    }[] = []
+    if (consulta.faturado && consulta.contaReceberId) {
+      try {
+        const r = await api.get(`/financeiro/contas-receber/${consulta.contaReceberId}`)
+        parcelas = (r.data?.parcelas ?? []).map((pp: Record<string, unknown>) => ({
+          numeroParcela:  Number(pp.numeroParcela),
+          dataVencimento: String(pp.dataVencimento ?? ""),
+          valor:          String(pp.valor ?? "0"),
+          pago:           pp.status === "PAGO",
+          dataPagamento:  pp.dataPagamento ? String(pp.dataPagamento) : "",
+          valorPago:      pp.valorPago != null ? String(pp.valorPago) : "",
+        }))
+      } catch { /* segue sem parcelas */ }
+    }
+    const pdf = gerarPdfFaturamento({
+      consultaId:        consulta.id,
+      tituloDoc:         "RESUMO DA CONSULTA",
+      referenciaLabel:   "Consulta",
+      pessoaLabel:       "Paciente",
+      emitenteNome:      consulta.emitenteNome      ?? "Emitente",
+      emitenteDocumento: consulta.emitenteDocumento ?? null,
+      pessoaNome:        consulta.pessoaNome,
+      pessoaDocumento:   consulta.pessoaDocumento   ?? null,
+      descricao:         `Consulta #${consulta.id}`,
+      data:              new Date().toISOString().slice(0, 10),
+      parcelas,
+      totalGeral,
+      itens,
+    })
+    baixarPdf(pdf, `consulta-${consulta.id}.pdf`)
   }
 
   function handleConcluir(total: number) {
@@ -704,7 +769,6 @@ export default function ConsultaForm() {
       open:         true,
       editId:       p.id,
       produtoId:    String(p.produtoId),
-      emitenteId:   String(p.emitenteId),
       quantidade:   String(p.quantidade),
       preco:        String(p.precoUnitario),
       loadingPreco: false,
@@ -729,13 +793,13 @@ export default function ConsultaForm() {
   }
 
   async function handleSalvarProduto() {
-    if (!produtoModal.produtoId)  { showMessage("error", "Selecione o produto");  return }
-    if (!produtoModal.emitenteId) { showMessage("error", "Selecione o emitente"); return }
+    if (!produtoModal.produtoId) { showMessage("error", "Selecione o produto"); return }
+    if (!emitenteId)             { showMessage("error", "Informe o emitente na consulta"); return }
     setProdutoModal(m => ({ ...m, saving: true }))
     try {
       const payload = {
         produtoId:   Number(produtoModal.produtoId),
-        emitenteId:  Number(produtoModal.emitenteId),
+        emitenteId:  Number(emitenteId),
         quantidade:  Number(produtoModal.quantidade),
         tipoAjuste:  produtoModal.tipoAjuste  || null,
         tipoCalculo: produtoModal.tipoAjuste  ? produtoModal.tipoCalculo : null,
@@ -1237,6 +1301,9 @@ export default function ConsultaForm() {
           <TFormActionsLeft>
             <TButton label="Voltar" variant="cancel" onClick={() => navigate("/clinica/consultas")} />
             <TButton label="Novo"   variant="new"    onClick={handleNovo} />
+            {isEdit && (
+              <TButton label="Gerar PDF" type="button" onClick={handleGerarPdf} />
+            )}
           </TFormActionsLeft>
           <TFormActionsRight>
             {isEdit && consulta?.status === "AGENDADA" && (
@@ -1459,22 +1526,7 @@ export default function ConsultaForm() {
             value        ={produtoModal.produtoId}
             onChange     ={(val) => {
               setProdutoModal(m => ({ ...m, produtoId: val }))
-              if (produtoModal.emitenteId) fetchPrecoEstoque(val, produtoModal.emitenteId)
-            }}
-          />
-          <TDbCombo
-            name         ="produto_emitenteId"
-            label        ="Emitente (origem do estoque) (*)"
-            url          ="/emitentes/select"
-            valueField   ="id"
-            displayField ={displayEmitente}
-            searchField  ="nome"
-            placeholder  ="Selecione o emitente..."
-            width        ="100%"
-            value        ={produtoModal.emitenteId}
-            onChange     ={(val) => {
-              setProdutoModal(m => ({ ...m, emitenteId: val }))
-              if (produtoModal.produtoId) fetchPrecoEstoque(produtoModal.produtoId, val)
+              if (emitenteId) fetchPrecoEstoque(val, emitenteId)
             }}
           />
           <div className="flex gap-4 flex-wrap">
@@ -1528,7 +1580,7 @@ export default function ConsultaForm() {
             )}
           </div>
           {/* Preview do total */}
-          {produtoModal.produtoId && produtoModal.emitenteId && (
+          {produtoModal.produtoId && (
             <div className="text-sm text-right text-(--text-muted)">
               Total estimado:{" "}
               <span className="font-semibold text-(--text-primary)">

@@ -349,6 +349,37 @@ public class EstoqueService {
         );
     }
 
+    public void entrarEstoquePorPedido(
+            Long       clienteId,
+            Long       emitenteId,
+            Long       produtoId,
+            BigDecimal quantidade,
+            String     motivo,
+            Usuario    usuario
+    ) {
+        Estoque estoque = estoqueRepository.findByEmitenteIdAndProdutoId(emitenteId, produtoId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Estoque não encontrado para o produto neste emitente"));
+
+        if (!estoque.getCliente().getId().equals(clienteId))
+            throw new NotFoundException("Estoque não pertence ao cliente");
+
+        if (Boolean.TRUE.equals(estoque.getBloqueado()))
+            throw new BadRequestException("Estoque bloqueado para este produto");
+
+        BigDecimal anterior  = estoque.getQuantidade();
+        BigDecimal posterior = anterior.add(quantidade);
+        estoque.setQuantidade(posterior);
+        estoqueRepository.save(estoque);
+
+        registrarMovimentacao(
+                estoque, estoque.getCliente(), usuario,
+                TipoMovimentacao.ENTRADA,
+                quantidade, anterior, posterior,
+                motivo, null
+        );
+    }
+
     private EstoqueMovimentacao registrarMovimentacao(
             Estoque              estoque,
             Cliente              cliente,

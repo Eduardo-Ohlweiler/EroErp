@@ -4,6 +4,7 @@ import axios                                             from "axios"
 import { api }                                           from "../../services/api"
 import { useMessage }                                    from "../../hooks/useMessage"
 import type { ErrorResponse }                            from "../../types/ErrorResponse"
+import type { GeraFinanceiro }                           from "../../types/Pedido"
 import { TPage }                                         from "../../components/tpage"
 import { TButton }                                       from "../../components/tbutton"
 import { TEntry }                                        from "../../components/tentry"
@@ -11,6 +12,13 @@ import { TDate }                                         from "../../components/
 import { TDbCombo }                                      from "../../components/tdbcombo"
 import { formatarDocumento }                             from "../../utils/pessoas"
 import { gerarPdfFaturamento, gerarPdfRecibo }           from "../../utils/geradorPdf"
+
+function baixarPdf(base64: string, nomeArquivo: string) {
+    const link = document.createElement("a")
+    link.href = `data:application/pdf;base64,${base64}`
+    link.download = nomeArquivo
+    link.click()
+}
 
 interface ParcelaFaturamento {
     _id:               string
@@ -39,6 +47,7 @@ interface FaturamentoState {
     emitenteId:        number | null
     emitenteNome:      string | null
     emitenteDocumento: string | null
+    geraFinanceiro:    GeraFinanceiro
     totalGeral:        number
     itens?:            ItemFaturamento[]
 }
@@ -74,7 +83,7 @@ function gerarParcelas(total: number, count: number, baseDate: string): ParcelaF
     })
 }
 
-export default function FaturamentoConsulta() {
+export default function FaturamentoPedido() {
     const { id }          = useParams<{ id: string }>()
     const navigate        = useNavigate()
     const location        = useLocation()
@@ -84,12 +93,16 @@ export default function FaturamentoConsulta() {
 
     useEffect(() => {
         if (!state?.pessoaId) {
-            navigate(`/clinica/consultas/${id}`, { replace: true })
+            navigate(`/pedidos/${id}`, { replace: true })
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    const [descricao, setDescricao] = useState(`Consulta #${id}`)
+    const isReceber = state?.geraFinanceiro === "CONTAS_RECEBER"
+    const endpoint  = isReceber ? "/financeiro/contas-receber" : "/financeiro/contas-pagar"
+    const titulo    = isReceber ? "conta a receber" : "conta a pagar"
+
+    const [descricao, setDescricao] = useState(`Pedido #${id}`)
     const [data,      setData]      = useState(todayStr())
     const [numParc,   setNumParc]   = useState("1")
     const [parcelas,  setParcelas]  = useState<ParcelaFaturamento[]>(() =>
@@ -120,21 +133,6 @@ export default function FaturamentoConsulta() {
         })
     }
 
-    function baixarPdf(base64: string, nomeArquivo: string) {
-        const link = document.createElement("a")
-        link.href = `data:application/pdf;base64,${base64}`
-        link.download = nomeArquivo
-        link.click()
-    }
-
-    async function enviarPdfWhatsapp(base64: string, fileName: string, caption: string) {
-        try {
-            await api.post(`/consultas/${id}/enviar-pdf`, { base64, fileName, caption })
-        } catch {
-            // falha silenciosa — PDF já foi baixado localmente
-        }
-    }
-
     async function handleSubmit() {
         if (!state) return
         if (parcelas.length === 0) {
@@ -150,7 +148,7 @@ export default function FaturamentoConsulta() {
                 showMessage("error", `Informe o valor da parcela ${p.numeroParcela}`)
                 return
             }
-            if (p.pago) {
+            if (isReceber && p.pago) {
                 if (!p.formaPagamentoId || !p.contaFinanceiraId) {
                     showMessage("error", `Parcela ${p.numeroParcela}: preencha forma de pagamento e conta financeira para marcar como paga`)
                     return
@@ -168,28 +166,35 @@ export default function FaturamentoConsulta() {
 
         setSaving(true)
         try {
-            const contaResp = await api.post("/financeiro/contas-receber", {
+            const contaResp = await api.post(endpoint, {
                 emitenteId: state.emitenteId,
                 pessoaId:   state.pessoaId,
                 data,
                 descricao:  descricao || null,
                 valorTotal: state.totalGeral,
+                observacao: null,
                 parcelas:   parcelas.map(p => ({
                     dataVencimento:    p.dataVencimento,
                     valor:             parseFloat(p.valor),
                     formaPagamentoId:  p.formaPagamentoId  ? Number(p.formaPagamentoId)  : null,
                     contaFinanceiraId: p.contaFinanceiraId ? Number(p.contaFinanceiraId) : null,
                     observacao:        null,
-                    dataPagamento:     p.pago ? p.dataPagamento         : null,
-                    valorPago:         p.pago ? parseFloat(p.valorPago) : null,
+                    // campos de pagamento só existem em contas a receber
+                    ...(isReceber ? {
+                        dataPagamento: p.pago ? p.dataPagamento         : null,
+                        valorPago:     p.pago ? parseFloat(p.valorPago) : null,
+                    } : {}),
                 })),
             })
 
-            await api.patch(`/consultas/${id}/faturar`, { contaReceberId: contaResp.data?.id ?? null })
+            await api.patch(`/pedidos/${id}/faturar`, { contaId: contaResp.data?.id ?? null })
 
-            // ── Gera e baixa PDF de faturamento ──────────────────────────────
-            const dadosFat = {
+            // ── Gera e baixa PDF de faturamento (sem envio por WhatsApp) ──────
+            const pdfFat = gerarPdfFaturamento({
                 consultaId:        id!,
+                referenciaLabel:   "Pedido",
+                pessoaLabel:       "Pessoa",
+                tituloDoc:         "FATURAMENTO DE PEDIDO",
                 emitenteNome:      state.emitenteNome      ?? "Emitente",
                 emitenteDocumento: state.emitenteDocumento ?? null,
                 pessoaNome:        state.pessoaNome,
@@ -199,17 +204,15 @@ export default function FaturamentoConsulta() {
                 parcelas,
                 totalGeral:        state.totalGeral,
                 itens:             state.itens,
-            }
-            const pdfFat     = gerarPdfFaturamento(dadosFat)
-            const nomeArqFat = `faturamento-consulta-${id}.pdf`
-            baixarPdf(pdfFat, nomeArqFat)
-            await enviarPdfWhatsapp(pdfFat, nomeArqFat, `Faturamento — Consulta #${id}`)
+            })
+            baixarPdf(pdfFat, `faturamento-pedido-${id}.pdf`)
 
             // ── Gera recibo para cada parcela já paga ─────────────────────────
-            const parcPagas = parcelas.filter(p => p.pago)
-            for (const p of parcPagas) {
+            for (const p of parcelas.filter(p => p.pago)) {
                 const pdfRec = gerarPdfRecibo({
                     consultaId:        id!,
+                    referenciaLabel:   "Pedido",
+                    pessoaLabel:       "Pessoa",
                     numeroParcela:     p.numeroParcela,
                     emitenteNome:      state.emitenteNome      ?? "Emitente",
                     emitenteDocumento: state.emitenteDocumento ?? null,
@@ -219,14 +222,12 @@ export default function FaturamentoConsulta() {
                     dataPagamento:     p.dataPagamento,
                     descricao,
                 })
-                const nomeArqRec = `recibo-consulta-${id}-parcela-${p.numeroParcela}.pdf`
-                baixarPdf(pdfRec, nomeArqRec)
-                await enviarPdfWhatsapp(pdfRec, nomeArqRec, `Recibo — Consulta #${id} — Parcela ${p.numeroParcela}`)
+                baixarPdf(pdfRec, `recibo-pedido-${id}-parcela-${p.numeroParcela}.pdf`)
             }
 
-            showMessage("success", "Consulta concluída e conta a receber criada!")
+            showMessage("success", `Pedido faturado e ${titulo} criada!`)
             window.history.replaceState({}, "")
-            navigate(`/clinica/consultas/${id}`)
+            navigate(`/pedidos/${id}`)
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 const d = err.response?.data as ErrorResponse
@@ -244,13 +245,13 @@ export default function FaturamentoConsulta() {
     const diff          = Math.round((totalParcelas - state.totalGeral) * 100) / 100
 
     return (
-        <TPage title={`Faturamento — Consulta #${id}`} breadcrumb={["Clínica", "Consultas", "Faturamento"]}>
+        <TPage title={`Faturamento — Pedido #${id}`} breadcrumb={["Pedidos", "Venda PDV", "Faturamento"]}>
 
             {/* Resumo */}
             <div className="mb-5 p-4 rounded-lg bg-(--surface-secondary) border border-(--border) flex flex-col gap-1.5 text-sm">
-                <span className="text-base font-bold text-(--accent) mb-0.5">Resumo da Consulta</span>
+                <span className="text-base font-bold text-(--accent) mb-0.5">Resumo do Pedido</span>
                 <span>
-                    <span className="text-(--text-muted)">Paciente: </span>
+                    <span className="text-(--text-muted)">Pessoa: </span>
                     <span className="font-medium">{state.pessoaNome}</span>
                     {state.pessoaDocumento && (
                         <span className="ml-1 text-xs opacity-60">({formatarDocumento(state.pessoaDocumento)})</span>
@@ -270,7 +271,7 @@ export default function FaturamentoConsulta() {
                     {fmtMoeda(state.totalGeral)}
                 </span>
                 <span className="text-xs text-(--text-muted) mt-0.5">
-                    ⚠ Ao concluir, o estoque dos produtos consumidos será baixado automaticamente.
+                    Será gerada uma {titulo} para este pedido.
                 </span>
             </div>
 
@@ -308,7 +309,7 @@ export default function FaturamentoConsulta() {
             {/* Alerta de diferença */}
             {parcelas.length > 0 && Math.abs(diff) > 0.005 && (
                 <div className="mb-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                    Soma das parcelas ({fmtMoeda(totalParcelas)}) difere do total da consulta ({fmtMoeda(state.totalGeral)})
+                    Soma das parcelas ({fmtMoeda(totalParcelas)}) difere do total do pedido ({fmtMoeda(state.totalGeral)})
                 </div>
             )}
 
@@ -370,22 +371,24 @@ export default function FaturamentoConsulta() {
                                 value       ={p.contaFinanceiraId}
                                 onChange    ={(val) => update(p._id, { contaFinanceiraId: val })}
                             />
-                            <div className="self-end mb-1">
-                                <button
-                                    type   ="button"
-                                    onClick={() => togglePago(p)}
-                                    className={`px-3 py-1.5 rounded text-sm font-semibold whitespace-nowrap transition-colors ${
-                                        p.pago
-                                            ? "bg-(--success) text-white"
-                                            : "border border-(--border) text-(--text-secondary) hover:bg-(--surface-secondary)"
-                                    }`}
-                                >
-                                    {p.pago ? "✓ Pago" : "Marcar Pago"}
-                                </button>
-                            </div>
+                            {isReceber && (
+                                <div className="self-end mb-1">
+                                    <button
+                                        type   ="button"
+                                        onClick={() => togglePago(p)}
+                                        className={`px-3 py-1.5 rounded text-sm font-semibold whitespace-nowrap transition-colors ${
+                                            p.pago
+                                                ? "bg-(--success) text-white"
+                                                : "border border-(--border) text-(--text-secondary) hover:bg-(--surface-secondary)"
+                                        }`}
+                                    >
+                                        {p.pago ? "✓ Pago" : "Marcar Pago"}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
-                        {p.pago && (
+                        {isReceber && p.pago && (
                             <div className="flex flex-wrap gap-3 px-3 pb-3 pt-2 border-t border-(--border) bg-(--surface-secondary)">
                                 <TDate
                                     key         ={`${p._id}-datapag`}
@@ -418,10 +421,10 @@ export default function FaturamentoConsulta() {
                     label  ="Cancelar"
                     variant="cancel"
                     type   ="button"
-                    onClick={() => navigate(`/clinica/consultas/${id}`)}
+                    onClick={() => navigate(`/pedidos/${id}`)}
                 />
                 <TButton
-                    label  ="Concluir e Faturar"
+                    label  ="Faturar"
                     variant="save"
                     type   ="button"
                     loading={saving}

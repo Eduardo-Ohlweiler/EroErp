@@ -314,7 +314,7 @@ public class ConsultaService {
     }
 
     @Transactional
-    public ConsultaResponseDto faturar(Long id) {
+    public ConsultaResponseDto faturar(Long id, Long contaReceberId) {
         Long     clienteId = securityUtils.getClienteIdLogado();
         Consulta consulta  = findById(id);
         Usuario  usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
@@ -331,6 +331,7 @@ public class ConsultaService {
             aplicarConclusao(consulta, clienteId, usuario);
 
         consulta.setFaturado(true);
+        if (contaReceberId != null) consulta.setContaReceberId(contaReceberId);
         consulta.setUpdatedBy(usuario);
 
         return buildResponse(consultaRepository.save(consulta));

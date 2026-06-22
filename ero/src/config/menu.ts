@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine, FaUtensils, FaPills, FaHeartbeat, FaAssistiveListeningSystems /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine, FaUtensils, FaPills, FaHeartbeat, FaAssistiveListeningSystems, FaShoppingCart /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -207,6 +207,38 @@ export const menu: MenuItem[] = [
           {
             label: "Configuração Consulta",
             path:  "/clinica/configuracao-consulta",
+            icon:  FaCog,
+            roles: ["SUPERADMIN", "ADMIN"],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Pedidos",
+    icon:  FaShoppingCart,
+    roles: ["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"],
+    children: [
+      {
+        label: "Venda PDV",
+        path:  "/pedidos",
+        icon:  FaShoppingCart,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"],
+      },
+      {
+        label: "Auxiliar Pedidos",
+        icon:  FaCogs,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"],
+        children: [
+          {
+            label: "Tipos de Pedido",
+            path:  "/pedidos/tipos",
+            icon:  FaCog,
+            roles: ["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"],
+          },
+          {
+            label: "Configuração Pedido",
+            path:  "/pedidos/configuracao",
             icon:  FaCog,
             roles: ["SUPERADMIN", "ADMIN"],
           },

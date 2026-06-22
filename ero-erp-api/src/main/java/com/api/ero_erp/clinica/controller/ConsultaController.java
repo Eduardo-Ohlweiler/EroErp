@@ -102,8 +102,11 @@ public class ConsultaController {
     @Operation(summary = "Marca a consulta como faturada (conclui antes, se ainda em atendimento)")
     @PatchMapping("/{id}/faturar")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CLINICA')")
-    public ResponseEntity<ConsultaResponseDto> faturar(@PathVariable Long id) {
-        return ResponseEntity.ok(consultaService.faturar(id));
+    public ResponseEntity<ConsultaResponseDto> faturar(
+            @PathVariable Long id,
+            @RequestBody(required = false) FaturarConsultaDto dto
+    ) {
+        return ResponseEntity.ok(consultaService.faturar(id, dto != null ? dto.contaReceberId() : null));
     }
 
     @Operation(summary = "Cancela a consulta")

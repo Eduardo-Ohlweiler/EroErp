@@ -1,10 +1,9 @@
-package com.api.ero_erp.clinica.entity;
+package com.api.ero_erp.pedido.entity;
 
 import com.api.ero_erp.baseentity.BaseEntity;
-import com.api.ero_erp.clinica.enums.StatusConsulta;
 import com.api.ero_erp.cliente.entity.Cliente;
-import com.api.ero_erp.compromisso.entity.Compromisso;
 import com.api.ero_erp.emitente.entity.Emitente;
+import com.api.ero_erp.pedido.enums.StatusPedido;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.usuario.entity.Usuario;
 import jakarta.persistence.*;
@@ -12,22 +11,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "consulta")
+@Table(name = "pedido")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Consulta extends BaseEntity {
+public class Pedido extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "compromisso_id")
-    private Compromisso compromisso;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "emitente_id", nullable = false)
@@ -37,31 +33,35 @@ public class Consulta extends BaseEntity {
     @JoinColumn(name = "pessoa_id", nullable = false)
     private Pessoa pessoa;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "tipo_pedido_id", nullable = false)
+    private TipoPedido tipoPedido;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vendedor_id")
+    private Usuario vendedor;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
-    private StatusConsulta status = StatusConsulta.AGENDADA;
+    @Column(name = "status", nullable = false, length = 20)
+    private StatusPedido status = StatusPedido.ABERTO;
+
+    @Column(name = "faturado", nullable = false)
+    private Boolean faturado = false;
+
+    @Column(name = "conta_id")
+    private Long contaId;
+
+    @Column(name = "data_pedido", nullable = false)
+    private LocalDateTime dataPedido;
+
+    @Column(name = "data_entrega")
+    private LocalDateTime dataEntrega;
 
     @Column(name = "observacao", columnDefinition = "TEXT")
     private String observacao;
 
     @Column(name = "motivo_cancelamento", length = 500)
     private String motivoCancelamento;
-
-    @Column(name = "faturado", nullable = false)
-    private Boolean faturado = false;
-
-    @Column(name = "conta_receber_id")
-    private Long contaReceberId;
-
-    @Column(name = "inicio", nullable = false)
-    private LocalDateTime inicio;
-
-    @Column(name = "fim", nullable = false)
-    private LocalDateTime fim;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "consulta_pai_id")
-    private Consulta consultaPai;
 
     @Column(name = "tipo_ajuste_geral", length = 10)
     private String tipoAjusteGeral;
@@ -70,11 +70,7 @@ public class Consulta extends BaseEntity {
     private String tipoCalculoGeral;
 
     @Column(name = "valor_ajuste_geral", precision = 15, scale = 2)
-    private java.math.BigDecimal valorAjusteGeral;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ficha_anamnese_id")
-    private FichaAnamnese fichaAnamnese;
+    private BigDecimal valorAjusteGeral;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
@@ -88,7 +84,7 @@ public class Consulta extends BaseEntity {
     public void prePersist() {
         super.prePersist();
         if (this.status == null)
-            this.status = StatusConsulta.AGENDADA;
+            this.status = StatusPedido.ABERTO;
         if (this.faturado == null)
             this.faturado = false;
     }

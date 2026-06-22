@@ -99,6 +99,8 @@ export interface DadosRecibo {
   valorPago:         string          // string numérica, ex: "1500.00"
   dataPagamento:     string          // YYYY-MM-DD
   descricao:         string
+  referenciaLabel?:  string          // rótulo da referência: "Consulta" (default) | "Pedido"
+  pessoaLabel?:      string          // rótulo da pessoa: "Paciente" (default) | "Pessoa"
 }
 
 export function gerarPdfRecibo(dados: DadosRecibo): string {
@@ -115,7 +117,7 @@ export function gerarPdfRecibo(dados: DadosRecibo): string {
   doc.setFont("helvetica", "normal")
   doc.setTextColor(120, 120, 120)
   doc.text(
-    `Ref.: Consulta #${dados.consultaId}  •  Parcela ${dados.numeroParcela}  •  Emitido em ${fmtData(dados.dataPagamento)}`,
+    `Ref.: ${dados.referenciaLabel ?? "Consulta"} #${dados.consultaId}  •  Parcela ${dados.numeroParcela}  •  Emitido em ${fmtData(dados.dataPagamento)}`,
     L / 2, y, { align: "center" }
   )
   doc.setTextColor(0, 0, 0)
@@ -148,7 +150,7 @@ export function gerarPdfRecibo(dados: DadosRecibo): string {
   y += 28
 
   // ── Texto jurídico ────────────────────────────────────────────────────────
-  const descr   = dados.descricao || `Consulta #${dados.consultaId}`
+  const descr   = dados.descricao || `${dados.referenciaLabel ?? "Consulta"} #${dados.consultaId}`
   const docPess = dados.pessoaDocumento
     ? `, CPF/CNPJ ${dados.pessoaDocumento},`
     : ","
@@ -173,7 +175,7 @@ export function gerarPdfRecibo(dados: DadosRecibo): string {
 
   doc.setFontSize(9)
   const pares: [string, string][] = [
-    ["Paciente:",    dados.pessoaNome + (dados.pessoaDocumento ? `  (${dados.pessoaDocumento})` : "")],
+    [`${dados.pessoaLabel ?? "Paciente"}:`,    dados.pessoaNome + (dados.pessoaDocumento ? `  (${dados.pessoaDocumento})` : "")],
     ["Emitente:",   dados.emitenteNome + (dados.emitenteDocumento ? `  (${dados.emitenteDocumento})` : "")],
     ["Data pag.:",  dataExt],
   ]
@@ -329,6 +331,16 @@ export interface DadosFaturamento {
     valorPago:      string
   }[]
   totalGeral: number
+  referenciaLabel?:  string   // rótulo da referência: "Consulta" (default) | "Pedido"
+  pessoaLabel?:      string   // rótulo da pessoa: "Paciente" (default) | "Pessoa"
+  tituloDoc?:        string   // título da faixa: "FATURAMENTO DE CONSULTA" (default)
+  itens?: {                   // detalhamento de produtos/serviços (opcional)
+    descricao:     string
+    tipo?:         string     // ex: "Serviço" | "Produto"
+    quantidade:    number
+    precoUnitario: number
+    total:         number
+  }[]
 }
 
 export function gerarPdfFaturamento(dados: DadosFaturamento): string {
@@ -337,13 +349,13 @@ export function gerarPdfFaturamento(dados: DadosFaturamento): string {
   const mg    = 18
   const inner = L - mg * 2
 
-  let y = faixaTopo(doc, dados.emitenteNome, "FATURAMENTO DE CONSULTA", [30, 65, 120])
+  let y = faixaTopo(doc, dados.emitenteNome, dados.tituloDoc ?? "FATURAMENTO DE CONSULTA", [30, 65, 120])
 
   // Referência
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.setTextColor(120, 120, 120)
-  doc.text(`Consulta Nº ${dados.consultaId}  •  Emitido em ${fmtData(dados.data)}`, L / 2, y, { align: "center" })
+  doc.text(`${dados.referenciaLabel ?? "Consulta"} Nº ${dados.consultaId}  •  Emitido em ${fmtData(dados.data)}`, L / 2, y, { align: "center" })
   doc.setTextColor(0, 0, 0)
   y += 10
 
@@ -351,7 +363,7 @@ export function gerarPdfFaturamento(dados: DadosFaturamento): string {
   doc.setFontSize(9)
   const blocos: [string, string][] = [
     ["Emitente:", dados.emitenteNome + (dados.emitenteDocumento ? `  (${dados.emitenteDocumento})` : "")],
-    ["Paciente:", dados.pessoaNome   + (dados.pessoaDocumento   ? `  (${dados.pessoaDocumento})`   : "")],
+    [`${dados.pessoaLabel ?? "Paciente"}:`, dados.pessoaNome   + (dados.pessoaDocumento   ? `  (${dados.pessoaDocumento})`   : "")],
   ]
   if (dados.descricao) blocos.push(["Descrição:", dados.descricao])
 
@@ -365,27 +377,70 @@ export function gerarPdfFaturamento(dados: DadosFaturamento): string {
 
   y += 4
 
-  // Tabela de parcelas
-  autoTable(doc, {
-    startY: y,
-    head: [["Nº", "Vencimento", "Valor", "Status", "Pagamento", "Valor Pago"]],
-    body: dados.parcelas.map(p => [
-      String(p.numeroParcela),
-      fmtData(p.dataVencimento),
-      fmtMoeda(p.valor),
-      p.pago ? "Pago" : "Em aberto",
-      p.pago ? fmtData(p.dataPagamento) : "—",
-      p.pago ? fmtMoeda(p.valorPago)    : "—",
-    ]),
-    foot: [["", "", "", "", "Total Geral", fmtMoeda(dados.totalGeral)]],
-    headStyles:   { fillColor: [30, 65, 120], fontSize: 9 },
-    footStyles:   { fillColor: [235, 240, 255], textColor: [0, 0, 0], fontStyle: "bold", fontSize: 9 },
-    bodyStyles:   { fontSize: 9 },
-    columnStyles: { 0: { halign: "center", cellWidth: 12 }, 2: { halign: "right" }, 5: { halign: "right" } },
-    margin: { left: mg, right: mg },
-  })
+  // Detalhamento dos produtos / serviços (antes das parcelas)
+  if (dados.itens && dados.itens.length > 0) {
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(30, 65, 120)
+    doc.text("Produtos e Serviços", mg, y)
+    doc.setTextColor(0, 0, 0)
+    y += 3
 
-  const afterTable: number = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 40
+    autoTable(doc, {
+      startY: y,
+      head: [["Item", "Tipo", "Qtd.", "Preço Unit.", "Total"]],
+      body: dados.itens.map(it => [
+        it.descricao,
+        it.tipo ?? "—",
+        it.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 3 }),
+        fmtMoeda(it.precoUnitario),
+        fmtMoeda(it.total),
+      ]),
+      headStyles:   { fillColor: [30, 65, 120], fontSize: 9 },
+      bodyStyles:   { fontSize: 9 },
+      columnStyles: { 1: { cellWidth: 28 }, 2: { halign: "right", cellWidth: 20 }, 3: { halign: "right" }, 4: { halign: "right" } },
+      margin: { left: mg, right: mg },
+    })
+    y = ((doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y) + 8
+  }
+
+  let afterTable: number
+
+  if (dados.parcelas.length > 0) {
+    // Tabela de parcelas (faturamento realizado)
+    autoTable(doc, {
+      startY: y,
+      head: [["Nº", "Vencimento", "Valor", "Status", "Pagamento", "Valor Pago"]],
+      body: dados.parcelas.map(p => [
+        String(p.numeroParcela),
+        fmtData(p.dataVencimento),
+        fmtMoeda(p.valor),
+        p.pago ? "Pago" : "Em aberto",
+        p.pago ? fmtData(p.dataPagamento) : "—",
+        p.pago ? fmtMoeda(p.valorPago)    : "—",
+      ]),
+      foot: [["", "", "", "", "Total Geral", fmtMoeda(dados.totalGeral)]],
+      headStyles:   { fillColor: [30, 65, 120], fontSize: 9 },
+      footStyles:   { fillColor: [235, 240, 255], textColor: [0, 0, 0], fontStyle: "bold", fontSize: 9 },
+      bodyStyles:   { fontSize: 9 },
+      columnStyles: { 0: { halign: "center", cellWidth: 12 }, 2: { halign: "right" }, 5: { halign: "right" } },
+      margin: { left: mg, right: mg },
+    })
+    afterTable = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 40
+  } else {
+    // Sem parcelas (não faturado): exibe apenas o total geral
+    doc.setDrawColor(210, 210, 210)
+    doc.setLineWidth(0.3)
+    doc.line(mg, y, L - mg, y)
+    y += 8
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(30, 65, 120)
+    doc.text("Total Geral", mg, y)
+    doc.text(fmtMoeda(dados.totalGeral), L - mg, y, { align: "right" })
+    doc.setTextColor(0, 0, 0)
+    afterTable = y
+  }
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "italic")

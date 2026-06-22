@@ -89,4 +89,9 @@
     <include file="082-insert-template-anamnese-otorrino.xml" relativeToChangelogFile="true" />
     <include file="083-create-configuracao-consulta.xml"     relativeToChangelogFile="true" />
     <include file="084-add-faturado-consulta.xml"           relativeToChangelogFile="true" />
+    <include file="085-insert-roles-pedido.xml"             relativeToChangelogFile="true" />
+    <include file="086-create-tipo-pedido.xml"              relativeToChangelogFile="true" />
+    <include file="087-create-pedido.xml"                   relativeToChangelogFile="true" />
+    <include file="088-create-configuracao-pedido.xml"      relativeToChangelogFile="true" />
+    <include file="089-add-conta-faturamento.xml"           relativeToChangelogFile="true" />
 </databaseChangeLog>

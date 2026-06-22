@@ -51,6 +51,7 @@ export interface ConsultaResponse {
     observacao:          string | null
     motivoCancelamento:  string | null
     faturado:            boolean
+    contaReceberId:      number | null
     consultaPaiId:       number | null
     servicos:            ConsultaServicoResponse[]
     produtos:            ConsultaProdutoResponse[]

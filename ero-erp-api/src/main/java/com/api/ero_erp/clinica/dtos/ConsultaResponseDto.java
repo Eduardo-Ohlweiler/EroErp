@@ -30,6 +30,7 @@ public record ConsultaResponseDto(
 
         // Faturamento
         boolean                       faturado,
+        Long                          contaReceberId,
 
         // Reconsulta
         Long                          consultaPaiId,

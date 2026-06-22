@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="087-create-pedido" author="eduardo">
+
+        <!-- ── PEDIDO ─────────────────────────────────────────────────────── -->
+        <createTable tableName="pedido">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="emitente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="tipo_pedido_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="vendedor_id" type="BIGINT"/>
+
+            <!-- ABERTO | CONCLUIDO | CANCELADO -->
+            <column name="status" type="VARCHAR(20)" defaultValue="ABERTO">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="faturado" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="data_pedido" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="data_entrega" type="TIMESTAMP"/>
+
+            <column name="observacao" type="TEXT"/>
+
+            <column name="motivo_cancelamento" type="VARCHAR(500)"/>
+
+            <column name="tipo_ajuste_geral" type="VARCHAR(10)"/>
+            <column name="tipo_calculo_geral" type="VARCHAR(10)"/>
+            <column name="valor_ajuste_geral" type="NUMERIC(15,2)"/>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="updated_by" type="BIGINT"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="pedido" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_pedido_cliente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pedido" baseColumnNames="emitente_id"
+                referencedTableName="emitente" referencedColumnNames="id"
+                constraintName="fk_pedido_emitente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pedido" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_pedido_pessoa"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pedido" baseColumnNames="tipo_pedido_id"
+                referencedTableName="tipo_pedido" referencedColumnNames="id"
+                constraintName="fk_pedido_tipo_pedido"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pedido" baseColumnNames="vendedor_id"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_pedido_vendedor"/>
+
+        <createIndex tableName="pedido" indexName="idx_pedido_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="pedido" indexName="idx_pedido_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <createIndex tableName="pedido" indexName="idx_pedido_emitente">
+            <column name="emitente_id"/>
+        </createIndex>
+
+        <createIndex tableName="pedido" indexName="idx_pedido_tipo_pedido">
+            <column name="tipo_pedido_id"/>
+        </createIndex>
+
+        <!-- ── PEDIDO_PRODUTO ────────────────────────────────────────────── -->
+        <createTable tableName="pedido_produto">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pedido_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="produto_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="emitente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="quantidade" type="NUMERIC(10,3)" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="preco_unitario" type="NUMERIC(15,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="tipo_ajuste" type="VARCHAR(10)"/>
+            <column name="tipo_calculo" type="VARCHAR(10)"/>
+            <column name="valor_ajuste" type="NUMERIC(15,2)"/>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="updated_by" type="BIGINT"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="pedido_produto" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_pedido_produto_cliente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pedido_produto" baseColumnNames="pedido_id"
+                referencedTableName="pedido" referencedColumnNames="id"
+                constraintName="fk_pedido_produto_pedido"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pedido_produto" baseColumnNames="produto_id"
+                referencedTableName="produto" referencedColumnNames="id"
+                constraintName="fk_pedido_produto_produto"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pedido_produto" baseColumnNames="emitente_id"
+                referencedTableName="emitente" referencedColumnNames="id"
+                constraintName="fk_pedido_produto_emitente"/>
+
+        <createIndex tableName="pedido_produto" indexName="idx_pedido_produto_pedido">
+            <column name="pedido_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
