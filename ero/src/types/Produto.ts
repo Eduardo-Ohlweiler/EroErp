@@ -114,6 +114,8 @@ export interface ProdutoResponse {
 
   substituicaoTributaria: boolean
 
+  quantidadeSessoesPadrao: number | null
+
   createdAt:              string
   updatedAt:              string | null
 }

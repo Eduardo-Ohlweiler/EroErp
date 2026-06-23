@@ -139,7 +139,7 @@ public class ProdutoService {
                 dto.tipoProdutoId(), dto.subgrupoId(), dto.categoriaId(), dto.marcaId(),
                 dto.unidadeMedidaId(), dto.fornecedorPessoaId(), clienteId,
                 dto.custo(), dto.ncmId(), dto.origemProdutoId(), dto.cestId(),
-                dto.substituicaoTributaria());
+                dto.substituicaoTributaria(), dto.quantidadeSessoesPadrao());
 
         return produtoMapper.toDto(produtoRepository.save(produto));
     }
@@ -157,7 +157,7 @@ public class ProdutoService {
                 dto.tipoProdutoId(), dto.subgrupoId(), dto.categoriaId(), dto.marcaId(),
                 dto.unidadeMedidaId(), dto.fornecedorPessoaId(), clienteId,
                 dto.custo(), dto.ncmId(), dto.origemProdutoId(), dto.cestId(),
-                dto.substituicaoTributaria());
+                dto.substituicaoTributaria(), dto.quantidadeSessoesPadrao());
 
         return produtoMapper.toDto(produtoRepository.save(produto));
     }
@@ -186,7 +186,8 @@ public class ProdutoService {
             Long    ncmId,
             Long    origemProdutoId,
             Long    cestId,
-            Boolean substituicaoTributaria
+            Boolean substituicaoTributaria,
+            Integer quantidadeSessoesPadrao
     ) {
         TipoProduto   tipoProduto   = tipoProdutoService.findById(tipoProdutoId);
         UnidadeMedida unidadeMedida = unidadeMedidaService.findById(unidadeMedidaId);
@@ -221,5 +222,6 @@ public class ProdutoService {
         produto.setOrigemProduto(origem);
         produto.setCest(cest);
         if (substituicaoTributaria != null) produto.setSubstituicaoTributaria(substituicaoTributaria);
+        produto.setQuantidadeSessoesPadrao(quantidadeSessoesPadrao);
     }
 }

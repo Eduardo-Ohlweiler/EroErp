@@ -58,6 +58,9 @@ import PlanoAlimentarForm                        from "../pages/clinica/PlanoAli
 import RefeicaoList                              from "../pages/clinica/RefeicaoList"
 import RefeicaoForm                              from "../pages/clinica/RefeicaoForm"
 import ConfiguracaoConsultaForm                  from "../pages/clinica/ConfiguracaoConsultaForm"
+import PacoteList                                 from "../pages/clinica/PacoteList"
+import ContratarPacote                            from "../pages/clinica/ContratarPacote"
+import PacoteForm                                 from "../pages/clinica/PacoteForm"
 import VendaPdvList                              from "../pages/pedidos/VendaPdvList"
 import PedidoForm                                from "../pages/pedidos/PedidoForm"
 import FaturamentoPedido                         from "../pages/pedidos/FaturamentoPedido"
@@ -241,6 +244,9 @@ export function Router() {
               <Route path="/clinica/consultas/nova"             element={<ConsultaForm />} />
               <Route path="/clinica/consultas/:id"              element={<ConsultaForm />} />
               <Route path="/clinica/consultas/:id/faturamento"  element={<FaturamentoConsulta />} />
+              <Route path="/clinica/pacotes"                    element={<PacoteList />} />
+              <Route path="/clinica/pacotes/contratar"          element={<ContratarPacote />} />
+              <Route path="/clinica/pacotes/:id"                element={<PacoteForm />} />
               <Route path="/dashboards/consultas"               element={<ConsultaDashboard />} />
               <Route path="/clinica/fichas-anamnese"            element={<FichaAnamneseList />} />
               <Route path="/clinica/fichas-anamnese/nova"       element={<FichaAnamneseForm />} />

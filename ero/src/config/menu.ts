@@ -188,6 +188,12 @@ export const menu: MenuItem[] = [
         roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"],
       },
       {
+        label: "Pacotes",
+        path:  "/clinica/pacotes",
+        icon:  FaBoxOpen,
+        roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"],
+      },
+      {
         label: "Fichas de Anamnese",
         path:  "/clinica/fichas-anamnese",
         icon:  FaClipboardList,

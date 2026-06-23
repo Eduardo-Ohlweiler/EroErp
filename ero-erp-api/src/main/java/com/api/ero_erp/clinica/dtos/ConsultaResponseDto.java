@@ -35,6 +35,12 @@ public record ConsultaResponseDto(
         // Reconsulta
         Long                          consultaPaiId,
 
+        // Pacote de sessões pré-pago (null fora de pacote)
+        Long                          pacoteId,
+        Integer                       sessao,
+        String                        pacoteNome,
+        Integer                       quantidadeSessoesPacote,
+
         // Sublistas
         List<ConsultaServicoResponseDto>  servicos,
         List<ConsultaProdutoResponseDto>  produtos,

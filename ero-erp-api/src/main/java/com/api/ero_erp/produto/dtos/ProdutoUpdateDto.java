@@ -66,5 +66,8 @@ public record ProdutoUpdateDto(
         Long cestId,
 
         @Schema(description = "Indica substituição tributária", example = "false")
-        Boolean substituicaoTributaria
+        Boolean substituicaoTributaria,
+
+        @Schema(description = "Número padrão de sessões para serviços de pacote (somente serviços)", example = "5")
+        Integer quantidadeSessoesPadrao
 ) {}

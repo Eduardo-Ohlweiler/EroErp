@@ -6,23 +6,11 @@ import { useMessage }                                    from "../../hooks/useMe
 import type { ErrorResponse }                            from "../../types/ErrorResponse"
 import { TPage }                                         from "../../components/tpage"
 import { TButton }                                       from "../../components/tbutton"
-import { TEntry }                                        from "../../components/tentry"
-import { TDate }                                         from "../../components/tdate"
-import { TDbCombo }                                      from "../../components/tdbcombo"
+import { ParcelasEditor }                                from "../../components/faturamento/ParcelasEditor"
+import { gerarParcelas, todayStr }                       from "../../components/faturamento/parcelas"
+import type { ParcelaFaturamento }                       from "../../components/faturamento/parcelas"
 import { formatarDocumento }                             from "../../utils/pessoas"
 import { gerarPdfFaturamento, gerarPdfRecibo }           from "../../utils/geradorPdf"
-
-interface ParcelaFaturamento {
-    _id:               string
-    numeroParcela:     number
-    dataVencimento:    string
-    valor:             string
-    formaPagamentoId:  string
-    contaFinanceiraId: string
-    pago:              boolean
-    dataPagamento:     string
-    valorPago:         string
-}
 
 interface ItemFaturamento {
     descricao:     string
@@ -41,37 +29,6 @@ interface FaturamentoState {
     emitenteDocumento: string | null
     totalGeral:        number
     itens?:            ItemFaturamento[]
-}
-
-function todayStr(): string {
-    return new Date().toISOString().slice(0, 10)
-}
-
-function addMonths(dateStr: string, months: number): string {
-    const d = new Date(dateStr + "T12:00:00")
-    d.setMonth(d.getMonth() + months)
-    return d.toISOString().slice(0, 10)
-}
-
-function gerarParcelas(total: number, count: number, baseDate: string): ParcelaFaturamento[] {
-    if (count < 1) return []
-    const cents     = Math.round(total * 100)
-    const baseValue = Math.floor(cents / count)
-    const remainder = cents - baseValue * count
-    return Array.from({ length: count }, (_, i) => {
-        const v = (baseValue + (i === count - 1 ? remainder : 0)) / 100
-        return {
-            _id:               crypto.randomUUID(),
-            numeroParcela:     i + 1,
-            dataVencimento:    addMonths(baseDate, i + 1),
-            valor:             v.toFixed(2),
-            formaPagamentoId:  "",
-            contaFinanceiraId: "",
-            pago:              false,
-            dataPagamento:     todayStr(),
-            valorPago:         v.toFixed(2),
-        }
-    })
 }
 
 export default function FaturamentoConsulta() {
@@ -98,27 +55,6 @@ export default function FaturamentoConsulta() {
     const [saving, setSaving] = useState(false)
 
     if (!state?.pessoaId) return null
-
-    function handleDistribuir() {
-        const n = parseInt(numParc, 10)
-        if (!n || n < 1 || n > 60) {
-            showMessage("error", "Informe um número de parcelas entre 1 e 60")
-            return
-        }
-        setParcelas(gerarParcelas(state!.totalGeral, n, data || todayStr()))
-    }
-
-    function update(_id: string, changes: Partial<ParcelaFaturamento>) {
-        setParcelas(prev => prev.map(p => p._id === _id ? { ...p, ...changes } : p))
-    }
-
-    function togglePago(p: ParcelaFaturamento) {
-        update(p._id, {
-            pago:          !p.pago,
-            dataPagamento: p.dataPagamento || todayStr(),
-            valorPago:     p.pago ? p.valorPago : p.valor,
-        })
-    }
 
     function baixarPdf(base64: string, nomeArquivo: string) {
         const link = document.createElement("a")
@@ -239,9 +175,7 @@ export default function FaturamentoConsulta() {
         }
     }
 
-    const fmtMoeda      = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-    const totalParcelas = parcelas.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
-    const diff          = Math.round((totalParcelas - state.totalGeral) * 100) / 100
+    const fmtMoeda = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
     return (
         <TPage title={`Faturamento — Consulta #${id}`} breadcrumb={["Clínica", "Consultas", "Faturamento"]}>
@@ -274,146 +208,22 @@ export default function FaturamentoConsulta() {
                 </span>
             </div>
 
-            {/* Configuração da conta */}
-            <div className="mb-4 flex flex-wrap gap-3 items-end">
-                <TEntry
-                    name        ="descricao"
-                    label       ="Descrição"
-                    width       ="320px"
-                    defaultValue={descricao}
-                    onChange    ={setDescricao}
-                />
-                <TDate
-                    name        ="data"
-                    label       ="Data"
-                    width       ="160px"
-                    defaultValue={data}
-                    onChange    ={setData}
-                />
-                <TEntry
-                    name        ="numParcelas"
-                    label       ="Nº Parcelas"
-                    width       ="110px"
-                    defaultValue={numParc}
-                    onChange    ={setNumParc}
-                />
-                <TButton
-                    label  ="Distribuir"
-                    variant="save"
-                    type   ="button"
-                    onClick={handleDistribuir}
-                />
-            </div>
-
-            {/* Alerta de diferença */}
-            {parcelas.length > 0 && Math.abs(diff) > 0.005 && (
-                <div className="mb-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                    Soma das parcelas ({fmtMoeda(totalParcelas)}) difere do total da consulta ({fmtMoeda(state.totalGeral)})
-                </div>
-            )}
-
-            {/* Lista de parcelas */}
-            <div className="flex flex-col gap-3 mb-6">
-                {parcelas.length === 0 && (
-                    <div className="text-sm text-(--text-muted) text-center py-6 rounded-lg border border-dashed border-(--border)">
-                        Defina o número de parcelas e clique em <strong>Distribuir</strong>
-                    </div>
-                )}
-                {parcelas.map(p => (
-                    <div key={p._id} className="rounded-lg border border-(--border) bg-(--surface)">
-                        <div className="flex flex-wrap items-end gap-3 p-3">
-                            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-(--surface-secondary) text-xs font-bold text-(--text-secondary) mb-1 shrink-0 self-end">
-                                {p.numeroParcela}
-                            </div>
-                            <TDate
-                                key         ={`${p._id}-venc`}
-                                name        ={`venc${p.numeroParcela}`}
-                                label       ="Vencimento"
-                                required
-                                width       ="150px"
-                                defaultValue={p.dataVencimento}
-                                onChange    ={(val) => update(p._id, { dataVencimento: val })}
-                            />
-                            <TEntry
-                                key         ={`${p._id}-valor`}
-                                name        ={`valor${p.numeroParcela}`}
-                                label       ="Valor"
-                                mask        ="moeda"
-                                required
-                                width       ="140px"
-                                defaultValue={p.valor}
-                                onChange    ={(val) => update(p._id, { valor: val })}
-                            />
-                            <TDbCombo
-                                name        ={`forma${p.numeroParcela}`}
-                                label       ="Forma de Pagamento"
-                                url         ="/financeiro/formas-pagamento/select"
-                                valueField  ="id"
-                                displayField="nome"
-                                width       ="200px"
-                                value       ={p.formaPagamentoId}
-                                onChange    ={(val, item) => {
-                                    const conta = item?.contaFinanceira as { id?: number } | undefined
-                                    update(p._id, {
-                                        formaPagamentoId: val,
-                                        ...(conta?.id != null ? { contaFinanceiraId: String(conta.id) } : {}),
-                                    })
-                                }}
-                            />
-                            <TDbCombo
-                                name        ={`conta${p.numeroParcela}`}
-                                label       ="Conta Financeira"
-                                url         ="/financeiro/contas/select"
-                                valueField  ="id"
-                                displayField="nome"
-                                width       ="200px"
-                                value       ={p.contaFinanceiraId}
-                                onChange    ={(val) => update(p._id, { contaFinanceiraId: val })}
-                            />
-                            <div className="self-end mb-1">
-                                <button
-                                    type   ="button"
-                                    onClick={() => togglePago(p)}
-                                    className={`px-3 py-1.5 rounded text-sm font-semibold whitespace-nowrap transition-colors ${
-                                        p.pago
-                                            ? "bg-(--success) text-white"
-                                            : "border border-(--border) text-(--text-secondary) hover:bg-(--surface-secondary)"
-                                    }`}
-                                >
-                                    {p.pago ? "✓ Pago" : "Marcar Pago"}
-                                </button>
-                            </div>
-                        </div>
-
-                        {p.pago && (
-                            <div className="flex flex-wrap gap-3 px-3 pb-3 pt-2 border-t border-(--border) bg-(--surface-secondary)">
-                                <TDate
-                                    key         ={`${p._id}-datapag`}
-                                    name        ={`datapag${p.numeroParcela}`}
-                                    label       ="Data de Pagamento"
-                                    required
-                                    width       ="160px"
-                                    defaultValue={p.dataPagamento}
-                                    onChange    ={(val) => update(p._id, { dataPagamento: val })}
-                                />
-                                <TEntry
-                                    key         ={`${p._id}-valorpago`}
-                                    name        ={`valorpago${p.numeroParcela}`}
-                                    label       ="Valor Pago"
-                                    mask        ="moeda"
-                                    required
-                                    width       ="140px"
-                                    defaultValue={p.valorPago}
-                                    onChange    ={(val) => update(p._id, { valorPago: val })}
-                                />
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
+            {/* Editor de parcelas (compartilhado) */}
+            <ParcelasEditor
+                total            ={state.totalGeral}
+                value            ={parcelas}
+                onChange         ={setParcelas}
+                data             ={data}
+                onDataChange     ={setData}
+                numParc          ={numParc}
+                onNumParcChange  ={setNumParc}
+                descricao        ={descricao}
+                onDescricaoChange={setDescricao}
+                onValidationError={(msg) => showMessage("error", msg)}
+            />
 
             {/* Rodapé */}
-            <div className="flex justify-between items-center pt-2 border-t border-(--border)">
+            <div className="flex justify-between items-center pt-2 mt-4 border-t border-(--border)">
                 <TButton
                     label  ="Cancelar"
                     variant="cancel"

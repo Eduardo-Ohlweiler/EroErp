@@ -50,6 +50,8 @@ public class ProdutoMapper {
 
                 p.getSubstituicaoTributaria(),
 
+                p.getQuantidadeSessoesPadrao(),
+
                 p.getCreatedAt(),
                 p.getUpdatedAt()
         );

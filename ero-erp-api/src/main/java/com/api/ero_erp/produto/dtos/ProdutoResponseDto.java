@@ -45,6 +45,8 @@ public record ProdutoResponseDto(
 
         Boolean       substituicaoTributaria,
 
+        Integer       quantidadeSessoesPadrao,
+
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {}

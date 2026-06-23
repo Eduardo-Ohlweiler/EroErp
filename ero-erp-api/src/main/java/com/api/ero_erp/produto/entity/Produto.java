@@ -90,6 +90,9 @@ public class Produto extends BaseEntity {
     @Column(name = "substituicao_tributaria", nullable = false)
     private Boolean substituicaoTributaria;
 
+    @Column(name = "quantidade_sessoes_padrao")
+    private Integer quantidadeSessoesPadrao;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private Usuario createdBy;

@@ -63,6 +63,13 @@ public class Consulta extends BaseEntity {
     @JoinColumn(name = "consulta_pai_id")
     private Consulta consultaPai;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pacote_id")
+    private PacoteContratado pacote;
+
+    @Column(name = "sessao")
+    private Integer sessao;
+
     @Column(name = "tipo_ajuste_geral", length = 10)
     private String tipoAjusteGeral;
 

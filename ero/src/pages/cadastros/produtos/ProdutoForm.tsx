@@ -57,6 +57,10 @@ export default function ProdutoForm() {
   const [custo,                 setCusto]                 = useState("")
   const [bloqueado,             setBloqueado]             = useState("false")
   const [substituicaoTributaria,setSubstituicaoTributaria]= useState("false")
+  const [tipoClassificacao,     setTipoClassificacao]     = useState("")
+  const [quantidadeSessoesPadrao, setQuantidadeSessoesPadrao] = useState("")
+
+  const isServico = tipoClassificacao === "SERVICO"
 
   useEffect(() => {
     if (isEdit) loadProduto()
@@ -77,8 +81,14 @@ export default function ProdutoForm() {
       setCusto(p.custo != null ? String(p.custo) : "")
       setBloqueado(p.bloqueado ? "true" : "false")
       setSubstituicaoTributaria(p.substituicaoTributaria ? "true" : "false")
+      setQuantidadeSessoesPadrao(p.quantidadeSessoesPadrao != null ? String(p.quantidadeSessoesPadrao) : "")
 
       setTipoProdutoId(String(p.tipoProdutoId))
+      // Carrega a classificação do tipo de produto (para exibir campo de sessões só em SERVICO)
+      try {
+        const tp = await api.get(`/tipos-produto/${p.tipoProdutoId}`)
+        setTipoClassificacao(String(tp.data?.classificacao ?? ""))
+      } catch { /* mantém vazio */ }
       setUnidadeMedidaId(String(p.unidadeMedidaId))
       if (p.subgrupoId)         setSubgrupoId(String(p.subgrupoId))
       if (p.categoriaId)        setCategoriaId(String(p.categoriaId))
@@ -126,6 +136,8 @@ export default function ProdutoForm() {
         origemProdutoId:       origemProdutoId    ? Number(origemProdutoId)    : null,
         cestId:                cestId             ? Number(cestId)             : null,
         substituicaoTributaria: formData.substituicaoTributaria === "true",
+        quantidadeSessoesPadrao: isServico && formData.quantidadeSessoesPadrao
+                                   ? Number(formData.quantidadeSessoesPadrao) : null,
       }
 
       if (isEdit) {
@@ -171,7 +183,10 @@ export default function ProdutoForm() {
               required
               width        ="300px"
               value        ={tipoProdutoId}
-              onChange     ={(val) => setTipoProdutoId(val)}
+              onChange     ={(val, item) => {
+                setTipoProdutoId(val)
+                setTipoClassificacao(item ? String(item.classificacao ?? "") : "")
+              }}
             />
           </TCol>
         </TRow>
@@ -306,6 +321,24 @@ export default function ProdutoForm() {
             />
           </TCol>
         </TRow>
+
+        {/* Sessões padrão — apenas para serviços (pré-preenche pacotes de sessões) */}
+        {isServico && (
+          <TRow>
+            <TCol>
+              <TEntry
+                key          ={`qsp-${quantidadeSessoesPadrao}`}
+                name         ="quantidadeSessoesPadrao"
+                label        ="Sessões padrão (pacotes)"
+                mask         ="numero"
+                hint         ="Nº de sessões pré-preenchido ao contratar um pacote deste serviço. Deixe vazio se variável."
+                defaultValue ={quantidadeSessoesPadrao}
+                onChange     ={setQuantidadeSessoesPadrao}
+                width        ="220px"
+              />
+            </TCol>
+          </TRow>
+        )}
         <TRow>
           <TCol>
             <TDbCombo

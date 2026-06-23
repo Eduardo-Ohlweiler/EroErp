@@ -620,6 +620,11 @@ export default function ConsultaForm() {
   }
 
   function handleConcluir(total: number) {
+    // Sessão de pacote pré-pago: nunca refatura — apenas conclui.
+    if (consulta?.pacoteId != null) {
+      concluirSemFaturar()
+      return
+    }
     if (faturarConfig === "NAO") {
       concluirSemFaturar()
       return
@@ -874,6 +879,19 @@ export default function ConsultaForm() {
             <span className="ml-2 font-normal">— Motivo: {consulta.motivoCancelamento}</span>
           )}
         </div>
+      )}
+
+      {/* Banner de pacote (sessão pré-paga) */}
+      {consulta?.pacoteId != null && (
+        <button
+          type     ="button"
+          onClick  ={() => navigate(`/clinica/pacotes/${consulta.pacoteId}`)}
+          className ="mb-4 w-full text-left px-4 py-2 rounded-lg border border-(--accent) bg-(--accent-light)
+                      text-sm font-medium text-(--accent) hover:opacity-90 transition"
+        >
+          Sessão {consulta.sessao}/{consulta.quantidadeSessoesPacote} — Pacote: {consulta.pacoteNome} — Pré-pago
+          <span className="ml-2 font-normal opacity-70">(clique para abrir o pacote)</span>
+        </button>
       )}
 
       <TForm key={formKey} onSubmit={handleSubmit}>

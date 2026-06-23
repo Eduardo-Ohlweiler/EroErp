@@ -53,6 +53,10 @@ export interface ConsultaResponse {
     faturado:            boolean
     contaReceberId:      number | null
     consultaPaiId:       number | null
+    pacoteId:                number | null
+    sessao:                  number | null
+    pacoteNome:              string | null
+    quantidadeSessoesPacote: number | null
     servicos:            ConsultaServicoResponse[]
     produtos:            ConsultaProdutoResponse[]
     tipoAjusteGeral:     TipoAjuste | null

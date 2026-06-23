@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="094-create-pacote-contratado" author="eduardo">
+
+        <createTable tableName="pacote_contratado">
+
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="emitente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="pessoa_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="produto_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="nome" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="quantidade_sessoes" type="INT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="valor_total" type="NUMERIC(15,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="conta_receber_id" type="BIGINT"/>
+
+            <!-- ATIVO | CONCLUIDO | CANCELADO -->
+            <column name="status" type="VARCHAR(20)" defaultValue="ATIVO">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="observacao" type="TEXT"/>
+
+            <column name="motivo_cancelamento" type="VARCHAR(500)"/>
+
+            <column name="created_by" type="BIGINT"/>
+            <column name="updated_by" type="BIGINT"/>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="pacote_contratado" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_pacote_contratado_cliente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pacote_contratado" baseColumnNames="emitente_id"
+                referencedTableName="emitente" referencedColumnNames="id"
+                constraintName="fk_pacote_contratado_emitente"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pacote_contratado" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_pacote_contratado_pessoa"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pacote_contratado" baseColumnNames="produto_id"
+                referencedTableName="produto" referencedColumnNames="id"
+                constraintName="fk_pacote_contratado_produto"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pacote_contratado" baseColumnNames="created_by"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_pacote_contratado_created_by"/>
+
+        <addForeignKeyConstraint
+                baseTableName="pacote_contratado" baseColumnNames="updated_by"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_pacote_contratado_updated_by"/>
+
+        <createIndex tableName="pacote_contratado" indexName="idx_pacote_contratado_cliente">
+            <column name="cliente_id"/>
+        </createIndex>
+
+        <createIndex tableName="pacote_contratado" indexName="idx_pacote_contratado_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

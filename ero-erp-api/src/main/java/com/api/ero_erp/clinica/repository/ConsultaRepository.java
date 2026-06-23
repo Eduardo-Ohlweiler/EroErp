@@ -112,4 +112,20 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
     boolean existsByCompromissoId(Long compromissoId);
 
     List<Consulta> findByFichaAnamneseId(Long fichaAnamneseId);
+
+    // ── Pacotes de sessões ──────────────────────────────────────────────────────
+    @Query("""
+            SELECT c FROM Consulta c
+            JOIN FETCH c.emitente e JOIN FETCH e.pessoa
+            JOIN FETCH c.pessoa
+            WHERE c.pacote.id = :pacoteId
+            AND c.cliente.id = :clienteId
+            ORDER BY c.sessao ASC
+            """)
+    List<Consulta> findByPacote_IdAndClienteIdOrderBySessaoAsc(
+            @Param("pacoteId")  Long pacoteId,
+            @Param("clienteId") Long clienteId
+    );
+
+    long countByPacote_IdAndStatus(Long pacoteId, StatusConsulta status);
 }
