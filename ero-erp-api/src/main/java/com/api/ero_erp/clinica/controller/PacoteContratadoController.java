@@ -2,7 +2,9 @@ package com.api.ero_erp.clinica.controller;
 
 import com.api.ero_erp.clinica.dtos.CancelarPacoteDto;
 import com.api.ero_erp.clinica.dtos.ContratarPacoteDto;
+import com.api.ero_erp.clinica.dtos.EnviarPdfConsultaDto;
 import com.api.ero_erp.clinica.dtos.PacoteContratadoResponseDto;
+import com.api.ero_erp.clinica.dtos.RemarcarSessaoDto;
 import com.api.ero_erp.clinica.enums.StatusPacote;
 import com.api.ero_erp.clinica.service.PacoteContratadoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -73,5 +75,27 @@ public class PacoteContratadoController {
     ) {
         return ResponseEntity.ok(
                 pacoteService.cancelarSessao(pacoteId, consultaId, dto != null ? dto.motivo() : null));
+    }
+
+    @Operation(summary = "Remarca a data/horário de uma sessão do pacote (move consulta + compromisso)")
+    @PatchMapping("/{pacoteId}/sessoes/{consultaId}/remarcar")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CLINICA')")
+    public ResponseEntity<PacoteContratadoResponseDto> remarcarSessao(
+            @PathVariable Long pacoteId,
+            @PathVariable Long consultaId,
+            @Valid @RequestBody RemarcarSessaoDto dto
+    ) {
+        return ResponseEntity.ok(pacoteService.remarcarSessao(pacoteId, consultaId, dto));
+    }
+
+    @Operation(summary = "Envia um PDF (base64) do resumo do pacote para o paciente via WhatsApp")
+    @PostMapping("/{id}/enviar-pdf")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CLINICA')")
+    public ResponseEntity<Void> enviarPdfWhatsapp(
+            @PathVariable Long id,
+            @RequestBody EnviarPdfConsultaDto dto
+    ) {
+        pacoteService.enviarPdfWhatsapp(id, dto);
+        return ResponseEntity.noContent().build();
     }
 }

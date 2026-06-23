@@ -6,11 +6,14 @@ import { useMessage }                            from "../../hooks/useMessage"
 import type { ErrorResponse }                    from "../../types/ErrorResponse"
 import type { PacoteContratadoResponse, StatusPacote, SessaoResumo } from "../../types/Pacote"
 import type { StatusConsulta }                   from "../../types/Clinica"
+import type { ContaReceberResponse, StatusConta } from "../../types/ContaReceber"
 import { TPage }                                 from "../../components/tpage"
 import { TPanel }                                from "../../components/tpanel"
 import { TButton }                               from "../../components/tbutton"
 import { TWindow }                               from "../../components/twindow"
+import { TDateTime }                             from "../../components/tdatetime"
 import { formatarDocumento }                     from "../../utils/pessoas"
+import { gerarPdfPacote }                        from "../../utils/geradorPdf"
 
 const STATUS_PACOTE_LABEL: Record<StatusPacote, string> = {
   ATIVO:     "Ativo",
@@ -36,6 +39,19 @@ const STATUS_CONSULTA_COLOR: Record<StatusConsulta, string> = {
   CANCELADA:      "bg-red-500",
 }
 
+const STATUS_CONTA_LABEL: Record<StatusConta, string> = {
+  ABERTO:            "Em aberto",
+  PARCIALMENTE_PAGO: "Parc. Pago",
+  PAGO:              "Pago",
+  CANCELADO:         "Cancelado",
+}
+
+function todayStr() {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 function fmtMoeda(v: number) {
   return (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
@@ -45,6 +61,15 @@ function fmtDT(iso: string) {
   const pad = (n: number) => String(n).padStart(2, "0")
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
+// ISO ("2026-06-25T08:00:00") -> formato do TDateTime ("2026-06-25T08:00")
+function toInputDT(iso: string) {
+  return iso ? iso.slice(0, 16) : ""
+}
+// formato do TDateTime -> formato esperado pela API ("...:00")
+function toApiDT(dt: string) {
+  if (!dt) return ""
+  return dt.length === 16 ? `${dt}:00` : dt
+}
 
 export default function PacoteForm() {
   const { id }          = useParams<{ id: string }>()
@@ -53,6 +78,8 @@ export default function PacoteForm() {
 
   const [pacote,  setPacote]  = useState<PacoteContratadoResponse | null>(null)
   const [loading, setLoading] = useState(false)
+  const [gerandoPdf, setGerandoPdf] = useState(false)
+  const [enviandoWpp, setEnviandoWpp] = useState(false)
 
   // Modal cancelar pacote
   const [cancelPacoteOpen, setCancelPacoteOpen] = useState(false)
@@ -64,6 +91,13 @@ export default function PacoteForm() {
   const [sessaoAlvo,       setSessaoAlvo]       = useState<SessaoResumo | null>(null)
   const [motivoSessao,     setMotivoSessao]     = useState("")
   const [cancelandoSessao, setCancelandoSessao] = useState(false)
+
+  // Modal remarcar sessão (alterar data/horário)
+  const [remarcarOpen,   setRemarcarOpen]   = useState(false)
+  const [sessaoRemarcar, setSessaoRemarcar] = useState<SessaoResumo | null>(null)
+  const [remarcarInicio, setRemarcarInicio] = useState("")
+  const [remarcarFim,    setRemarcarFim]    = useState("")
+  const [remarcando,     setRemarcando]     = useState(false)
 
   useEffect(() => {
     if (id) load(id)
@@ -104,6 +138,101 @@ export default function PacoteForm() {
     }
   }
 
+  function baixarPdf(base64: string, nomeArquivo: string) {
+    const link = document.createElement("a")
+    link.href = `data:application/pdf;base64,${base64}`
+    link.download = nomeArquivo
+    link.click()
+  }
+
+  // Monta o PDF do pacote (busca as parcelas da conta a receber, se houver) e retorna o base64.
+  async function montarBase64Pdf(): Promise<string> {
+    if (!pacote) throw new Error("Pacote não carregado")
+
+    let financeiro: NonNullable<Parameters<typeof gerarPdfPacote>[0]["financeiro"]> | null = null
+    if (pacote.contaReceberId != null) {
+      try {
+        const res = await api.get<ContaReceberResponse>(`/financeiro/contas-receber/${pacote.contaReceberId}`)
+        const conta = res.data
+        financeiro = {
+          parcelas: conta.parcelas.map(p => ({
+            numeroParcela:  p.numeroParcela,
+            dataVencimento: p.dataVencimento,
+            valor:          Number(p.valor),
+            statusLabel:    STATUS_CONTA_LABEL[p.status] ?? "Em aberto",
+            dataPagamento:  p.dataPagamento,
+            valorPago:      p.valorPago != null ? Number(p.valorPago) : null,
+          })),
+          totalGeral: conta.valorTotal,
+        }
+      } catch {
+        financeiro = null
+      }
+    }
+
+    return gerarPdfPacote({
+      pacoteId:          pacote.id,
+      nome:              pacote.nome,
+      statusLabel:       STATUS_PACOTE_LABEL[pacote.status],
+      emitenteNome:      pacote.emitenteNome,
+      pessoaNome:        pacote.pessoaNome,
+      pessoaDocumento:   pacote.pessoaDocumento,
+      produtoNome:       pacote.produtoNome,
+      valorTotal:        pacote.valorTotal,
+      quantidadeSessoes: pacote.quantidadeSessoes,
+      sessoesUsadas:     pacote.sessoesUsadas,
+      sessoesRestantes:  pacote.sessoesRestantes,
+      dataEmissao:       todayStr(),
+      observacao:        pacote.observacao,
+      sessoes: pacote.sessoes.map(s => ({
+        sessao:      s.sessao,
+        statusLabel: STATUS_CONSULTA_LABEL[s.status],
+        inicio:      s.inicio,
+        fim:         s.fim,
+      })),
+      financeiro,
+    })
+  }
+
+  // Apenas gera e baixa o PDF (não envia).
+  async function handleGerarPdf() {
+    if (!pacote) return
+    setGerandoPdf(true)
+    try {
+      const base64 = await montarBase64Pdf()
+      baixarPdf(base64, `pacote-${pacote.id}.pdf`)
+      showMessage("success", "PDF gerado com sucesso!")
+    } catch {
+      showMessage("error", "Erro ao gerar PDF do pacote")
+    } finally {
+      setGerandoPdf(false)
+    }
+  }
+
+  // Gera e envia o PDF ao paciente por WhatsApp (ação explícita).
+  async function handleEnviarWhatsapp() {
+    if (!id || !pacote) return
+    setEnviandoWpp(true)
+    try {
+      const base64 = await montarBase64Pdf()
+      await api.post(`/pacotes/${id}/enviar-pdf`, {
+        base64,
+        fileName: `pacote-${pacote.id}.pdf`,
+        caption:  `Resumo do Pacote — ${pacote.nome}`,
+      })
+      showMessage("success", "PDF enviado por WhatsApp!")
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const d = err.response?.data as ErrorResponse
+        showMessage("error", d?.erro ?? "Erro ao enviar por WhatsApp")
+      } else {
+        showMessage("error", "Erro ao enviar por WhatsApp")
+      }
+    } finally {
+      setEnviandoWpp(false)
+    }
+  }
+
   function openCancelarSessao(s: SessaoResumo) {
     setSessaoAlvo(s)
     setMotivoSessao("")
@@ -132,6 +261,45 @@ export default function PacoteForm() {
       }
     } finally {
       setCancelandoSessao(false)
+    }
+  }
+
+  function openRemarcar(s: SessaoResumo) {
+    setSessaoRemarcar(s)
+    setRemarcarInicio(toInputDT(s.inicio))
+    setRemarcarFim(toInputDT(s.fim))
+    setRemarcarOpen(true)
+  }
+
+  async function handleRemarcar() {
+    if (!id || !sessaoRemarcar) return
+    if (!remarcarInicio || !remarcarFim) {
+      showMessage("error", "Informe início e fim")
+      return
+    }
+    if (new Date(toApiDT(remarcarFim)) <= new Date(toApiDT(remarcarInicio))) {
+      showMessage("error", "O fim deve ser posterior ao início")
+      return
+    }
+    setRemarcando(true)
+    try {
+      const res = await api.patch<PacoteContratadoResponse>(
+        `/pacotes/${id}/sessoes/${sessaoRemarcar.consultaId}/remarcar`,
+        { inicio: toApiDT(remarcarInicio), fim: toApiDT(remarcarFim) },
+      )
+      setPacote(res.data)
+      showMessage("success", "Sessão remarcada!")
+      setRemarcarOpen(false)
+      setSessaoRemarcar(null)
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const d = err.response?.data as ErrorResponse
+        showMessage("error", d?.erro ?? "Erro ao remarcar sessão")
+      } else {
+        showMessage("error", "Erro inesperado")
+      }
+    } finally {
+      setRemarcando(false)
     }
   }
 
@@ -235,6 +403,14 @@ export default function PacoteForm() {
                   />
                   {podeCancelarSessao && (
                     <TButton
+                      label  ="Alterar data"
+                      variant="new"
+                      type   ="button"
+                      onClick={() => openRemarcar(s)}
+                    />
+                  )}
+                  {podeCancelarSessao && (
+                    <TButton
                       label  ="Cancelar Sessão"
                       variant="cancel"
                       type   ="button"
@@ -250,7 +426,13 @@ export default function PacoteForm() {
 
       {/* Rodapé */}
       <div className="flex flex-wrap justify-between items-center gap-3 pt-2 border-t border-(--border)">
-        <TButton label="Voltar" variant="cancel" type="button" onClick={() => navigate("/clinica/pacotes")} />
+        <div className="flex flex-wrap gap-2">
+          <TButton label="Voltar" variant="cancel" type="button" onClick={() => navigate("/clinica/pacotes")} />
+          <TButton label="Gerar PDF" variant="secondary" type="button"
+            loading={gerandoPdf} onClick={handleGerarPdf} />
+          <TButton label="Enviar por WhatsApp" variant="save" type="button"
+            loading={enviandoWpp} onClick={handleEnviarWhatsapp} />
+        </div>
         {podeCancelarPacote && (
           <TButton label="Cancelar Pacote" variant="danger" type="button"
             onClick={() => { setMotivoPacote(""); setCancelPacoteOpen(true) }} />
@@ -320,6 +502,47 @@ export default function PacoteForm() {
                         bg-(--bg-surface) text-(--text-primary) resize-none
                         focus:outline-none focus:ring-1 focus:ring-(--accent) w-full"
           />
+        </div>
+      </TWindow>
+
+      {/* Modal: remarcar sessão (alterar data/horário) */}
+      <TWindow
+        title   ={sessaoRemarcar ? `Alterar data — Sessão ${sessaoRemarcar.sessao}` : "Alterar data"}
+        open    ={remarcarOpen}
+        onClose ={() => { setRemarcarOpen(false); setSessaoRemarcar(null) }}
+        width   ="480px"
+        actions ={
+          <>
+            <TButton label="Voltar" variant="cancel"
+              onClick={() => { setRemarcarOpen(false); setSessaoRemarcar(null) }} />
+            <TButton label="Salvar" variant="save"
+              loading={remarcando} onClick={handleRemarcar} />
+          </>
+        }
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-(--text-muted)">
+            A consulta desta sessão e o compromisso na agenda serão movidos para a nova data/horário.
+            Conflitos de horário são verificados automaticamente.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <TDateTime
+              key         ={`rem-ini-${sessaoRemarcar?.consultaId ?? "x"}`}
+              name        ="remarcarInicio"
+              label       ="Início (*)"
+              width       ="200px"
+              defaultValue={remarcarInicio}
+              onChange    ={setRemarcarInicio}
+            />
+            <TDateTime
+              key         ={`rem-fim-${sessaoRemarcar?.consultaId ?? "x"}`}
+              name        ="remarcarFim"
+              label       ="Fim (*)"
+              width       ="200px"
+              defaultValue={remarcarFim}
+              onChange    ={setRemarcarFim}
+            />
+          </div>
         </div>
       </TWindow>
     </TPage>

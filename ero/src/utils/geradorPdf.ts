@@ -2342,3 +2342,202 @@ export function gerarPdfEscala(dados: DadosEscalaOtorrino): string {
 
   return doc.output("datauristring").split(",")[1]
 }
+
+// ── RESUMO DO PACOTE ───────────────────────────────────────────────────────────
+
+export interface DadosPacotePdf {
+  pacoteId:          number
+  nome:              string
+  statusLabel:       string
+  emitenteNome:      string
+  emitenteDocumento?: string | null
+  pessoaNome:        string
+  pessoaDocumento?:  string | null
+  produtoNome:       string
+  valorTotal:        number
+  quantidadeSessoes: number
+  sessoesUsadas:     number
+  sessoesRestantes:  number
+  dataEmissao:       string   // YYYY-MM-DD
+  observacao?:       string | null
+  sessoes: {
+    sessao:      number
+    statusLabel: string
+    inicio:      string       // ISO datetime
+    fim:         string       // ISO datetime
+  }[]
+  financeiro?: {
+    parcelas: {
+      numeroParcela:  number
+      dataVencimento: string
+      valor:          number
+      statusLabel:    string
+      dataPagamento:  string | null
+      valorPago:      number | null
+    }[]
+    totalGeral: number
+  } | null
+}
+
+export function gerarPdfPacote(dados: DadosPacotePdf): string {
+  const doc   = new jsPDF({ unit: "mm", format: "a4" })
+  const L     = doc.internal.pageSize.getWidth()
+  const mg    = 18
+  const inner = L - mg * 2
+  const COR: [number, number, number] = [30, 65, 120]
+
+  // Formata ISO datetime → dd/mm/yyyy HH:mm (fmtData só trata YYYY-MM-DD)
+  const fmtDataHora = (iso: string): string => {
+    if (!iso) return "—"
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return "—"
+    const pad = (n: number) => String(n).padStart(2, "0")
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
+  // 1. Faixa de topo
+  let y = faixaTopo(doc, dados.emitenteNome, "RESUMO DO PACOTE", COR)
+
+  // 2. Linha de referência
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(120, 120, 120)
+  doc.text(`Pacote Nº ${dados.pacoteId}  •  ${dados.nome}  •  Emitido em ${fmtData(dados.dataEmissao)}`, L / 2, y, { align: "center" })
+  doc.setTextColor(0, 0, 0)
+  y += 10
+
+  // 3. Identificação
+  doc.setFontSize(9)
+  const blocos: [string, string][] = [
+    ["Emitente:", dados.emitenteNome + (dados.emitenteDocumento ? `  (${dados.emitenteDocumento})` : "")],
+    ["Paciente:", dados.pessoaNome   + (dados.pessoaDocumento   ? `  (${dados.pessoaDocumento})`   : "")],
+  ]
+  for (const [label, valor] of blocos) {
+    doc.setFont("helvetica", "bold")
+    doc.text(label, mg, y)
+    doc.setFont("helvetica", "normal")
+    y = blocoTexto(doc, valor, mg + 22, y, inner - 22, 5)
+    y += 2
+  }
+  y += 4
+
+  // 4. Caixa de resumo (valor em destaque)
+  doc.setFillColor(240, 247, 255)
+  doc.setDrawColor(...COR)
+  doc.setLineWidth(0.4)
+  doc.roundedRect(mg, y, inner, 26, 3, 3, "FD")
+
+  // Coluna esquerda: serviço, status, sessões
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(50, 50, 50)
+  doc.text("Serviço:", mg + 5, y + 8)
+  doc.setFont("helvetica", "normal")
+  doc.text(doc.splitTextToSize(dados.produtoNome, inner / 2 - 26)[0] ?? dados.produtoNome, mg + 28, y + 8)
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Status:", mg + 5, y + 15)
+  doc.setFont("helvetica", "normal")
+  doc.text(dados.statusLabel, mg + 28, y + 15)
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Sessões:", mg + 5, y + 22)
+  doc.setFont("helvetica", "normal")
+  doc.text(`${dados.sessoesUsadas} de ${dados.quantidadeSessoes} usadas  •  ${dados.sessoesRestantes} restantes`, mg + 28, y + 22)
+
+  // Coluna direita: valor total em destaque
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(80, 80, 80)
+  doc.text("Valor Total", L - mg - 5, y + 9, { align: "right" })
+  doc.setFontSize(17)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(...COR)
+  doc.text(fmtMoeda(dados.valorTotal), L - mg - 5, y + 18, { align: "right" })
+  doc.setTextColor(0, 0, 0)
+
+  y += 34
+
+  // 5. Agendamentos
+  doc.setFontSize(10)
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(...COR)
+  doc.text("Agendamentos", mg, y)
+  doc.setTextColor(0, 0, 0)
+  y += 3
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Sessão", "Início", "Fim", "Status"]],
+    body: dados.sessoes.length > 0
+      ? dados.sessoes.map(s => [
+          `${s.sessao}/${dados.quantidadeSessoes}`,
+          fmtDataHora(s.inicio),
+          fmtDataHora(s.fim),
+          s.statusLabel,
+        ])
+      : [["—", "Nenhuma sessão", "", ""]],
+    headStyles:   { fillColor: COR, fontSize: 9 },
+    bodyStyles:   { fontSize: 9 },
+    columnStyles: { 0: { halign: "center", cellWidth: 22 } },
+    margin: { left: mg, right: mg },
+  })
+  y = ((doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 30) + 8
+
+  // 6. Financeiro (somente se houver)
+  if (dados.financeiro) {
+    if (y > 230) { doc.addPage(); y = 20 }
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...COR)
+    doc.text("Financeiro", mg, y)
+    doc.setTextColor(0, 0, 0)
+    y += 3
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Nº", "Vencimento", "Valor", "Status", "Data Pag.", "Valor Pago"]],
+      body: dados.financeiro.parcelas.map(p => [
+        String(p.numeroParcela),
+        fmtData(p.dataVencimento),
+        fmtMoeda(p.valor),
+        p.statusLabel,
+        p.dataPagamento ? fmtData(p.dataPagamento) : "—",
+        p.valorPago != null ? fmtMoeda(p.valorPago) : "—",
+      ]),
+      foot: [["", "", "", "", "Total", fmtMoeda(dados.financeiro.totalGeral)]],
+      headStyles:   { fillColor: COR, fontSize: 9 },
+      footStyles:   { fillColor: [235, 240, 255], textColor: [0, 0, 0], fontStyle: "bold", fontSize: 9 },
+      bodyStyles:   { fontSize: 9 },
+      columnStyles: { 0: { halign: "center", cellWidth: 12 }, 2: { halign: "right" }, 5: { halign: "right" } },
+      margin: { left: mg, right: mg },
+    })
+    y = ((doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? y + 40) + 8
+  }
+
+  // 7. Total por extenso
+  if (y > 270) { doc.addPage(); y = 20 }
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "italic")
+  doc.setTextColor(100, 100, 100)
+  doc.text(`Total por extenso: ${numeroPorExtenso(dados.valorTotal)}`, mg, y)
+  doc.setTextColor(0, 0, 0)
+  y += 8
+
+  // 8. Observação
+  if (dados.observacao) {
+    if (y > 260) { doc.addPage(); y = 20 }
+    doc.setFillColor(245, 245, 245)
+    doc.rect(mg, y - 3, inner, 7, "F")
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(0, 0, 0)
+    doc.text("OBSERVAÇÃO", mg + 2, y + 1.5)
+    y += 9
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    blocoTexto(doc, dados.observacao, mg + 2, y, inner - 4, 5)
+  }
+
+  return doc.output("datauristring").split(",")[1]
+}

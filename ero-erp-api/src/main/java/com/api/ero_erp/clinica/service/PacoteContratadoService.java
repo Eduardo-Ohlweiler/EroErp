@@ -1,14 +1,18 @@
 package com.api.ero_erp.clinica.service;
 
 import com.api.ero_erp.clinica.dtos.ContratarPacoteDto;
+import com.api.ero_erp.clinica.dtos.EnviarPdfConsultaDto;
 import com.api.ero_erp.clinica.dtos.PacoteContratadoResponseDto;
+import com.api.ero_erp.clinica.dtos.RemarcarSessaoDto;
 import com.api.ero_erp.clinica.dtos.SessaoResumoDto;
 import com.api.ero_erp.clinica.dtos.SessaoSlotDto;
 import com.api.ero_erp.clinica.entity.Consulta;
+import com.api.ero_erp.clinica.entity.ConsultaServico;
 import com.api.ero_erp.clinica.entity.PacoteContratado;
 import com.api.ero_erp.clinica.enums.StatusConsulta;
 import com.api.ero_erp.clinica.enums.StatusPacote;
 import com.api.ero_erp.clinica.repository.ConsultaRepository;
+import com.api.ero_erp.clinica.repository.ConsultaServicoRepository;
 import com.api.ero_erp.clinica.repository.PacoteContratadoRepository;
 import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.cliente.service.ClienteService;
@@ -37,6 +41,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -49,6 +55,7 @@ public class PacoteContratadoService {
 
     private final PacoteContratadoRepository  pacoteRepository;
     private final ConsultaRepository          consultaRepository;
+    private final ConsultaServicoRepository   servicoRepository;
     private final CompromissoRepository       compromissoRepository;
     private final ClienteService              clienteService;
     private final EmitenteService             emitenteService;
@@ -63,6 +70,7 @@ public class PacoteContratadoService {
     public PacoteContratadoService(
             PacoteContratadoRepository  pacoteRepository,
             ConsultaRepository          consultaRepository,
+            ConsultaServicoRepository   servicoRepository,
             CompromissoRepository       compromissoRepository,
             ClienteService              clienteService,
             EmitenteService             emitenteService,
@@ -76,6 +84,7 @@ public class PacoteContratadoService {
     ) {
         this.pacoteRepository      = pacoteRepository;
         this.consultaRepository    = consultaRepository;
+        this.servicoRepository     = servicoRepository;
         this.compromissoRepository = compromissoRepository;
         this.clienteService        = clienteService;
         this.emitenteService       = emitenteService;
@@ -152,10 +161,16 @@ public class PacoteContratadoService {
         pacote.setCreatedBy(usuario);
         pacoteRepository.save(pacote);
 
-        // 4. Criar N compromissos + N consultas (sem linha de serviço por sessão)
+        // 4. Criar N compromissos + N consultas, cada uma com a linha do serviço do pacote.
+        //    O valor total é rateado por sessão; a última sessão absorve o resto dos centavos
+        //    (soma das linhas == valorTotal). Isso alimenta lista/resumo/PDF da consulta.
         int                n            = dto.quantidadeSessoes();
         List<Consulta>     consultas    = new ArrayList<>();
         List<Compromisso>  compromissos = new ArrayList<>();
+
+        long totalCentavos = dto.valorTotal().setScale(2, RoundingMode.HALF_UP).movePointRight(2).longValueExact();
+        long baseCentavos  = totalCentavos / n;
+        long restoCentavos = totalCentavos - baseCentavos * n;
 
         for (int i = 0; i < n; i++) {
             SessaoSlotDto slot = dto.sessoes().get(i);
@@ -183,6 +198,18 @@ public class PacoteContratadoService {
             consulta.setCreatedBy(usuario);
             consultaRepository.save(consulta);
             consultas.add(consulta);
+
+            // Linha de serviço da sessão (valor rateado). Não gera nova cobrança: a sessão já
+            // nasce faturado=true com a conta a receber única do pacote.
+            long centavosSessao = baseCentavos + (i == n - 1 ? restoCentavos : 0);
+            ConsultaServico servico = new ConsultaServico();
+            servico.setCliente(cliente);
+            servico.setConsulta(consulta);
+            servico.setProduto(produto);
+            servico.setQuantidade(BigDecimal.ONE);
+            servico.setPrecoUnitario(BigDecimal.valueOf(centavosSessao, 2));
+            servico.setCreatedBy(usuario);
+            servicoRepository.save(servico);
         }
 
         // 5. Criar a conta a receber pré-paga única (reusa o fluxo do financeiro)
@@ -267,6 +294,64 @@ public class PacoteContratadoService {
 
         // buildResponse recalcula e persiste o status do pacote (auto-conclusão).
         return buildResponse(pacote);
+    }
+
+    @Transactional
+    public PacoteContratadoResponseDto remarcarSessao(Long pacoteId, Long consultaId, RemarcarSessaoDto dto) {
+        Long             clienteId = securityUtils.getClienteIdLogado();
+        Usuario          usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
+        PacoteContratado pacote    = pacoteRepository.findByIdAndClienteId(pacoteId, clienteId)
+                .orElseThrow(() -> new NotFoundException("Pacote não encontrado, verifique!"));
+
+        Consulta consulta = consultaRepository.findByIdAndClienteId(consultaId, clienteId)
+                .orElseThrow(() -> new NotFoundException("Sessão não encontrada, verifique!"));
+        if (consulta.getPacote() == null || !consulta.getPacote().getId().equals(pacoteId))
+            throw new BadRequestException("A sessão não pertence a este pacote, verifique!");
+        if (consulta.getStatus() == StatusConsulta.CONCLUIDA)
+            throw new BadRequestException("Não é possível remarcar uma sessão concluída, verifique!");
+        if (consulta.getStatus() == StatusConsulta.CANCELADA)
+            throw new BadRequestException("Não é possível remarcar uma sessão cancelada, verifique!");
+        if (!dto.fim().isAfter(dto.inicio()))
+            throw new BadRequestException("O horário de fim deve ser posterior ao de início, verifique!");
+
+        // Valida conflito de horário ignorando o próprio compromisso da sessão.
+        Compromisso compromisso = consulta.getCompromisso();
+        Long excludeId = compromisso != null ? compromisso.getId() : null;
+        if (compromissoRepository.existsConflict(clienteId, dto.inicio(), dto.fim(), excludeId))
+            throw new ConflictException(
+                    "Já existe um compromisso agendado neste horário: "
+                            + dto.inicio().toLocalDate() + " " + dto.inicio().toLocalTime());
+
+        consulta.setInicio(dto.inicio());
+        consulta.setFim(dto.fim());
+        consulta.setUpdatedBy(usuario);
+        consultaRepository.save(consulta);
+
+        if (compromisso != null) {
+            compromisso.setInicio(dto.inicio());
+            compromisso.setFim(dto.fim());
+            compromisso.setUpdatedBy(usuario);
+            compromissoRepository.save(compromisso);
+        }
+
+        return buildResponse(pacote);
+    }
+
+    // ── PDF / WhatsApp ──────────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public void enviarPdfWhatsapp(Long id, EnviarPdfConsultaDto dto) {
+        Long             clienteId = securityUtils.getClienteIdLogado();
+        PacoteContratado pacote    = pacoteRepository.findByIdAndClienteId(id, clienteId)
+                .orElseThrow(() -> new NotFoundException("Pacote não encontrado, verifique!"));
+        notificationService.enviarPdfParaCliente(
+                pacote.getPessoa().getId(),
+                pacote.getCliente().getId(),
+                securityUtils.getUsuarioIdLogado(),
+                dto.base64(),
+                dto.fileName(),
+                dto.caption()
+        );
     }
 
     // ── Auxiliares ────────────────────────────────────────────────────────────
