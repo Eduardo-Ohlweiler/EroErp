@@ -5,7 +5,7 @@ export const menu: MenuItem[] = [
   {
     label: "Dashboards",
     icon:  FaTachometerAlt,
-    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET", "DOCUMENTO", "DOCUMENTO_GET", "PEDIATRIA", "PEDIATRIA_GET", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET", "OTORRINO", "OTORRINO_GET"],
+    roles: ["SUPERADMIN", "ADMIN", "COMPROMISSO", "ESTOQUE", "ESTOQUE_GET", "CLINICA", "CLINICA_GET", "FINANCEIRO", "FINANCEIRO_GET", "DOCUMENTO", "DOCUMENTO_GET", "PEDIATRIA", "PEDIATRIA_GET", "TERAPIA_NUTRICIONAL", "TERAPIA_NUTRICIONAL_GET", "OTORRINO", "OTORRINO_GET", "PEDIDO", "PEDIDO_GET"],
     children: [
       {
         label: "Geral",
@@ -18,6 +18,18 @@ export const menu: MenuItem[] = [
         path:  "/dashboards/consultas",
         icon:  FaStethoscope,
         roles: ["SUPERADMIN", "ADMIN", "CLINICA", "CLINICA_GET"],
+      },
+      {
+        label: "Pedidos",
+        path:  "/dashboards/pedidos",
+        icon:  FaShoppingCart,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"],
+      },
+      {
+        label: "Pedidos por Pessoa",
+        path:  "/dashboards/pedidos-pessoa",
+        icon:  FaShoppingCart,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"],
       },
       {
         label: "Financeiro",

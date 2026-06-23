@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,4 +49,25 @@ public interface PedidoProdutoRepository extends JpaRepository<PedidoProduto, Lo
             AND est.baixarEstoque = true
             """)
     List<PedidoProduto> findParaMovimentarEstoque(@Param("pedidoId") Long pedidoId);
+
+    @Query("""
+            SELECT pp FROM PedidoProduto pp
+            JOIN FETCH pp.produto p
+            JOIN FETCH pp.pedido pe
+            WHERE pe.cliente.id = :clienteId
+            AND pe.status = 'CONCLUIDO'
+            AND pe.dataPedido >= :inicio
+            AND pe.dataPedido <= :fim
+            AND (:emitenteId IS NULL OR pe.emitente.id = :emitenteId)
+            AND (:tipoPedidoId IS NULL OR pe.tipoPedido.id = :tipoPedidoId)
+            AND (:pessoaId IS NULL OR pe.pessoa.id = :pessoaId)
+            """)
+    List<PedidoProduto> findForDashboard(
+            @Param("clienteId")    Long          clienteId,
+            @Param("inicio")       LocalDateTime inicio,
+            @Param("fim")          LocalDateTime fim,
+            @Param("emitenteId")   Long          emitenteId,
+            @Param("tipoPedidoId") Long          tipoPedidoId,
+            @Param("pessoaId")     Long          pessoaId
+    );
 }

@@ -8,6 +8,8 @@ import com.api.ero_erp.emitente.service.EmitenteService;
 import com.api.ero_erp.estoque.service.EstoqueService;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.financeiro.contapagar.service.ContaPagarService;
+import com.api.ero_erp.financeiro.contareceber.service.ContaReceberService;
 import com.api.ero_erp.pedido.dtos.PedidoCreateDto;
 import com.api.ero_erp.pedido.dtos.PedidoProdutoCreateDto;
 import com.api.ero_erp.pedido.dtos.PedidoProdutoResponseDto;
@@ -49,6 +51,8 @@ public class PedidoService {
     private final UsuarioService          usuarioService;
     private final ProdutoRepository       produtoRepository;
     private final EstoqueService          estoqueService;
+    private final ContaReceberService     contaReceberService;
+    private final ContaPagarService       contaPagarService;
     private final SecurityUtils           securityUtils;
 
     public PedidoService(
@@ -61,6 +65,8 @@ public class PedidoService {
             UsuarioService          usuarioService,
             ProdutoRepository       produtoRepository,
             EstoqueService          estoqueService,
+            ContaReceberService     contaReceberService,
+            ContaPagarService       contaPagarService,
             SecurityUtils           securityUtils
     ) {
         this.pedidoRepository        = pedidoRepository;
@@ -72,6 +78,8 @@ public class PedidoService {
         this.usuarioService          = usuarioService;
         this.produtoRepository       = produtoRepository;
         this.estoqueService          = estoqueService;
+        this.contaReceberService     = contaReceberService;
+        this.contaPagarService       = contaPagarService;
         this.securityUtils           = securityUtils;
     }
 
@@ -216,19 +224,68 @@ public class PedidoService {
 
     @Transactional
     public PedidoResponseDto cancelar(Long id, String motivo) {
-        Pedido  pedido  = findById(id);
-        Usuario usuario = usuarioService.findById(securityUtils.getUsuarioIdLogado());
+        Long    clienteId = securityUtils.getClienteIdLogado();
+        Pedido  pedido    = findById(id);
+        Usuario usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
 
         if (pedido.getStatus() == StatusPedido.CANCELADO)
             throw new BadRequestException("Pedido já está cancelado");
+
+        // Estorna o estoque movimentado na conclusão (inverte a direção do tipo de pedido)
         if (pedido.getStatus() == StatusPedido.CONCLUIDO)
-            throw new BadRequestException("Não é possível cancelar um pedido já concluído");
+            estornarEstoque(pedido, clienteId, usuario);
+
+        // Exclui o faturamento (conta + parcelas + pagamentos via cascade) se já faturado
+        if (Boolean.TRUE.equals(pedido.getFaturado()) && pedido.getContaId() != null) {
+            excluirFinanceiro(pedido);
+            pedido.setFaturado(false);
+            pedido.setContaId(null);
+        }
 
         pedido.setStatus(StatusPedido.CANCELADO);
         pedido.setMotivoCancelamento(motivo);
         pedido.setUpdatedBy(usuario);
 
         return buildResponse(pedidoRepository.save(pedido));
+    }
+
+    /**
+     * Estorna a movimentação de estoque feita na conclusão: inverte a direção do tipo de
+     * pedido (SAIDA → devolve ao estoque; ENTRADA → retira do estoque) — apenas para os
+     * produtos cujo cadastro de estoque tem baixarEstoque = true.
+     */
+    private void estornarEstoque(Pedido pedido, Long clienteId, Usuario usuario) {
+        MovimentaEstoque mov = pedido.getTipoPedido().getMovimentaEstoque();
+        if (mov == MovimentaEstoque.NENHUM) return;
+        List<PedidoProduto> itens = pedidoProdutoRepository.findParaMovimentarEstoque(pedido.getId());
+        for (PedidoProduto pp : itens) {
+            String motivo = "Estorno (cancelamento) do pedido #" + pedido.getId();
+            if (mov == MovimentaEstoque.SAIDA) {
+                estoqueService.entrarEstoquePorPedido(
+                        clienteId, pp.getEmitente().getId(), pp.getProduto().getId(),
+                        pp.getQuantidade(), motivo, usuario);
+            } else {
+                estoqueService.baixarEstoquePorConsumo(
+                        clienteId, pp.getEmitente().getId(), pp.getProduto().getId(),
+                        pp.getQuantidade(), motivo, usuario);
+            }
+        }
+    }
+
+    /**
+     * Exclui a conta a receber/pagar gerada no faturamento (a cascata remove parcelas e
+     * pagamentos). Tolera conta já removida manualmente — o cancelamento prossegue.
+     */
+    private void excluirFinanceiro(Pedido pedido) {
+        GeraFinanceiro gf = pedido.getTipoPedido().getGeraFinanceiro();
+        try {
+            if (gf == GeraFinanceiro.CONTAS_RECEBER)
+                contaReceberService.delete(pedido.getContaId());
+            else if (gf == GeraFinanceiro.CONTAS_PAGAR)
+                contaPagarService.delete(pedido.getContaId());
+        } catch (NotFoundException ignored) {
+            // conta já excluída — segue o cancelamento
+        }
     }
 
     /**

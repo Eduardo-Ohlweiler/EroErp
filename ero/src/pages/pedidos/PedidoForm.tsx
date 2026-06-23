@@ -152,6 +152,7 @@ export default function PedidoForm() {
   const [produtoModal, setProdutoModal] = useState<ProdutoModal>(emptyProduto)
   const [cancelModal,  setCancelModal]  = useState(false)
   const [motivoCancel, setMotivoCancel] = useState("")
+  const [cancelStatus, setCancelStatus] = useState("CANCELADO")
   const [canceling,    setCanceling]    = useState(false)
 
   // Configuração "Faturar ao concluir": SIM | NAO | PERGUNTAR (fallback PERGUNTAR)
@@ -364,13 +365,18 @@ export default function PedidoForm() {
     irParaFaturamento(total)
   }
 
+  function fecharCancelModal() {
+    setCancelModal(false)
+    setMotivoCancel("")
+    setCancelStatus("CANCELADO")
+  }
+
   async function handleCancelar() {
     setCanceling(true)
     try {
-      await api.patch(`/pedidos/${currentId}/cancelar`, { motivo: motivoCancel })
+      await api.patch(`/pedidos/${currentId}/cancelar`, { motivo: motivoCancel, status: cancelStatus })
       showMessage("success", "Pedido cancelado!")
-      setCancelModal(false)
-      setMotivoCancel("")
+      fecharCancelModal()
       await reload(currentId!)
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -751,7 +757,7 @@ export default function PedidoForm() {
             )}
           </TFormActionsLeft>
           <TFormActionsRight>
-            {isEdit && pedido?.status === "ABERTO" && (
+            {isEdit && pedido && pedido.status !== "CANCELADO" && (
               <TButton label="Cancelar Pedido" variant="cancel" onClick={() => setCancelModal(true)} />
             )}
             {isEdit && pedido?.status === "ABERTO" && (
@@ -771,29 +777,48 @@ export default function PedidoForm() {
       <TWindow
         title   ="Cancelar Pedido"
         open    ={cancelModal}
-        onClose ={() => { setCancelModal(false); setMotivoCancel("") }}
+        onClose ={fecharCancelModal}
         width   ="460px"
         actions ={
           <>
-            <TButton label="Voltar" variant="cancel"
-              onClick={() => { setCancelModal(false); setMotivoCancel("") }} />
+            <TButton label="Voltar" variant="cancel" onClick={fecharCancelModal} />
             <TButton label="Confirmar Cancelamento" variant="save"
               loading={canceling} onClick={handleCancelar} />
           </>
         }
       >
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-(--text-muted)">Informe o motivo do cancelamento (opcional):</p>
-          <textarea
-            rows      ={4}
-            maxLength ={500}
-            value     ={motivoCancel}
-            onChange  ={e => setMotivoCancel(e.target.value)}
-            placeholder="Motivo do cancelamento..."
-            className ="border border-(--border) rounded px-3 py-2 text-sm
-                        bg-(--bg-surface) text-(--text-primary) resize-none
-                        focus:outline-none focus:ring-1 focus:ring-(--accent) w-full"
+          <TCombo
+            name        ="cancelStatus"
+            label       ="Status"
+            options     ={[{ value: "CANCELADO", label: "Cancelado" }]}
+            defaultValue="CANCELADO"
+            onChange    ={setCancelStatus}
           />
+
+          <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 flex flex-col gap-1">
+            <span>⚠️ Esta ação <strong>não poderá ser desfeita</strong>.</span>
+            {pedido?.status === "CONCLUIDO" && (
+              <span>O estoque movimentado por este pedido será <strong>estornado</strong>.</span>
+            )}
+            {pedido?.faturado && (
+              <span>O <strong>faturamento</strong> deste pedido (parcelas e pagamentos já lançados) será <strong>excluído</strong>.</span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm text-(--text-muted)">Motivo do cancelamento (opcional):</label>
+            <textarea
+              rows      ={4}
+              maxLength ={500}
+              value     ={motivoCancel}
+              onChange  ={e => setMotivoCancel(e.target.value)}
+              placeholder="Motivo do cancelamento..."
+              className ="border border-(--border) rounded px-3 py-2 text-sm
+                          bg-(--bg-surface) text-(--text-primary) resize-none
+                          focus:outline-none focus:ring-1 focus:ring-(--accent) w-full"
+            />
+          </div>
         </div>
       </TWindow>
 

@@ -64,6 +64,8 @@ import FaturamentoPedido                         from "../pages/pedidos/Faturame
 import TipoPedidoList                            from "../pages/pedidos/auxiliares/TipoPedidoList"
 import TipoPedidoForm                            from "../pages/pedidos/auxiliares/TipoPedidoForm"
 import ConfiguracaoPedidoForm                    from "../pages/pedidos/auxiliares/ConfiguracaoPedidoForm"
+import PedidoDashboard                           from "../pages/pedidos/PedidoDashboard"
+import PedidoDashboardPessoa                     from "../pages/pedidos/PedidoDashboardPessoa"
 import PlanoTreinoList                           from "../pages/gym/PlanoTreinoList"
 import PlanoTreinoForm                           from "../pages/gym/PlanoTreinoForm"
 import ExercicioList                             from "../pages/gym/ExercicioList"
@@ -268,6 +270,8 @@ export function Router() {
               <Route path="/pedidos/tipos/novo"        element={<TipoPedidoForm />} />
               <Route path="/pedidos/tipos/:id"         element={<TipoPedidoForm />} />
               <Route path="/pedidos/configuracao"      element={<ConfiguracaoPedidoForm />} />
+              <Route path="/dashboards/pedidos"         element={<PedidoDashboard />} />
+              <Route path="/dashboards/pedidos-pessoa"  element={<PedidoDashboardPessoa />} />
             </Route>
 
             {/* ── GYM ── */}

@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -57,5 +58,27 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             @Param("fim")          LocalDateTime fim,
             @Param("nomePessoa")   String        nomePessoa,
             @Param("faturado")     Boolean       faturado
+    );
+
+    @Query("""
+            SELECT p FROM Pedido p
+            JOIN FETCH p.emitente e JOIN FETCH e.pessoa
+            JOIN FETCH p.pessoa
+            JOIN FETCH p.tipoPedido
+            WHERE p.cliente.id = :clienteId
+            AND p.dataPedido >= :inicio
+            AND p.dataPedido <= :fim
+            AND (:emitenteId IS NULL OR p.emitente.id = :emitenteId)
+            AND (:tipoPedidoId IS NULL OR p.tipoPedido.id = :tipoPedidoId)
+            AND (:pessoaId IS NULL OR p.pessoa.id = :pessoaId)
+            ORDER BY p.dataPedido ASC
+            """)
+    List<Pedido> findForDashboard(
+            @Param("clienteId")    Long          clienteId,
+            @Param("inicio")       LocalDateTime inicio,
+            @Param("fim")          LocalDateTime fim,
+            @Param("emitenteId")   Long          emitenteId,
+            @Param("tipoPedidoId") Long          tipoPedidoId,
+            @Param("pessoaId")     Long          pessoaId
     );
 }
