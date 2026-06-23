@@ -1,6 +1,6 @@
 import type { TipoAjuste, TipoCalculo } from "./Clinica"
 
-export type StatusPedido     = "ABERTO" | "CONCLUIDO" | "CANCELADO"
+export type StatusPedido     = "ABERTO" | "CONCLUIDO" | "CANCELADO" | "DEVOLVIDO" | "DEVOLVIDO_PARCIAL"
 export type MovimentaEstoque = "NENHUM" | "ENTRADA" | "SAIDA"
 export type GeraFinanceiro   = "NENHUM" | "CONTAS_RECEBER" | "CONTAS_PAGAR"
 
@@ -11,6 +11,7 @@ export interface PedidoProdutoResponse {
     emitenteId:    number
     emitenteNome:  string
     quantidade:    number
+    quantidadeDevolvida: number
     precoUnitario: number
     tipoAjuste:    TipoAjuste | null
     tipoCalculo:   TipoCalculo | null

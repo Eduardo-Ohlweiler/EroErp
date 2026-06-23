@@ -94,4 +94,8 @@
     <include file="087-create-pedido.xml"                   relativeToChangelogFile="true" />
     <include file="088-create-configuracao-pedido.xml"      relativeToChangelogFile="true" />
     <include file="089-add-conta-faturamento.xml"           relativeToChangelogFile="true" />
+    <include file="090-add-devolucao-configuracao-pedido.xml" relativeToChangelogFile="true" />
+    <include file="091-add-quantidade-devolvida-pedido-produto.xml" relativeToChangelogFile="true" />
+    <include file="092-create-credito-cliente.xml"          relativeToChangelogFile="true" />
+    <include file="093-add-credito-parcela-conta-receber.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

@@ -183,14 +183,26 @@ public class ContaReceberService {
             p.setDataVencimento(LocalDate.parse(dto.dataVencimento()));
             p.setValor(dto.valor());
             p.setObservacao(dto.observacao());
-            if (dto.formaPagamentoId() != null)
-                p.setFormaPagamento(formaPagamentoService.findById(dto.formaPagamentoId()));
-            if (dto.contaFinanceiraId() != null)
-                p.setContaFinanceira(contaFinanceiraService.findById(dto.contaFinanceiraId()));
-            if (dto.dataPagamento() != null && !dto.dataPagamento().isBlank() && dto.valorPago() != null) {
-                p.setDataPagamento(LocalDate.parse(dto.dataPagamento()));
-                p.setValorPago(dto.valorPago());
+
+            boolean isCredito = Boolean.TRUE.equals(dto.credito());
+            p.setCredito(isCredito);
+
+            if (isCredito) {
+                // Pagamento via crédito do cliente: parcela paga, sem forma/conta, fora do caixa
                 p.setStatus(StatusConta.PAGO);
+                p.setDataPagamento(dto.dataPagamento() != null && !dto.dataPagamento().isBlank()
+                        ? LocalDate.parse(dto.dataPagamento()) : LocalDate.now());
+                p.setValorPago(dto.valorPago() != null ? dto.valorPago() : dto.valor());
+            } else {
+                if (dto.formaPagamentoId() != null)
+                    p.setFormaPagamento(formaPagamentoService.findById(dto.formaPagamentoId()));
+                if (dto.contaFinanceiraId() != null)
+                    p.setContaFinanceira(contaFinanceiraService.findById(dto.contaFinanceiraId()));
+                if (dto.dataPagamento() != null && !dto.dataPagamento().isBlank() && dto.valorPago() != null) {
+                    p.setDataPagamento(LocalDate.parse(dto.dataPagamento()));
+                    p.setValorPago(dto.valorPago());
+                    p.setStatus(StatusConta.PAGO);
+                }
             }
             parcelas.add(p);
         }

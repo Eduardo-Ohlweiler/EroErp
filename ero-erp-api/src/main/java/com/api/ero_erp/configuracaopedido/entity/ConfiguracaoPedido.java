@@ -18,4 +18,7 @@ public class ConfiguracaoPedido extends BaseEntity {
 
     @Column(name = "faturar_ao_concluir", length = 10)
     private String faturarAoConcluir;
+
+    @Column(name = "devolucao_gerar_credito", length = 10)
+    private String devolucaoGerarCredito;
 }

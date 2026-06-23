@@ -31,7 +31,8 @@ public class ContaReceberMapper {
                 p.getDataPagamento() != null ? p.getDataPagamento().toString() : null,
                 p.getValorPago(),
                 p.getStatus() != null ? p.getStatus().name() : null,
-                p.getObservacao()
+                p.getObservacao(),
+                p.getCredito()
         );
     }
 

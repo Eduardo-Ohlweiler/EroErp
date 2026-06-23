@@ -38,6 +38,9 @@ public class PedidoProduto extends BaseEntity {
     @Column(name = "quantidade", nullable = false, precision = 10, scale = 3)
     private BigDecimal quantidade = BigDecimal.ONE;
 
+    @Column(name = "quantidade_devolvida", nullable = false, precision = 10, scale = 3)
+    private BigDecimal quantidadeDevolvida = BigDecimal.ZERO;
+
     @Column(name = "preco_unitario", nullable = false, precision = 15, scale = 2)
     private BigDecimal precoUnitario = BigDecimal.ZERO;
 

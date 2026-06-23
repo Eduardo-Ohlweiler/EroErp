@@ -10,7 +10,8 @@ public class ConfiguracaoPedidoMapper {
     public static ConfiguracaoPedidoResponseDto toDto(ConfiguracaoPedido entity) {
         return new ConfiguracaoPedidoResponseDto(
                 entity.getId(),
-                entity.getFaturarAoConcluir()
+                entity.getFaturarAoConcluir(),
+                entity.getDevolucaoGerarCredito()
         );
     }
 }

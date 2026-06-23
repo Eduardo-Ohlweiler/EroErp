@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Config "Devolução - gerar crédito" (SIM | NAO); ausente => tratado como SIM -->
+    <changeSet id="090-add-devolucao-configuracao-pedido" author="eduardo">
+
+        <addColumn tableName="configuracao_pedido">
+            <column name="devolucao_gerar_credito" type="VARCHAR(10)"/>
+        </addColumn>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -109,6 +109,16 @@ export default function FaturamentoPedido() {
         state ? gerarParcelas(state.totalGeral, 1, todayStr()) : []
     )
     const [saving, setSaving] = useState(false)
+    const [creditoDisponivel, setCreditoDisponivel] = useState(0)
+    const [usarCredito,       setUsarCredito]       = useState(false)
+
+    useEffect(() => {
+        if (!state?.pessoaId || state.geraFinanceiro !== "CONTAS_RECEBER") return
+        api.get(`/creditos/saldo?pessoaId=${state.pessoaId}`)
+            .then(r => setCreditoDisponivel(Number(r.data?.saldo) || 0))
+            .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     if (!state?.pessoaId) return null
 
@@ -118,7 +128,18 @@ export default function FaturamentoPedido() {
             showMessage("error", "Informe um número de parcelas entre 1 e 60")
             return
         }
-        setParcelas(gerarParcelas(state!.totalGeral, n, data || todayStr()))
+        const credUsado = isReceber && usarCredito ? Math.min(creditoDisponivel, state!.totalGeral) : 0
+        const aParcelar = Math.round((state!.totalGeral - credUsado) * 100) / 100
+        setParcelas(aParcelar > 0 ? gerarParcelas(aParcelar, n, data || todayStr()) : [])
+    }
+
+    function toggleUsarCredito() {
+        const novo = !usarCredito
+        setUsarCredito(novo)
+        const credUsado = novo ? Math.min(creditoDisponivel, state!.totalGeral) : 0
+        const aParcelar = Math.round((state!.totalGeral - credUsado) * 100) / 100
+        const n = parseInt(numParc, 10) || 1
+        setParcelas(aParcelar > 0 ? gerarParcelas(aParcelar, n, data || todayStr()) : [])
     }
 
     function update(_id: string, changes: Partial<ParcelaFaturamento>) {
@@ -135,7 +156,8 @@ export default function FaturamentoPedido() {
 
     async function handleSubmit() {
         if (!state) return
-        if (parcelas.length === 0) {
+        const credUsado = isReceber && usarCredito ? Math.min(creditoDisponivel, state.totalGeral) : 0
+        if (parcelas.length === 0 && credUsado <= 0) {
             showMessage("error", "Defina o número de parcelas e clique em Distribuir")
             return
         }
@@ -166,6 +188,33 @@ export default function FaturamentoPedido() {
 
         setSaving(true)
         try {
+            const parcelasPayload: Record<string, unknown>[] = parcelas.map(p => ({
+                dataVencimento:    p.dataVencimento,
+                valor:             parseFloat(p.valor),
+                formaPagamentoId:  p.formaPagamentoId  ? Number(p.formaPagamentoId)  : null,
+                contaFinanceiraId: p.contaFinanceiraId ? Number(p.contaFinanceiraId) : null,
+                observacao:        null,
+                // campos de pagamento só existem em contas a receber
+                ...(isReceber ? {
+                    dataPagamento: p.pago ? p.dataPagamento         : null,
+                    valorPago:     p.pago ? parseFloat(p.valorPago) : null,
+                } : {}),
+            }))
+
+            // Parcela paga com crédito do cliente (não entra no caixa)
+            if (credUsado > 0) {
+                parcelasPayload.push({
+                    dataVencimento:    data,
+                    valor:             credUsado,
+                    formaPagamentoId:  null,
+                    contaFinanceiraId: null,
+                    observacao:        "Crédito do cliente",
+                    dataPagamento:     data,
+                    valorPago:         credUsado,
+                    credito:           true,
+                })
+            }
+
             const contaResp = await api.post(endpoint, {
                 emitenteId: state.emitenteId,
                 pessoaId:   state.pessoaId,
@@ -173,23 +222,28 @@ export default function FaturamentoPedido() {
                 descricao:  descricao || null,
                 valorTotal: state.totalGeral,
                 observacao: null,
-                parcelas:   parcelas.map(p => ({
-                    dataVencimento:    p.dataVencimento,
-                    valor:             parseFloat(p.valor),
-                    formaPagamentoId:  p.formaPagamentoId  ? Number(p.formaPagamentoId)  : null,
-                    contaFinanceiraId: p.contaFinanceiraId ? Number(p.contaFinanceiraId) : null,
-                    observacao:        null,
-                    // campos de pagamento só existem em contas a receber
-                    ...(isReceber ? {
-                        dataPagamento: p.pago ? p.dataPagamento         : null,
-                        valorPago:     p.pago ? parseFloat(p.valorPago) : null,
-                    } : {}),
-                })),
+                parcelas:   parcelasPayload,
             })
 
-            await api.patch(`/pedidos/${id}/faturar`, { contaId: contaResp.data?.id ?? null })
+            await api.patch(`/pedidos/${id}/faturar`, {
+                contaId:          contaResp.data?.id ?? null,
+                creditoUtilizado: credUsado > 0 ? credUsado : null,
+            })
 
             // ── Gera e baixa PDF de faturamento (sem envio por WhatsApp) ──────
+            const parcelasPdf = credUsado > 0
+                ? [...parcelas, {
+                    _id:               "credito",
+                    numeroParcela:     parcelas.length + 1,
+                    dataVencimento:    data,
+                    valor:             credUsado.toFixed(2),
+                    formaPagamentoId:  "",
+                    contaFinanceiraId: "",
+                    pago:              true,
+                    dataPagamento:     data,
+                    valorPago:         credUsado.toFixed(2),
+                  }]
+                : parcelas
             const pdfFat = gerarPdfFaturamento({
                 consultaId:        id!,
                 referenciaLabel:   "Pedido",
@@ -201,7 +255,7 @@ export default function FaturamentoPedido() {
                 pessoaDocumento:   state.pessoaDocumento   ?? null,
                 descricao,
                 data,
-                parcelas,
+                parcelas:          parcelasPdf,
                 totalGeral:        state.totalGeral,
                 itens:             state.itens,
             })
@@ -240,9 +294,11 @@ export default function FaturamentoPedido() {
         }
     }
 
-    const fmtMoeda      = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-    const totalParcelas = parcelas.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
-    const diff          = Math.round((totalParcelas - state.totalGeral) * 100) / 100
+    const fmtMoeda       = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    const creditoUsado   = isReceber && usarCredito ? Math.min(creditoDisponivel, state.totalGeral) : 0
+    const valorAParcelar = Math.round((state.totalGeral - creditoUsado) * 100) / 100
+    const totalParcelas  = parcelas.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+    const diff           = Math.round((totalParcelas - valorAParcelar) * 100) / 100
 
     return (
         <TPage title={`Faturamento — Pedido #${id}`} breadcrumb={["Pedidos", "Venda PDV", "Faturamento"]}>
@@ -306,10 +362,36 @@ export default function FaturamentoPedido() {
                 />
             </div>
 
+            {/* Crédito do cliente (somente vendas com saldo) */}
+            {isReceber && creditoDisponivel > 0 && (
+                <div className="mb-4 p-3 rounded-lg border border-emerald-200 bg-emerald-50 flex flex-wrap items-center gap-3 text-sm">
+                    <span className="text-emerald-800">
+                        Crédito disponível do cliente: <strong>{fmtMoeda(creditoDisponivel)}</strong>
+                    </span>
+                    <button
+                        type   ="button"
+                        onClick={toggleUsarCredito}
+                        className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
+                            usarCredito
+                                ? "bg-emerald-600 text-white"
+                                : "border border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                        }`}
+                    >
+                        {usarCredito ? "✓ Usando crédito" : "Usar crédito"}
+                    </button>
+                    {usarCredito && (
+                        <span className="text-emerald-800">
+                            Aplicado: <strong>{fmtMoeda(creditoUsado)}</strong>{" · "}
+                            A parcelar: <strong>{fmtMoeda(valorAParcelar)}</strong>
+                        </span>
+                    )}
+                </div>
+            )}
+
             {/* Alerta de diferença */}
             {parcelas.length > 0 && Math.abs(diff) > 0.005 && (
                 <div className="mb-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                    Soma das parcelas ({fmtMoeda(totalParcelas)}) difere do total do pedido ({fmtMoeda(state.totalGeral)})
+                    Soma das parcelas ({fmtMoeda(totalParcelas)}) difere do valor a parcelar ({fmtMoeda(valorAParcelar)})
                 </div>
             )}
 
@@ -317,7 +399,9 @@ export default function FaturamentoPedido() {
             <div className="flex flex-col gap-3 mb-6">
                 {parcelas.length === 0 && (
                     <div className="text-sm text-(--text-muted) text-center py-6 rounded-lg border border-dashed border-(--border)">
-                        Defina o número de parcelas e clique em <strong>Distribuir</strong>
+                        {isReceber && usarCredito && valorAParcelar <= 0
+                            ? <>Total pago integralmente com <strong>crédito</strong></>
+                            : <>Defina o número de parcelas e clique em <strong>Distribuir</strong></>}
                     </div>
                 )}
                 {parcelas.map(p => (

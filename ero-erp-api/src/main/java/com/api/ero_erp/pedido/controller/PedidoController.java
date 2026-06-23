@@ -85,7 +85,10 @@ public class PedidoController {
             @PathVariable Long id,
             @RequestBody(required = false) FaturarPedidoDto dto
     ) {
-        return ResponseEntity.ok(pedidoService.faturar(id, dto != null ? dto.contaId() : null));
+        return ResponseEntity.ok(pedidoService.faturar(
+                id,
+                dto != null ? dto.contaId()          : null,
+                dto != null ? dto.creditoUtilizado() : null));
     }
 
     @Operation(summary = "Cancela o pedido")
@@ -96,6 +99,16 @@ public class PedidoController {
             @RequestBody(required = false) CancelarPedidoDto dto
     ) {
         return ResponseEntity.ok(pedidoService.cancelar(id, dto != null ? dto.motivo() : null));
+    }
+
+    @Operation(summary = "Devolve produtos do pedido (total ou parcial) e gera crédito quando aplicável")
+    @PatchMapping("/{id}/devolver")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'PEDIDO')")
+    public ResponseEntity<PedidoResponseDto> devolver(
+            @PathVariable Long id,
+            @RequestBody DevolverPedidoDto dto
+    ) {
+        return ResponseEntity.ok(pedidoService.devolver(id, dto));
     }
 
     // ── Produtos do pedido ──────────────────────────────────────────────────────

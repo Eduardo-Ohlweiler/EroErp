@@ -238,6 +238,12 @@ export const menu: MenuItem[] = [
         roles: ["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"],
       },
       {
+        label: "Créditos de Clientes",
+        path:  "/pedidos/creditos",
+        icon:  FaHandHoldingUsd,
+        roles: ["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"],
+      },
+      {
         label: "Auxiliar Pedidos",
         icon:  FaCogs,
         roles: ["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"],

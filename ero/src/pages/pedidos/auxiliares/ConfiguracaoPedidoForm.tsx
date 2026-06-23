@@ -15,6 +15,7 @@ export default function ConfiguracaoPedidoForm() {
     const { showMessage } = useMessage()
 
     const [faturarAoConcluir, setFaturarAoConcluir] = useState("PERGUNTAR")
+    const [devolucaoGerarCredito, setDevolucaoGerarCredito] = useState("SIM")
     const [loading, setLoading] = useState(false)
     const [saving,  setSaving]  = useState(false)
 
@@ -25,6 +26,9 @@ export default function ConfiguracaoPedidoForm() {
                 if (r.data?.faturarAoConcluir) {
                     setFaturarAoConcluir(r.data.faturarAoConcluir)
                 }
+                if (r.data?.devolucaoGerarCredito) {
+                    setDevolucaoGerarCredito(r.data.devolucaoGerarCredito)
+                }
             })
             .catch(() => {})
             .finally(() => setLoading(false))
@@ -33,7 +37,7 @@ export default function ConfiguracaoPedidoForm() {
     async function handleSalvar() {
         setSaving(true)
         try {
-            await api.put("/pedidos/configuracao", { faturarAoConcluir })
+            await api.put("/pedidos/configuracao", { faturarAoConcluir, devolucaoGerarCredito })
             showMessage("success", "Configuração salva com sucesso!")
         } catch (err) {
             if (axios.isAxiosError(err)) {
@@ -75,6 +79,21 @@ export default function ConfiguracaoPedidoForm() {
                                 { value: "SIM",       label: "Sim"       },
                                 { value: "NAO",       label: "Não"       },
                                 { value: "PERGUNTAR", label: "Perguntar" },
+                            ]}
+                        />
+                    </TCol>
+                </TRow>
+                <TRow>
+                    <TCol>
+                        <TCombo
+                            name        ="devolucaoGerarCredito"
+                            label       ="Devolução - gerar crédito"
+                            width       ="220px"
+                            defaultValue={devolucaoGerarCredito}
+                            onChange    ={setDevolucaoGerarCredito}
+                            options     ={[
+                                { value: "SIM", label: "Sim" },
+                                { value: "NAO", label: "Não" },
                             ]}
                         />
                     </TCol>

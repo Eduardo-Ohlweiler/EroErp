@@ -61,6 +61,7 @@ import ConfiguracaoConsultaForm                  from "../pages/clinica/Configur
 import VendaPdvList                              from "../pages/pedidos/VendaPdvList"
 import PedidoForm                                from "../pages/pedidos/PedidoForm"
 import FaturamentoPedido                         from "../pages/pedidos/FaturamentoPedido"
+import CreditoClienteList                         from "../pages/pedidos/CreditoClienteList"
 import TipoPedidoList                            from "../pages/pedidos/auxiliares/TipoPedidoList"
 import TipoPedidoForm                            from "../pages/pedidos/auxiliares/TipoPedidoForm"
 import ConfiguracaoPedidoForm                    from "../pages/pedidos/auxiliares/ConfiguracaoPedidoForm"
@@ -264,6 +265,7 @@ export function Router() {
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "PEDIDO", "PEDIDO_GET"]} />}>
               <Route path="/pedidos"                   element={<VendaPdvList />} />
               <Route path="/pedidos/novo"              element={<PedidoForm />} />
+              <Route path="/pedidos/creditos"          element={<CreditoClienteList />} />
               <Route path="/pedidos/:id"               element={<PedidoForm />} />
               <Route path="/pedidos/:id/faturamento"   element={<FaturamentoPedido />} />
               <Route path="/pedidos/tipos"             element={<TipoPedidoList />} />

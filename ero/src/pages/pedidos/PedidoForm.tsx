@@ -72,14 +72,18 @@ function fmtAjuste(tipoAjuste: string | null, tipoCalculo: string | null, valorA
 }
 
 const STATUS_LABEL: Record<StatusPedido, string> = {
-  ABERTO:    "Aberto",
-  CONCLUIDO: "Concluído",
-  CANCELADO: "Cancelado",
+  ABERTO:            "Aberto",
+  CONCLUIDO:         "Concluído",
+  CANCELADO:         "Cancelado",
+  DEVOLVIDO:         "Devolvido",
+  DEVOLVIDO_PARCIAL: "Parcialmente devolvido",
 }
 const STATUS_COLOR: Record<StatusPedido, string> = {
-  ABERTO:    "bg-blue-100 text-blue-800 border-blue-200",
-  CONCLUIDO: "bg-green-100 text-green-800 border-green-200",
-  CANCELADO: "bg-red-100 text-red-800 border-red-200",
+  ABERTO:            "bg-blue-100 text-blue-800 border-blue-200",
+  CONCLUIDO:         "bg-green-100 text-green-800 border-green-200",
+  CANCELADO:         "bg-red-100 text-red-800 border-red-200",
+  DEVOLVIDO:         "bg-orange-100 text-orange-800 border-orange-200",
+  DEVOLVIDO_PARCIAL: "bg-amber-100 text-amber-800 border-amber-200",
 }
 
 const OPCOES_AJUSTE = [
@@ -154,12 +158,16 @@ export default function PedidoForm() {
   const [motivoCancel, setMotivoCancel] = useState("")
   const [cancelStatus, setCancelStatus] = useState("CANCELADO")
   const [canceling,    setCanceling]    = useState(false)
+  const [devTipo,      setDevTipo]      = useState<"TOTAL" | "PARCIAL">("TOTAL")
+  const [devItens,     setDevItens]     = useState<Record<number, string>>({})
+  const [devolveCredito, setDevolveCredito] = useState(true)
 
   // Configuração "Faturar ao concluir": SIM | NAO | PERGUNTAR (fallback PERGUNTAR)
   const [faturarConfig, setFaturarConfig] = useState<"SIM" | "NAO" | "PERGUNTAR">("PERGUNTAR")
 
   const isEdit   = !!currentId
   const isClosed = pedido?.status === "CONCLUIDO" || pedido?.status === "CANCELADO"
+                || pedido?.status === "DEVOLVIDO" || pedido?.status === "DEVOLVIDO_PARCIAL"
 
   useEffect(() => {
     api.get<TipoPedidoSummary[]>("/tipos-pedido/ativos")
@@ -170,7 +178,10 @@ export default function PedidoForm() {
   // Carrega a configuração "Faturar ao concluir" (fallback PERGUNTAR quando não há registro)
   useEffect(() => {
     api.get("/pedidos/configuracao")
-      .then(r => { if (r.data?.faturarAoConcluir) setFaturarConfig(r.data.faturarAoConcluir) })
+      .then(r => {
+        if (r.data?.faturarAoConcluir) setFaturarConfig(r.data.faturarAoConcluir)
+        setDevolveCredito(r.data?.devolucaoGerarCredito !== "NAO")
+      })
       .catch(() => {})
   }, [])
 
@@ -346,6 +357,8 @@ export default function PedidoForm() {
       parcelas,
       totalGeral,
       itens,
+      devolucoes,
+      totalLiquido,
     })
     baixarPdf(pdf, `pedido-${pedido.id}.pdf`)
   }
@@ -369,6 +382,16 @@ export default function PedidoForm() {
     setCancelModal(false)
     setMotivoCancel("")
     setCancelStatus("CANCELADO")
+    setDevTipo("TOTAL")
+    setDevItens({})
+  }
+
+  function abrirCancelModal() {
+    setCancelStatus(pedido?.status === "DEVOLVIDO_PARCIAL" ? "DEVOLUCAO" : "CANCELADO")
+    setDevTipo("TOTAL")
+    setDevItens({})
+    setMotivoCancel("")
+    setCancelModal(true)
   }
 
   async function handleCancelar() {
@@ -382,6 +405,36 @@ export default function PedidoForm() {
       if (axios.isAxiosError(err)) {
         const d = err.response?.data as ErrorResponse
         showMessage("error", d?.erro ?? "Erro ao cancelar")
+      }
+    } finally {
+      setCanceling(false)
+    }
+  }
+
+  async function handleDevolver() {
+    let payload: { tipo: string; motivo: string; itens: { pedidoProdutoId: number; quantidade: number }[] }
+    if (devTipo === "TOTAL") {
+      payload = { tipo: "TOTAL", motivo: motivoCancel, itens: [] }
+    } else {
+      const itens = (pedido?.produtos ?? [])
+        .map(p => ({ pedidoProdutoId: p.id, quantidade: parseFloat(devItens[p.id] ?? "0") || 0 }))
+        .filter(it => it.quantidade > 0)
+      if (itens.length === 0) {
+        showMessage("error", "Informe a quantidade a devolver de ao menos um produto")
+        return
+      }
+      payload = { tipo: "PARCIAL", motivo: motivoCancel, itens }
+    }
+    setCanceling(true)
+    try {
+      await api.patch(`/pedidos/${currentId}/devolver`, payload)
+      showMessage("success", "Devolução registrada!")
+      fecharCancelModal()
+      await reload(currentId!)
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const d = err.response?.data as ErrorResponse
+        showMessage("error", d?.erro ?? "Erro ao registrar devolução")
       }
     } finally {
       setCanceling(false)
@@ -475,6 +528,20 @@ export default function PedidoForm() {
   const subtotal    = produtos.reduce((acc, p) => acc + p.total, 0)
   const valorAjusteGeralNum = valorAjusteGeral ? Number(valorAjusteGeral) : null
   const totalGeral  = calcTotal(subtotal, 1, tipoAjusteGeral || null, tipoCalculoGeral, valorAjusteGeralNum)
+
+  // Devoluções por produto — valor de venda devolvido, rateando o ajuste geral
+  const ratioGeral     = subtotal > 0 ? totalGeral / subtotal : 1
+  const devolucoes     = produtos
+    .filter(p => (p.quantidadeDevolvida ?? 0) > 0)
+    .map(p => ({
+      produtoNome: p.produtoNome,
+      quantidade:  p.quantidadeDevolvida,
+      valor: Math.round(
+        calcTotal(p.precoUnitario, p.quantidadeDevolvida, p.tipoAjuste, p.tipoCalculo, p.valorAjuste)
+        * ratioGeral * 100) / 100,
+    }))
+  const totalDevolvido = devolucoes.reduce((acc, d) => acc + d.valor, 0)
+  const totalLiquido   = Math.round((totalGeral - totalDevolvido) * 100) / 100
 
   const podeFaturar = isEdit && pedido?.status === "CONCLUIDO" && !pedido?.faturado && pedido?.geraFinanceiro !== "NENHUM"
 
@@ -728,6 +795,29 @@ export default function PedidoForm() {
                 <span>Total Geral</span>
                 <span>{fmtMoeda(totalGeral)}</span>
               </div>
+
+              {devolucoes.length > 0 && (
+                <>
+                  <div className="mt-2 text-xs font-semibold uppercase tracking-wide text-(--text-muted)">
+                    Devoluções
+                  </div>
+                  {devolucoes.map((d, i) => (
+                    <div key={i} className="flex justify-between text-(--text-muted)">
+                      <span>{d.produtoNome} × {fmtQtd(d.quantidade)} (devolvido)</span>
+                      <span className="text-red-600 w-28 text-right">− {fmtMoeda(d.valor)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between font-medium text-red-600">
+                    <span>Total devolvido</span>
+                    <span>− {fmtMoeda(totalDevolvido)}</span>
+                  </div>
+                  <hr className="border-(--border) my-1" />
+                  <div className="flex justify-between text-base font-bold text-(--accent)">
+                    <span>Total líquido</span>
+                    <span>{fmtMoeda(totalLiquido)}</span>
+                  </div>
+                </>
+              )}
             </div>
           </TPanel>
         )}
@@ -757,8 +847,8 @@ export default function PedidoForm() {
             )}
           </TFormActionsLeft>
           <TFormActionsRight>
-            {isEdit && pedido && pedido.status !== "CANCELADO" && (
-              <TButton label="Cancelar Pedido" variant="cancel" onClick={() => setCancelModal(true)} />
+            {isEdit && pedido && (pedido.status === "ABERTO" || pedido.status === "CONCLUIDO" || pedido.status === "DEVOLVIDO_PARCIAL") && (
+              <TButton label="Cancelar / Devolver" variant="cancel" onClick={abrirCancelModal} />
             )}
             {isEdit && pedido?.status === "ABERTO" && (
               <TButton label="Concluir" variant="save" onClick={() => handleConcluir(totalGeral)} />
@@ -773,47 +863,110 @@ export default function PedidoForm() {
         </TFormFooter>
       </TForm>
 
-      {/* ── Modal: cancelar pedido ───────────────────────────────────────── */}
+      {/* ── Modal: cancelar / devolver pedido ────────────────────────────── */}
       <TWindow
-        title   ="Cancelar Pedido"
+        title   ="Cancelar / Devolver Pedido"
         open    ={cancelModal}
         onClose ={fecharCancelModal}
-        width   ="460px"
+        width   ="480px"
         actions ={
           <>
             <TButton label="Voltar" variant="cancel" onClick={fecharCancelModal} />
-            <TButton label="Confirmar Cancelamento" variant="save"
-              loading={canceling} onClick={handleCancelar} />
+            <TButton
+              label   ={cancelStatus === "DEVOLUCAO" ? "Confirmar Devolução" : "Confirmar Cancelamento"}
+              variant ="save"
+              loading ={canceling}
+              onClick ={cancelStatus === "DEVOLUCAO" ? handleDevolver : handleCancelar}
+            />
           </>
         }
       >
         <div className="flex flex-col gap-3">
           <TCombo
+            key         ={`cancel-status-${cancelModal}-${pedido?.status}`}
             name        ="cancelStatus"
             label       ="Status"
-            options     ={[{ value: "CANCELADO", label: "Cancelado" }]}
-            defaultValue="CANCELADO"
+            defaultValue={cancelStatus}
             onChange    ={setCancelStatus}
+            options     ={
+              pedido?.status === "DEVOLVIDO_PARCIAL"
+                ? [{ value: "DEVOLUCAO", label: "Devolução" }]
+                : pedido?.status === "CONCLUIDO"
+                  ? [{ value: "CANCELADO", label: "Cancelado" }, { value: "DEVOLUCAO", label: "Devolução" }]
+                  : [{ value: "CANCELADO", label: "Cancelado" }]
+            }
           />
 
-          <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 flex flex-col gap-1">
-            <span>⚠️ Esta ação <strong>não poderá ser desfeita</strong>.</span>
-            {pedido?.status === "CONCLUIDO" && (
-              <span>O estoque movimentado por este pedido será <strong>estornado</strong>.</span>
-            )}
-            {pedido?.faturado && (
-              <span>O <strong>faturamento</strong> deste pedido (parcelas e pagamentos já lançados) será <strong>excluído</strong>.</span>
-            )}
-          </div>
+          {cancelStatus === "DEVOLUCAO" ? (
+            <>
+              <TCombo
+                key         ={`dev-tipo-${cancelModal}`}
+                name        ="devTipo"
+                label       ="Tipo de devolução"
+                defaultValue="TOTAL"
+                onChange    ={(v) => setDevTipo(v === "PARCIAL" ? "PARCIAL" : "TOTAL")}
+                options     ={[
+                  { value: "TOTAL",   label: "Total (todos os produtos restantes)" },
+                  { value: "PARCIAL", label: "Parcial (escolher quantidades)"      },
+                ]}
+              />
+
+              {devTipo === "PARCIAL" && (
+                <div className="flex flex-col gap-2 border border-(--border) rounded p-2 max-h-60 overflow-y-auto">
+                  {(pedido?.produtos ?? []).map(p => {
+                    const restante = p.quantidade - p.quantidadeDevolvida
+                    return (
+                      <div key={p.id} className="flex items-center justify-between gap-2 text-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate">{p.produtoNome}</div>
+                          <div className="text-xs text-(--text-muted)">Disponível: {fmtQtd(restante)}</div>
+                        </div>
+                        <input
+                          type       ="number"
+                          min        ="0"
+                          max        ={restante}
+                          step       ="0.001"
+                          disabled   ={restante <= 0}
+                          value      ={devItens[p.id] ?? ""}
+                          onChange   ={e => setDevItens(prev => ({ ...prev, [p.id]: e.target.value }))}
+                          placeholder="0"
+                          className  ="w-24 border border-(--border) rounded px-2 py-1 text-sm
+                                       bg-(--bg-surface) text-(--text-primary) disabled:opacity-50
+                                       focus:outline-none focus:ring-1 focus:ring-(--accent)"
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 flex flex-col gap-1">
+                <span>⚠️ O estoque dos produtos devolvidos será <strong>retornado</strong>.</span>
+                {pedido?.geraFinanceiro === "CONTAS_RECEBER" && devolveCredito && (
+                  <span>Será gerado <strong>crédito</strong> para o cliente no valor devolvido.</span>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 flex flex-col gap-1">
+              <span>⚠️ Esta ação <strong>não poderá ser desfeita</strong>.</span>
+              {pedido?.status === "CONCLUIDO" && (
+                <span>O estoque movimentado por este pedido será <strong>estornado</strong>.</span>
+              )}
+              {pedido?.faturado && (
+                <span>O <strong>faturamento</strong> deste pedido (parcelas e pagamentos já lançados) será <strong>excluído</strong>.</span>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-(--text-muted)">Motivo do cancelamento (opcional):</label>
+            <label className="text-sm text-(--text-muted)">Motivo (opcional):</label>
             <textarea
-              rows      ={4}
+              rows      ={3}
               maxLength ={500}
               value     ={motivoCancel}
               onChange  ={e => setMotivoCancel(e.target.value)}
-              placeholder="Motivo do cancelamento..."
+              placeholder="Motivo..."
               className ="border border-(--border) rounded px-3 py-2 text-sm
                           bg-(--bg-surface) text-(--text-primary) resize-none
                           focus:outline-none focus:ring-1 focus:ring-(--accent) w-full"

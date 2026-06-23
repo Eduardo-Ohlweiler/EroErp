@@ -59,6 +59,11 @@ public class FinanceiroDashboardService {
         List<ParcelaContaReceber> todasReceber = parcelaReceberRepo.findForPagarContas(clienteId,    null, null, null, null, null);
         List<ParcelaContaPagar>   todasPagar   = parcelaContaPagarRepo.findForPagarContas(clienteId, null, null, null, null, null);
 
+        // Parcelas pagas com crédito do cliente não entram no caixa (recebido/saldo/fluxo)
+        List<ParcelaContaReceber> recebidasCaixa = todasReceber.stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getCredito()))
+                .toList();
+
         // Cards - pendentes (valor face)
         BigDecimal pendenteReceber = todasReceber.stream()
                 .filter(p -> p.getStatus() == StatusConta.ABERTO)
@@ -84,7 +89,7 @@ public class FinanceiroDashboardService {
         int mesAtual = hoje.getMonthValue();
         int anoAtual = hoje.getYear();
 
-        BigDecimal recebidoMes = todasReceber.stream()
+        BigDecimal recebidoMes = recebidasCaixa.stream()
                 .filter(p -> p.getStatus() == StatusConta.PAGO
                         && p.getDataPagamento() != null
                         && p.getDataPagamento().getMonthValue() == mesAtual
@@ -101,7 +106,7 @@ public class FinanceiroDashboardService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Saldo geral
-        BigDecimal totalRecebido = todasReceber.stream()
+        BigDecimal totalRecebido = recebidasCaixa.stream()
                 .filter(p -> p.getStatus() == StatusConta.PAGO)
                 .map(p -> p.getValorPago() != null ? p.getValorPago() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -126,11 +131,11 @@ public class FinanceiroDashboardService {
         BigDecimal saldoGeral = totalRecebido.subtract(totalPago).add(totalEntradas).subtract(totalSaidas);
 
         // Fluxo mensal
-        List<FluxoMensalDto> fluxo = calcularFluxoMensal(todasReceber, todasPagar, lancamentos, hoje);
+        List<FluxoMensalDto> fluxo = calcularFluxoMensal(recebidasCaixa, todasPagar, lancamentos, hoje);
 
         // Saldo por conta
         List<ContaFinanceira> contas = contaFinanceiraRepo.findForSelect(clienteId);
-        List<SaldoContaDto> saldoPorConta = calcularSaldoPorConta(todasReceber, todasPagar, lancamentos, contas);
+        List<SaldoContaDto> saldoPorConta = calcularSaldoPorConta(recebidasCaixa, todasPagar, lancamentos, contas);
 
         return new FinanceiroDashboardDto(
                 pendenteReceber,

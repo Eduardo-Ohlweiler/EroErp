@@ -10,6 +10,9 @@ import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.financeiro.contapagar.service.ContaPagarService;
 import com.api.ero_erp.financeiro.contareceber.service.ContaReceberService;
+import com.api.ero_erp.configuracaopedido.service.ConfiguracaoPedidoService;
+import com.api.ero_erp.credito.service.CreditoClienteService;
+import com.api.ero_erp.pedido.dtos.DevolverPedidoDto;
 import com.api.ero_erp.pedido.dtos.PedidoCreateDto;
 import com.api.ero_erp.pedido.dtos.PedidoProdutoCreateDto;
 import com.api.ero_erp.pedido.dtos.PedidoProdutoResponseDto;
@@ -36,8 +39,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class PedidoService {
@@ -53,6 +62,8 @@ public class PedidoService {
     private final EstoqueService          estoqueService;
     private final ContaReceberService     contaReceberService;
     private final ContaPagarService       contaPagarService;
+    private final CreditoClienteService     creditoClienteService;
+    private final ConfiguracaoPedidoService configuracaoPedidoService;
     private final SecurityUtils           securityUtils;
 
     public PedidoService(
@@ -67,6 +78,8 @@ public class PedidoService {
             EstoqueService          estoqueService,
             ContaReceberService     contaReceberService,
             ContaPagarService       contaPagarService,
+            CreditoClienteService     creditoClienteService,
+            ConfiguracaoPedidoService configuracaoPedidoService,
             SecurityUtils           securityUtils
     ) {
         this.pedidoRepository        = pedidoRepository;
@@ -80,6 +93,8 @@ public class PedidoService {
         this.estoqueService          = estoqueService;
         this.contaReceberService     = contaReceberService;
         this.contaPagarService       = contaPagarService;
+        this.creditoClienteService     = creditoClienteService;
+        this.configuracaoPedidoService = configuracaoPedidoService;
         this.securityUtils           = securityUtils;
     }
 
@@ -191,6 +206,8 @@ public class PedidoService {
             throw new BadRequestException("Pedido já está concluído");
         if (pedido.getStatus() == StatusPedido.CANCELADO)
             throw new BadRequestException("Não é possível concluir um pedido cancelado");
+        if (pedido.getStatus() == StatusPedido.DEVOLVIDO || pedido.getStatus() == StatusPedido.DEVOLVIDO_PARCIAL)
+            throw new BadRequestException("Não é possível concluir um pedido devolvido");
 
         aplicarConclusao(pedido, clienteId, usuario);
         pedido.setUpdatedBy(usuario);
@@ -199,13 +216,15 @@ public class PedidoService {
     }
 
     @Transactional
-    public PedidoResponseDto faturar(Long id, Long contaId) {
+    public PedidoResponseDto faturar(Long id, Long contaId, BigDecimal creditoUtilizado) {
         Long    clienteId = securityUtils.getClienteIdLogado();
         Pedido  pedido    = findById(id);
         Usuario usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
 
         if (pedido.getStatus() == StatusPedido.CANCELADO)
             throw new BadRequestException("Não é possível faturar um pedido cancelado");
+        if (pedido.getStatus() == StatusPedido.DEVOLVIDO || pedido.getStatus() == StatusPedido.DEVOLVIDO_PARCIAL)
+            throw new BadRequestException("Não é possível faturar um pedido devolvido");
         if (pedido.getTipoPedido().getGeraFinanceiro() == GeraFinanceiro.NENHUM)
             throw new BadRequestException("Este tipo de pedido não gera financeiro");
         if (Boolean.TRUE.equals(pedido.getFaturado()))
@@ -219,6 +238,11 @@ public class PedidoService {
         if (contaId != null) pedido.setContaId(contaId);
         pedido.setUpdatedBy(usuario);
 
+        // Consome crédito do cliente, se utilizado no faturamento (não entra no caixa)
+        if (creditoUtilizado != null && creditoUtilizado.compareTo(BigDecimal.ZERO) > 0)
+            creditoClienteService.usarCredito(pedido.getPessoa(), creditoUtilizado,
+                    "Faturamento do pedido #" + id, id, contaId);
+
         return buildResponse(pedidoRepository.save(pedido));
     }
 
@@ -230,6 +254,8 @@ public class PedidoService {
 
         if (pedido.getStatus() == StatusPedido.CANCELADO)
             throw new BadRequestException("Pedido já está cancelado");
+        if (pedido.getStatus() == StatusPedido.DEVOLVIDO || pedido.getStatus() == StatusPedido.DEVOLVIDO_PARCIAL)
+            throw new BadRequestException("Não é possível cancelar um pedido devolvido");
 
         // Estorna o estoque movimentado na conclusão (inverte a direção do tipo de pedido)
         if (pedido.getStatus() == StatusPedido.CONCLUIDO)
@@ -247,6 +273,126 @@ public class PedidoService {
         pedido.setUpdatedBy(usuario);
 
         return buildResponse(pedidoRepository.save(pedido));
+    }
+
+    /**
+     * Devolve produtos do pedido (TOTAL = todo o restante; PARCIAL = quantidades informadas),
+     * devolve o estoque correspondente e gera crédito ao cliente quando for venda e a config
+     * permitir. Incremental: acumula em quantidadeDevolvida e ajusta o status.
+     */
+    @Transactional
+    public PedidoResponseDto devolver(Long id, DevolverPedidoDto dto) {
+        Long    clienteId = securityUtils.getClienteIdLogado();
+        Pedido  pedido    = findById(id);
+        Usuario usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
+
+        if (pedido.getStatus() != StatusPedido.CONCLUIDO
+                && pedido.getStatus() != StatusPedido.DEVOLVIDO_PARCIAL)
+            throw new BadRequestException("Só é possível devolver um pedido concluído");
+
+        List<PedidoProduto> itens = pedidoProdutoRepository.findByPedidoIdAndClienteId(id, clienteId);
+        if (itens.isEmpty())
+            throw new BadRequestException("Pedido sem produtos para devolver");
+
+        boolean total = "TOTAL".equalsIgnoreCase(dto.tipo());
+
+        // Quantidade a devolver agora por item (pedidoProdutoId -> qtd)
+        Map<Long, BigDecimal> aDevolver = new HashMap<>();
+        if (total) {
+            for (PedidoProduto pp : itens) {
+                BigDecimal restante = pp.getQuantidade().subtract(devolvida(pp));
+                if (restante.compareTo(BigDecimal.ZERO) > 0) aDevolver.put(pp.getId(), restante);
+            }
+        } else {
+            if (dto.itens() == null || dto.itens().isEmpty())
+                throw new BadRequestException("Informe os produtos a devolver");
+            Map<Long, PedidoProduto> porId = itens.stream()
+                    .collect(Collectors.toMap(PedidoProduto::getId, p -> p));
+            for (DevolverPedidoDto.ItemDevolucaoDto it : dto.itens()) {
+                if (it.quantidade() == null || it.quantidade().compareTo(BigDecimal.ZERO) <= 0) continue;
+                PedidoProduto pp = porId.get(it.pedidoProdutoId());
+                if (pp == null)
+                    throw new BadRequestException("Produto do pedido não encontrado");
+                BigDecimal restante = pp.getQuantidade().subtract(devolvida(pp));
+                if (it.quantidade().compareTo(restante) > 0)
+                    throw new BadRequestException(
+                            "Quantidade a devolver maior que o disponível para o produto " + pp.getProduto().getNome());
+                aDevolver.merge(pp.getId(), it.quantidade(), BigDecimal::add);
+            }
+        }
+
+        if (aDevolver.isEmpty())
+            throw new BadRequestException("Nada a devolver");
+
+        // Estorno de estoque (só itens com baixarEstoque = true), pela qtd devolvida agora
+        MovimentaEstoque mov = pedido.getTipoPedido().getMovimentaEstoque();
+        if (mov == MovimentaEstoque.SAIDA || mov == MovimentaEstoque.ENTRADA) {
+            Set<Long> mexeEstoque = pedidoProdutoRepository.findParaMovimentarEstoque(id)
+                    .stream().map(PedidoProduto::getId).collect(Collectors.toSet());
+            for (PedidoProduto pp : itens) {
+                BigDecimal qtd = aDevolver.get(pp.getId());
+                if (qtd == null || !mexeEstoque.contains(pp.getId())) continue;
+                String motivo = "Devolução do pedido #" + id;
+                if (mov == MovimentaEstoque.SAIDA)
+                    estoqueService.entrarEstoquePorPedido(clienteId, pp.getEmitente().getId(),
+                            pp.getProduto().getId(), qtd, motivo, usuario);
+                else
+                    estoqueService.baixarEstoquePorConsumo(clienteId, pp.getEmitente().getId(),
+                            pp.getProduto().getId(), qtd, motivo, usuario);
+            }
+        }
+
+        // Valor de venda devolvido (linhas) + crédito rateando o ajuste geral do pedido
+        BigDecimal devolvidoLinhas = BigDecimal.ZERO;
+        BigDecimal subtotal        = BigDecimal.ZERO;
+        for (PedidoProduto pp : itens) {
+            subtotal = subtotal.add(PedidoMapper.calcTotal(pp.getPrecoUnitario(), pp.getQuantidade(),
+                    pp.getTipoAjuste(), pp.getTipoCalculo(), pp.getValorAjuste()));
+            BigDecimal qtd = aDevolver.get(pp.getId());
+            if (qtd != null)
+                devolvidoLinhas = devolvidoLinhas.add(PedidoMapper.calcTotal(pp.getPrecoUnitario(), qtd,
+                        pp.getTipoAjuste(), pp.getTipoCalculo(), pp.getValorAjuste()));
+        }
+        BigDecimal pedidoTotal = PedidoMapper.calcTotal(subtotal, BigDecimal.ONE,
+                pedido.getTipoAjusteGeral(), pedido.getTipoCalculoGeral(), pedido.getValorAjusteGeral());
+        BigDecimal creditoValor = subtotal.compareTo(BigDecimal.ZERO) == 0
+                ? devolvidoLinhas
+                : devolvidoLinhas.multiply(pedidoTotal).divide(subtotal, 2, RoundingMode.HALF_UP);
+
+        // Aplica a devolução nas linhas (qtd acumulada)
+        for (PedidoProduto pp : itens) {
+            BigDecimal qtd = aDevolver.get(pp.getId());
+            if (qtd == null) continue;
+            pp.setQuantidadeDevolvida(devolvida(pp).add(qtd));
+            pp.setUpdatedBy(usuario);
+            pedidoProdutoRepository.save(pp);
+        }
+
+        // Crédito só em vendas (CONTAS_RECEBER) e se a config permitir (default SIM)
+        if (pedido.getTipoPedido().getGeraFinanceiro() == GeraFinanceiro.CONTAS_RECEBER && devolucaoGeraCredito())
+            creditoClienteService.gerarCredito(pedido.getPessoa(), creditoValor,
+                    "Devolução do pedido #" + id, id);
+
+        // Status: tudo devolvido => DEVOLVIDO; senão DEVOLVIDO_PARCIAL
+        boolean tudoDevolvido = itens.stream()
+                .allMatch(pp -> devolvida(pp).compareTo(pp.getQuantidade()) >= 0);
+        pedido.setStatus(tudoDevolvido ? StatusPedido.DEVOLVIDO : StatusPedido.DEVOLVIDO_PARCIAL);
+        if (dto.motivo() != null && !dto.motivo().isBlank())
+            pedido.setMotivoCancelamento(dto.motivo());
+        pedido.setUpdatedBy(usuario);
+
+        return buildResponse(pedidoRepository.save(pedido));
+    }
+
+    private BigDecimal devolvida(PedidoProduto pp) {
+        return pp.getQuantidadeDevolvida() != null ? pp.getQuantidadeDevolvida() : BigDecimal.ZERO;
+    }
+
+    private boolean devolucaoGeraCredito() {
+        var cfg = configuracaoPedidoService.getAtual();
+        return cfg == null
+                || cfg.devolucaoGerarCredito() == null
+                || !"NAO".equalsIgnoreCase(cfg.devolucaoGerarCredito());
     }
 
     /**
@@ -403,5 +549,7 @@ public class PedidoService {
             throw new BadRequestException("Não é possível editar um pedido já concluído");
         if (pedido.getStatus() == StatusPedido.CANCELADO)
             throw new BadRequestException("Não é possível editar um pedido cancelado");
+        if (pedido.getStatus() == StatusPedido.DEVOLVIDO || pedido.getStatus() == StatusPedido.DEVOLVIDO_PARCIAL)
+            throw new BadRequestException("Não é possível editar um pedido devolvido");
     }
 }

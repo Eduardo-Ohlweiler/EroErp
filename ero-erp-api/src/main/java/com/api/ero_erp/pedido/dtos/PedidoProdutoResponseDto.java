@@ -10,6 +10,7 @@ public record PedidoProdutoResponseDto(
         Long          emitenteId,
         String        emitenteNome,
         BigDecimal    quantidade,
+        BigDecimal    quantidadeDevolvida,
         BigDecimal    precoUnitario,
         String        tipoAjuste,
         String        tipoCalculo,

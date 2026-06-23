@@ -78,6 +78,7 @@ public interface ParcelaContaReceberRepository extends JpaRepository<ParcelaCont
         LEFT JOIN FETCH p.contaFinanceira
         WHERE cr.cliente.id = :clienteId
           AND p.status = com.api.ero_erp.financeiro.enums.StatusConta.PAGO
+          AND (p.credito = false OR p.credito IS NULL)
           AND p.dataPagamento BETWEEN :ini AND :fim
           AND (:emitenteId IS NULL OR cr.emitente.id = :emitenteId)
           AND (:contaId IS NULL OR p.contaFinanceira.id = :contaId)

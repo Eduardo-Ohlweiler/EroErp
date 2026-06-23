@@ -19,5 +19,8 @@ public record ParcelaContaReceberCreateDto(
         String observacao,
 
         String     dataPagamento,
-        BigDecimal valorPago
+        BigDecimal valorPago,
+
+        // Parcela paga com crédito do cliente (não entra no caixa)
+        Boolean    credito
 ) {}

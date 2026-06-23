@@ -65,6 +65,7 @@ public class PedidoMapper {
                 pp.getEmitente().getId(),
                 pp.getEmitente().getPessoa().getNome(),
                 pp.getQuantidade(),
+                pp.getQuantidadeDevolvida(),
                 pp.getPrecoUnitario(),
                 pp.getTipoAjuste(),
                 pp.getTipoCalculo(),

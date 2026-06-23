@@ -14,5 +14,6 @@ public record ParcelaContaReceberResponseDto(
         String dataPagamento,
         BigDecimal valorPago,
         String status,
-        String observacao
+        String observacao,
+        Boolean credito
 ) {}

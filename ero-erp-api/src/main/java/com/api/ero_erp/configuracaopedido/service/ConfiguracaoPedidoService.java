@@ -47,6 +47,7 @@ public class ConfiguracaoPedidoService {
 
         config.setCliente(cliente);
         config.setFaturarAoConcluir(dto.faturarAoConcluir());
+        config.setDevolucaoGerarCredito(dto.devolucaoGerarCredito());
 
         return ConfiguracaoPedidoMapper.toDto(repository.save(config));
     }

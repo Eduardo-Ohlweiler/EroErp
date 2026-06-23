@@ -341,6 +341,12 @@ export interface DadosFaturamento {
     precoUnitario: number
     total:         number
   }[]
+  devolucoes?: {              // produtos devolvidos (opcional)
+    produtoNome: string
+    quantidade:  number
+    valor:       number
+  }[]
+  totalLiquido?: number       // total após devoluções (default = totalGeral)
 }
 
 export function gerarPdfFaturamento(dados: DadosFaturamento): string {
@@ -442,10 +448,33 @@ export function gerarPdfFaturamento(dados: DadosFaturamento): string {
     afterTable = y
   }
 
+  // Devoluções (se houver) — após o total do pedido
+  if (dados.devolucoes && dados.devolucoes.length > 0) {
+    autoTable(doc, {
+      startY: afterTable + 8,
+      head: [["Produto devolvido", "Qtd.", "Valor"]],
+      body: dados.devolucoes.map(d => [
+        d.produtoNome,
+        d.quantidade.toLocaleString("pt-BR", { maximumFractionDigits: 3 }),
+        "− " + fmtMoeda(d.valor),
+      ]),
+      foot: [
+        ["", "Total devolvido", "− " + fmtMoeda(dados.devolucoes.reduce((a, d) => a + d.valor, 0))],
+        ["", "Total líquido",   fmtMoeda(dados.totalLiquido ?? dados.totalGeral)],
+      ],
+      headStyles: { fillColor: [180, 70, 70], fontSize: 9 },
+      footStyles: { fillColor: [250, 235, 235], textColor: [0, 0, 0], fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      columnStyles: { 1: { halign: "right", cellWidth: 24 }, 2: { halign: "right", cellWidth: 36 } },
+      margin: { left: mg, right: mg },
+    })
+    afterTable = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? afterTable
+  }
+
   doc.setFontSize(8)
   doc.setFont("helvetica", "italic")
   doc.setTextColor(100, 100, 100)
-  doc.text(`Total por extenso: ${numeroPorExtenso(dados.totalGeral)}`, mg, afterTable + 6)
+  doc.text(`Total por extenso: ${numeroPorExtenso(dados.totalLiquido ?? dados.totalGeral)}`, mg, afterTable + 6)
   doc.setTextColor(0, 0, 0)
 
   return doc.output("datauristring").split(",")[1]

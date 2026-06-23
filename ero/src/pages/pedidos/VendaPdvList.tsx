@@ -19,15 +19,19 @@ import { TSpace }                                     from "../../components/tsp
 import { displayEmitente, formatarDocumento }         from "../../utils/pessoas"
 
 const STATUS_LABEL: Record<StatusPedido, string> = {
-  ABERTO:    "Aberto",
-  CONCLUIDO: "Concluído",
-  CANCELADO: "Cancelado",
+  ABERTO:            "Aberto",
+  CONCLUIDO:         "Concluído",
+  CANCELADO:         "Cancelado",
+  DEVOLVIDO:         "Devolvido",
+  DEVOLVIDO_PARCIAL: "Parc. devolvido",
 }
 
 const STATUS_COLOR: Record<StatusPedido, string> = {
-  ABERTO:    "bg-blue-500",
-  CONCLUIDO: "bg-green-500",
-  CANCELADO: "bg-red-500",
+  ABERTO:            "bg-blue-500",
+  CONCLUIDO:         "bg-green-500",
+  CANCELADO:         "bg-red-500",
+  DEVOLVIDO:         "bg-orange-500",
+  DEVOLVIDO_PARCIAL: "bg-amber-500",
 }
 
 function formatData(iso: string | null) {
@@ -214,10 +218,12 @@ export default function VendaPdvList() {
               width       ="200px"
               defaultValue={filtroStatus}
               options     ={[
-                { value: "",          label: "Todos"     },
-                { value: "ABERTO",    label: "Aberto"    },
-                { value: "CONCLUIDO", label: "Concluído" },
-                { value: "CANCELADO", label: "Cancelado" },
+                { value: "",                  label: "Todos"                  },
+                { value: "ABERTO",            label: "Aberto"                 },
+                { value: "CONCLUIDO",         label: "Concluído"              },
+                { value: "CANCELADO",         label: "Cancelado"              },
+                { value: "DEVOLVIDO",         label: "Devolvido"              },
+                { value: "DEVOLVIDO_PARCIAL", label: "Parcialmente devolvido" },
               ]}
             />
           </TCol>

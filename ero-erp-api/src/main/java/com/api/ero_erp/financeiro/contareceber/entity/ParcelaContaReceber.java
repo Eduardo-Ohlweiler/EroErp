@@ -53,9 +53,14 @@ public class ParcelaContaReceber extends BaseEntity {
     @Column(name = "observacao", columnDefinition = "TEXT")
     private String observacao;
 
+    /** Parcela paga com crédito do cliente: não entra no caixa (excluída do recebido/fluxo/saldo). */
+    @Column(name = "credito", nullable = false)
+    private Boolean credito = false;
+
     @PrePersist
     public void prePersist() {
         super.prePersist();
         if (this.status == null) this.status = StatusConta.ABERTO;
+        if (this.credito == null) this.credito = false;
     }
 }

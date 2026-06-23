@@ -1,3 +1,5 @@
 package com.api.ero_erp.pedido.dtos;
 
-public record FaturarPedidoDto(Long contaId) {}
+import java.math.BigDecimal;
+
+public record FaturarPedidoDto(Long contaId, BigDecimal creditoUtilizado) {}
