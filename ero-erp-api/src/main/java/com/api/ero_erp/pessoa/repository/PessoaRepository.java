@@ -70,11 +70,16 @@ public interface PessoaRepository extends JpaRepository<Pessoa, Long> {
         SELECT p FROM Pessoa p
         WHERE p.cliente.id = :clienteId
             AND p.ativo = true
-            AND (:nome IS NULL OR LOWER(p.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
+            AND (:ignorarId IS NULL OR p.id <> :ignorarId)
+            AND (:nome IS NULL
+                 OR LOWER(p.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%'))
+                 OR p.cpf  LIKE CONCAT('%', CAST(:nome AS string), '%')
+                 OR p.cnpj LIKE CONCAT('%', CAST(:nome AS string), '%'))
         ORDER BY p.nome
     """)
     List<Pessoa> findForSelect(
             @Param("clienteId") Long   clienteId,
-            @Param("nome")      String nome
+            @Param("nome")      String nome,
+            @Param("ignorarId") Long   ignorarId
     );
 }

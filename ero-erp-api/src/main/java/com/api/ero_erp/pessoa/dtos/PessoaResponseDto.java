@@ -3,6 +3,7 @@ package com.api.ero_erp.pessoa.dtos;
 import com.api.ero_erp.email.dtos.EmailResponseDto;
 import com.api.ero_erp.endereco.dtos.EnderecoResponseDto;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
+import com.api.ero_erp.pessoavinculo.dtos.PessoaVinculoResponseDto;
 import com.api.ero_erp.redesocial.dtos.RedeSocialResponseDto;
 import com.api.ero_erp.telefone.dtos.TelefoneResponseDto;
 import com.api.ero_erp.tipocadastro.dtos.TipoCadastroResponseDto;
@@ -38,5 +39,6 @@ public record PessoaResponseDto(
         List<EmailResponseDto>          emails,
         List<TelefoneResponseDto>       telefones,
         List<RedeSocialResponseDto>     redesSociais,
-        List<EnderecoResponseDto>       enderecos
+        List<EnderecoResponseDto>       enderecos,
+        List<PessoaVinculoResponseDto>  vinculos
 ) {}

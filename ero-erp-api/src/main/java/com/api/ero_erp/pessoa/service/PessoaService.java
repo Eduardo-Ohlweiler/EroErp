@@ -17,6 +17,7 @@ import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.pessoa.mapper.PessoaMapper;
 import com.api.ero_erp.pessoa.repository.PessoaRepository;
 import com.api.ero_erp.pessoa.util.PessoaValidator;
+import com.api.ero_erp.pessoavinculo.service.PessoaVinculoService;
 import com.api.ero_erp.redesocial.service.RedeSocialService;
 import com.api.ero_erp.telefone.service.TelefoneService;
 import com.api.ero_erp.tipocadastro.entity.TipoCadastro;
@@ -44,6 +45,7 @@ public class PessoaService {
     private final TelefoneService     telefoneService;
     private final RedeSocialService   redeSocialService;
     private final EnderecoService     enderecoService;
+    private final PessoaVinculoService pessoaVinculoService;
 
     public PessoaService(
             PessoaRepository    pessoaRepository,
@@ -54,7 +56,8 @@ public class PessoaService {
             EmailService        emailService,
             TelefoneService     telefoneService,
             RedeSocialService   redeSocialService,
-            EnderecoService     enderecoService
+            EnderecoService     enderecoService,
+            PessoaVinculoService pessoaVinculoService
     ) {
         this.pessoaRepository    = pessoaRepository;
         this.clienteService      = clienteService;
@@ -65,6 +68,7 @@ public class PessoaService {
         this.telefoneService     = telefoneService;
         this.redeSocialService   = redeSocialService;
         this.enderecoService     = enderecoService;
+        this.pessoaVinculoService = pessoaVinculoService;
     }
 
     @Transactional(readOnly = true)
@@ -98,9 +102,9 @@ public class PessoaService {
     }
 
     @Transactional(readOnly = true)
-    public List<PessoaSelectDto> select(String nome) {
+    public List<PessoaSelectDto> select(String nome, Long ignorarId) {
         Long clienteId = securityUtils.getClienteIdLogado();
-        return pessoaRepository.findForSelect(clienteId, nome)
+        return pessoaRepository.findForSelect(clienteId, nome, ignorarId)
                 .stream()
                 .map(PessoaMapper::toSelectDto)
                 .toList();
@@ -166,6 +170,7 @@ public class PessoaService {
         telefoneService.sincronizarTelefones(salva,      dto.telefones(),    cliente);
         redeSocialService.sincronizarRedesSociais(salva, dto.redesSociais(), cliente);
         enderecoService.sincronizarEnderecos(salva,      dto.enderecos(),    cliente);
+        pessoaVinculoService.sincronizarVinculos(salva,  dto.vinculos(),     cliente);
 
         return this.findByIdResponse(salva.getId());
     }
@@ -237,6 +242,7 @@ public class PessoaService {
         telefoneService.sincronizarTelefones(salva,      dto.telefones(),    pessoa.getCliente());
         redeSocialService.sincronizarRedesSociais(salva, dto.redesSociais(), pessoa.getCliente());
         enderecoService.sincronizarEnderecos(salva,      dto.enderecos(),    pessoa.getCliente());
+        pessoaVinculoService.sincronizarVinculos(salva,  dto.vinculos(),     pessoa.getCliente());
 
         return this.findByIdResponse(salva.getId());
     }

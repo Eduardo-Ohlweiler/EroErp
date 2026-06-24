@@ -70,6 +70,21 @@ export interface EnderecoResponse {
     updatedAt:        string | null
 }
 
+export type TipoVinculo = "RESPONSAVEL" | "DEPENDENTE" | "CONJUGE" | "FAMILIAR"
+
+export interface VinculoResponse {
+    id:            number
+    pessoaId:      number
+    pessoaNome:    string
+    pessoaCpf:     string | null
+    pessoaCnpj:    string | null
+    tipo:          TipoVinculo
+    tipoDescricao: string
+    observacao:    string | null
+    createdAt:     string
+    updatedAt:     string | null
+}
+
 export interface PessoaRequest {
     nome:                string
     tipoPessoa:          TipoPessoa
@@ -95,6 +110,7 @@ export interface PessoaResponse extends PessoaRequest {
     telefones:      TelefoneResponse[]
     redesSociais:   RedeSocialResponse[]
     enderecos:      EnderecoResponse[]
+    vinculos:       VinculoResponse[]
     createdAt:      string
     createdById:    number | null
     createdByNome:  string | null

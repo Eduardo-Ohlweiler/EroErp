@@ -62,9 +62,10 @@ public class PessoaController {
     @GetMapping("/select")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PessoaSelectDto>> select(
-            @Parameter(description = "Filtrar por nome") @RequestParam(required = false) String nome
+            @Parameter(description = "Filtrar por nome, CPF ou CNPJ") @RequestParam(required = false) String nome,
+            @Parameter(description = "ID de pessoa a excluir dos resultados") @RequestParam(required = false) Long ignorarId
     ) {
-        return ResponseEntity.ok(pessoaService.select(nome));
+        return ResponseEntity.ok(pessoaService.select(nome, ignorarId));
     }
 
     @Operation(summary = "Select de pessoas", description = "Retorna lista simplificada de pessoas ativas para uso em combos")

@@ -5,6 +5,7 @@ import com.api.ero_erp.endereco.mapper.EnderecoMapper;
 import com.api.ero_erp.pessoa.dtos.PessoaResponseDto;
 import com.api.ero_erp.pessoa.dtos.PessoaSelectDto;
 import com.api.ero_erp.pessoa.entity.Pessoa;
+import com.api.ero_erp.pessoavinculo.mapper.PessoaVinculoMapper;
 import com.api.ero_erp.redesocial.mapper.RedeSocialMapper;
 import com.api.ero_erp.telefone.mapper.TelefoneMapper;
 import com.api.ero_erp.tipocadastro.mapper.TipoCadastroMapper;
@@ -50,7 +51,8 @@ public class PessoaMapper {
                         : List.of(),
                 pessoa.getEnderecos() != null
                         ? EnderecoMapper.toDtoList(pessoa.getEnderecos())
-                        : List.of()
+                        : List.of(),
+                PessoaVinculoMapper.toResponseList(pessoa)
         );
     }
 

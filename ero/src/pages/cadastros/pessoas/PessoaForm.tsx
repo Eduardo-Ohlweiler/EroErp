@@ -8,6 +8,7 @@ import { useMessage } from "../../../hooks/useMessage"
 
 import type { ErrorResponse } from "../../../types/ErrorResponse"
 import type { CidadeItem, PessoaResponse, TipoPessoa } from "../../../types/Pessoa"
+import { displayPessoa, formatarDocumento } from "../../../utils/pessoas"
 
 import { TPage } from "../../../components/tpage"
 import {
@@ -32,6 +33,7 @@ import { TWindow } from "../../../components/twindow"
 import { TDataGrid } from "../../../components/tdatagrid"
 import type { TDataGridColumn } from "../../../types/TDataGridColumn"
 import { TUniqueSearch } from "../../../components/tuniquesearch"
+import { TDbCombo } from "../../../components/tdbcombo"
 
 type EnderecoLocal = {
     _tempId:        string
@@ -61,6 +63,42 @@ function enderecosParaState(enderecos?: PessoaResponse["enderecos"]): EnderecoLo
         bairro:         e.bairro      ?? "",
         complemento:    e.complemento ?? "",
         principal:      e.principal ? "true" : "false",
+    }))
+}
+
+type VinculoLocal = {
+    _tempId:       string
+    id:            string
+    pessoaId:      string
+    pessoaNome:    string
+    pessoaDoc:     string
+    tipo:          string
+    tipoDescricao: string
+    observacao:    string
+}
+
+const TIPOS_VINCULO = [
+    { value: "RESPONSAVEL", label: "Responsável" },
+    { value: "DEPENDENTE",  label: "Dependente"  },
+    { value: "CONJUGE",     label: "Cônjuge"     },
+    { value: "FAMILIAR",    label: "Familiar"    },
+]
+
+function tipoVinculoLabel(tipo: string): string {
+    return TIPOS_VINCULO.find(t => t.value === tipo)?.label ?? tipo
+}
+
+function vinculosParaState(vinculos?: PessoaResponse["vinculos"]): VinculoLocal[] {
+    if (!vinculos?.length) return []
+    return vinculos.map(v => ({
+        _tempId:       String(v.id),
+        id:            String(v.id),
+        pessoaId:      String(v.pessoaId),
+        pessoaNome:    v.pessoaNome ?? "",
+        pessoaDoc:     v.pessoaCpf ?? v.pessoaCnpj ?? "",
+        tipo:          v.tipo,
+        tipoDescricao: v.tipoDescricao ?? tipoVinculoLabel(v.tipo),
+        observacao:    v.observacao ?? "",
     }))
 }
 
@@ -99,6 +137,13 @@ export default function PessoaForm() {
     const [editandoEndereco,   setEditandoEndereco]   = useState<EnderecoLocal | null>(null)
     const [cidadeIdWindow,     setCidadeIdWindow]      = useState("")
     const [cidadeNomeWindow,   setCidadeNomeWindow]    = useState("")
+
+    const [vinculos,           setVinculos]           = useState<VinculoLocal[]>([])
+    const [vinculoWindowOpen,  setVinculoWindowOpen]  = useState(false)
+    const [editandoVinculo,    setEditandoVinculo]    = useState<VinculoLocal | null>(null)
+    const [vinculoPessoaId,    setVinculoPessoaId]    = useState("")
+    const [vinculoPessoaNome,  setVinculoPessoaNome]  = useState("")
+    const [vinculoPessoaDoc,   setVinculoPessoaDoc]   = useState("")
 
     //useEffect(() => {
     //    api.get("/tipos/email/select").then(r => setTiposEmail(r.data))
@@ -157,6 +202,7 @@ export default function PessoaForm() {
 
                 setFormKey((prev) => prev + 1)
                 setEnderecos(enderecosParaState(p.enderecos))
+                setVinculos(vinculosParaState(p.vinculos))
             })
             .catch(() => {
                 showMessage("error", "Erro ao carregar pessoa")
@@ -185,6 +231,7 @@ export default function PessoaForm() {
         setRazaoSocial("")
         setTiposCadastroIds([])
         setEnderecos([])
+        setVinculos([])
 
         setFormKey((prev) => prev + 1)
     }
@@ -218,6 +265,7 @@ export default function PessoaForm() {
             setPessoa(response.data)
             setTipoPessoa(response.data.tipoPessoa)
             setTiposCadastroIds(response.data.tiposCadastro?.map((tc: { id: number }) => String(tc.id)) ?? [])
+            setVinculos(vinculosParaState(response.data.vinculos))
             setFormKey((prev) => prev + 1)
         } catch {
             showMessage("error", "Erro ao recarregar pessoa")
@@ -317,6 +365,14 @@ export default function PessoaForm() {
                         complemento:    e.complemento || null,
                         principal:      e.principal   === "true",
                     })),
+                vinculos: vinculos
+                    .filter(v => v.pessoaId)
+                    .map(v => ({
+                        id:         v.id ? Number(v.id) : null,
+                        pessoaId:   Number(v.pessoaId),
+                        tipo:       v.tipo,
+                        observacao: v.observacao || null,
+                    })),
             }
             if (isEdit) {
                 await api.put(`/pessoas/${currentId}`, payload)
@@ -384,6 +440,60 @@ export default function PessoaForm() {
 
     function handleRemoverEndereco(tempId: string) {
         setEnderecos(prev => prev.filter(e => e._tempId !== tempId))
+    }
+
+    function handleAbrirNovoVinculo() {
+        setEditandoVinculo(null)
+        setVinculoPessoaId("")
+        setVinculoPessoaNome("")
+        setVinculoPessoaDoc("")
+        setVinculoWindowOpen(true)
+    }
+
+    function handleAbrirEditarVinculo(v: VinculoLocal) {
+        setEditandoVinculo(v)
+        setVinculoPessoaId(v.pessoaId)
+        setVinculoPessoaNome(v.pessoaNome)
+        setVinculoPessoaDoc(v.pessoaDoc)
+        setVinculoWindowOpen(true)
+    }
+
+    function handleSalvarVinculo(data: Record<string, string>) {
+        if (!vinculoPessoaId) {
+            showMessage("error", "Selecione a pessoa do vínculo")
+            return
+        }
+        const tipo = data.tipo ?? ""
+        const novo: VinculoLocal = {
+            _tempId:       editandoVinculo?._tempId ?? crypto.randomUUID(),
+            id:            editandoVinculo?.id      ?? "",
+            pessoaId:      vinculoPessoaId,
+            pessoaNome:    vinculoPessoaNome,
+            pessoaDoc:     vinculoPessoaDoc,
+            tipo:          tipo,
+            tipoDescricao: tipoVinculoLabel(tipo),
+            observacao:    data.observacao ?? "",
+        }
+
+        // Impede duplicar a mesma pessoa em outro vínculo
+        const jaVinculada = vinculos.some(v =>
+            v.pessoaId === vinculoPessoaId && v._tempId !== editandoVinculo?._tempId
+        )
+        if (jaVinculada) {
+            showMessage("error", "Esta pessoa já possui um vínculo cadastrado")
+            return
+        }
+
+        setVinculos(prev =>
+            editandoVinculo
+                ? prev.map(v => v._tempId === editandoVinculo._tempId ? novo : v)
+                : [...prev, novo]
+        )
+        setVinculoWindowOpen(false)
+    }
+
+    function handleRemoverVinculo(tempId: string) {
+        setVinculos(prev => prev.filter(v => v._tempId !== tempId))
     }
 
     if (loading) {
@@ -783,6 +893,36 @@ export default function PessoaForm() {
                             </>
                         )}
                     />
+                <TPanel title="Vínculos (Responsáveis / Dependentes)">
+                    <TDataGrid<VinculoLocal>
+                        keyField     ="_tempId"
+                        data         ={vinculos}
+                        emptyMessage ="Nenhum vínculo cadastrado"
+                        onAdd        ={handleAbrirNovoVinculo}
+                        actionsWidth ="100px"
+                        columns      ={[
+                            { label: "Tipo",   field: "tipoDescricao", width: "150px" },
+                            { label: "Pessoa", render: (row) => row.pessoaDoc
+                                                    ? `${row.pessoaNome}  (${formatarDocumento(row.pessoaDoc)})`
+                                                    : row.pessoaNome },
+                            { label: "Observação", field: "observacao" },
+                        ] as TDataGridColumn<VinculoLocal>[]}
+                        actions={(row) => (
+                            <>
+                                <TButton
+                                    label   =""
+                                    variant ="edit"
+                                    onClick ={(e) => { e?.stopPropagation(); handleAbrirEditarVinculo(row) }}
+                                />
+                                <TButton
+                                    label   =""
+                                    variant ="delete"
+                                    onClick ={(e) => { e?.stopPropagation(); handleRemoverVinculo(row._tempId) }}
+                                />
+                            </>
+                        )}
+                    />
+                </TPanel>
                 <TRow>
                     <TCol>
                         <TCombo
@@ -1022,6 +1162,93 @@ export default function PessoaForm() {
                                 />
                                 Principal
                             </label>
+                        </TCol>
+                    </TRow>
+                </form>
+            </TWindow>
+
+            <TWindow
+                title   ={editandoVinculo ? "Editar Vínculo" : "Novo Vínculo"}
+                open    ={vinculoWindowOpen}
+                width   ="640px"
+                onClose ={() => setVinculoWindowOpen(false)}
+                actions ={
+                    <TButton
+                        label   ={editandoVinculo ? "Salvar" : "Adicionar"}
+                        variant ="save"
+                        type    ="submit"
+                        form    ="vinculo-form"
+                    />
+                }
+            >
+                <form
+                    id        ="vinculo-form"
+                    key       ={editandoVinculo?._tempId ?? "novo"}
+                    className ="flex flex-col gap-4"
+                    onSubmit  ={(e) => {
+                        e.preventDefault()
+                        const inputs = e.currentTarget.querySelectorAll<
+                            HTMLInputElement | HTMLSelectElement
+                        >("input, select")
+                        const data: Record<string, string> = {}
+                        inputs.forEach((el) => {
+                            if (!el.name) return
+                            data[el.name] = el.value
+                        })
+                        handleSalvarVinculo(data)
+                    }}
+                >
+                    <TRow>
+                        <TCol>
+                            <TDbCombo
+                                name         ="pessoaId"
+                                label        ="Pessoa"
+                                url          ="/pessoas/select"
+                                valueField   ="id"
+                                displayField ={displayPessoa}
+                                searchField  ="nome"
+                                placeholder  ="Buscar por nome ou CPF..."
+                                minLength    ={3}
+                                width        ="100%"
+                                disabled     ={!!editandoVinculo}
+                                value        ={vinculoPessoaId}
+                                extraParams  ={currentId ? { ignorarId: currentId } : undefined}
+                                onChange     ={(value, item) => {
+                                    setVinculoPessoaId(value)
+                                    if (item) {
+                                        setVinculoPessoaNome(String(item.nome ?? ""))
+                                        setVinculoPessoaDoc(
+                                            item.cpf ? String(item.cpf)
+                                                     : item.cnpj ? String(item.cnpj) : ""
+                                        )
+                                    } else {
+                                        setVinculoPessoaNome("")
+                                        setVinculoPessoaDoc("")
+                                    }
+                                }}
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TCombo
+                                name         ="tipo"
+                                label        ="Tipo de Vínculo"
+                                required
+                                width        ="220px"
+                                defaultValue ={editandoVinculo?.tipo ?? "DEPENDENTE"}
+                                options      ={TIPOS_VINCULO}
+                            />
+                        </TCol>
+                    </TRow>
+                    <TRow>
+                        <TCol>
+                            <TEntry
+                                name         ="observacao"
+                                label        ="Observação"
+                                maxLength    ={255}
+                                defaultValue ={editandoVinculo?.observacao ?? ""}
+                            />
                         </TCol>
                     </TRow>
                 </form>
