@@ -34,6 +34,7 @@ import { TDataGrid } from "../../../components/tdatagrid"
 import type { TDataGridColumn } from "../../../types/TDataGridColumn"
 import { TUniqueSearch } from "../../../components/tuniquesearch"
 import { TDbCombo } from "../../../components/tdbcombo"
+import { TQuickPessoa } from "../../../components/tquickpessoa"
 
 type EnderecoLocal = {
     _tempId:        string
@@ -144,6 +145,7 @@ export default function PessoaForm() {
     const [vinculoPessoaId,    setVinculoPessoaId]    = useState("")
     const [vinculoPessoaNome,  setVinculoPessoaNome]  = useState("")
     const [vinculoPessoaDoc,   setVinculoPessoaDoc]   = useState("")
+    const [quickPessoaOpen,    setQuickPessoaOpen]    = useState(false)
 
     //useEffect(() => {
     //    api.get("/tipos/email/select").then(r => setTiposEmail(r.data))
@@ -1200,33 +1202,44 @@ export default function PessoaForm() {
                 >
                     <TRow>
                         <TCol>
-                            <TDbCombo
-                                name         ="pessoaId"
-                                label        ="Pessoa"
-                                url          ="/pessoas/select"
-                                valueField   ="id"
-                                displayField ={displayPessoa}
-                                searchField  ="nome"
-                                placeholder  ="Buscar por nome ou CPF..."
-                                minLength    ={3}
-                                width        ="100%"
-                                disabled     ={!!editandoVinculo}
-                                value        ={vinculoPessoaId}
-                                extraParams  ={currentId ? { ignorarId: currentId } : undefined}
-                                onChange     ={(value, item) => {
-                                    setVinculoPessoaId(value)
-                                    if (item) {
-                                        setVinculoPessoaNome(String(item.nome ?? ""))
-                                        setVinculoPessoaDoc(
-                                            item.cpf ? String(item.cpf)
-                                                     : item.cnpj ? String(item.cnpj) : ""
-                                        )
-                                    } else {
-                                        setVinculoPessoaNome("")
-                                        setVinculoPessoaDoc("")
-                                    }
-                                }}
-                            />
+                            <div className="flex items-end gap-2">
+                                <div className="flex-1 min-w-0">
+                                    <TDbCombo
+                                        name         ="pessoaId"
+                                        label        ="Pessoa"
+                                        url          ="/pessoas/select"
+                                        valueField   ="id"
+                                        displayField ={displayPessoa}
+                                        searchField  ="nome"
+                                        placeholder  ="Buscar por nome ou CPF..."
+                                        minLength    ={3}
+                                        width        ="100%"
+                                        disabled     ={!!editandoVinculo}
+                                        value        ={vinculoPessoaId}
+                                        extraParams  ={currentId ? { ignorarId: currentId } : undefined}
+                                        onChange     ={(value, item) => {
+                                            setVinculoPessoaId(value)
+                                            if (item) {
+                                                setVinculoPessoaNome(String(item.nome ?? ""))
+                                                setVinculoPessoaDoc(
+                                                    item.cpf ? String(item.cpf)
+                                                             : item.cnpj ? String(item.cnpj) : ""
+                                                )
+                                            } else {
+                                                setVinculoPessoaNome("")
+                                                setVinculoPessoaDoc("")
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                {!editandoVinculo && (
+                                    <TButton
+                                        label   ="Cadastro rápido"
+                                        variant ="new"
+                                        onClick ={() => setQuickPessoaOpen(true)}
+                                    />
+                                )}
+                            </div>
                         </TCol>
                     </TRow>
                     <TRow>
@@ -1253,6 +1266,16 @@ export default function PessoaForm() {
                     </TRow>
                 </form>
             </TWindow>
+
+            <TQuickPessoa
+                open      ={quickPessoaOpen}
+                onClose   ={() => setQuickPessoaOpen(false)}
+                onCreated ={(p) => {
+                    setVinculoPessoaId(String(p.id))
+                    setVinculoPessoaNome(p.nome)
+                    setVinculoPessoaDoc(p.cpf ?? p.cnpj ?? "")
+                }}
+            />
         </TPage>
     )
 }
