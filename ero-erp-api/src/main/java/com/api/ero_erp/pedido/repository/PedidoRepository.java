@@ -70,6 +70,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             AND p.dataPedido <= :fim
             AND (:emitenteId IS NULL OR p.emitente.id = :emitenteId)
             AND (:tipoPedidoId IS NULL OR p.tipoPedido.id = :tipoPedidoId)
+            AND (:status IS NULL OR p.status = :status)
             AND (:pessoaId IS NULL OR p.pessoa.id = :pessoaId)
             ORDER BY p.dataPedido ASC
             """)
@@ -79,6 +80,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             @Param("fim")          LocalDateTime fim,
             @Param("emitenteId")   Long          emitenteId,
             @Param("tipoPedidoId") Long          tipoPedidoId,
+            @Param("status")       StatusPedido  status,
             @Param("pessoaId")     Long          pessoaId
     );
 }

@@ -1,6 +1,7 @@
 package com.api.ero_erp.pedido.repository;
 
 import com.api.ero_erp.pedido.entity.PedidoProduto;
+import com.api.ero_erp.pedido.enums.StatusPedido;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -56,6 +57,7 @@ public interface PedidoProdutoRepository extends JpaRepository<PedidoProduto, Lo
             JOIN FETCH pp.pedido pe
             WHERE pe.cliente.id = :clienteId
             AND pe.status = 'CONCLUIDO'
+            AND (:status IS NULL OR pe.status = :status)
             AND pe.dataPedido >= :inicio
             AND pe.dataPedido <= :fim
             AND (:emitenteId IS NULL OR pe.emitente.id = :emitenteId)
@@ -68,6 +70,7 @@ public interface PedidoProdutoRepository extends JpaRepository<PedidoProduto, Lo
             @Param("fim")          LocalDateTime fim,
             @Param("emitenteId")   Long          emitenteId,
             @Param("tipoPedidoId") Long          tipoPedidoId,
+            @Param("status")       StatusPedido  status,
             @Param("pessoaId")     Long          pessoaId
     );
 }

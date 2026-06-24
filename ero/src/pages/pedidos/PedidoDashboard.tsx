@@ -22,7 +22,6 @@ import type { TipoPedidoSummary }                        from "../../types/Pedid
 import { TPage }                                         from "../../components/tpage"
 import { TCombo }                                        from "../../components/tcombo"
 import { TDbCombo }                                      from "../../components/tdbcombo"
-import { TDate }                                         from "../../components/tdate"
 import {
     FaShoppingCart, FaFolderOpen, FaCheckCircle, FaBan,
     FaMoneyBillWave, FaChartLine, FaTrophy,
@@ -87,12 +86,21 @@ const TOOLTIP_LABEL_STYLE: React.CSSProperties = { color: "#cbd5e1", marginBotto
 const TOOLTIP_ITEM_STYLE:  React.CSSProperties = { color: "#f8fafc" }
 
 const STATUS_META: Record<string, { label: string; cor: string }> = {
-    ABERTO:    { label: "Aberto",    cor: "#6366f1" },
-    CONCLUIDO: { label: "Concluído", cor: "#10b981" },
-    CANCELADO: { label: "Cancelado", cor: "#ef4444" },
+    ABERTO:            { label: "Aberto",            cor: "#6366f1" },
+    CONCLUIDO:         { label: "Concluído",         cor: "#10b981" },
+    CANCELADO:         { label: "Cancelado",         cor: "#ef4444" },
+    DEVOLVIDO:         { label: "Devolvido",         cor: "#f59e0b" },
+    DEVOLVIDO_PARCIAL: { label: "Devolvido parcial", cor: "#fb923c" },
 }
 function statusLabel(s: string) { return STATUS_META[s]?.label ?? s }
 function statusCor(s: string)   { return STATUS_META[s]?.cor   ?? "#94a3b8" }
+
+const PERIODOS = [
+    { label: "30 dias",  dias: 30  },
+    { label: "90 dias",  dias: 90  },
+    { label: "12 meses", dias: 365 },
+    { label: "Tudo",     dias: 0   },
+]
 
 // ── componente principal ───────────────────────────────────────────────────────
 
@@ -103,10 +111,10 @@ export default function PedidoDashboard() {
     const [loading, setLoading] = useState(true)
     const [tipos,   setTipos]   = useState<TipoPedidoSummary[]>([])
 
-    const [inicio,       setInicio]       = useState(daysAgoStr(365))
-    const [fim,          setFim]          = useState(todayStr())
+    const [periodo,      setPeriodo]      = useState(365)
     const [emitenteId,   setEmitenteId]   = useState("")
     const [tipoPedidoId, setTipoPedidoId] = useState("")
+    const [status,       setStatus]       = useState("")
 
     useEffect(() => {
         api.get<TipoPedidoSummary[]>("/tipos-pedido/ativos").then(r => setTipos(r.data)).catch(() => {})
@@ -116,16 +124,19 @@ export default function PedidoDashboard() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true)
         const params = new URLSearchParams()
-        if (inicio)       params.set("inicio", `${inicio}T00:00:00`)
-        if (fim)          params.set("fim",    `${fim}T23:59:59`)
+        if (periodo > 0) {
+            params.set("inicio", `${daysAgoStr(periodo)}T00:00:00`)
+            params.set("fim",    `${todayStr()}T23:59:59`)
+        }
         if (emitenteId)   params.set("emitenteId",   emitenteId)
         if (tipoPedidoId) params.set("tipoPedidoId", tipoPedidoId)
+        if (status)       params.set("status",       status)
 
         api.get<PedidoDashboardResponse>(`/pedidos/dashboard?${params.toString()}`)
             .then(r => setData(r.data))
             .catch(() => showMessage("error", "Erro ao carregar dashboard de pedidos"))
             .finally(() => setLoading(false))
-    }, [inicio, fim, emitenteId, tipoPedidoId]) // eslint-disable-line
+    }, [periodo, emitenteId, tipoPedidoId, status]) // eslint-disable-line
 
     if (loading && !data) {
         return (
@@ -151,12 +162,41 @@ export default function PedidoDashboard() {
 
             {/* ── Filtros ───────────────────────────────────────────────────── */}
             <div className="flex flex-wrap gap-2 mb-5 items-end">
-                <TDate name="inicio" label="De"  width="170px" defaultValue={inicio} onChange={setInicio} />
-                <TDate name="fim"    label="Até" width="170px" defaultValue={fim}    onChange={setFim} />
+
+                {/* período */}
+                <div className="flex gap-1 p-1 bg-(--bg-input) rounded-lg w-fit">
+                    {PERIODOS.map(p => (
+                        <button
+                            key      ={p.dias}
+                            type     ="button"
+                            onClick  ={() => setPeriodo(p.dias)}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition
+                                ${periodo === p.dias
+                                    ? "bg-(--accent) text-white shadow-sm"
+                                    : "text-(--text-muted) hover:text-(--text-primary)"}`}
+                        >
+                            {p.label}
+                        </button>
+                    ))}
+                </div>
+
                 <TDbCombo
                     name="emitenteId" label="Emitente" url="/emitentes/select"
                     valueField="id" displayField={displayEmitente} searchField="nome"
                     placeholder="Todos" width="240px" value={emitenteId} onChange={setEmitenteId}
+                />
+                <TCombo
+                    name="status" label="Status" width="200px" placeholder="Todos"
+                    defaultValue={status}
+                    options={[
+                        { value: "",                  label: "Todos"            },
+                        { value: "ABERTO",            label: "Aberto"           },
+                        { value: "CONCLUIDO",         label: "Concluído"        },
+                        { value: "CANCELADO",         label: "Cancelado"        },
+                        { value: "DEVOLVIDO",         label: "Devolvido"        },
+                        { value: "DEVOLVIDO_PARCIAL", label: "Devolvido parcial" },
+                    ]}
+                    onChange={setStatus}
                 />
                 <TCombo
                     name="tipoPedidoId" label="Tipo de Pedido" width="220px" placeholder="Todos"

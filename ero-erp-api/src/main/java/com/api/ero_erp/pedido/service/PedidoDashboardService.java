@@ -44,7 +44,7 @@ public class PedidoDashboardService {
     @Transactional(readOnly = true)
     public PedidoDashboardDto getDashboard(
             LocalDateTime inicio, LocalDateTime fim,
-            Long emitenteId, Long tipoPedidoId, Long pessoaId
+            Long emitenteId, Long tipoPedidoId, StatusPedido status, Long pessoaId
     ) {
         Long clienteId = securityUtils.getClienteIdLogado();
 
@@ -54,9 +54,9 @@ public class PedidoDashboardService {
                 .withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
 
         List<Pedido> pedidos =
-                pedidoRepository.findForDashboard(clienteId, desde, ate, emitenteId, tipoPedidoId, pessoaId);
+                pedidoRepository.findForDashboard(clienteId, desde, ate, emitenteId, tipoPedidoId, status, pessoaId);
         List<PedidoProduto> produtos =
-                produtoRepository.findForDashboard(clienteId, desde, ate, emitenteId, tipoPedidoId, pessoaId);
+                produtoRepository.findForDashboard(clienteId, desde, ate, emitenteId, tipoPedidoId, status, pessoaId);
 
         // Apenas pedidos CONCLUIDO possuem valor (produtos já vêm só de concluídos)
         List<Pedido> concluidos = pedidos.stream()
