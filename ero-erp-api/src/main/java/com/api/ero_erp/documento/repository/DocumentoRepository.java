@@ -75,4 +75,17 @@ public interface DocumentoRepository extends JpaRepository<Documento, Long> {
             @Param("emitenteId") Long            emitenteId,
             @Param("status")     DocumentoStatus status
     );
+
+    @Query("""
+        SELECT d FROM Documento d
+        JOIN FETCH d.modeloDocumento
+        WHERE d.cliente.id = :clienteId
+          AND d.clientePessoa.id = :pessoaId
+          AND d.status <> com.api.ero_erp.documento.entity.DocumentoStatus.CANCELADO
+        ORDER BY d.dataEmissao DESC
+    """)
+    List<Documento> findByClienteIdAndClientePessoaIdAtivos(
+            @Param("clienteId") Long clienteId,
+            @Param("pessoaId")  Long pessoaId
+    );
 }

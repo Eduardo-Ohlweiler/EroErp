@@ -41,6 +41,12 @@ public record ConsultaResponseDto(
         String                        pacoteNome,
         Integer                       quantidadeSessoesPacote,
 
+        // Anexos do pacote (contrato + ficha de anamnese), null fora de pacote
+        Long                          pacoteDocumentoId,
+        String                        pacoteDocumentoNumero,
+        Long                          pacoteFichaAnamneseId,
+        String                        pacoteFichaAnamneseNome,
+
         // Sublistas
         List<ConsultaServicoResponseDto>  servicos,
         List<ConsultaProdutoResponseDto>  produtos,

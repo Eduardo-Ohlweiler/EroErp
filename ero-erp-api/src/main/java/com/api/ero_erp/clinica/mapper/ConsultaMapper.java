@@ -7,6 +7,8 @@ import com.api.ero_erp.clinica.entity.Consulta;
 import com.api.ero_erp.clinica.entity.ConsultaProduto;
 import com.api.ero_erp.clinica.entity.ConsultaServico;
 import com.api.ero_erp.clinica.entity.FichaAnamnese;
+import com.api.ero_erp.clinica.entity.PacoteContratado;
+import com.api.ero_erp.documento.entity.Documento;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 
 import java.math.BigDecimal;
@@ -29,6 +31,10 @@ public class ConsultaMapper {
             List<ConsultaServico>  servicos,
             List<ConsultaProduto>  produtos
     ) {
+        PacoteContratado pacote = consulta.getPacote();
+        Documento     pacoteDocumento = pacote != null ? pacote.getDocumento()     : null;
+        FichaAnamnese pacoteFicha     = pacote != null ? pacote.getFichaAnamnese() : null;
+
         return new ConsultaResponseDto(
                 consulta.getId(),
                 consulta.getStatus(),
@@ -50,6 +56,10 @@ public class ConsultaMapper {
                 consulta.getSessao(),
                 consulta.getPacote() != null ? consulta.getPacote().getNome()              : null,
                 consulta.getPacote() != null ? consulta.getPacote().getQuantidadeSessoes() : null,
+                pacoteDocumento != null ? pacoteDocumento.getId() : null,
+                buildDocumentoLabel(pacoteDocumento),
+                pacoteFicha != null ? pacoteFicha.getId() : null,
+                buildFichaDescricao(pacoteFicha),
                 servicos.stream().map(ConsultaMapper::toServicoDto).toList(),
                 produtos.stream().map(ConsultaMapper::toProdutoDto).toList(),
                 consulta.getTipoAjusteGeral(),
@@ -68,6 +78,11 @@ public class ConsultaMapper {
         if (f == null) return null;
         String data = f.getDataPreenchimento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         return f.getTemplate().getNome() + " — " + data;
+    }
+
+    private static String buildDocumentoLabel(Documento d) {
+        if (d == null) return null;
+        return "Contrato #" + d.getId() + " — " + d.getStatus().name();
     }
 
     public static ConsultaServicoResponseDto toServicoDto(ConsultaServico cs) {

@@ -20,6 +20,10 @@ import { TButton }                                       from "../../components/
 import { ParcelasEditor }                                from "../../components/faturamento/ParcelasEditor"
 import { gerarParcelas, todayStr }                       from "../../components/faturamento/parcelas"
 import type { ParcelaFaturamento }                       from "../../components/faturamento/parcelas"
+import { DocumentoPdfModal }                             from "../../components/documento/DocumentoPdfModal"
+import type { DocumentoSummary }                         from "../../types/Documento"
+import type { FichaAnamnesesSummary }                    from "../../types/Anamnese"
+import { gerarEBaixarPdfFicha }                          from "../../utils/fichaAnamnesePdf"
 import { displayPessoa, displayEmitente }                from "../../utils/pessoas"
 import { gerarPdfFaturamento }                           from "../../utils/geradorPdf"
 
@@ -93,6 +97,13 @@ export default function ContratarPacote() {
     const [observacao,        setObservacao]        = useState("")
     const [loadingPreco,      setLoadingPreco]      = useState(false)
 
+    // ── Contrato (Documento) e Ficha de Anamnese do paciente ──────────────────────
+    const [documentoId,      setDocumentoId]      = useState("")
+    const [fichaAnamneseId,  setFichaAnamneseId]  = useState("")
+    const [documentoOptions, setDocumentoOptions] = useState<{ value: string; label: string }[]>([])
+    const [fichaOptions,     setFichaOptions]     = useState<{ value: string; label: string }[]>([])
+    const [docPdfOpen,       setDocPdfOpen]       = useState(false)
+
     // Bumps p/ forçar TEntry de nome/qtd/valor a reler defaultValue quando muda por código
     const [nomeKey,  setNomeKey]  = useState(0)
     const [qtdKey,   setQtdKey]   = useState(0)
@@ -148,6 +159,47 @@ export default function ContratarPacote() {
             // mantém o valor atual em caso de erro
         } finally {
             setLoadingPreco(false)
+        }
+    }
+
+    // dd/MM/yyyy a partir de "YYYY-MM-DD"
+    function fmtDataBr(iso: string): string {
+        if (!iso) return ""
+        return new Date(iso + "T00:00").toLocaleDateString("pt-BR")
+    }
+
+    async function loadDocumentoOptions(pId: string) {
+        if (!pId) { setDocumentoOptions([]); return }
+        try {
+            const r = await api.get<DocumentoSummary[]>(`/documentos/por-pessoa/${pId}`)
+            setDocumentoOptions(r.data.map(d => ({
+                value: String(d.id),
+                label: `${d.modeloDocumentoNome} — ${fmtDataBr(d.dataEmissao)} (${d.status})`,
+            })))
+        } catch {
+            setDocumentoOptions([])
+        }
+    }
+
+    async function loadFichaOptions(pId: string) {
+        if (!pId) { setFichaOptions([]); return }
+        try {
+            const r = await api.get<FichaAnamnesesSummary[]>(`/fichas-anamnese/por-pessoa/${pId}`)
+            setFichaOptions(r.data.map(f => ({
+                value: String(f.id),
+                label: `${f.templateNome} — ${fmtDataBr(f.dataPreenchimento)}`,
+            })))
+        } catch {
+            setFichaOptions([])
+        }
+    }
+
+    async function handleVerFichaPdf() {
+        if (!fichaAnamneseId) return
+        try {
+            await gerarEBaixarPdfFicha(Number(fichaAnamneseId))
+        } catch {
+            showMessage("error", "Erro ao gerar PDF da ficha")
         }
     }
 
@@ -258,6 +310,8 @@ export default function ContratarPacote() {
                 quantidadeSessoes: qtd,
                 valorTotal:        valorTotalNum,
                 observacao:        observacao.trim() || null,
+                documentoId:       documentoId ? Number(documentoId) : null,
+                fichaAnamneseId:   fichaAnamneseId ? Number(fichaAnamneseId) : null,
                 sessoes:           slots.map(s => ({
                     inicio: toApiDT(s.inicio),
                     fim:    toApiDT(s.fim),
@@ -363,6 +417,15 @@ export default function ContratarPacote() {
                                     const cpf  = item?.cpf  ? String(item.cpf)  : null
                                     const cnpj = item?.cnpj ? String(item.cnpj) : null
                                     setPessoaDocumento(cpf ?? cnpj ?? null)
+                                    setDocumentoId("")
+                                    setFichaAnamneseId("")
+                                    if (val) {
+                                        loadDocumentoOptions(val)
+                                        loadFichaOptions(val)
+                                    } else {
+                                        setDocumentoOptions([])
+                                        setFichaOptions([])
+                                    }
                                 }}
                             />
                         </TCol>
@@ -439,6 +502,65 @@ export default function ContratarPacote() {
                         </TCol>
                     </TRow>
                 </TPanel>
+
+                {/* ── Contrato e Ficha do Paciente ── */}
+                {pessoaId && (
+                    <TPanel key={`anexos-${pessoaId}`} title="Contrato e Ficha do Paciente">
+                        <p className="text-xs text-(--text-muted)">
+                            Vincule um contrato (documento) e/ou uma ficha de anamnese já cadastrados para este paciente.
+                        </p>
+                        <TRow>
+                            <TCol>
+                                <TCombo
+                                    name         ="documentoId"
+                                    label        ="Contrato"
+                                    width        ="100%"
+                                    minWidth     ="200px"
+                                    disabled     ={documentoOptions.length === 0}
+                                    defaultValue ={documentoId}
+                                    onChange     ={setDocumentoId}
+                                    options      ={[{ value: "", label: "Nenhum" }, ...documentoOptions]}
+                                    hint         ={documentoOptions.length === 0 ? "Paciente não possui contrato cadastrado" : undefined}
+                                />
+                            </TCol>
+                            <div className="flex items-end pb-0.5">
+                                <TButton
+                                    label   ="Visualizar/Gerar PDF"
+                                    variant ="secondary"
+                                    type    ="button"
+                                    disabled={!documentoId}
+                                    onClick ={() => setDocPdfOpen(true)}
+                                />
+                            </div>
+                            <TSpace />
+                        </TRow>
+                        <TRow>
+                            <TCol>
+                                <TCombo
+                                    name         ="fichaAnamneseId"
+                                    label        ="Ficha de Anamnese"
+                                    width        ="100%"
+                                    minWidth     ="200px"
+                                    disabled     ={fichaOptions.length === 0}
+                                    defaultValue ={fichaAnamneseId}
+                                    onChange     ={setFichaAnamneseId}
+                                    options      ={[{ value: "", label: "Nenhuma" }, ...fichaOptions]}
+                                    hint         ={fichaOptions.length === 0 ? "Paciente não possui ficha de anamnese" : undefined}
+                                />
+                            </TCol>
+                            <div className="flex items-end pb-0.5">
+                                <TButton
+                                    label   ="Visualizar/Gerar PDF"
+                                    variant ="secondary"
+                                    type    ="button"
+                                    disabled={!fichaAnamneseId}
+                                    onClick ={handleVerFichaPdf}
+                                />
+                            </div>
+                            <TSpace />
+                        </TRow>
+                    </TPanel>
+                )}
 
                 {/* ── Sessões (datas) ── */}
                 <TPanel title={`Sessões (${slots.length})`}>
@@ -541,6 +663,12 @@ export default function ContratarPacote() {
                     </TFormActionsRight>
                 </TFormFooter>
             </TForm>
+
+            <DocumentoPdfModal
+                documentoId={documentoId ? Number(documentoId) : null}
+                open        ={docPdfOpen}
+                onClose     ={() => setDocPdfOpen(false)}
+            />
         </TPage>
     )
 }

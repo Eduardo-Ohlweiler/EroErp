@@ -57,6 +57,10 @@ export interface ConsultaResponse {
     sessao:                  number | null
     pacoteNome:              string | null
     quantidadeSessoesPacote: number | null
+    pacoteDocumentoId:       number | null
+    pacoteDocumentoNumero:   string | null
+    pacoteFichaAnamneseId:   number | null
+    pacoteFichaAnamneseNome: string | null
     servicos:            ConsultaServicoResponse[]
     produtos:            ConsultaProdutoResponse[]
     tipoAjusteGeral:     TipoAjuste | null

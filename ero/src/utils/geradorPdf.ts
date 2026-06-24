@@ -650,17 +650,29 @@ export function gerarPdfFichaAnamnese(dados: DadosFichaAnamnese): string {
         : "—"
 
       doc.setFontSize(8.5)
-      doc.setFont("helvetica", "bold")
-      doc.text(campo.rotulo + ":", mg + 2, y)
+      const labelX = mg + 2
+      const valueX = mg + 55
+      const labelW = valueX - labelX - 3   // coluna do rótulo (deixa 3mm de folga antes do valor)
+      const valueW = inner - 55            // coluna do valor até a margem direita
+      const lineH  = 5
 
+      // Quebra rótulo E valor cada um na largura da sua coluna (layout em 2 colunas)
+      doc.setFont("helvetica", "bold")
+      const rotuloLinhas = doc.splitTextToSize(campo.rotulo + ":", labelW) as string[]
       doc.setFont("helvetica", "normal")
-      const linhas = doc.splitTextToSize(valorText, inner - 55) as string[]
-      linhas.forEach((l, i) => {
-        if (i > 0 && y > 275) { doc.addPage(); y = 20 }
-        doc.text(l, mg + 55, y)
-        if (i < linhas.length - 1) y += 5
-      })
-      y += 6
+      const valorLinhas  = doc.splitTextToSize(valorText, valueW) as string[]
+
+      const nLinhas = Math.max(rotuloLinhas.length, valorLinhas.length)
+
+      // Quebra de página se o bloco inteiro do campo não couber
+      if (y + (nLinhas - 1) * lineH > 280) { doc.addPage(); y = 20 }
+
+      doc.setFont("helvetica", "bold")
+      rotuloLinhas.forEach((l, i) => doc.text(l, labelX, y + i * lineH))
+      doc.setFont("helvetica", "normal")
+      valorLinhas.forEach((l, i) => doc.text(l, valueX, y + i * lineH))
+
+      y += (nLinhas - 1) * lineH + 6
     }
     y += 3
   }

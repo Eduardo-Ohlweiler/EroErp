@@ -33,6 +33,12 @@ public record PacoteContratadoResponseDto(
         String        observacao,
         String        motivoCancelamento,
 
+        // Anexos opcionais do pacote
+        Long          documentoId,
+        String        documentoNumero,
+        Long          fichaAnamneseId,
+        String        fichaAnamneseNome,
+
         // Resumo de sessões
         int           sessoesUsadas,
         int           sessoesRestantes,

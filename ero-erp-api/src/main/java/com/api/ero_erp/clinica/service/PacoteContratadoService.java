@@ -1,5 +1,6 @@
 package com.api.ero_erp.clinica.service;
 
+import com.api.ero_erp.clinica.dtos.AnexosPacoteDto;
 import com.api.ero_erp.clinica.dtos.ContratarPacoteDto;
 import com.api.ero_erp.clinica.dtos.EnviarPdfConsultaDto;
 import com.api.ero_erp.clinica.dtos.PacoteContratadoResponseDto;
@@ -8,12 +9,16 @@ import com.api.ero_erp.clinica.dtos.SessaoResumoDto;
 import com.api.ero_erp.clinica.dtos.SessaoSlotDto;
 import com.api.ero_erp.clinica.entity.Consulta;
 import com.api.ero_erp.clinica.entity.ConsultaServico;
+import com.api.ero_erp.clinica.entity.FichaAnamnese;
 import com.api.ero_erp.clinica.entity.PacoteContratado;
 import com.api.ero_erp.clinica.enums.StatusConsulta;
 import com.api.ero_erp.clinica.enums.StatusPacote;
 import com.api.ero_erp.clinica.repository.ConsultaRepository;
 import com.api.ero_erp.clinica.repository.ConsultaServicoRepository;
+import com.api.ero_erp.clinica.repository.FichaAnamneseRepository;
 import com.api.ero_erp.clinica.repository.PacoteContratadoRepository;
+import com.api.ero_erp.documento.entity.Documento;
+import com.api.ero_erp.documento.repository.DocumentoRepository;
 import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.cliente.service.ClienteService;
 import com.api.ero_erp.compromisso.entity.Compromisso;
@@ -45,6 +50,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,6 +72,8 @@ public class PacoteContratadoService {
     private final WhatsappNotificationService notificationService;
     private final ContaReceberService         contaReceberService;
     private final ConsultaService             consultaService;
+    private final DocumentoRepository         documentoRepository;
+    private final FichaAnamneseRepository     fichaAnamneseRepository;
 
     public PacoteContratadoService(
             PacoteContratadoRepository  pacoteRepository,
@@ -80,7 +88,9 @@ public class PacoteContratadoService {
             SecurityUtils               securityUtils,
             WhatsappNotificationService notificationService,
             ContaReceberService         contaReceberService,
-            ConsultaService             consultaService
+            ConsultaService             consultaService,
+            DocumentoRepository         documentoRepository,
+            FichaAnamneseRepository     fichaAnamneseRepository
     ) {
         this.pacoteRepository      = pacoteRepository;
         this.consultaRepository    = consultaRepository;
@@ -95,6 +105,8 @@ public class PacoteContratadoService {
         this.notificationService   = notificationService;
         this.contaReceberService   = contaReceberService;
         this.consultaService       = consultaService;
+        this.documentoRepository   = documentoRepository;
+        this.fichaAnamneseRepository = fichaAnamneseRepository;
     }
 
     // ── Leitura ───────────────────────────────────────────────────────────────
@@ -159,6 +171,13 @@ public class PacoteContratadoService {
         pacote.setObservacao(dto.observacao());
         pacote.setStatus(StatusPacote.ATIVO);
         pacote.setCreatedBy(usuario);
+
+        // Anexos opcionais (contrato + ficha de anamnese), validados multi-tenant e por dono
+        if (dto.documentoId() != null)
+            pacote.setDocumento(carregarDocumento(dto.documentoId(), clienteId, pessoa.getId()));
+        if (dto.fichaAnamneseId() != null)
+            pacote.setFichaAnamnese(carregarFicha(dto.fichaAnamneseId(), clienteId, pessoa.getId()));
+
         pacoteRepository.save(pacote);
 
         // 4. Criar N compromissos + N consultas, cada uma com a linha do serviço do pacote.
@@ -275,6 +294,39 @@ public class PacoteContratadoService {
         pacoteRepository.save(pacote);
 
         log.info("Pacote {} cancelado pelo cliente {}", id, clienteId);
+        return buildResponse(pacote);
+    }
+
+    // ── Anexos ──────────────────────────────────────────────────────────────────
+
+    @Transactional
+    public PacoteContratadoResponseDto atualizarAnexos(Long id, AnexosPacoteDto dto) {
+        Long             clienteId = securityUtils.getClienteIdLogado();
+        Usuario          usuario   = usuarioService.findById(securityUtils.getUsuarioIdLogado());
+        PacoteContratado pacote    = pacoteRepository.findByIdAndClienteId(id, clienteId)
+                .orElseThrow(() -> new NotFoundException("Pacote não encontrado, verifique!"));
+
+        if (pacote.getStatus() == StatusPacote.CANCELADO)
+            throw new BadRequestException("Não é possível editar anexos de um pacote cancelado, verifique!");
+
+        Long pessoaId = pacote.getPessoa().getId();
+
+        // Contrato (Documento): null limpa; informado é validado e setado
+        if (dto.documentoId() == null)
+            pacote.setDocumento(null);
+        else
+            pacote.setDocumento(carregarDocumento(dto.documentoId(), clienteId, pessoaId));
+
+        // Ficha de anamnese: null limpa; informado é validado e setado
+        if (dto.fichaAnamneseId() == null)
+            pacote.setFichaAnamnese(null);
+        else
+            pacote.setFichaAnamnese(carregarFicha(dto.fichaAnamneseId(), clienteId, pessoaId));
+
+        pacote.setUpdatedBy(usuario);
+        pacoteRepository.save(pacote);
+
+        log.info("Anexos do pacote {} atualizados pelo cliente {}", id, clienteId);
         return buildResponse(pacote);
     }
 
@@ -400,6 +452,10 @@ public class PacoteContratadoService {
                 pacote.getContaReceberId(),
                 pacote.getObservacao(),
                 pacote.getMotivoCancelamento(),
+                pacote.getDocumento() != null ? pacote.getDocumento().getId() : null,
+                labelDocumento(pacote.getDocumento()),
+                pacote.getFichaAnamnese() != null ? pacote.getFichaAnamnese().getId() : null,
+                labelFicha(pacote.getFichaAnamnese()),
                 usadas,
                 restantes,
                 sessoesDto,
@@ -411,6 +467,37 @@ public class PacoteContratadoService {
         if (p == null) return null;
         if (p.getCpf() != null && !p.getCpf().isBlank()) return p.getCpf();
         return p.getCnpj();
+    }
+
+    // ── Anexos: carga validada e rótulos ────────────────────────────────────────
+
+    private Documento carregarDocumento(Long documentoId, Long clienteId, Long pessoaId) {
+        Documento documento = documentoRepository.findByIdAndClienteId(documentoId, clienteId)
+                .orElseThrow(() -> new NotFoundException("Documento não encontrado, verifique!"));
+        if (!documento.getClientePessoa().getId().equals(pessoaId))
+            throw new BadRequestException("O contrato não pertence ao paciente do pacote, verifique!");
+        return documento;
+    }
+
+    private FichaAnamnese carregarFicha(Long fichaId, Long clienteId, Long pessoaId) {
+        FichaAnamnese ficha = fichaAnamneseRepository.findByIdAndClienteId(fichaId, clienteId)
+                .orElseThrow(() -> new NotFoundException("Ficha de anamnese não encontrada, verifique!"));
+        if (!ficha.getPessoa().getId().equals(pessoaId))
+            throw new BadRequestException("A ficha de anamnese não pertence ao paciente do pacote, verifique!");
+        return ficha;
+    }
+
+    private static final DateTimeFormatter DATA_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    static String labelDocumento(Documento doc) {
+        if (doc == null) return null;
+        return "Contrato #" + doc.getId() + " — " + doc.getStatus().name();
+    }
+
+    static String labelFicha(FichaAnamnese ficha) {
+        if (ficha == null) return null;
+        String data = ficha.getDataPreenchimento().format(DATA_FMT);
+        return ficha.getTemplate().getNome() + " — " + data;
     }
 
     private Compromisso buildCompromisso(

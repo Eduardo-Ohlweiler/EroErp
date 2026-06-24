@@ -4,14 +4,19 @@ import axios                                     from "axios"
 import { api }                                   from "../../services/api"
 import { useMessage }                            from "../../hooks/useMessage"
 import type { ErrorResponse }                    from "../../types/ErrorResponse"
-import type { PacoteContratadoResponse, StatusPacote, SessaoResumo } from "../../types/Pacote"
+import type { PacoteContratadoResponse, StatusPacote, SessaoResumo, AnexosPacoteRequest } from "../../types/Pacote"
 import type { StatusConsulta }                   from "../../types/Clinica"
 import type { ContaReceberResponse, StatusConta } from "../../types/ContaReceber"
+import type { DocumentoSummary }                 from "../../types/Documento"
+import type { FichaAnamnesesSummary }            from "../../types/Anamnese"
 import { TPage }                                 from "../../components/tpage"
 import { TPanel }                                from "../../components/tpanel"
 import { TButton }                               from "../../components/tbutton"
 import { TWindow }                               from "../../components/twindow"
+import { TCombo }                                from "../../components/tcombo"
 import { TDateTime }                             from "../../components/tdatetime"
+import { DocumentoPdfModal }                     from "../../components/documento/DocumentoPdfModal"
+import { gerarEBaixarPdfFicha }                  from "../../utils/fichaAnamnesePdf"
 import { formatarDocumento }                     from "../../utils/pessoas"
 import { gerarPdfPacote }                        from "../../utils/geradorPdf"
 
@@ -98,6 +103,17 @@ export default function PacoteForm() {
   const [remarcarInicio, setRemarcarInicio] = useState("")
   const [remarcarFim,    setRemarcarFim]    = useState("")
   const [remarcando,     setRemarcando]     = useState(false)
+
+  // Visualização do contrato (PDF)
+  const [docPdfOpen, setDocPdfOpen] = useState(false)
+
+  // Modal editar anexos (contrato/ficha)
+  const [anexosOpen,       setAnexosOpen]       = useState(false)
+  const [anexoDocumentoId, setAnexoDocumentoId] = useState("")
+  const [anexoFichaId,     setAnexoFichaId]     = useState("")
+  const [documentoOptions, setDocumentoOptions] = useState<{ value: string; label: string }[]>([])
+  const [fichaOptions,     setFichaOptions]     = useState<{ value: string; label: string }[]>([])
+  const [salvandoAnexos,   setSalvandoAnexos]   = useState(false)
 
   useEffect(() => {
     if (id) load(id)
@@ -303,6 +319,78 @@ export default function PacoteForm() {
     }
   }
 
+  // ── Anexos (contrato/ficha) ──────────────────────────────────────────────────
+
+  function fmtDataBr(iso: string): string {
+    if (!iso) return ""
+    return new Date(iso + "T00:00").toLocaleDateString("pt-BR")
+  }
+
+  async function loadDocumentoOptions(pId: number) {
+    try {
+      const r = await api.get<DocumentoSummary[]>(`/documentos/por-pessoa/${pId}`)
+      setDocumentoOptions(r.data.map(d => ({
+        value: String(d.id),
+        label: `${d.modeloDocumentoNome} — ${fmtDataBr(d.dataEmissao)} (${d.status})`,
+      })))
+    } catch {
+      setDocumentoOptions([])
+    }
+  }
+
+  async function loadFichaOptions(pId: number) {
+    try {
+      const r = await api.get<FichaAnamnesesSummary[]>(`/fichas-anamnese/por-pessoa/${pId}`)
+      setFichaOptions(r.data.map(f => ({
+        value: String(f.id),
+        label: `${f.templateNome} — ${fmtDataBr(f.dataPreenchimento)}`,
+      })))
+    } catch {
+      setFichaOptions([])
+    }
+  }
+
+  function openEditarAnexos() {
+    if (!pacote) return
+    setAnexoDocumentoId(pacote.documentoId != null ? String(pacote.documentoId) : "")
+    setAnexoFichaId(pacote.fichaAnamneseId != null ? String(pacote.fichaAnamneseId) : "")
+    loadDocumentoOptions(pacote.pessoaId)
+    loadFichaOptions(pacote.pessoaId)
+    setAnexosOpen(true)
+  }
+
+  async function handleSalvarAnexos() {
+    if (!id) return
+    setSalvandoAnexos(true)
+    try {
+      const payload: AnexosPacoteRequest = {
+        documentoId:     anexoDocumentoId ? Number(anexoDocumentoId) : null,
+        fichaAnamneseId: anexoFichaId     ? Number(anexoFichaId)     : null,
+      }
+      const res = await api.patch<PacoteContratadoResponse>(`/pacotes/${id}/anexos`, payload)
+      setPacote(res.data)
+      showMessage("success", "Anexos atualizados!")
+      setAnexosOpen(false)
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const d = err.response?.data as ErrorResponse
+        showMessage("error", d?.erro ?? "Erro ao atualizar anexos")
+      } else {
+        showMessage("error", "Erro inesperado")
+      }
+    } finally {
+      setSalvandoAnexos(false)
+    }
+  }
+
+  async function handleVerFichaPdf(fichaId: number) {
+    try {
+      await gerarEBaixarPdfFicha(fichaId)
+    } catch {
+      showMessage("error", "Erro ao gerar PDF da ficha")
+    }
+  }
+
   if (loading || !pacote) {
     return (
       <TPage title="Carregando..." breadcrumb={["Clínica", "Pacotes"]}>
@@ -368,6 +456,45 @@ export default function PacoteForm() {
         <div className="mt-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
           ⚠ O financeiro deste pacote é tratado manualmente: cancelar o pacote ou uma sessão
           <strong> não altera</strong> a conta a receber. Devoluções/créditos devem ser feitos pelo módulo Financeiro.
+        </div>
+      </TPanel>
+
+      {/* Contrato e Ficha */}
+      <TPanel title="Contrato e Ficha">
+        <div className="flex flex-col gap-3 text-sm">
+          {/* Contrato */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-(--text-muted)">Contrato:</span>
+            <span className="font-medium">{pacote.documentoNumero ?? "Nenhum"}</span>
+            <div className="ml-auto">
+              <TButton
+                label   ="Visualizar/Gerar PDF"
+                variant ="secondary"
+                type    ="button"
+                disabled={pacote.documentoId == null}
+                onClick ={() => setDocPdfOpen(true)}
+              />
+            </div>
+          </div>
+          {/* Ficha */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-(--text-muted)">Ficha de Anamnese:</span>
+            <span className="font-medium">{pacote.fichaAnamneseNome ?? "Nenhuma"}</span>
+            <div className="ml-auto">
+              <TButton
+                label   ="Visualizar/Gerar PDF"
+                variant ="secondary"
+                type    ="button"
+                disabled={pacote.fichaAnamneseId == null}
+                onClick ={() => handleVerFichaPdf(pacote.fichaAnamneseId!)}
+              />
+            </div>
+          </div>
+          {pacote.status !== "CANCELADO" && (
+            <div>
+              <TButton label="Editar anexos" variant="new" type="button" onClick={openEditarAnexos} />
+            </div>
+          )}
         </div>
       </TPanel>
 
@@ -545,6 +672,54 @@ export default function PacoteForm() {
           </div>
         </div>
       </TWindow>
+
+      {/* Modal: editar anexos (contrato/ficha) */}
+      <TWindow
+        title   ="Editar anexos"
+        open    ={anexosOpen}
+        onClose ={() => setAnexosOpen(false)}
+        width   ="560px"
+        actions ={
+          <>
+            <TButton label="Voltar" variant="cancel"
+              onClick={() => setAnexosOpen(false)} />
+            <TButton label="Salvar" variant="save"
+              loading={salvandoAnexos} onClick={handleSalvarAnexos} />
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <TCombo
+            key          ={`anexo-doc-${anexosOpen}-${documentoOptions.length}`}
+            name         ="anexoDocumentoId"
+            label        ="Contrato"
+            width        ="100%"
+            disabled     ={documentoOptions.length === 0}
+            defaultValue ={anexoDocumentoId}
+            onChange     ={setAnexoDocumentoId}
+            options      ={[{ value: "", label: "Nenhum" }, ...documentoOptions]}
+            hint         ={documentoOptions.length === 0 ? "Paciente não possui contrato cadastrado" : undefined}
+          />
+          <TCombo
+            key          ={`anexo-ficha-${anexosOpen}-${fichaOptions.length}`}
+            name         ="anexoFichaId"
+            label        ="Ficha de Anamnese"
+            width        ="100%"
+            disabled     ={fichaOptions.length === 0}
+            defaultValue ={anexoFichaId}
+            onChange     ={setAnexoFichaId}
+            options      ={[{ value: "", label: "Nenhuma" }, ...fichaOptions]}
+            hint         ={fichaOptions.length === 0 ? "Paciente não possui ficha de anamnese" : undefined}
+          />
+        </div>
+      </TWindow>
+
+      {/* Modal: visualizar contrato (PDF) */}
+      <DocumentoPdfModal
+        documentoId={pacote.documentoId}
+        open        ={docPdfOpen}
+        onClose     ={() => setDocPdfOpen(false)}
+      />
     </TPage>
   )
 }

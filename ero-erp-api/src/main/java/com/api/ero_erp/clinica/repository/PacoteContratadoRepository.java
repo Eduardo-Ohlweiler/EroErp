@@ -19,6 +19,8 @@ public interface PacoteContratadoRepository extends JpaRepository<PacoteContrata
             JOIN FETCH p.emitente e JOIN FETCH e.pessoa
             JOIN FETCH p.pessoa
             JOIN FETCH p.produto
+            LEFT JOIN FETCH p.documento d LEFT JOIN FETCH d.modeloDocumento
+            LEFT JOIN FETCH p.fichaAnamnese fa LEFT JOIN FETCH fa.template
             WHERE p.id = :id
             AND p.cliente.id = :clienteId
             """)

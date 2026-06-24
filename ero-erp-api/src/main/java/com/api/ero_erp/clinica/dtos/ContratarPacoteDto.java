@@ -35,6 +35,10 @@ public record ContratarPacoteDto(
 
         String observacao,
 
+        // Anexos opcionais do pacote (sem validação)
+        Long documentoId,
+        Long fichaAnamneseId,
+
         @NotEmpty(message = "É necessário informar as datas das sessões")
         @Valid
         List<SessaoSlotDto> sessoes,

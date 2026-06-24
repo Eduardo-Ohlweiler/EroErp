@@ -21,6 +21,9 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
             SELECT c FROM Consulta c
             JOIN FETCH c.emitente e JOIN FETCH e.pessoa
             JOIN FETCH c.pessoa
+            LEFT JOIN FETCH c.pacote pac
+            LEFT JOIN FETCH pac.documento doc LEFT JOIN FETCH doc.modeloDocumento
+            LEFT JOIN FETCH pac.fichaAnamnese fic LEFT JOIN FETCH fic.template
             WHERE c.id = :id
             AND c.cliente.id = :clienteId
             """)

@@ -26,6 +26,10 @@ export interface PacoteContratadoResponse {
     contaReceberId:     number | null
     observacao:         string | null
     motivoCancelamento: string | null
+    documentoId:        number | null
+    documentoNumero:    string | null
+    fichaAnamneseId:    number | null
+    fichaAnamneseNome:  string | null
     sessoesUsadas:      number
     sessoesRestantes:   number
     sessoes:            SessaoResumo[]
@@ -56,6 +60,13 @@ export interface ContratarPacoteRequest {
     quantidadeSessoes: number
     valorTotal:        number
     observacao?:       string | null
+    documentoId?:      number | null
+    fichaAnamneseId?:  number | null
     sessoes:           SessaoSlotRequest[]
     parcelas:          ParcelaPacoteRequest[]
+}
+
+export interface AnexosPacoteRequest {
+    documentoId:     number | null
+    fichaAnamneseId: number | null
 }

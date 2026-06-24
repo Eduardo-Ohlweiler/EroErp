@@ -30,6 +30,8 @@ import type { TDataGridColumn }                                     from "../../
 import { useMessage }                                               from "../../hooks/useMessage"
 import { displayPessoa, displayEmitente, formatarDocumento }       from "../../utils/pessoas"
 import { gerarPdfFaturamento }                                     from "../../utils/geradorPdf"
+import { gerarEBaixarPdfFicha }                                    from "../../utils/fichaAnamnesePdf"
+import { DocumentoPdfModal }                                       from "../../components/documento/DocumentoPdfModal"
 import { useQuestion }                                              from "../../hooks/useQuestion"
 
 function baixarPdf(base64: string, nomeArquivo: string) {
@@ -271,6 +273,9 @@ export default function ConsultaForm() {
   const [reconsultaFim,    setReconsultaFim]    = useState("")
   const [reconsultaSaving, setReconsultaSaving] = useState(false)
 
+  // Visualização do contrato do pacote (PDF)
+  const [docPdfOpen, setDocPdfOpen] = useState(false)
+
   // Configuração "Faturar ao concluir": SIM | NAO | PERGUNTAR (fallback PERGUNTAR)
   const [faturarConfig, setFaturarConfig] = useState<"SIM" | "NAO" | "PERGUNTAR">("PERGUNTAR")
 
@@ -372,7 +377,13 @@ export default function ConsultaForm() {
     setConsulta(data)
     setEmitenteId(String(data.emitenteId))
     setPessoaId(String(data.pessoaId))
-    setFichaAnamneseId(data.fichaAnamneseId ? String(data.fichaAnamneseId) : "")
+    // Em sessões de pacote, herda a ficha anexada ao pacote quando a consulta
+    // ainda não tem ficha própria — assim o campo já vem carregado e editável.
+    setFichaAnamneseId(
+      data.fichaAnamneseId       ? String(data.fichaAnamneseId)
+      : data.pacoteFichaAnamneseId ? String(data.pacoteFichaAnamneseId)
+      : ""
+    )
     setTipoAjusteGeral(data.tipoAjusteGeral ?? "")
     setTipoCalculoGeral(data.tipoCalculoGeral ?? "FIXO")
     setValorAjusteGeral(data.valorAjusteGeral != null ? String(data.valorAjusteGeral) : "")
@@ -894,6 +905,23 @@ export default function ConsultaForm() {
         </button>
       )}
 
+      {/* Contrato herdado do pacote (somente leitura — o PDF é gerado pelo botão no rodapé) */}
+      {consulta?.pacoteId != null && consulta.pacoteDocumentoId != null && (
+        <div className="mb-4 border border-(--border) rounded-lg p-4 bg-(--bg-surface)">
+          <p className="text-sm font-semibold text-(--text-primary) mb-3">Contrato do Pacote</p>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="text-(--text-muted)">Contrato:</span>
+            <span className="font-medium">{consulta.pacoteDocumentoNumero}</span>
+          </div>
+        </div>
+      )}
+
+      <DocumentoPdfModal
+        documentoId={consulta?.pacoteDocumentoId ?? null}
+        open        ={docPdfOpen}
+        onClose     ={() => setDocPdfOpen(false)}
+      />
+
       <TForm key={formKey} onSubmit={handleSubmit}>
         {/* ── Info básica ── */}
         <TRow>
@@ -1321,6 +1349,22 @@ export default function ConsultaForm() {
             <TButton label="Novo"   variant="new"    onClick={handleNovo} />
             {isEdit && (
               <TButton label="Gerar PDF" type="button" onClick={handleGerarPdf} />
+            )}
+            {isEdit && consulta?.pacoteDocumentoId != null && (
+              <TButton label="PDF do Contrato" type="button" onClick={() => setDocPdfOpen(true)} />
+            )}
+            {isEdit && fichaAnamneseId && (
+              <TButton
+                label  ="PDF da Ficha"
+                type   ="button"
+                onClick={async () => {
+                  try {
+                    await gerarEBaixarPdfFicha(Number(fichaAnamneseId))
+                  } catch {
+                    showMessage("error", "Erro ao gerar PDF da ficha")
+                  }
+                }}
+              />
             )}
           </TFormActionsLeft>
           <TFormActionsRight>

@@ -5,6 +5,7 @@ import com.api.ero_erp.cliente.service.ClienteService;
 import com.api.ero_erp.config.SecurityUtils;
 import com.api.ero_erp.documento.dtos.DocumentoCreateDto;
 import com.api.ero_erp.documento.dtos.DocumentoResponseDto;
+import com.api.ero_erp.documento.dtos.DocumentoSummaryDto;
 import com.api.ero_erp.documento.dtos.DocumentoUpdateDto;
 import com.api.ero_erp.documento.entity.Documento;
 import com.api.ero_erp.documento.entity.DocumentoStatus;
@@ -33,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -103,6 +105,20 @@ public class DocumentoService {
         return documentoRepository.findAllWithFilters(
                         pageable, clienteId, emitenteId, clientePessoaNome, status, dataEmissaoInicio, dataEmissaoFim)
                 .map(documentoMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DocumentoSummaryDto> findByPessoa(Long pessoaId) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        return documentoRepository.findByClienteIdAndClientePessoaIdAtivos(clienteId, pessoaId)
+                .stream()
+                .map(d -> new DocumentoSummaryDto(
+                        d.getId(),
+                        d.getModeloDocumento().getNome(),
+                        d.getStatus(),
+                        d.getDataEmissao()
+                ))
+                .toList();
     }
 
     // ── ESCRITA ───────────────────────────────────────────────────────────────

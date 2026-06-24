@@ -3,6 +3,7 @@ package com.api.ero_erp.clinica.entity;
 import com.api.ero_erp.baseentity.BaseEntity;
 import com.api.ero_erp.clinica.enums.StatusPacote;
 import com.api.ero_erp.cliente.entity.Cliente;
+import com.api.ero_erp.documento.entity.Documento;
 import com.api.ero_erp.emitente.entity.Emitente;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.produto.entity.Produto;
@@ -58,6 +59,15 @@ public class PacoteContratado extends BaseEntity {
 
     @Column(name = "motivo_cancelamento", length = 500)
     private String motivoCancelamento;
+
+    // Anexos opcionais do pacote: 1 contrato (Documento) e 1 ficha de anamnese
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "documento_id")
+    private Documento documento;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ficha_anamnese_id")
+    private FichaAnamnese fichaAnamnese;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")

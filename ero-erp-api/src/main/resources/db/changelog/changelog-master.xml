@@ -102,4 +102,5 @@
     <include file="095-add-pacote-consulta.xml"             relativeToChangelogFile="true" />
     <include file="096-add-sessoes-padrao-produto.xml"      relativeToChangelogFile="true" />
     <include file="097-create-pessoa-vinculo.xml"           relativeToChangelogFile="true" />
+    <include file="098-add-anexos-pacote.xml"               relativeToChangelogFile="true" />
 </databaseChangeLog>

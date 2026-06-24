@@ -1,5 +1,6 @@
 package com.api.ero_erp.clinica.controller;
 
+import com.api.ero_erp.clinica.dtos.AnexosPacoteDto;
 import com.api.ero_erp.clinica.dtos.CancelarPacoteDto;
 import com.api.ero_erp.clinica.dtos.ContratarPacoteDto;
 import com.api.ero_erp.clinica.dtos.EnviarPdfConsultaDto;
@@ -63,6 +64,16 @@ public class PacoteContratadoController {
             @RequestBody(required = false) CancelarPacoteDto dto
     ) {
         return ResponseEntity.ok(pacoteService.cancelarPacote(id, dto != null ? dto.motivo() : null));
+    }
+
+    @Operation(summary = "Atualiza os anexos do pacote (contrato e ficha de anamnese)")
+    @PatchMapping("/{id}/anexos")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CLINICA')")
+    public ResponseEntity<PacoteContratadoResponseDto> atualizarAnexos(
+            @PathVariable Long id,
+            @RequestBody AnexosPacoteDto dto
+    ) {
+        return ResponseEntity.ok(pacoteService.atualizarAnexos(id, dto));
     }
 
     @Operation(summary = "Cancela uma sessão específica do pacote (não altera a conta a receber)")

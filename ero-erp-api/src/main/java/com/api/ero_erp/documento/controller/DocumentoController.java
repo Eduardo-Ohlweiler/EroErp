@@ -2,6 +2,7 @@ package com.api.ero_erp.documento.controller;
 
 import com.api.ero_erp.documento.dtos.DocumentoCreateDto;
 import com.api.ero_erp.documento.dtos.DocumentoResponseDto;
+import com.api.ero_erp.documento.dtos.DocumentoSummaryDto;
 import com.api.ero_erp.documento.dtos.DocumentoUpdateDto;
 import com.api.ero_erp.documento.entity.DocumentoStatus;
 import com.api.ero_erp.documento.service.DocumentoService;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/documentos")
@@ -49,6 +51,13 @@ public class DocumentoController {
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'DOCUMENTO', 'DOCUMENTO_GET')")
     public ResponseEntity<DocumentoResponseDto> findById(@PathVariable Long id) {
         return ResponseEntity.ok(documentoService.findByIdResponse(id));
+    }
+
+    @Operation(summary = "Lista documentos (não cancelados) de uma pessoa para dropdown")
+    @GetMapping("/por-pessoa/{pessoaId}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'DOCUMENTO', 'DOCUMENTO_GET')")
+    public ResponseEntity<List<DocumentoSummaryDto>> findByPessoa(@PathVariable Long pessoaId) {
+        return ResponseEntity.ok(documentoService.findByPessoa(pessoaId));
     }
 
     @Operation(summary = "Cria um novo documento a partir de um modelo")

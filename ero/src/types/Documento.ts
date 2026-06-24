@@ -1,5 +1,12 @@
 export type DocumentoStatus = 'RASCUNHO' | 'EMITIDO' | 'CANCELADO'
 
+export interface DocumentoSummary {
+  id: number
+  modeloDocumentoNome: string
+  status: DocumentoStatus
+  dataEmissao: string
+}
+
 export interface Documento {
   id: number
   modeloDocumentoId: number
