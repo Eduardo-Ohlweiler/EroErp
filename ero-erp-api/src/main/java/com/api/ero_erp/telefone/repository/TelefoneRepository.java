@@ -13,4 +13,6 @@ public interface TelefoneRepository extends JpaRepository<Telefone, Long> {
     List<Telefone> findByPessoaIdAndClienteId(Long pessoaId, Long clienteId);
     Optional<Telefone> findByIdAndClienteId(Long id, Long clienteId);
     Optional<Telefone> findFirstByPessoaIdAndClienteIdAndTipoTelefoneId(Long pessoaId, Long clienteId, Long tipoTelefoneId);
+
+    Optional<Telefone> findFirstByClienteIdAndNumero(Long clienteId, String numero);
 }

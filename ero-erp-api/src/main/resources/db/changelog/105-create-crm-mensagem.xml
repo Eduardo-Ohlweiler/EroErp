@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="105-create-crm-mensagem" author="eduardo">
+
+        <createTable tableName="crm_mensagem">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="atendimento_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="direcao" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="conteudo" type="TEXT"/>
+            <column name="midia_mimetype" type="VARCHAR(100)"/>
+            <column name="midia_nome" type="VARCHAR(255)"/>
+            <column name="usuario_id" type="BIGINT"/>
+            <column name="evolution_message_id" type="VARCHAR(255)"/>
+            <column name="status" type="VARCHAR(20)"/>
+            <column name="data_mensagem" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="crm_mensagem" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_crm_mensagem_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="crm_mensagem" baseColumnNames="atendimento_id"
+                referencedTableName="crm_atendimento" referencedColumnNames="id"
+                constraintName="fk_crm_mensagem_atendimento"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="crm_mensagem" baseColumnNames="usuario_id"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_crm_mensagem_usuario"
+                onDelete="SET NULL"/>
+
+        <createIndex tableName="crm_mensagem" indexName="idx_crm_mensagem_atendimento_data">
+            <column name="atendimento_id"/>
+            <column name="data_mensagem"/>
+        </createIndex>
+
+        <createIndex tableName="crm_mensagem" indexName="uk_crm_mensagem_evolution_id" unique="true">
+            <column name="evolution_message_id"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

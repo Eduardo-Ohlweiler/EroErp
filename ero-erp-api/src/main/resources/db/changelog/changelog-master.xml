@@ -108,4 +108,7 @@
     <include file="101-alter-configuracao-crm-pendencias.xml" relativeToChangelogFile="true" />
     <include file="102-create-crm-lembrete-pendencia.xml"   relativeToChangelogFile="true" />
     <include file="103-create-crm-fluxo-kanban-coluna.xml"  relativeToChangelogFile="true" />
+    <include file="104-create-crm-atendimento.xml"          relativeToChangelogFile="true" />
+    <include file="105-create-crm-mensagem.xml"             relativeToChangelogFile="true" />
+    <include file="106-create-crm-atendimento-assuncao.xml" relativeToChangelogFile="true" />
 </databaseChangeLog>

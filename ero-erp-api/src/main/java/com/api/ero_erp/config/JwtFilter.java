@@ -57,8 +57,18 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
 
+        String token = null;
         if (header != null && !header.isBlank() && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+            token = header.substring(7);
+        } else if (isStreamPath(request)) {
+            // EventSource não envia header Authorization: aceita o JWT via query param ?token=
+            String paramToken = request.getParameter("token");
+            if (paramToken != null && !paramToken.isBlank()) {
+                token = paramToken;
+            }
+        }
+
+        if (token != null) {
             try {
                 Long id             = jwtUtil.getId(token);
                 List<String> roles  = jwtUtil.getRoles(token);
@@ -105,6 +115,11 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isStreamPath(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path != null && path.endsWith("/crm/atendimentos/stream");
     }
 
     private void escreverErro(HttpServletResponse response, String mensagem) throws IOException {

@@ -129,6 +129,7 @@ import AssinaturaPage                            from "../pages/documentos/assin
 import ConfiguracaoCrmForm                        from "../pages/crm/auxiliares/ConfiguracaoCrmForm"
 import AndamentoList                              from "../pages/crm/auxiliares/AndamentoList"
 import FluxoKanbanForm                            from "../pages/crm/auxiliares/FluxoKanbanForm"
+import AtendimentoKanbanPage                       from "../pages/crm/AtendimentoKanbanPage"
 import PerfilForm                                 from "../pages/perfil/PerfilForm"
 
 export function Router() {
@@ -399,8 +400,9 @@ export function Router() {
               <Route path="/documentos/configuracao-documento" element={<ConfiguracaoDocumentoForm />} />
             </Route>
 
-            {/* ── CRM AUXILIAR ── */}
+            {/* ── CRM ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
+              <Route path="/crm/atendimentos"  element={<AtendimentoKanbanPage />} />
               <Route path="/crm/configuracao"  element={<ConfiguracaoCrmForm />} />
               <Route path="/crm/andamentos"    element={<AndamentoList />} />
               <Route path="/crm/fluxo-kanban"  element={<FluxoKanbanForm />} />

@@ -68,6 +68,7 @@ jwt:
   expiration: 86400000
 
 app:
+  public-url: ${APP_PUBLIC_URL:http://localhost:8080}
   superadmin:
     email: ${SUPERADMIN_EMAIL}
     password: ${SUPERADMIN_PASSWORD}

@@ -13,9 +13,11 @@ import com.api.ero_erp.crm.configuracaocrm.repository.ConfiguracaoCrmRepository;
 import com.api.ero_erp.crm.lembretependencia.service.CrmLembretePendenciaService;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.whatsapp.service.WhatsappEvolutionClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -26,6 +28,9 @@ public class ConfiguracaoCrmService {
     private final SecurityUtils                 securityUtils;
     private final WhatsappEvolutionClient       evolutionClient;
     private final CrmLembretePendenciaService   lembretePendenciaService;
+
+    @Value("${app.public-url:}")
+    private String publicUrl;
 
     public ConfiguracaoCrmService(
             ConfiguracaoCrmRepository     repository,
@@ -96,8 +101,18 @@ public class ConfiguracaoCrmService {
     public CrmQrCodeResponseDto gerarQrCode() {
         ConfiguracaoCrm config = carregarConfigValida();
 
-        // Cria a instância (idempotente) e em seguida conecta para obter o QR Code
+        // Cria a instância (idempotente)
         evolutionClient.criarInstancia(config.getApiUrl(), config.getInstanceName(), config.getApiKey());
+
+        // Configura o webhook do CRM (recebimento de mensagens) — best-effort, não falha o fluxo
+        if (publicUrl != null && !publicUrl.isBlank()) {
+            String webhookUrl = publicUrl.replaceAll("/+$", "") + "/crm/webhook/evolution";
+            evolutionClient.configurarWebhook(
+                    config.getApiUrl(), config.getInstanceName(), config.getApiKey(),
+                    webhookUrl, List.of("MESSAGES_UPSERT", "CONNECTION_UPDATE"));
+        }
+
+        // Conecta para obter o QR Code
         Map<?, ?> body = evolutionClient.conectar(config.getApiUrl(), config.getInstanceName(), config.getApiKey());
 
         String base64      = body != null && body.get("base64")      != null ? body.get("base64").toString()      : null;
