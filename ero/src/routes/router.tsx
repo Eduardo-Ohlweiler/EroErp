@@ -10,7 +10,7 @@ import ClienteForm                                from "../pages/administrativo/
 import UsuarioForm                                from "../pages/administrativo/usuarios/UsuarioForm";
 import TipoTelefoneFormList                       from "../pages/administrativo/auxiliares/TipoTelefoneFormList";
 import UsuarioList                                from "../pages/administrativo/usuarios/UsuarioList";
-import LoginLogList                                from "../pages/administrativo/logs/LoginLogList";
+//import LoginLogList                                from "../pages/administrativo/logs/LoginLogList";
 import TipoEmailFormList                          from "../pages/administrativo/auxiliares/TipoEmailFormList";
 import TipoRedeSocialFormList                     from "../pages/administrativo/auxiliares/TipoRedeSocialFormList";
 import TipoEnderecoFormList                       from "../pages/administrativo/auxiliares/TipoEnderecoFormList";
@@ -126,6 +126,9 @@ import DocumentoForm                             from "../pages/documentos/Docum
 import DocumentoDashboard                        from "../pages/documentos/DocumentoDashboard"
 import ConfiguracaoDocumentoForm                 from "../pages/documentos/auxiliares/ConfiguracaoDocumentoForm"
 import AssinaturaPage                            from "../pages/documentos/assinatura/AssinaturaPage"
+import ConfiguracaoCrmForm                        from "../pages/crm/auxiliares/ConfiguracaoCrmForm"
+import AndamentoList                              from "../pages/crm/auxiliares/AndamentoList"
+import FluxoKanbanForm                            from "../pages/crm/auxiliares/FluxoKanbanForm"
 import PerfilForm                                 from "../pages/perfil/PerfilForm"
 
 export function Router() {
@@ -157,7 +160,7 @@ export function Router() {
 
               <Route path="/whatsapp/config-global" element={<WhatsappConfigGlobalForm />} />
 
-              <Route path="/logs/login-logs"  element={<LoginLogList />} />
+              {/*<Route path="/logs/login-logs"  element={<LoginLogList />} />*/}
 
               <Route path="/estados"          element={<EstadoFormList />} />
               <Route path="/tipos/telefone"   element={<TipoTelefoneFormList />} />
@@ -394,6 +397,13 @@ export function Router() {
             {/* ── DOCUMENTOS AUXILIAR ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
               <Route path="/documentos/configuracao-documento" element={<ConfiguracaoDocumentoForm />} />
+            </Route>
+
+            {/* ── CRM AUXILIAR ── */}
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
+              <Route path="/crm/configuracao"  element={<ConfiguracaoCrmForm />} />
+              <Route path="/crm/andamentos"    element={<AndamentoList />} />
+              <Route path="/crm/fluxo-kanban"  element={<FluxoKanbanForm />} />
             </Route>
 
             {/* ── PERFIL (qualquer usuário autenticado) ── */}

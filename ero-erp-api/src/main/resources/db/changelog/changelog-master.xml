@@ -103,4 +103,9 @@
     <include file="096-add-sessoes-padrao-produto.xml"      relativeToChangelogFile="true" />
     <include file="097-create-pessoa-vinculo.xml"           relativeToChangelogFile="true" />
     <include file="098-add-anexos-pacote.xml"               relativeToChangelogFile="true" />
+    <include file="099-create-configuracao-crm.xml"         relativeToChangelogFile="true" />
+    <include file="100-create-crm-andamento.xml"            relativeToChangelogFile="true" />
+    <include file="101-alter-configuracao-crm-pendencias.xml" relativeToChangelogFile="true" />
+    <include file="102-create-crm-lembrete-pendencia.xml"   relativeToChangelogFile="true" />
+    <include file="103-create-crm-fluxo-kanban-coluna.xml"  relativeToChangelogFile="true" />
 </databaseChangeLog>

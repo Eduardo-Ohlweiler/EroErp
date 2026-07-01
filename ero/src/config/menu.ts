@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine, FaUtensils, FaPills, FaHeartbeat, FaAssistiveListeningSystems, FaShoppingCart /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine, FaUtensils, FaPills, FaHeartbeat, FaAssistiveListeningSystems, FaShoppingCart, FaColumns /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -480,6 +480,23 @@ export const menu: MenuItem[] = [
           { label: "Contas Financeiras",   path: "/financeiro/contas",           icon: FaMoneyBill  },
           { label: "Tipos de Cobrança",    path: "/financeiro/tipos-cobranca",   icon: FaCog        },
           { label: "Formas de Pagamento",  path: "/financeiro/formas-pagamento", icon: FaCreditCard },
+        ],
+      },
+    ],
+  },
+  {
+    label: "CRM",
+    icon:  FaWhatsapp,
+    roles: ["SUPERADMIN", "ADMIN"],
+    children: [
+      {
+        label: "Auxiliar CRM",
+        icon:  FaCogs,
+        roles: ["SUPERADMIN", "ADMIN"],
+        children: [
+          { label: "Configuração CRM", path: "/crm/configuracao",  icon: FaCog,     roles: ["SUPERADMIN", "ADMIN"] },
+          { label: "Andamentos CRM",   path: "/crm/andamentos",     icon: FaList,    roles: ["SUPERADMIN", "ADMIN"] },
+          { label: "Fluxo Kanban",     path: "/crm/fluxo-kanban",   icon: FaColumns, roles: ["SUPERADMIN", "ADMIN"] },
         ],
       },
     ],

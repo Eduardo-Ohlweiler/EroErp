@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="100-create-crm-andamento" author="eduardo">
+
+        <createTable tableName="crm_andamento">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT"/>
+            <column name="nome" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="conclui_atendimento" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cancela_atendimento" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sistema" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="chave" type="VARCHAR(30)"/>
+            <column name="cor" type="VARCHAR(20)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="crm_andamento" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_crm_andamento_cliente"
+                onDelete="RESTRICT"/>
+
+        <createIndex tableName="crm_andamento" indexName="idx_crm_andamento_cliente_id">
+            <column name="cliente_id"/>
+        </createIndex>
+
+    </changeSet>
+
+    <changeSet id="100-insert-crm-andamento-globais" author="eduardo">
+
+        <insert tableName="crm_andamento">
+            <column name="nome" value="Aguardando atendimento"/>
+            <column name="chave" value="AGUARDANDO_ATENDIMENTO"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="conclui_atendimento" valueBoolean="false"/>
+            <column name="cancela_atendimento" valueBoolean="false"/>
+            <column name="sistema" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="crm_andamento">
+            <column name="nome" value="Em atendimento"/>
+            <column name="chave" value="EM_ATENDIMENTO"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="conclui_atendimento" valueBoolean="false"/>
+            <column name="cancela_atendimento" valueBoolean="false"/>
+            <column name="sistema" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="crm_andamento">
+            <column name="nome" value="Concluído"/>
+            <column name="chave" value="CONCLUIDO"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="conclui_atendimento" valueBoolean="true"/>
+            <column name="cancela_atendimento" valueBoolean="false"/>
+            <column name="sistema" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="crm_andamento">
+            <column name="nome" value="Cancelado"/>
+            <column name="chave" value="CANCELADO"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="conclui_atendimento" valueBoolean="false"/>
+            <column name="cancela_atendimento" valueBoolean="true"/>
+            <column name="sistema" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+        <insert tableName="crm_andamento">
+            <column name="nome" value="Pendente"/>
+            <column name="chave" value="PENDENTE"/>
+            <column name="ativo" valueBoolean="true"/>
+            <column name="conclui_atendimento" valueBoolean="false"/>
+            <column name="cancela_atendimento" valueBoolean="false"/>
+            <column name="sistema" valueBoolean="true"/>
+            <column name="created_at" valueComputed="CURRENT_TIMESTAMP"/>
+        </insert>
+
+    </changeSet>
+
+</databaseChangeLog>
