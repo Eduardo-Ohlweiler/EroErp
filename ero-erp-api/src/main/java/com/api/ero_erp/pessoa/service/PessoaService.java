@@ -8,6 +8,7 @@ import com.api.ero_erp.endereco.service.EnderecoService;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.pessoa.dtos.PessoaBuscaDto;
 import com.api.ero_erp.pessoa.dtos.PessoaCreateDto;
 import com.api.ero_erp.pessoa.dtos.PessoaResponseDto;
 import com.api.ero_erp.pessoa.dtos.PessoaSelectDto;
@@ -108,6 +109,20 @@ public class PessoaService {
                 .stream()
                 .map(PessoaMapper::toSelectDto)
                 .toList();
+    }
+
+    /**
+     * Busca paginada de pessoas para vínculo (ex.: tela de atendimentos do CRM).
+     * O documento e o telefone são reduzidos a dígitos antes do filtro, pois são
+     * armazenados sem máscara; campos em branco viram {@code null} (ignorados).
+     */
+    @Transactional(readOnly = true)
+    public Page<PessoaBuscaDto> buscarParaVinculo(Pageable pageable, String nome, String documento, String telefone) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        String nomeFiltro      = hasValue(nome) ? nome.trim() : null;
+        String documentoFiltro = removeCaracteresEstranhos(documento);
+        String telefoneFiltro   = removeCaracteresEstranhos(telefone);
+        return pessoaRepository.buscarParaVinculo(clienteId, nomeFiltro, documentoFiltro, telefoneFiltro, pageable);
     }
 
     @Transactional

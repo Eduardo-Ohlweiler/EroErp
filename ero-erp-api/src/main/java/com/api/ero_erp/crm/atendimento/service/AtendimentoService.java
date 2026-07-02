@@ -4,6 +4,7 @@ import com.api.ero_erp.config.SecurityUtils;
 import com.api.ero_erp.crm.andamento.entity.Andamento;
 import com.api.ero_erp.crm.andamento.repository.AndamentoRepository;
 import com.api.ero_erp.crm.atendimento.dtos.AssumirAtendimentoDto;
+import com.api.ero_erp.crm.atendimento.dtos.AtendimentoListaResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.AtendimentoResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.EnviarMensagemDto;
 import com.api.ero_erp.crm.atendimento.dtos.MensagemResponseDto;
@@ -22,6 +23,8 @@ import com.api.ero_erp.crm.configuracaocrm.repository.ConfiguracaoCrmRepository;
 import com.api.ero_erp.crm.sse.CrmSseService;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.pessoa.entity.Pessoa;
+import com.api.ero_erp.pessoa.repository.PessoaRepository;
 import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.repository.UsuarioRepository;
 import com.api.ero_erp.whatsapp.service.WhatsappEvolutionClient;
@@ -48,6 +51,7 @@ public class AtendimentoService {
     private final AndamentoRepository            andamentoRepository;
     private final ConfiguracaoCrmRepository      configuracaoCrmRepository;
     private final UsuarioRepository              usuarioRepository;
+    private final PessoaRepository               pessoaRepository;
     private final WhatsappEvolutionClient        evolutionClient;
     private final CrmSseService                  sseService;
     private final SecurityUtils                  securityUtils;
@@ -59,6 +63,7 @@ public class AtendimentoService {
             AndamentoRepository           andamentoRepository,
             ConfiguracaoCrmRepository     configuracaoCrmRepository,
             UsuarioRepository             usuarioRepository,
+            PessoaRepository              pessoaRepository,
             WhatsappEvolutionClient       evolutionClient,
             CrmSseService                 sseService,
             SecurityUtils                 securityUtils
@@ -69,6 +74,7 @@ public class AtendimentoService {
         this.andamentoRepository       = andamentoRepository;
         this.configuracaoCrmRepository = configuracaoCrmRepository;
         this.usuarioRepository         = usuarioRepository;
+        this.pessoaRepository          = pessoaRepository;
         this.evolutionClient           = evolutionClient;
         this.sseService                = sseService;
         this.securityUtils             = securityUtils;
@@ -118,6 +124,56 @@ public class AtendimentoService {
         return atendimentoRepository.findByIdAndClienteId(id, clienteId)
                 .map(AtendimentoMapper::toDto)
                 .orElseThrow(() -> new NotFoundException("Atendimento não encontrado, verifique!"));
+    }
+
+    /**
+     * Listagem completa e paginada de atendimentos, ordenada por data de contato (dataAbertura)
+     * do mais recente ao mais antigo. Carrega, em uma única query, a última assunção de cada
+     * atendimento da página (quem assumiu e quando), evitando N+1.
+     */
+    @Transactional(readOnly = true)
+    public Page<AtendimentoListaResponseDto> listarPaginado(
+            Long andamentoId, Long usuarioId, String busca,
+            LocalDateTime dataInicio, LocalDateTime dataFim, Pageable pageable) {
+
+        Long clienteId = securityUtils.getClienteIdLogado();
+        String buscaFiltro = (busca != null && !busca.isBlank()) ? busca.trim() : null;
+
+        Page<Atendimento> pagina = atendimentoRepository.listarPaginado(
+                clienteId, andamentoId, usuarioId, buscaFiltro, dataInicio, dataFim, pageable);
+
+        List<Long> ids = pagina.getContent().stream().map(Atendimento::getId).toList();
+
+        // última assunção por atendimento (lista já vem ordenada por data DESC → mantém a primeira)
+        Map<Long, AtendimentoAssuncao> ultimaAssuncaoPorAtendimento = ids.isEmpty()
+                ? Map.of()
+                : assuncaoRepository.findByAtendimentoIdIn(ids).stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                aa -> aa.getAtendimento().getId(),
+                                aa -> aa,
+                                (existente, novo) -> existente));
+
+        return pagina.map(a -> AtendimentoMapper.toListaDto(a, ultimaAssuncaoPorAtendimento.get(a.getId())));
+    }
+
+    /** Vincula uma pessoa (cadastro existente) a um atendimento, ambos do cliente logado. */
+    @Transactional
+    public AtendimentoResponseDto vincularPessoa(Long atendimentoId, Long pessoaId) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+
+        Atendimento atendimento = atendimentoRepository.findByIdAndClienteId(atendimentoId, clienteId)
+                .orElseThrow(() -> new NotFoundException("Atendimento não encontrado, verifique!"));
+
+        Pessoa pessoa = pessoaRepository.findByIdAndClienteId(pessoaId, clienteId)
+                .orElseThrow(() -> new NotFoundException("Pessoa não encontrada, verifique!"));
+
+        atendimento.setPessoa(pessoa);
+        Atendimento salvo = atendimentoRepository.save(atendimento);
+
+        AtendimentoResponseDto dto = AtendimentoMapper.toDto(salvo);
+        sseService.emit(clienteId, "atendimento-atualizado", dto);
+        log.info("Pessoa {} vinculada ao atendimento {} pelo cliente {}", pessoaId, atendimentoId, clienteId);
+        return dto;
     }
 
     @Transactional(readOnly = true)

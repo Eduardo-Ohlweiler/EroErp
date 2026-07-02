@@ -2,10 +2,12 @@ package com.api.ero_erp.crm.atendimento.controller;
 
 import com.api.ero_erp.config.SecurityUtils;
 import com.api.ero_erp.crm.atendimento.dtos.AssumirAtendimentoDto;
+import com.api.ero_erp.crm.atendimento.dtos.AtendimentoListaResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.AtendimentoResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.EnviarMensagemDto;
 import com.api.ero_erp.crm.atendimento.dtos.MensagemResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.MoverAndamentoDto;
+import com.api.ero_erp.crm.atendimento.dtos.VincularPessoaDto;
 import com.api.ero_erp.crm.atendimento.service.AtendimentoService;
 import com.api.ero_erp.crm.sse.CrmSseService;
 import jakarta.validation.Valid;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -50,10 +54,32 @@ public class AtendimentoController {
         return service.listarKanban(usuarioId, andamentoId);
     }
 
+    @GetMapping("/lista")
+    @PreAuthorize("isAuthenticated()")
+    public Page<AtendimentoListaResponseDto> listar(
+            @RequestParam(required = false) Long   andamentoId,
+            @RequestParam(required = false) Long   usuarioId,
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim,
+            @PageableDefault(size = 15) Pageable pageable
+    ) {
+        return service.listarPaginado(andamentoId, usuarioId, busca, dataInicio, dataFim, pageable);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AtendimentoResponseDto> getAtendimento(@PathVariable Long id) {
         return ResponseEntity.ok(service.getAtendimento(id));
+    }
+
+    @PutMapping("/{id}/pessoa")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AtendimentoResponseDto> vincularPessoa(
+            @PathVariable Long id,
+            @Valid @RequestBody VincularPessoaDto dto
+    ) {
+        return ResponseEntity.ok(service.vincularPessoa(id, dto.pessoaId()));
     }
 
     @GetMapping("/{id}/mensagens")

@@ -18,10 +18,14 @@ import { TDbCheckbox } from "../tdbcheckbox"
 import { TUniqueSearch } from "../tuniquesearch"
 
 interface TQuickPessoaProps {
-    open:       boolean
-    onClose:    () => void
-    onCreated:  (pessoa: PessoaResponse) => void
-    title?:     string
+    open:             boolean
+    onClose:          () => void
+    onCreated:        (pessoa: PessoaResponse) => void
+    title?:           string
+    /** Pré-preenche o campo Nome ao abrir (editável). */
+    defaultNome?:     string
+    /** Pré-preenche o campo Telefone ao abrir (somente dígitos, editável). */
+    defaultTelefone?: string
 }
 
 const TELEFONE_REGEX = /^\d{10,11}$/
@@ -35,7 +39,7 @@ const EMAIL_REGEX    = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
  * Obrigatórios: nome, tipo de cadastro e tipo de pessoa.
  * Opcionais: data de nascimento, CPF/RG ou CNPJ, um telefone, um e-mail e um endereço.
  */
-export function TQuickPessoa({ open, onClose, onCreated, title = "Cadastro rápido" }: TQuickPessoaProps) {
+export function TQuickPessoa({ open, onClose, onCreated, title = "Cadastro rápido", defaultNome, defaultTelefone }: TQuickPessoaProps) {
 
     const { showMessage } = useMessage()
 
@@ -228,11 +232,12 @@ export function TQuickPessoa({ open, onClose, onCreated, title = "Cadastro rápi
                 <TRow>
                     <TCol>
                         <TEntry
-                            name      ="nome"
-                            label     ="Nome"
+                            name         ="nome"
+                            label        ="Nome"
                             required
-                            maxLength ={255}
-                            width     ="100%"
+                            maxLength    ={255}
+                            width        ="100%"
+                            defaultValue ={defaultNome}
                         />
                     </TCol>
                     <TCol>
@@ -274,7 +279,7 @@ export function TQuickPessoa({ open, onClose, onCreated, title = "Cadastro rápi
                             />
                         </TCol>
                         <TCol>
-                            <TEntry name="telNumero" label="Número" mask="celular" width="200px" />
+                            <TEntry name="telNumero" label="Número" mask="celular" width="200px" defaultValue={defaultTelefone} />
                         </TCol>
                     </TRow>
                 </TPanel>

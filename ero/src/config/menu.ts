@@ -496,6 +496,12 @@ export const menu: MenuItem[] = [
         roles: ["SUPERADMIN", "ADMIN"],
       },
       {
+        label: "Atendimentos (Lista)",
+        path:  "/crm/atendimentos-lista",
+        icon:  FaList,
+        roles: ["SUPERADMIN", "ADMIN"],
+      },
+      {
         label: "Auxiliar CRM",
         icon:  FaCogs,
         roles: ["SUPERADMIN", "ADMIN"],

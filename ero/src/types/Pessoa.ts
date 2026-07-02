@@ -127,3 +127,13 @@ export interface PessoaSelect {
     cnpj:      string | null
 }
 
+// Projeção leve retornada por GET /pessoas/busca (tela de vínculo).
+export interface PessoaBusca {
+    id:         number
+    nome:       string
+    tipoPessoa: TipoPessoa
+    cpf:        string | null
+    cnpj:       string | null
+    telefone:   string | null
+}
+

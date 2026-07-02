@@ -1,6 +1,7 @@
 package com.api.ero_erp.crm.atendimento.repository;
 
 import com.api.ero_erp.crm.atendimento.entity.Atendimento;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -103,6 +104,53 @@ public interface AtendimentoRepository extends JpaRepository<Atendimento, Long> 
     Optional<Atendimento> findByIdAndClienteId(
             @Param("id")        Long id,
             @Param("clienteId") Long clienteId
+    );
+
+    /**
+     * Listagem completa e paginada de atendimentos do cliente, ordenada da data de contato
+     * (dataAbertura) mais recente para a mais antiga. Filtros opcionais: andamento, usuário
+     * responsável, busca textual (nome da pessoa / nome do contato / número) e intervalo de
+     * datas de abertura. Usa LEFT JOIN nas associações to-one (aliases) para não excluir
+     * atendimentos sem pessoa/usuário e para preservar a semântica dos filtros nullable.
+     */
+    @Query(value = """
+            SELECT a FROM Atendimento a
+            LEFT JOIN FETCH a.andamento an
+            LEFT JOIN FETCH a.usuario   u
+            LEFT JOIN FETCH a.pessoa    p
+            WHERE a.cliente.id = :clienteId
+              AND (:andamentoId IS NULL OR an.id = :andamentoId)
+              AND (:usuarioId   IS NULL OR u.id  = :usuarioId)
+              AND (:busca IS NULL
+                   OR LOWER(a.contatoNome) LIKE LOWER(CONCAT('%', CAST(:busca AS string), '%'))
+                   OR a.numero             LIKE       CONCAT('%', CAST(:busca AS string), '%')
+                   OR LOWER(p.nome)        LIKE LOWER(CONCAT('%', CAST(:busca AS string), '%')))
+              AND a.dataAbertura >= COALESCE(:dataInicio, a.dataAbertura)
+              AND a.dataAbertura <= COALESCE(:dataFim,    a.dataAbertura)
+            ORDER BY a.dataAbertura DESC
+            """,
+            countQuery = """
+            SELECT COUNT(a) FROM Atendimento a
+            LEFT JOIN a.pessoa  p
+            LEFT JOIN a.usuario u
+            WHERE a.cliente.id = :clienteId
+              AND (:andamentoId IS NULL OR a.andamento.id = :andamentoId)
+              AND (:usuarioId   IS NULL OR u.id           = :usuarioId)
+              AND (:busca IS NULL
+                   OR LOWER(a.contatoNome) LIKE LOWER(CONCAT('%', CAST(:busca AS string), '%'))
+                   OR a.numero             LIKE       CONCAT('%', CAST(:busca AS string), '%')
+                   OR LOWER(p.nome)        LIKE LOWER(CONCAT('%', CAST(:busca AS string), '%')))
+              AND a.dataAbertura >= COALESCE(:dataInicio, a.dataAbertura)
+              AND a.dataAbertura <= COALESCE(:dataFim,    a.dataAbertura)
+            """)
+    Page<Atendimento> listarPaginado(
+            @Param("clienteId")   Long          clienteId,
+            @Param("andamentoId") Long          andamentoId,
+            @Param("usuarioId")   Long          usuarioId,
+            @Param("busca")       String        busca,
+            @Param("dataInicio")  LocalDateTime dataInicio,
+            @Param("dataFim")     LocalDateTime dataFim,
+            Pageable pageable
     );
 
     /** Atendimentos abertos de um cliente com resposta do cliente (base das pendências). */

@@ -1,5 +1,6 @@
 package com.api.ero_erp.pessoa.repository;
 
+import com.api.ero_erp.pessoa.dtos.PessoaBuscaDto;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import org.springframework.data.domain.Page;
@@ -81,5 +82,42 @@ public interface PessoaRepository extends JpaRepository<Pessoa, Long> {
             @Param("clienteId") Long   clienteId,
             @Param("nome")      String nome,
             @Param("ignorarId") Long   ignorarId
+    );
+
+    // ─── Busca paginada para vínculo (nome / documento / telefone) ─────────────
+    @Query(value = """
+        SELECT new com.api.ero_erp.pessoa.dtos.PessoaBuscaDto(
+            p.id, p.nome, p.tipoPessoa, p.cpf, p.cnpj,
+            (SELECT MIN(t.numero) FROM Telefone t WHERE t.pessoa = p))
+        FROM Pessoa p
+        WHERE p.cliente.id = :clienteId
+          AND p.ativo = true
+          AND (:nome IS NULL OR LOWER(p.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
+          AND (:documento IS NULL
+               OR p.cpf  LIKE CONCAT('%', CAST(:documento AS string), '%')
+               OR p.cnpj LIKE CONCAT('%', CAST(:documento AS string), '%'))
+          AND (:telefone IS NULL
+               OR EXISTS (SELECT 1 FROM Telefone t2 WHERE t2.pessoa = p
+                          AND t2.numero LIKE CONCAT('%', CAST(:telefone AS string), '%')))
+        ORDER BY p.nome
+        """,
+        countQuery = """
+        SELECT COUNT(p) FROM Pessoa p
+        WHERE p.cliente.id = :clienteId
+          AND p.ativo = true
+          AND (:nome IS NULL OR LOWER(p.nome) LIKE LOWER(CONCAT('%', CAST(:nome AS string), '%')))
+          AND (:documento IS NULL
+               OR p.cpf  LIKE CONCAT('%', CAST(:documento AS string), '%')
+               OR p.cnpj LIKE CONCAT('%', CAST(:documento AS string), '%'))
+          AND (:telefone IS NULL
+               OR EXISTS (SELECT 1 FROM Telefone t2 WHERE t2.pessoa = p
+                          AND t2.numero LIKE CONCAT('%', CAST(:telefone AS string), '%')))
+        """)
+    Page<PessoaBuscaDto> buscarParaVinculo(
+            @Param("clienteId") Long   clienteId,
+            @Param("nome")      String nome,
+            @Param("documento") String documento,
+            @Param("telefone")  String telefone,
+            Pageable pageable
     );
 }
