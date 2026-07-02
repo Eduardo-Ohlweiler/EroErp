@@ -149,7 +149,7 @@ public class AtendimentoService {
                 case TEXTO -> {
                     if (dto.conteudo() == null || dto.conteudo().isBlank())
                         throw new BadRequestException("Conteúdo da mensagem é obrigatório, verifique!");
-                    evolutionClient.enviar(config.getApiUrl(), config.getInstanceName(), config.getApiKey(),
+                    evolutionMessageId = evolutionClient.enviar(config.getApiUrl(), config.getInstanceName(), config.getApiKey(),
                             numero, dto.conteudo());
                 }
                 case AUDIO -> {
@@ -253,6 +253,39 @@ public class AtendimentoService {
         log.info("Atendimento {} assumido pelo usuário {} (anterior: {})", id, usuarioId,
                 anterior != null ? anterior.getId() : null);
         return respDto;
+    }
+
+    /**
+     * Marca a conversa como lida (zera o contador de não-lidas) e, se habilitado na
+     * configuração, envia a confirmação de leitura (visto) ao cliente no WhatsApp.
+     */
+    @Transactional
+    public void marcarLido(Long id) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        Atendimento atendimento = atendimentoRepository.findByIdAndClienteId(id, clienteId)
+                .orElseThrow(() -> new NotFoundException("Atendimento não encontrado, verifique!"));
+
+        boolean tinhaNaoLidas = atendimento.getMensagensNaoLidas() != null
+                && atendimento.getMensagensNaoLidas() > 0;
+        if (!tinhaNaoLidas) return; // nada a fazer, evita SSE desnecessário
+
+        // Confirmação de leitura (visto) no WhatsApp, se habilitado — best-effort.
+        configuracaoCrmRepository.findByClienteId(clienteId).ifPresent(config -> {
+            if (Boolean.TRUE.equals(config.getEnviarConfirmacaoLeitura())) {
+                mensagemRepository
+                        .findTopByAtendimento_IdAndDirecaoOrderByDataMensagemDesc(id, DirecaoMensagem.RECEBIDA)
+                        .filter(m -> m.getEvolutionMessageId() != null && !m.getEvolutionMessageId().isBlank())
+                        .ifPresent(m -> evolutionClient.markMessageAsRead(
+                                config.getApiUrl(), config.getInstanceName(), config.getApiKey(),
+                                atendimento.getNumero() + "@s.whatsapp.net",
+                                m.getEvolutionMessageId(), false));
+            }
+        });
+
+        atendimento.setMensagensNaoLidas(0);
+        Atendimento salvo = atendimentoRepository.save(atendimento);
+        sseService.emit(clienteId, "atendimento-atualizado", AtendimentoMapper.toDto(salvo));
+        log.debug("Atendimento {} marcado como lido", id);
     }
 
     /**

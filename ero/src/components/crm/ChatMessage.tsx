@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { FaFileLines, FaDownload } from "react-icons/fa6"
+import { FaFileLines, FaDownload, FaCheck, FaCheckDouble } from "react-icons/fa6"
 import { api } from "../../services/api"
 import type { MensagemResponse } from "../../types/Mensagem"
 
@@ -99,6 +99,22 @@ function MidiaMensagem({ mensagem }: ChatMessageProps) {
   )
 }
 
+// Indicador de status (checks do WhatsApp) para mensagens ENVIADA.
+function StatusMensagemIcon({ status }: { status: MensagemResponse["status"] }) {
+  if (status === "ERRO") {
+    return <span className="font-semibold text-(--danger)">falhou</span>
+  }
+  if (status === "LIDA") {
+    // azul vibrante e opacidade cheia para destacar o "lido" no balão verde
+    return <FaCheckDouble size={13} className="text-sky-400 opacity-100" title="Lida" />
+  }
+  if (status === "ENTREGUE") {
+    return <FaCheckDouble size={11} className="opacity-70" title="Entregue" />
+  }
+  // ENVIADA (ou null): entregue ao servidor
+  return <FaCheck size={11} className="opacity-70" title="Enviada" />
+}
+
 export function ChatMessage({ mensagem }: ChatMessageProps) {
   const enviada = mensagem.direcao === "ENVIADA"
   const temMidia = mensagem.tipo !== "TEXTO"
@@ -109,7 +125,7 @@ export function ChatMessage({ mensagem }: ChatMessageProps) {
         className={`
           max-w-[80%] rounded-lg px-3 py-2 text-sm shadow-sm
           ${enviada
-            ? "rounded-br-none bg-(--accent) text-(--text-inverse)"
+            ? "rounded-br-none bg-(--success) text-(--text-inverse)"
             : "rounded-bl-none border border-(--border) bg-(--bg-surface) text-(--text-primary)"}
         `}
       >
@@ -127,13 +143,11 @@ export function ChatMessage({ mensagem }: ChatMessageProps) {
 
         <div
           className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
-            enviada ? "text-(--text-inverse) opacity-70" : "text-(--text-muted)"
+            enviada ? "text-(--text-inverse)" : "text-(--text-muted)"
           }`}
         >
-          <span>{formatHora(mensagem.dataMensagem)}</span>
-          {enviada && mensagem.status === "ERRO" && (
-            <span className="font-semibold text-(--danger)">falhou</span>
-          )}
+          <span className={enviada ? "opacity-70" : ""}>{formatHora(mensagem.dataMensagem)}</span>
+          {enviada && <StatusMensagemIcon status={mensagem.status} />}
         </div>
       </div>
     </div>

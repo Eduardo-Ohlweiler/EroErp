@@ -35,6 +35,8 @@ export function KanbanCard({ atendimento, selecionado, onClick }: KanbanCardProp
   }
 
   const nome = atendimento.contatoNome || atendimento.pessoaNome || atendimento.numero
+  const naoLidas = atendimento.mensagensNaoLidas ?? 0
+  const temNaoLidas = naoLidas > 0
 
   return (
     <div
@@ -51,13 +53,18 @@ export function KanbanCard({ atendimento, selecionado, onClick }: KanbanCardProp
       `}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-(--text-primary)">
+        <span className={`min-w-0 flex-1 truncate text-sm text-(--text-primary) ${temNaoLidas ? "font-bold" : "font-medium"}`}>
           {nome}
         </span>
         <span className="flex shrink-0 items-center gap-1 text-xs text-(--text-muted)">
           <FaRegClock size={10} />
           {formatHora(atendimento.dataUltimaMensagem ?? atendimento.dataAbertura)}
         </span>
+        {temNaoLidas && (
+          <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-(--accent) px-1.5 text-xs font-semibold text-(--text-inverse)">
+            {naoLidas}
+          </span>
+        )}
       </div>
 
       {atendimento.assunto && (

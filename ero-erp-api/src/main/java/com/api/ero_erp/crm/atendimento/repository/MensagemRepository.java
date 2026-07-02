@@ -1,6 +1,7 @@
 package com.api.ero_erp.crm.atendimento.repository;
 
 import com.api.ero_erp.crm.atendimento.entity.Mensagem;
+import com.api.ero_erp.crm.atendimento.enums.DirecaoMensagem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,6 +26,12 @@ public interface MensagemRepository extends JpaRepository<Mensagem, Long> {
     );
 
     boolean existsByEvolutionMessageId(String evolutionMessageId);
+
+    // Mensagem ENVIADA correspondente a um id da Evolution (para atualizar status entregue/lido).
+    Optional<Mensagem> findFirstByEvolutionMessageIdAndDirecao(String evolutionMessageId, DirecaoMensagem direcao);
+
+    // Última mensagem em uma direção dentro do atendimento (para marcar visto/leitura no WhatsApp).
+    Optional<Mensagem> findTopByAtendimento_IdAndDirecaoOrderByDataMensagemDesc(Long atendimentoId, DirecaoMensagem direcao);
 
     @Query("""
             SELECT m FROM Mensagem m

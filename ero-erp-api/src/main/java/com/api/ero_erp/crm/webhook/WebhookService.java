@@ -70,17 +70,20 @@ public class WebhookService {
             return;
         }
 
-        // Evolution envia como "messages.upsert" ou "MESSAGES_UPSERT"
+        // Evolution envia "messages.upsert"/"MESSAGES_UPSERT" (mensagem nova)
+        // e "messages.update"/"MESSAGES_UPDATE" (mudança de status: entregue/lido)
         String eventoNorm = evento.toLowerCase().replace("_", ".");
+        boolean isUpsert = eventoNorm.contains("messages.upsert");
+        boolean isUpdate = eventoNorm.contains("messages.update");
 
-        if (!eventoNorm.contains("messages.upsert")) {
+        if (!isUpsert && !isUpdate) {
             // connection.update e demais eventos: sem ação por ora
             log.debug("Webhook evento '{}' ignorado", evento);
             return;
         }
 
         if (instance == null || instance.isBlank()) {
-            log.warn("Webhook messages.upsert sem 'instance', ignorando");
+            log.warn("Webhook '{}' sem 'instance', ignorando", evento);
             return;
         }
 
@@ -91,19 +94,21 @@ public class WebhookService {
         }
         Long clienteId = config.getCliente().getId();
 
-        // O node "data" pode ser um objeto único ou um array de mensagens
+        // O node "data" pode ser um objeto único ou um array
         JsonNode data = payload.get("data");
         if (data == null || data.isNull()) {
-            log.debug("Webhook messages.upsert sem 'data'");
+            log.debug("Webhook '{}' sem 'data'", evento);
             return;
         }
 
         if (data.isArray()) {
             for (JsonNode item : data) {
-                processarMensagem(config, clienteId, item);
+                if (isUpsert) processarMensagem(config, clienteId, item);
+                else          processarStatus(config, clienteId, item);
             }
         } else {
-            processarMensagem(config, clienteId, data);
+            if (isUpsert) processarMensagem(config, clienteId, data);
+            else          processarStatus(config, clienteId, data);
         }
     }
 
@@ -159,6 +164,8 @@ public class WebhookService {
         atendimento.setDataUltimaMensagem(agora);
         atendimento.setDataUltimaMensagemCliente(agora);
         atendimento.setUltimoLembreteHoras(0); // reset do ciclo de pendências
+        int naoLidas = atendimento.getMensagensNaoLidas() != null ? atendimento.getMensagensNaoLidas() : 0;
+        atendimento.setMensagensNaoLidas(naoLidas + 1);
         Atendimento salvoAtendimento = atendimentoRepository.save(atendimento);
 
         Mensagem mensagem = new Mensagem();
@@ -178,6 +185,73 @@ public class WebhookService {
 
         log.info("Webhook: mensagem RECEBIDA de {} (atendimento {}, novo={})",
                 numero, salvoAtendimento.getId(), novo);
+    }
+
+    /**
+     * Trata o evento messages.update: atualiza o status (ENTREGUE/LIDA) de uma mensagem ENVIADA
+     * e emite SSE para o front atualizar os checks ao vivo.
+     */
+    private void processarStatus(ConfiguracaoCrm config, Long clienteId, JsonNode data) {
+        if (data == null || data.isNull()) return;
+
+        JsonNode key = data.get("key");
+        String evolutionMessageId = key != null ? texto(key, "id") : texto(data, "keyId");
+        String novoStatus = mapearStatus(data);
+        log.info("Webhook messages.update recebido: id={} statusMapeado={}", evolutionMessageId, novoStatus);
+
+        if (evolutionMessageId == null || evolutionMessageId.isBlank()) return;
+        if (novoStatus == null) {
+            log.info("Webhook messages.update sem status reconhecido: {}", data);
+            return;
+        }
+
+        Mensagem mensagem = mensagemRepository
+                .findFirstByEvolutionMessageIdAndDirecao(evolutionMessageId, DirecaoMensagem.ENVIADA)
+                .orElse(null);
+        if (mensagem == null) {
+            log.info("Webhook messages.update: mensagem ENVIADA {} não encontrada", evolutionMessageId);
+            return; // update de mensagem que não é nossa/enviada
+        }
+
+        // forward-only: nunca regride (ex.: DELIVERY tardio chegando depois do READ)
+        if (rankStatus(novoStatus) <= rankStatus(mensagem.getStatus())) return;
+
+        mensagem.setStatus(novoStatus);
+        Mensagem salva = mensagemRepository.save(mensagem);
+
+        sseService.emit(clienteId, "mensagem-atualizada", MensagemMapper.toDto(salva));
+        log.info("Webhook: status da mensagem {} -> {}", evolutionMessageId, novoStatus);
+    }
+
+    /**
+     * Mapeia o ack do WhatsApp (string SERVER_ACK/DELIVERY_ACK/READ/PLAYED ou numérico 2..5,
+     * em data.status ou data.update.status) para o status interno. Null se não reconhecido.
+     */
+    private String mapearStatus(JsonNode data) {
+        String statusStr = texto(data, "status");
+        if (statusStr == null) {
+            JsonNode update = data.get("update");
+            statusStr = update != null ? texto(update, "status") : null;
+        }
+        if (statusStr == null) return null;
+
+        String s = statusStr.trim().toUpperCase();
+        return switch (s) {
+            case "SERVER_ACK", "2"          -> "ENVIADA";
+            case "DELIVERY_ACK", "3"        -> "ENTREGUE";
+            case "READ", "PLAYED", "4", "5" -> "LIDA";
+            default                          -> null;
+        };
+    }
+
+    private int rankStatus(String status) {
+        if (status == null) return 0;
+        return switch (status) {
+            case "ENVIADA"  -> 1;
+            case "ENTREGUE" -> 2;
+            case "LIDA"     -> 3;
+            default          -> 0;
+        };
     }
 
     private Atendimento acharOuCriarAtendimento(ConfiguracaoCrm config, Long clienteId,

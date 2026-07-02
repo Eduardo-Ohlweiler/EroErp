@@ -24,7 +24,8 @@ public class AtendimentoMapper {
                 a.getDataUltimaMensagem(),
                 a.getDataUltimaMensagemCliente(),
                 a.getDataConclusao(),
-                a.getAtivo()
+                a.getAtivo(),
+                a.getMensagensNaoLidas()
         );
     }
 }

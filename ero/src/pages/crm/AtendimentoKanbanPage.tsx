@@ -26,6 +26,7 @@ export default function AtendimentoKanbanPage() {
 
   const [atendimentoAtivo, setAtendimentoAtivo] = useState<AtendimentoResponse | null>(null)
   const [mensagemExterna, setMensagemExterna] = useState<MensagemResponse | null>(null)
+  const [mensagemAtualizadaExterna, setMensagemAtualizadaExterna] = useState<MensagemResponse | null>(null)
 
   // ── carga dos dados fixos (colunas + usuários) ──
   useEffect(() => {
@@ -91,6 +92,10 @@ export default function AtendimentoKanbanPage() {
             : a
         )
       )
+    },
+    onMensagemAtualizada: (msg) => {
+      // repassa a mudança de status (entregue/lido) para o chat aberto
+      setMensagemAtualizadaExterna(msg)
     },
     onAtendimentoAtualizado: (at) => {
       upsertAtendimento(at)
@@ -204,6 +209,7 @@ export default function AtendimentoKanbanPage() {
               onMover={moverAndamento}
               onAtualizado={upsertAtendimento}
               mensagemExterna={mensagemExterna}
+              mensagemAtualizadaExterna={mensagemAtualizadaExterna}
             />
           </div>
         )}

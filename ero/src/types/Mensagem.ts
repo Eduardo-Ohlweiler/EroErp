@@ -2,6 +2,9 @@ export type DirecaoMensagem = "ENVIADA" | "RECEBIDA"
 
 export type TipoMensagem = "TEXTO" | "IMAGEM" | "AUDIO" | "VIDEO" | "DOCUMENTO"
 
+// Status de entrega de uma mensagem ENVIADA (checks do WhatsApp).
+export type StatusMensagem = "ENVIADA" | "ENTREGUE" | "LIDA" | "ERRO"
+
 // Mensagem de um atendimento do CRM.
 export interface MensagemResponse {
   id:            number
@@ -13,7 +16,7 @@ export interface MensagemResponse {
   midiaNome:     string | null
   usuarioId:     number | null
   usuarioNome:   string | null
-  status:        string | null
+  status:        StatusMensagem | null
   dataMensagem:  string
 }
 

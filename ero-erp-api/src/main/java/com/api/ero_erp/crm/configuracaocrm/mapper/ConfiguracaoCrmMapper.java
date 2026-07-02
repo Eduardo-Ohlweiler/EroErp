@@ -35,6 +35,7 @@ public class ConfiguracaoCrmMapper {
                 entity.getApiKey() != null && !entity.getApiKey().isBlank(),
                 entity.getToken()  != null && !entity.getToken().isBlank(),
                 entity.getAtivarPendencias(),
+                entity.getEnviarConfirmacaoLeitura(),
                 lembretes
         );
     }

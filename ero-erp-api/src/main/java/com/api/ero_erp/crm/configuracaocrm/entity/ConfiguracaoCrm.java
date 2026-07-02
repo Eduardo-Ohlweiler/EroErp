@@ -44,6 +44,9 @@ public class ConfiguracaoCrm extends BaseEntity {
     @Column(name = "ativar_pendencias")
     private Boolean ativarPendencias;
 
+    @Column(name = "enviar_confirmacao_leitura")
+    private Boolean enviarConfirmacaoLeitura;
+
     @OneToMany(mappedBy = "configuracaoCrm", fetch = FetchType.LAZY)
     private List<CrmLembretePendencia> lembretes = new ArrayList<>();
 
@@ -51,8 +54,9 @@ public class ConfiguracaoCrm extends BaseEntity {
     @Override
     public void prePersist() {
         super.prePersist();
-        if (this.provedor         == null) this.provedor         = "EVOLUTION";
-        if (this.ativo            == null) this.ativo            = true;
-        if (this.ativarPendencias == null) this.ativarPendencias = false;
+        if (this.provedor                 == null) this.provedor                 = "EVOLUTION";
+        if (this.ativo                    == null) this.ativo                    = true;
+        if (this.ativarPendencias         == null) this.ativarPendencias         = false;
+        if (this.enviarConfirmacaoLeitura == null) this.enviarConfirmacaoLeitura = false;
     }
 }

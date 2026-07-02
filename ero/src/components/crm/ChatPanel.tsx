@@ -23,6 +23,8 @@ interface ChatPanelProps {
   onAtualizado: (atendimento: AtendimentoResponse) => void
   // mensagens que chegam via SSE para este atendimento (empurradas pelo pai)
   mensagemExterna: MensagemResponse | null
+  // mudança de status (entregue/lido) de uma mensagem, via SSE
+  mensagemAtualizadaExterna: MensagemResponse | null
 }
 
 const PAGE_SIZE = 30
@@ -34,6 +36,7 @@ export function ChatPanel({
   onMover,
   onAtualizado,
   mensagemExterna,
+  mensagemAtualizadaExterna,
 }: ChatPanelProps) {
   const { user } = useAuth()
   const { showMessage } = useMessage()
@@ -72,6 +75,11 @@ export function ChatPanel({
     carregarInicial()
   }, [carregarInicial])
 
+  // marca a conversa como lida ao abrir (zera o contador de não-lidas)
+  useEffect(() => {
+    api.put(`/crm/atendimentos/${atendimento.id}/ler`).catch(() => {})
+  }, [atendimento.id])
+
   // rola para o fim quando a lista inicial carrega
   useEffect(() => {
     if (!carregando && page === 0 && listaRef.current) {
@@ -87,11 +95,28 @@ export function ChatPanel({
       if (prev.some((m) => m.id === mensagemExterna.id)) return prev
       return [...prev, mensagemExterna]
     })
+    // conversa aberta: mensagem recebida já conta como lida — evita acumular badge
+    if (mensagemExterna.direcao === "RECEBIDA") {
+      api.put(`/crm/atendimentos/${atendimento.id}/ler`).catch(() => {})
+    }
     // rola para o fim
     requestAnimationFrame(() => {
       if (listaRef.current) listaRef.current.scrollTop = listaRef.current.scrollHeight
     })
   }, [mensagemExterna, atendimento.id])
+
+  // aplica mudança de status (entregue/lido) vinda do SSE
+  useEffect(() => {
+    if (!mensagemAtualizadaExterna) return
+    if (mensagemAtualizadaExterna.atendimentoId !== atendimento.id) return
+    setMensagens((prev) =>
+      prev.map((m) =>
+        m.id === mensagemAtualizadaExterna.id
+          ? { ...m, status: mensagemAtualizadaExterna.status }
+          : m
+      )
+    )
+  }, [mensagemAtualizadaExterna, atendimento.id])
 
   async function carregarMais() {
     if (carregando || !temMais) return

@@ -11,6 +11,7 @@ export interface AtendimentoResponse {
   assunto:            string | null
   dataUltimaMensagem: string | null
   dataAbertura:       string
+  mensagensNaoLidas:  number
 }
 
 // Body do POST /crm/atendimentos/{id}/assumir.

@@ -70,6 +70,7 @@ public class ConfiguracaoCrmService {
         config.setNumero(dto.numero());
         config.setAtivo(dto.ativo());
         config.setAtivarPendencias(dto.ativarPendencias() != null ? dto.ativarPendencias() : false);
+        config.setEnviarConfirmacaoLeitura(dto.enviarConfirmacaoLeitura() != null ? dto.enviarConfirmacaoLeitura() : false);
 
         // Segredos: se vierem null/blank, preserva o valor atual (não sobrescreve com branco)
         if (dto.apiKey() != null && !dto.apiKey().isBlank()) {
@@ -109,7 +110,7 @@ public class ConfiguracaoCrmService {
             String webhookUrl = publicUrl.replaceAll("/+$", "") + "/crm/webhook/evolution";
             evolutionClient.configurarWebhook(
                     config.getApiUrl(), config.getInstanceName(), config.getApiKey(),
-                    webhookUrl, List.of("MESSAGES_UPSERT", "CONNECTION_UPDATE"));
+                    webhookUrl, List.of("MESSAGES_UPSERT", "MESSAGES_UPDATE", "CONNECTION_UPDATE"));
         }
 
         // Conecta para obter o QR Code

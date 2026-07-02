@@ -98,6 +98,13 @@ public class AtendimentoController {
         return ResponseEntity.ok(service.assumir(id, dto));
     }
 
+    @PutMapping("/{id}/ler")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> marcarLido(@PathVariable Long id) {
+        service.marcarLido(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/mensagens/{id}/midia")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ByteArrayResource> baixarMidia(@PathVariable Long id) {

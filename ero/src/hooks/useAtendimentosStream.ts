@@ -5,6 +5,8 @@ import type { MensagemResponse } from "../types/Mensagem"
 interface StreamHandlers {
   // Chega uma mensagem nova (recebida do cliente ou enviada por outro atendente/rotina).
   onMensagemNova?: (mensagem: MensagemResponse) => void
+  // Uma mensagem teve o status alterado (entregue/lido).
+  onMensagemAtualizada?: (mensagem: MensagemResponse) => void
   // Um atendimento foi criado ou atualizado (novo card, mudança de coluna, dono, etc.).
   onAtendimentoAtualizado?: (atendimento: AtendimentoResponse) => void
 }
@@ -42,6 +44,15 @@ export function useAtendimentosStream(handlers: StreamHandlers, enabled = true) 
         try {
           const data = JSON.parse((e as MessageEvent).data) as MensagemResponse
           handlersRef.current.onMensagemNova?.(data)
+        } catch {
+          /* payload inválido — ignora */
+        }
+      })
+
+      source.addEventListener("mensagem-atualizada", (e) => {
+        try {
+          const data = JSON.parse((e as MessageEvent).data) as MensagemResponse
+          handlersRef.current.onMensagemAtualizada?.(data)
         } catch {
           /* payload inválido — ignora */
         }

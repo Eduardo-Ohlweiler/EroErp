@@ -18,5 +18,6 @@ public record AtendimentoResponseDto(
         LocalDateTime dataUltimaMensagem,
         LocalDateTime dataUltimaMensagemCliente,
         LocalDateTime dataConclusao,
-        Boolean       ativo
+        Boolean       ativo,
+        Integer       mensagensNaoLidas
 ) {}

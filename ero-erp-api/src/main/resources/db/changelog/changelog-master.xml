@@ -111,4 +111,5 @@
     <include file="104-create-crm-atendimento.xml"          relativeToChangelogFile="true" />
     <include file="105-create-crm-mensagem.xml"             relativeToChangelogFile="true" />
     <include file="106-create-crm-atendimento-assuncao.xml" relativeToChangelogFile="true" />
+    <include file="107-alter-crm-leitura-status.xml"        relativeToChangelogFile="true" />
 </databaseChangeLog>

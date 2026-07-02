@@ -60,11 +60,15 @@ public class Atendimento extends BaseEntity {
     @Column(name = "ativo")
     private Boolean ativo;
 
+    @Column(name = "mensagens_nao_lidas", nullable = false)
+    private Integer mensagensNaoLidas;
+
     @PrePersist
     @Override
     public void prePersist() {
         super.prePersist();
-        if (this.ativo         == null) this.ativo         = true;
-        if (this.dataAbertura  == null) this.dataAbertura  = LocalDateTime.now();
+        if (this.ativo             == null) this.ativo             = true;
+        if (this.dataAbertura      == null) this.dataAbertura      = LocalDateTime.now();
+        if (this.mensagensNaoLidas == null) this.mensagensNaoLidas = 0;
     }
 }

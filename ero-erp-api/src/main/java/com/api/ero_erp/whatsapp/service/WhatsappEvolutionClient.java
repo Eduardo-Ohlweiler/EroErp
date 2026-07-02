@@ -18,19 +18,20 @@ public class WhatsappEvolutionClient {
         this.restClient = RestClient.create();
     }
 
-    public void enviar(String apiUrl, String instanceName, String apiKey, String numero, String mensagem) {
+    public String enviar(String apiUrl, String instanceName, String apiKey, String numero, String mensagem) {
         String url = apiUrl.replaceAll("/+$", "") + "/message/sendText/" + instanceName;
 
         try {
-            restClient.post()
+            Map resposta = restClient.post()
                     .uri(url)
                     .header("Content-Type", "application/json")
                     .header("apikey", apiKey)
                     .body(Map.of("number", numero, "text", mensagem))
                     .retrieve()
-                    .toBodilessEntity();
+                    .body(Map.class);
 
             log.debug("Mensagem enviada para {} via instância {}", numero, instanceName);
+            return extrairMessageId(resposta);
         } catch (Exception e) {
             log.error("Falha ao enviar WhatsApp para {}: {}", numero, e.getMessage());
             throw new RuntimeException("Erro na Evolution API: " + e.getMessage(), e);
@@ -201,6 +202,37 @@ public class WhatsappEvolutionClient {
         } catch (Exception e) {
             log.error("Falha ao enviar áudio WhatsApp para {}: {}", numero, e.getMessage());
             throw new RuntimeException("Erro na Evolution API ao enviar áudio: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Marca mensagens como lidas (envia o "visto"/tick azul ao contato) via
+     * POST /chat/markMessageAsRead/{instance}. Best-effort: loga e não propaga erro.
+     */
+    public void markMessageAsRead(String apiUrl, String instanceName, String apiKey,
+                                  String remoteJid, String messageId, boolean fromMe) {
+        String url = apiUrl.replaceAll("/+$", "") + "/chat/markMessageAsRead/" + instanceName;
+
+        try {
+            java.util.Map<String, Object> read = new java.util.HashMap<>();
+            read.put("remoteJid", remoteJid);
+            read.put("fromMe", fromMe);
+            read.put("id", messageId);
+
+            java.util.Map<String, Object> body = new java.util.HashMap<>();
+            body.put("readMessages", java.util.List.of(read));
+
+            restClient.post()
+                    .uri(url)
+                    .header("Content-Type", "application/json")
+                    .header("apikey", apiKey)
+                    .body(body)
+                    .retrieve()
+                    .toBodilessEntity();
+
+            log.debug("Mensagem {} marcada como lida na instância {}", messageId, instanceName);
+        } catch (Exception e) {
+            log.error("Falha ao marcar mensagem como lida na Evolution (instância {}): {}", instanceName, e.getMessage());
         }
     }
 

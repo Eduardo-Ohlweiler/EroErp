@@ -19,6 +19,7 @@ export interface ConfiguracaoCrmResponse {
   possuiApiKey:    boolean
   possuiToken:     boolean
   ativarPendencias: boolean
+  enviarConfirmacaoLeitura: boolean
   lembretes:       LembretePendencia[]
 }
 
@@ -33,6 +34,7 @@ export interface ConfiguracaoCrmPayload {
   numero:          string
   ativo:           boolean
   ativarPendencias: boolean
+  enviarConfirmacaoLeitura: boolean
   lembretes:       {
     id:         number | null
     tempoHoras: number
