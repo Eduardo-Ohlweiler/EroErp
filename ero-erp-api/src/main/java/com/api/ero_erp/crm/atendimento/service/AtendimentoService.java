@@ -28,6 +28,7 @@ import com.api.ero_erp.whatsapp.service.WhatsappEvolutionClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,13 +74,42 @@ public class AtendimentoService {
         this.securityUtils             = securityUtils;
     }
 
+    // Finalizados (concluído/cancelado): no carregamento normal traz os N mais recentes;
+    // ao filtrar por um andamento terminal, traz todos dos últimos DIAS (com teto de segurança).
+    private static final int LIMITE_FINALIZADOS_PADRAO = 30;
+    private static final int DIAS_FINALIZADOS_FILTRO   = 5;
+    private static final int TETO_FINALIZADOS_FILTRO   = 500;
+
     @Transactional(readOnly = true)
     public List<AtendimentoResponseDto> listarKanban(Long usuarioId, Long andamentoId) {
         Long clienteId = securityUtils.getClienteIdLogado();
-        return atendimentoRepository.listarKanban(clienteId, usuarioId, andamentoId)
-                .stream()
-                .map(AtendimentoMapper::toDto)
-                .toList();
+
+        if (andamentoId != null) {
+            boolean terminal = andamentoRepository.findById(andamentoId)
+                    .map(a -> Boolean.TRUE.equals(a.getConcluiAtendimento())
+                           || Boolean.TRUE.equals(a.getCancelaAtendimento()))
+                    .orElse(false);
+            if (terminal) {
+                // filtro por terminal: todos os finalizados desse andamento nos últimos N dias
+                LocalDateTime desde = LocalDateTime.now().minusDays(DIAS_FINALIZADOS_FILTRO);
+                return atendimentoRepository
+                        .listarFinalizadosPorAndamentoDesde(clienteId, usuarioId, andamentoId, desde,
+                                PageRequest.of(0, TETO_FINALIZADOS_FILTRO))
+                        .stream().map(AtendimentoMapper::toDto).toList();
+            }
+            // andamento não-terminal: só os ativos daquele andamento
+            return atendimentoRepository.listarKanban(clienteId, usuarioId, andamentoId)
+                    .stream().map(AtendimentoMapper::toDto).toList();
+        }
+
+        // carregamento normal (sem filtro): ativos + os últimos 30 finalizados
+        List<AtendimentoResponseDto> resultado = new java.util.ArrayList<>(
+                atendimentoRepository.listarKanban(clienteId, usuarioId, null)
+                        .stream().map(AtendimentoMapper::toDto).toList());
+        atendimentoRepository
+                .listarUltimosFinalizados(clienteId, usuarioId, PageRequest.of(0, LIMITE_FINALIZADOS_PADRAO))
+                .stream().map(AtendimentoMapper::toDto).forEach(resultado::add);
+        return resultado;
     }
 
     @Transactional(readOnly = true)

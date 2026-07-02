@@ -1,11 +1,13 @@
 package com.api.ero_erp.crm.atendimento.repository;
 
 import com.api.ero_erp.crm.atendimento.entity.Atendimento;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +47,50 @@ public interface AtendimentoRepository extends JpaRepository<Atendimento, Long> 
             @Param("clienteId")   Long clienteId,
             @Param("usuarioId")   Long usuarioId,
             @Param("andamentoId") Long andamentoId
+    );
+
+    /**
+     * Kanban (carregamento normal): os N atendimentos finalizados (concluído/cancelado)
+     * mais recentes do cliente, para preencher as colunas terminais sem poluir. Limite via Pageable.
+     */
+    @Query("""
+            SELECT a FROM Atendimento a
+            LEFT JOIN FETCH a.andamento
+            LEFT JOIN FETCH a.usuario
+            LEFT JOIN FETCH a.pessoa
+            WHERE a.cliente.id = :clienteId
+              AND a.ativo = false
+              AND (:usuarioId IS NULL OR a.usuario.id = :usuarioId)
+            ORDER BY a.dataConclusao DESC NULLS LAST, a.dataUltimaMensagem DESC NULLS LAST
+            """)
+    List<Atendimento> listarUltimosFinalizados(
+            @Param("clienteId") Long clienteId,
+            @Param("usuarioId") Long usuarioId,
+            Pageable pageable
+    );
+
+    /**
+     * Kanban (filtro por andamento terminal): finalizados de um andamento a partir de uma data
+     * (ex.: últimos 5 dias). Pageable usado apenas como teto de segurança.
+     */
+    @Query("""
+            SELECT a FROM Atendimento a
+            LEFT JOIN FETCH a.andamento
+            LEFT JOIN FETCH a.usuario
+            LEFT JOIN FETCH a.pessoa
+            WHERE a.cliente.id = :clienteId
+              AND a.ativo = false
+              AND a.andamento.id = :andamentoId
+              AND (:usuarioId IS NULL OR a.usuario.id = :usuarioId)
+              AND a.dataConclusao >= :dataMinima
+            ORDER BY a.dataConclusao DESC NULLS LAST, a.dataUltimaMensagem DESC NULLS LAST
+            """)
+    List<Atendimento> listarFinalizadosPorAndamentoDesde(
+            @Param("clienteId")   Long clienteId,
+            @Param("usuarioId")   Long usuarioId,
+            @Param("andamentoId") Long andamentoId,
+            @Param("dataMinima")  LocalDateTime dataMinima,
+            Pageable pageable
     );
 
     @Query("""
