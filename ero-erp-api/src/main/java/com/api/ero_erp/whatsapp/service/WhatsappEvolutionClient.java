@@ -146,9 +146,9 @@ public class WhatsappEvolutionClient {
      * Envia mídia (imagem, vídeo, documento) via POST /message/sendMedia/{instance}.
      * Generaliza o enviarDocumento permitindo mediatype/mimetype/fileName/caption arbitrários.
      */
-    public void enviarMidia(String apiUrl, String instanceName, String apiKey,
-                            String numero, String base64, String mediatype,
-                            String mimetype, String fileName, String caption) {
+    public String enviarMidia(String apiUrl, String instanceName, String apiKey,
+                              String numero, String base64, String mediatype,
+                              String mimetype, String fileName, String caption) {
         String url = apiUrl.replaceAll("/+$", "") + "/message/sendMedia/" + instanceName;
 
         try {
@@ -160,15 +160,16 @@ public class WhatsappEvolutionClient {
             body.put("media", base64);
             if (caption != null && !caption.isBlank())   body.put("caption", caption);
 
-            restClient.post()
+            Map resposta = restClient.post()
                     .uri(url)
                     .header("Content-Type", "application/json")
                     .header("apikey", apiKey)
                     .body(body)
                     .retrieve()
-                    .toBodilessEntity();
+                    .body(Map.class);
 
             log.debug("Mídia ({}) enviada para {} via instância {}", mediatype, numero, instanceName);
+            return extrairMessageId(resposta);
         } catch (Exception e) {
             log.error("Falha ao enviar mídia WhatsApp para {}: {}", numero, e.getMessage());
             throw new RuntimeException("Erro na Evolution API ao enviar mídia: " + e.getMessage(), e);
@@ -178,8 +179,8 @@ public class WhatsappEvolutionClient {
     /**
      * Envia áudio (formato WhatsApp/PTT) via POST /message/sendWhatsAppAudio/{instance}.
      */
-    public void enviarAudio(String apiUrl, String instanceName, String apiKey,
-                            String numero, String base64) {
+    public String enviarAudio(String apiUrl, String instanceName, String apiKey,
+                              String numero, String base64) {
         String url = apiUrl.replaceAll("/+$", "") + "/message/sendWhatsAppAudio/" + instanceName;
 
         try {
@@ -187,19 +188,33 @@ public class WhatsappEvolutionClient {
             body.put("number", numero);
             body.put("audio", base64);
 
-            restClient.post()
+            Map resposta = restClient.post()
                     .uri(url)
                     .header("Content-Type", "application/json")
                     .header("apikey", apiKey)
                     .body(body)
                     .retrieve()
-                    .toBodilessEntity();
+                    .body(Map.class);
 
             log.debug("Áudio enviado para {} via instância {}", numero, instanceName);
+            return extrairMessageId(resposta);
         } catch (Exception e) {
             log.error("Falha ao enviar áudio WhatsApp para {}: {}", numero, e.getMessage());
             throw new RuntimeException("Erro na Evolution API ao enviar áudio: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Extrai o id da mensagem (key.id) da resposta de envio da Evolution.
+     * Best-effort: retorna null se qualquer nível estiver ausente — o envio em si já ocorreu.
+     */
+    private String extrairMessageId(Map<?, ?> resposta) {
+        if (resposta == null) return null;
+        Object key = resposta.get("key");
+        if (key instanceof Map<?, ?> keyMap && keyMap.get("id") != null) {
+            return keyMap.get("id").toString();
+        }
+        return null;
     }
 
     /**

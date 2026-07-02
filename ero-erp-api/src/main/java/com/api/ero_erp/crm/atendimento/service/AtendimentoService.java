@@ -142,6 +142,8 @@ public class AtendimentoService {
         TipoMensagem tipo = parseTipo(dto.tipo());
         String numero = atendimento.getNumero();
 
+        String evolutionMessageId = null;
+
         try {
             switch (tipo) {
                 case TEXTO -> {
@@ -153,13 +155,13 @@ public class AtendimentoService {
                 case AUDIO -> {
                     if (dto.base64() == null || dto.base64().isBlank())
                         throw new BadRequestException("Áudio é obrigatório, verifique!");
-                    evolutionClient.enviarAudio(config.getApiUrl(), config.getInstanceName(), config.getApiKey(),
+                    evolutionMessageId = evolutionClient.enviarAudio(config.getApiUrl(), config.getInstanceName(), config.getApiKey(),
                             numero, dto.base64());
                 }
                 case IMAGEM, VIDEO, DOCUMENTO -> {
                     if (dto.base64() == null || dto.base64().isBlank())
                         throw new BadRequestException("Mídia é obrigatória, verifique!");
-                    evolutionClient.enviarMidia(config.getApiUrl(), config.getInstanceName(), config.getApiKey(),
+                    evolutionMessageId = evolutionClient.enviarMidia(config.getApiUrl(), config.getInstanceName(), config.getApiKey(),
                             numero, dto.base64(), mediatypeDe(tipo), dto.mimetype(), dto.fileName(), dto.conteudo());
                 }
             }
@@ -180,6 +182,7 @@ public class AtendimentoService {
         mensagem.setConteudo(dto.conteudo());
         mensagem.setMidiaMimetype(dto.mimetype());
         mensagem.setMidiaNome(dto.fileName());
+        mensagem.setEvolutionMessageId(evolutionMessageId);
         mensagem.setUsuario(usuario);
         mensagem.setStatus("ENVIADA");
         mensagem.setDataMensagem(LocalDateTime.now());
