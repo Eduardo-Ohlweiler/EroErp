@@ -32,6 +32,14 @@ public interface AtendimentoRepository extends JpaRepository<Atendimento, Long> 
             @Param("numero")    String numero
     );
 
+    /**
+     * Memória de vínculo: último atendimento (qualquer status) daquele número que
+     * já teve uma pessoa vinculada. Usado para herdar a pessoa em novos atendimentos
+     * do mesmo número, sem depender do telefone estar no cadastro da pessoa.
+     */
+    Optional<Atendimento> findFirstByClienteIdAndNumeroAndPessoaIsNotNullOrderByDataAberturaDesc(
+            Long clienteId, String numero);
+
     /** Kanban: atendimentos do cliente com filtros opcionais de usuário e andamento. */
     @Query("""
             SELECT a FROM Atendimento a

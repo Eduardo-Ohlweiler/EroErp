@@ -12,6 +12,8 @@ import { TCol } from "../../../components/tcol"
 import type { ErrorResponse } from "../../../types/ErrorResponse"
 import axios from "axios"
 import { TCombo } from "../../../components/tcombo"
+import { TPaisCombo } from "../../../components/tpaiscombo"
+import { TSpace } from "../../../components/tspace"
 
 export default function ClienteForm() {
 
@@ -124,6 +126,12 @@ export default function ClienteForm() {
 
         <TRow>
           <TCol>
+            <TPaisCombo
+              name="codigoPais"
+              defaultValue={cliente?.codigoPais ?? "55"}
+            />
+          </TCol>
+          <TCol>
             <TEntry
               name="telefone"
               label="Telefone"
@@ -132,6 +140,7 @@ export default function ClienteForm() {
               width="200px"
             />
           </TCol>
+          <TSpace />
         </TRow>
         <TRow>
         <TCol>

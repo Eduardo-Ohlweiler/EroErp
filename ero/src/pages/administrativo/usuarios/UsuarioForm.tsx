@@ -11,6 +11,7 @@ import { TRow } from "../../../components/trow"
 import { TCol } from "../../../components/tcol"
 import { TEntry } from "../../../components/tentry"
 import { TCombo } from "../../../components/tcombo"
+import { TPaisCombo } from "../../../components/tpaiscombo"
 import { TDbCombo } from "../../../components/tdbcombo"
 import { TDbCheckbox } from "../../../components/tdbcheckbox"
 import { TButton } from "../../../components/tbutton"
@@ -174,6 +175,12 @@ export default function UsuarioForm() {
                 </TRow>
                 <TRow>
                     <TCol>
+                        <TPaisCombo
+                            name         ="codigoPais"
+                            defaultValue ={usuario?.codigoPais ?? "55"}
+                        />
+                    </TCol>
+                    <TCol>
                         <TEntry
                             name        ="telefone"
                             label       ="Telefone"
@@ -183,6 +190,7 @@ export default function UsuarioForm() {
                             defaultValue={usuario?.telefone}
                         />
                     </TCol>
+                    <TSpace />
                 </TRow>
                 <TRow>
                     <TCol>

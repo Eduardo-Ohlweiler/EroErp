@@ -31,6 +31,13 @@ public record UsuarioCreateDto(
         )
         String telefone,
 
+        @Schema(description = "Código do país (DDI, somente números). Padrão 55 (Brasil) quando não informado.", example = "55")
+        @Pattern(
+                regexp = "^\\d{1,4}$",
+                message = "Código do país deve conter apenas números (1 a 4 dígitos)"
+        )
+        String codigoPais,
+
         @Schema(
                 description = "Nome das roles do usuário",
                 example = "[SUPERADMIN, ADMIN]"

@@ -56,26 +56,60 @@ export function VincularPessoaModal({ atendimento, open, onClose, onVinculado }:
 
     if (!open || !atendimento) return null
 
-    // Telefone do WhatsApp → best-effort para DDD + número (remove código do país).
-    const digitos  = (atendimento.numero ?? "").replace(/\D/g, "")
-    const telefone = digitos.length > 11 ? digitos.slice(-11) : digitos
-    const nome     = atendimento.contatoNome ?? ""
+    const jaVinculado = atendimento.pessoaId != null
+
+    // Telefone do WhatsApp (E.164 sem "+") → separa DDI de DDD + número.
+    // Brasil: 55 + DDD(2) + número(8 ou 9) = 12 ou 13 dígitos.
+    const digitos    = (atendimento.numero ?? "").replace(/\D/g, "")
+    let   codigoPais = "55"
+    let   telefone   = digitos
+    if (digitos.startsWith("55") && (digitos.length === 12 || digitos.length === 13)) {
+        codigoPais = "55"
+        telefone   = digitos.slice(2)                       // DDD + número (10 ou 11 dígitos)
+    } else if (digitos.length > 11) {                       // fallback outros países
+        codigoPais = digitos.slice(0, digitos.length - 11)
+        telefone   = digitos.slice(-11)
+    }
+    // (digitos <= 11 e sem "55": já é DDD + número nacional, mantém como está)
+    const nome = atendimento.contatoNome ?? ""
 
     return (
         <>
             {etapa === "escolha" && (
-                <TWindow title="Vincular pessoa ao atendimento" open width="480px" onClose={onClose}>
+                <TWindow
+                    title   ={jaVinculado ? "Alterar vínculo do atendimento" : "Vincular pessoa ao atendimento"}
+                    open
+                    width   ="480px"
+                    onClose ={onClose}
+                >
                     <div className="flex flex-col gap-4">
                         <p className="text-sm text-(--text-secondary)">
                             Contato: <span className="font-medium text-(--text-primary)">{nome || atendimento.numero}</span>
                         </p>
-                        <p className="text-sm text-(--text-secondary)">
-                            Como deseja associar este atendimento a uma pessoa?
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <TButton label="Vincular a cadastro existente" variant="primary" width="100%" onClick={() => setEtapa("buscar")} />
-                            <TButton label="Cadastrar nova pessoa"          variant="new"     width="100%" onClick={() => setEtapa("novo")} />
-                        </div>
+                        {jaVinculado ? (
+                            <>
+                                <p className="text-sm text-(--text-secondary)">
+                                    Vinculado atualmente a: <span className="font-medium text-(--text-primary)">{atendimento.pessoaNome}</span>
+                                </p>
+                                <p className="text-sm text-(--text-secondary)">
+                                    Deseja alterar o vínculo?
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                    <TButton label="Vincular a outro cadastro existente" variant="primary" width="100%" onClick={() => setEtapa("buscar")} />
+                                    <TButton label="Cadastrar nova pessoa"                variant="new"     width="100%" onClick={() => setEtapa("novo")} />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-sm text-(--text-secondary)">
+                                    Como deseja associar este atendimento a uma pessoa?
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                    <TButton label="Vincular a cadastro existente" variant="primary" width="100%" onClick={() => setEtapa("buscar")} />
+                                    <TButton label="Cadastrar nova pessoa"          variant="new"     width="100%" onClick={() => setEtapa("novo")} />
+                                </div>
+                            </>
+                        )}
                     </div>
                 </TWindow>
             )}
@@ -90,9 +124,10 @@ export function VincularPessoaModal({ atendimento, open, onClose, onVinculado }:
                 open            ={etapa === "novo"}
                 onClose         ={onClose}
                 onCreated       ={(p: PessoaResponse) => vincular(p.id)}
-                title           ="Cadastrar e vincular pessoa"
-                defaultNome     ={nome}
-                defaultTelefone ={telefone}
+                title             ="Cadastrar e vincular pessoa"
+                defaultNome       ={nome}
+                defaultTelefone   ={telefone}
+                defaultCodigoPais ={codigoPais}
             />
         </>
     )

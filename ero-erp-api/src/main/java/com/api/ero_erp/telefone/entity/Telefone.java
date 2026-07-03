@@ -29,6 +29,9 @@ public class Telefone extends BaseEntity {
     @Column(name = "numero", nullable = false, length = 20)
     private String numero;
 
+    @Column(name = "codigo_pais", nullable = false, length = 4)
+    private String codigoPais = "55";
+
     @Column(name = "principal", nullable = false)
     private Boolean principal = false;
 

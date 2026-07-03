@@ -12,6 +12,7 @@ import { TRow } from "../trow"
 import { TCol } from "../tcol"
 import { TEntry } from "../tentry"
 import { TCombo } from "../tcombo"
+import { TPaisCombo } from "../tpaiscombo"
 import { TButton } from "../tbutton"
 import { TPanel } from "../tpanel"
 import { TDbCheckbox } from "../tdbcheckbox"
@@ -26,6 +27,8 @@ interface TQuickPessoaProps {
     defaultNome?:     string
     /** Pré-preenche o campo Telefone ao abrir (somente dígitos, editável). */
     defaultTelefone?: string
+    /** Código do país (DDI) inicial do telefone. Default "55". */
+    defaultCodigoPais?: string
 }
 
 const TELEFONE_REGEX = /^\d{10,11}$/
@@ -39,7 +42,7 @@ const EMAIL_REGEX    = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
  * Obrigatórios: nome, tipo de cadastro e tipo de pessoa.
  * Opcionais: data de nascimento, CPF/RG ou CNPJ, um telefone, um e-mail e um endereço.
  */
-export function TQuickPessoa({ open, onClose, onCreated, title = "Cadastro rápido", defaultNome, defaultTelefone }: TQuickPessoaProps) {
+export function TQuickPessoa({ open, onClose, onCreated, title = "Cadastro rápido", defaultNome, defaultTelefone, defaultCodigoPais = "55" }: TQuickPessoaProps) {
 
     const { showMessage } = useMessage()
 
@@ -106,6 +109,7 @@ export function TQuickPessoa({ open, onClose, onCreated, title = "Cadastro rápi
         const isFisica = tipoPessoa === "PESSOA_FISICA"
 
         const telTipo   = val("telTipo")
+        const telPais   = val("telPais")
         const telNumero = val("telNumero")
         const emailTipo = val("emailTipo")
         const emailVal  = val("emailValor")
@@ -138,7 +142,7 @@ export function TQuickPessoa({ open, onClose, onCreated, title = "Cadastro rápi
                 ? [{ id: null, tipoEmailId: Number(emailTipo), email: emailVal, observacao: null, principal: true }]
                 : [],
             telefones: telNumero
-                ? [{ id: null, tipoTelefoneId: Number(telTipo), numero: telNumero, observacao: null, principal: true }]
+                ? [{ id: null, tipoTelefoneId: Number(telTipo), codigoPais: telPais || "55", numero: telNumero, observacao: null, principal: true }]
                 : [],
             enderecos: cidadeId
                 ? [{
@@ -277,6 +281,9 @@ export function TQuickPessoa({ open, onClose, onCreated, title = "Cadastro rápi
                                 placeholder ="Selecione..."
                                 options     ={tiposTelefone.map(t => ({ value: String(t.id), label: t.nome }))}
                             />
+                        </TCol>
+                        <TCol>
+                            <TPaisCombo name="telPais" width="180px" defaultValue={defaultCodigoPais} />
                         </TCol>
                         <TCol>
                             <TEntry name="telNumero" label="Número" mask="celular" width="200px" defaultValue={defaultTelefone} />

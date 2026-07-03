@@ -31,6 +31,7 @@ export interface TelefoneResponse {
     pessoaId:         number,
     tipoTelefoneId:   number,
     tipoTelefoneNome: string,
+    codigoPais:       string,
     numero:           string,
     observacao:       string | null,
     principal:        boolean,

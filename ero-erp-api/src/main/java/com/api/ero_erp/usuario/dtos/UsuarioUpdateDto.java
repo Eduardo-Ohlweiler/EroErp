@@ -24,6 +24,12 @@ public record UsuarioUpdateDto(
         )
         String telefone,
 
+        @Pattern(
+                regexp = "^\\d{1,4}$",
+                message = "Código do país deve conter apenas números (1 a 4 dígitos)"
+        )
+        String codigoPais,
+
         Long clienteId,
 
         Boolean ativo,

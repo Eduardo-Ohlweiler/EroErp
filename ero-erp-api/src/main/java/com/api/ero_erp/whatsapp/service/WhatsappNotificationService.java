@@ -4,6 +4,7 @@ import com.api.ero_erp.configuracaomensagem.entity.ConfiguracaoMensagem;
 import com.api.ero_erp.configuracaomensagem.service.ConfiguracaoMensagemService;
 import com.api.ero_erp.compromisso.entity.Compromisso;
 import com.api.ero_erp.telefone.repository.TelefoneRepository;
+import com.api.ero_erp.telefone.util.TelefoneUtils;
 import com.api.ero_erp.whatsapp.whatsappconfigglobal.entity.WhatsappConfigGlobal;
 import com.api.ero_erp.whatsapp.whatsappconfigglobal.repository.WhatsappConfigGlobalRepository;
 import com.api.ero_erp.whatsapp.whatsappinstancia.entity.WhatsappInstancia;
@@ -51,11 +52,12 @@ public class WhatsappNotificationService {
         if (compromissos == null || compromissos.isEmpty())
             return;
 
-        Compromisso primeiro = compromissos.get(0);
-        String phoneCliente  = resolverPhoneCliente(primeiro);
+        Compromisso primeiro    = compromissos.get(0);
+        ContatoCliente phoneCliente = resolverPhoneCliente(primeiro);
 
         try {
-            whatsappLogService.criarPendente(primeiro, phoneCliente);
+            // WhatsappLog não persiste DDI: grava apenas DDD+número
+            whatsappLogService.criarPendente(primeiro, phoneCliente != null ? phoneCliente.numero() : null);
         } catch (Exception e) {
             log.warn("Falha ao criar log para compromisso {}: {}", primeiro.getId(), e.getMessage());
         }
@@ -76,10 +78,11 @@ public class WhatsappNotificationService {
     }
 
     public void notificarCriacao(Compromisso compromisso) {
-        String phoneCliente = resolverPhoneCliente(compromisso);
+        ContatoCliente phoneCliente = resolverPhoneCliente(compromisso);
 
         try {
-            whatsappLogService.criarPendente(compromisso, phoneCliente);
+            // WhatsappLog não persiste DDI: grava apenas DDD+número
+            whatsappLogService.criarPendente(compromisso, phoneCliente != null ? phoneCliente.numero() : null);
         } catch (Exception e) {
             log.warn("Falha ao criar log para compromisso {}: {}", compromisso.getId(), e.getMessage());
         }
@@ -106,7 +109,7 @@ public class WhatsappNotificationService {
 
             ConfiguracaoMensagem config   = configuracaoMensagemService
                     .findByUsuarioId(compromisso.getUsuario().getId()).orElse(null);
-            String               phoneCliente = resolverPhoneCliente(compromisso);
+            ContatoCliente       phoneCliente = resolverPhoneCliente(compromisso);
             var                  ctx          = buildContexto(compromisso, compromisso.getMotivoCancelamento());
 
             enviarParaUsuarioECliente(
@@ -126,7 +129,7 @@ public class WhatsappNotificationService {
 
             ConfiguracaoMensagem config      = configuracaoMensagemService
                     .findByUsuarioId(compromisso.getUsuario().getId()).orElse(null);
-            String               phoneCliente = resolverPhoneCliente(compromisso);
+            ContatoCliente       phoneCliente = resolverPhoneCliente(compromisso);
             var                  ctx          = buildContexto(compromisso, null);
 
             enviarParaUsuarioECliente(
@@ -141,10 +144,10 @@ public class WhatsappNotificationService {
     }
 
     private void enviarParaUsuarioECliente(
-            Compromisso compromisso,
-            String      mensagemUsuario,
-            String      mensagemCliente,
-            String      phoneCliente
+            Compromisso    compromisso,
+            String         mensagemUsuario,
+            String         mensagemCliente,
+            ContatoCliente phoneCliente
     ) {
         WhatsappConfigGlobal configGlobal = configGlobalRepository.findFirstByAtivoTrue().orElse(null);
         if (configGlobal == null) return;
@@ -164,7 +167,7 @@ public class WhatsappNotificationService {
                     configGlobal.getApiUrl(),
                     instancia.getInstanceName(),
                     instancia.getToken(),
-                    "55" + limparNumero(telefoneUsuario),
+                    TelefoneUtils.montarNumeroEnvio(compromisso.getUsuario().getCodigoPais(), telefoneUsuario),
                     mensagemUsuario
             );
         }
@@ -174,13 +177,24 @@ public class WhatsappNotificationService {
                     configGlobal.getApiUrl(),
                     instancia.getInstanceName(),
                     instancia.getToken(),
-                    "55" + phoneCliente,
+                    phoneCliente.numeroEnvio(),
                     mensagemCliente
             );
         }
     }
 
-    String resolverPhoneCliente(Compromisso compromisso) {
+    /**
+     * Contato do cliente resolvido a partir do Telefone cadastrado.
+     * {@code numero} é apenas DDD+número (sem DDI, como é persistido no WhatsappLog);
+     * {@code codigoPais} carrega o DDI real para montar o número de envio.
+     */
+    record ContatoCliente(String numero, String codigoPais) {
+        String numeroEnvio() {
+            return TelefoneUtils.montarNumeroEnvio(codigoPais, numero);
+        }
+    }
+
+    ContatoCliente resolverPhoneCliente(Compromisso compromisso) {
         if (compromisso.getPessoa() == null) return null;
         return telefoneRepository
                 .findFirstByPessoaIdAndClienteIdAndTipoTelefoneId(
@@ -188,7 +202,7 @@ public class WhatsappNotificationService {
                         compromisso.getCliente().getId(),
                         2L
                 )
-                .map(t -> limparNumero(t.getNumero()))
+                .map(t -> new ContatoCliente(limparNumero(t.getNumero()), t.getCodigoPais()))
                 .orElse(null);
     }
 
@@ -230,7 +244,7 @@ public class WhatsappNotificationService {
 
             String phone = telefoneRepository
                     .findFirstByPessoaIdAndClienteIdAndTipoTelefoneId(pessoaId, clienteId, 2L)
-                    .map(t -> limparNumero(t.getNumero()))
+                    .map(t -> TelefoneUtils.montarNumeroEnvio(t.getCodigoPais(), t.getNumero()))
                     .orElse(null);
 
             if (phone == null || phone.isBlank()) {
@@ -242,7 +256,7 @@ public class WhatsappNotificationService {
                     configGlobal.getApiUrl(),
                     instancia.getInstanceName(),
                     instancia.getToken(),
-                    "55" + phone,
+                    phone,
                     base64,
                     fileName,
                     caption
@@ -269,7 +283,7 @@ public class WhatsappNotificationService {
 
             String phone = telefoneRepository
                     .findFirstByPessoaIdAndClienteIdAndTipoTelefoneId(pessoaId, clienteId, 2L)
-                    .map(t -> limparNumero(t.getNumero()))
+                    .map(t -> TelefoneUtils.montarNumeroEnvio(t.getCodigoPais(), t.getNumero()))
                     .orElse(null);
 
             if (phone == null || phone.isBlank()) {
@@ -281,7 +295,7 @@ public class WhatsappNotificationService {
                     configGlobal.getApiUrl(),
                     instancia.getInstanceName(),
                     instancia.getToken(),
-                    "55" + phone,
+                    phone,
                     mensagem
             );
         } catch (Exception e) {

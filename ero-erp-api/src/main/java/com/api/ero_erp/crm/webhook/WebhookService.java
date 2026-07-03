@@ -273,10 +273,22 @@ public class WebhookService {
         atendimento.setAtivo(true);
         atendimento.setDataAbertura(LocalDateTime.now());
 
-        // auto-vínculo de pessoa por telefone cadastrado
-        Telefone telefone = telefoneRepository.findFirstByClienteIdAndNumero(clienteId, numero).orElse(null);
+        // auto-vínculo de pessoa por telefone cadastrado.
+        // 'numero' vem completo do remoteJid (DDI+DDD+número); casa exato pela concatenação
+        // DDI+número e, em último caso, por sufixo (números legados sem DDI/formatados).
+        Telefone telefone = telefoneRepository.findByClienteIdAndNumeroCompleto(clienteId, numero)
+                .orElseGet(() -> telefoneRepository.findByClienteIdAndNumeroSufixo(clienteId, numero)
+                        .stream().findFirst().orElse(null));
         if (telefone != null && telefone.getPessoa() != null) {
             atendimento.setPessoa(telefone.getPessoa());
+        }
+
+        // memória de vínculo: se não casou por telefone cadastrado, herda a pessoa do
+        // último atendimento desse mesmo número que já teve vínculo (manual ou automático).
+        if (atendimento.getPessoa() == null) {
+            atendimentoRepository
+                    .findFirstByClienteIdAndNumeroAndPessoaIsNotNullOrderByDataAberturaDesc(clienteId, numero)
+                    .ifPresent(anterior -> atendimento.setPessoa(anterior.getPessoa()));
         }
 
         return atendimento;
