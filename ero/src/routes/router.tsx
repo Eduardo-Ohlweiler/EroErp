@@ -131,6 +131,7 @@ import AndamentoList                              from "../pages/crm/auxiliares/
 import FluxoKanbanForm                            from "../pages/crm/auxiliares/FluxoKanbanForm"
 import AtendimentoKanbanPage                       from "../pages/crm/AtendimentoKanbanPage"
 import AtendimentoListPage                        from "../pages/crm/AtendimentoListPage"
+import CrmBiDashboard                             from "../pages/crm/CrmBiDashboard"
 import PerfilForm                                 from "../pages/perfil/PerfilForm"
 
 export function Router() {
@@ -403,6 +404,7 @@ export function Router() {
 
             {/* ── CRM ── */}
             <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
+              <Route path="/crm/dashboard"          element={<CrmBiDashboard />} />
               <Route path="/crm/atendimentos"       element={<AtendimentoKanbanPage />} />
               <Route path="/crm/atendimentos-lista" element={<AtendimentoListPage />} />
               <Route path="/crm/configuracao"  element={<ConfiguracaoCrmForm />} />

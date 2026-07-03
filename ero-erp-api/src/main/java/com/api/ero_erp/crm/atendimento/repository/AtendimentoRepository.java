@@ -170,4 +170,27 @@ public interface AtendimentoRepository extends JpaRepository<Atendimento, Long> 
               AND a.dataUltimaMensagemCliente IS NOT NULL
             """)
     List<Atendimento> findAbertosComRespostaCliente(@Param("clienteId") Long clienteId);
+
+    /**
+     * Projeção enxuta para o dashboard BI: uma linha por atendimento do cliente
+     * a partir de {@code dataInicio}, com filtros opcionais de usuário e andamento.
+     * As agregações (status, período, UF/região, tempos médios) são feitas em Java.
+     */
+    @Query("""
+            SELECT a.id, a.usuario.id, a.usuario.nome,
+                   a.andamento.id, a.andamento.nome, a.andamento.cor, a.andamento.chave,
+                   a.andamento.concluiAtendimento, a.andamento.cancelaAtendimento,
+                   a.pessoa.id, a.numero,
+                   a.dataAbertura, a.dataConclusao, a.dataUltimaMensagem, a.dataUltimaMensagemCliente,
+                   a.ativo, a.mensagensNaoLidas
+            FROM Atendimento a
+            WHERE a.cliente.id = :clienteId
+              AND a.dataAbertura >= :dataInicio
+              AND (:usuarioId IS NULL OR a.usuario.id = :usuarioId)
+              AND (:andamentoId IS NULL OR a.andamento.id = :andamentoId)
+            """)
+    List<Object[]> listarParaDashboard(@Param("clienteId") Long clienteId,
+                                       @Param("dataInicio") LocalDateTime dataInicio,
+                                       @Param("usuarioId") Long usuarioId,
+                                       @Param("andamentoId") Long andamentoId);
 }
