@@ -3,6 +3,7 @@ package com.api.ero_erp.whatsapp.service;
 import com.api.ero_erp.configuracaomensagem.entity.ConfiguracaoMensagem;
 import com.api.ero_erp.configuracaomensagem.service.ConfiguracaoMensagemService;
 import com.api.ero_erp.compromisso.entity.Compromisso;
+import com.api.ero_erp.telefone.util.TelefoneUtils;
 import com.api.ero_erp.whatsapp.whatsappconfigglobal.entity.WhatsappConfigGlobal;
 import com.api.ero_erp.whatsapp.whatsappconfigglobal.repository.WhatsappConfigGlobalRepository;
 import com.api.ero_erp.whatsapp.whatsappinstancia.entity.WhatsappInstancia;
@@ -133,7 +134,7 @@ public class WhatsappReminderService {
                     configGlobal.getApiUrl(),
                     instancia.getInstanceName(),
                     instancia.getToken(),
-                    "55" + telefoneUsuario.replaceAll("\\D", ""),
+                    TelefoneUtils.montarNumeroEnvio(entrada.getUsuario().getCodigoPais(), telefoneUsuario),
                     messageBuilder.mensagemUsuarioLembrete(ctx)
             );
         }
@@ -144,6 +145,7 @@ public class WhatsappReminderService {
                     configGlobal.getApiUrl(),
                     instancia.getInstanceName(),
                     instancia.getToken(),
+                    // TODO DDI: WhatsappLog não persiste codigo_pais (fora de escopo)
                     "55" + phoneCliente,
                     messageBuilder.mensagemClienteLembrete(ctx, config)
             );

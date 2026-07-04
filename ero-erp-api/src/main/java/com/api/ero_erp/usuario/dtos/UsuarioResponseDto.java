@@ -8,6 +8,7 @@ public record UsuarioResponseDto(
         String          nome,
         String          email,
         String          telefone,
+        String          codigoPais,
         Boolean         ativo,
         Long            clienteId,
         LocalDateTime   createdAt,

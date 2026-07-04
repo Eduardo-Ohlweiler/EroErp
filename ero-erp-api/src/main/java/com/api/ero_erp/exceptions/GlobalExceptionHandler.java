@@ -17,6 +17,16 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    // Cliente de streaming (SSE) desconectou — não há resposta a escrever. Evita o ruído
+    // do "broken pipe" e o erro secundário de serializar ErrorResponse num text/event-stream.
+    @ExceptionHandler({
+            org.springframework.web.context.request.async.AsyncRequestNotUsableException.class,
+            java.io.IOException.class
+    })
+    public void handleClientDisconnect(Exception e) {
+        log.debug("Conexão de streaming encerrada pelo cliente: {}", e.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGenericException(Exception e, WebRequest request) {
         log.error("Erro interno não tratado: {}", e.getMessage(), e);

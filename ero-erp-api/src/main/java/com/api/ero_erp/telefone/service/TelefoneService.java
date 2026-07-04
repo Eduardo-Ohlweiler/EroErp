@@ -8,6 +8,7 @@ import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.telefone.dtos.TelefoneItemDto;
 import com.api.ero_erp.telefone.entity.Telefone;
 import com.api.ero_erp.telefone.repository.TelefoneRepository;
+import com.api.ero_erp.telefone.util.TelefoneUtils;
 import com.api.ero_erp.tipotelefone.entity.TipoTelefone;
 import com.api.ero_erp.tipotelefone.service.TipoTelefoneService;
 import org.springframework.stereotype.Service;
@@ -86,6 +87,7 @@ public class TelefoneService {
                         .orElseThrow(() -> new NotFoundException("Telefone não encontrado"));
                 telefone.setTipoTelefone(tipoTelefone);
                 telefone.setNumero(dto.numero());
+                telefone.setCodigoPais(TelefoneUtils.defaultDdi(dto.codigoPais()));
                 telefone.setObservacao(dto.observacao());
                 telefone.setPrincipal(principal);
                 Telefone salvo = telefoneRepository.save(telefone);
@@ -99,6 +101,7 @@ public class TelefoneService {
                 telefone.setPessoa(pessoa);
                 telefone.setTipoTelefone(tipoTelefone);
                 telefone.setNumero(dto.numero());
+                telefone.setCodigoPais(TelefoneUtils.defaultDdi(dto.codigoPais()));
                 telefone.setObservacao(dto.observacao());
                 telefone.setPrincipal(principal);
 

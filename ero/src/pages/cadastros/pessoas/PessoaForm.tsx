@@ -9,6 +9,7 @@ import { useMessage } from "../../../hooks/useMessage"
 import type { ErrorResponse } from "../../../types/ErrorResponse"
 import type { CidadeItem, PessoaResponse, TipoPessoa } from "../../../types/Pessoa"
 import { displayPessoa, formatarDocumento } from "../../../utils/pessoas"
+import { PAISES } from "../../../constants/paises"
 
 import { TPage } from "../../../components/tpage"
 import {
@@ -341,6 +342,7 @@ export default function PessoaForm() {
                     .map(e => ({
                         id:             e.id ? Number(e.id) : null,
                         tipoTelefoneId: String(e.tipoTelefoneId),
+                        codigoPais:     e.codigoPais || "55",
                         numero:         e.numero,
                         observacao:     e.observacao ?? "",
                         principal:      e.principal === "true",
@@ -529,6 +531,7 @@ export default function PessoaForm() {
         return telefones.map(e => ({
             id:             String(e.id),
             tipoTelefoneId: String(e.tipoTelefoneId),
+            codigoPais:     e.codigoPais || "55",
             numero:         e.numero,
             observacao:     e.observacao ?? "",
             principal:      e.principal ? "true" : "false",
@@ -797,6 +800,13 @@ export default function PessoaForm() {
                                 name:      "tipoTelefoneId",
                                 width:     "160px",
                                 options:   tiposTelefone.map(t => ({ value: String(t.id), label: t.nome })),
+                            },
+                            {
+                                component: "combo",
+                                label:     "País",
+                                name:      "codigoPais",
+                                width:     "180px",
+                                options:   PAISES.map(p => ({ value: p.codigo, label: `${p.flag} ${p.nome} (+${p.codigo})` })),
                             },
                             {
                                 component: "entry",

@@ -19,6 +19,12 @@ public record PerfilUpdateDto(
         )
         String telefone,
 
+        @Pattern(
+                regexp = "^\\d{1,4}$",
+                message = "Código do país deve conter apenas números (1 a 4 dígitos)"
+        )
+        String codigoPais,
+
         String senhaAtual,
 
         @Size(min = 6, max = 255, message = "Nova senha deve ter entre 6 e 255 caracteres")

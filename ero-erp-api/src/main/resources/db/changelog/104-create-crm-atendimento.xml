@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="104-create-crm-atendimento" author="eduardo">
+
+        <createTable tableName="crm_atendimento">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="cliente_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pessoa_id" type="BIGINT"/>
+            <column name="numero" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contato_nome" type="VARCHAR(255)"/>
+            <column name="andamento_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="usuario_id" type="BIGINT"/>
+            <column name="assunto" type="VARCHAR(255)"/>
+            <column name="data_abertura" type="TIMESTAMP"/>
+            <column name="data_ultima_mensagem" type="TIMESTAMP"/>
+            <column name="data_ultima_mensagem_cliente" type="TIMESTAMP"/>
+            <column name="ultimo_lembrete_horas" type="INTEGER"/>
+            <column name="data_conclusao" type="TIMESTAMP"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="crm_atendimento" baseColumnNames="cliente_id"
+                referencedTableName="cliente" referencedColumnNames="id"
+                constraintName="fk_crm_atendimento_cliente"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="crm_atendimento" baseColumnNames="pessoa_id"
+                referencedTableName="pessoa" referencedColumnNames="id"
+                constraintName="fk_crm_atendimento_pessoa"
+                onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+                baseTableName="crm_atendimento" baseColumnNames="andamento_id"
+                referencedTableName="crm_andamento" referencedColumnNames="id"
+                constraintName="fk_crm_atendimento_andamento"
+                onDelete="RESTRICT"/>
+
+        <addForeignKeyConstraint
+                baseTableName="crm_atendimento" baseColumnNames="usuario_id"
+                referencedTableName="usuario" referencedColumnNames="id"
+                constraintName="fk_crm_atendimento_usuario"
+                onDelete="SET NULL"/>
+
+        <createIndex tableName="crm_atendimento" indexName="idx_crm_atendimento_cliente_andamento">
+            <column name="cliente_id"/>
+            <column name="andamento_id"/>
+        </createIndex>
+
+        <createIndex tableName="crm_atendimento" indexName="idx_crm_atendimento_cliente_usuario">
+            <column name="cliente_id"/>
+            <column name="usuario_id"/>
+        </createIndex>
+
+        <createIndex tableName="crm_atendimento" indexName="idx_crm_atendimento_cliente_numero">
+            <column name="cliente_id"/>
+            <column name="numero"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

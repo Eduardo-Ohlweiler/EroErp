@@ -18,6 +18,13 @@ public record ClienteCreateDto(
         )
         String telefone,
 
+        @Schema(description = "Código do país (DDI, somente números). Padrão 55 (Brasil) quando não informado.", example = "55")
+        @Pattern(
+                regexp = "^\\d{1,4}$",
+                message = "Código do país deve conter apenas números (1 a 4 dígitos)"
+        )
+        String codigoPais,
+
         @Schema(description = "Email do cliente", example = "eduardo@email.com")
         @NotBlank(message = "Email é obrigatório")
         @Email(message = "Email inválido")

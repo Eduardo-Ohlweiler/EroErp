@@ -15,6 +15,7 @@ public class UsuarioMapper {
                 u.getNome(),
                 u.getEmail(),
                 u.getTelefone(),
+                u.getCodigoPais(),
                 u.getAtivo(),
                 u.getCliente() != null ? u.getCliente().getId() : null,
                 u.getCreatedAt(),

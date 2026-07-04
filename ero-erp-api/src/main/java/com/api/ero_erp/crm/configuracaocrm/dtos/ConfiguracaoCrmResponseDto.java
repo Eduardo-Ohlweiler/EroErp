@@ -14,5 +14,6 @@ public record ConfiguracaoCrmResponseDto(
         boolean possuiApiKey,
         boolean possuiToken,
         Boolean ativarPendencias,
+        Boolean enviarConfirmacaoLeitura,
         List<LembretePendenciaResponseDto> lembretes
 ) {}

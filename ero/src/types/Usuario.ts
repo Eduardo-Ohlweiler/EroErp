@@ -2,6 +2,7 @@ export interface Usuario {
   id:             number
   nome:           string
   email:          string
+  codigoPais:     string
   telefone:       string
   ativo:          boolean
   clienteId:      number

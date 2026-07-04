@@ -6,6 +6,7 @@ import com.api.ero_erp.cliente.entity.Cliente;
 import com.api.ero_erp.cliente.repository.ClienteRepository;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.telefone.util.TelefoneUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,7 @@ public class ClienteService {
         cliente.setNome(dto.nome());
         cliente.setEmail(dto.email());
         cliente.setTelefone(dto.telefone());
+        cliente.setCodigoPais(TelefoneUtils.defaultDdi(dto.codigoPais()));
 
         return this.clienteRepository.save(cliente);
     }
@@ -68,6 +70,8 @@ public class ClienteService {
             cliente.setNome(dto.nome());
         if(dto.telefone()  != null && !dto.telefone().isBlank())
             cliente.setTelefone(dto.telefone());
+        if(dto.codigoPais() != null && !dto.codigoPais().isBlank())
+            cliente.setCodigoPais(TelefoneUtils.defaultDdi(dto.codigoPais()));
         if(dto.ativo() != null)
             cliente.setAtivo(dto.ativo());
 

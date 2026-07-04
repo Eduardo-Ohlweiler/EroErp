@@ -18,6 +18,7 @@ public class TelefoneMapper {
                 entity.getTipoTelefone() != null ? entity.getTipoTelefone().getId()     : null,
                 entity.getTipoTelefone() != null ? entity.getTipoTelefone().getNome()   : null,
                 entity.getNumero(),
+                entity.getCodigoPais(),
                 entity.getObservacao(),
                 entity.getPrincipal(),
                 entity.getCreatedAt(),

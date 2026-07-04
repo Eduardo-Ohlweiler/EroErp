@@ -7,6 +7,7 @@ import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.role.entity.Role;
 import com.api.ero_erp.role.repository.RoleRepository;
+import com.api.ero_erp.telefone.util.TelefoneUtils;
 import com.api.ero_erp.usuario.dtos.PerfilUpdateDto;
 import com.api.ero_erp.usuario.dtos.UsuarioCreateDto;
 import com.api.ero_erp.usuario.dtos.UsuarioResponseDto;
@@ -120,6 +121,7 @@ public class UsuarioService {
         usuario.setEmail(dto.email());
         usuario.setSenha(passwordEncoder.encode(dto.senha()));
         usuario.setTelefone(dto.telefone());
+        usuario.setCodigoPais(TelefoneUtils.defaultDdi(dto.codigoPais()));
         usuario.setRoles(roles);
         usuario.setCreatedBy(createdBy);
 
@@ -141,6 +143,9 @@ public class UsuarioService {
 
         if (dto.telefone() != null && !dto.telefone().isBlank())
             usuario.setTelefone(dto.telefone());
+
+        if (dto.codigoPais() != null && !dto.codigoPais().isBlank())
+            usuario.setCodigoPais(TelefoneUtils.defaultDdi(dto.codigoPais()));
 
         if (dto.email() != null && !dto.email().isBlank()) {
             Optional<Usuario> salvo = usuarioRepository.findByEmailIgnoreCase(dto.email());
@@ -192,6 +197,9 @@ public class UsuarioService {
 
         if (dto.telefone() != null && !dto.telefone().isBlank())
             usuario.setTelefone(dto.telefone());
+
+        if (dto.codigoPais() != null && !dto.codigoPais().isBlank())
+            usuario.setCodigoPais(TelefoneUtils.defaultDdi(dto.codigoPais()));
 
         if (dto.email() != null && !dto.email().isBlank()) {
             Optional<Usuario> salvo = usuarioRepository.findByEmailIgnoreCase(dto.email());

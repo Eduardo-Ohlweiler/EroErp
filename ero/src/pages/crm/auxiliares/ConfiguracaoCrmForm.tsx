@@ -59,6 +59,9 @@ export default function ConfiguracaoCrmForm() {
   const [qrLoading,   setQrLoading]   = useState(false)
   const [qrModalOpen, setQrModalOpen] = useState(false)
 
+  // Confirmação de leitura (visto) ao cliente
+  const [enviarConfirmacaoLeitura, setEnviarConfirmacaoLeitura] = useState(false)
+
   // Pendências
   const [ativarPendencias, setAtivarPendencias] = useState(false)
   const [lembretes,        setLembretes]        = useState<LembreteLocal[]>([])
@@ -70,6 +73,7 @@ export default function ConfiguracaoCrmForm() {
   // hidrata o estado de pendências a partir da resposta do backend
   function hidratarPendencias(cfg: ConfiguracaoCrmResponse | null) {
     setAtivarPendencias(cfg?.ativarPendencias ?? false)
+    setEnviarConfirmacaoLeitura(cfg?.enviarConfirmacaoLeitura ?? false)
     setLembretes(lembretesParaState(cfg?.lembretes))
   }
 
@@ -129,6 +133,7 @@ export default function ConfiguracaoCrmForm() {
         numero:       data.numero       ?? "",
         ativo:        data.ativo === "true",
         ativarPendencias,
+        enviarConfirmacaoLeitura,
         lembretes: ativarPendencias
           ? lembretes
               .filter((l) => l.mensagem.trim() && l.tempoHoras.trim())
@@ -328,6 +333,22 @@ export default function ConfiguracaoCrmForm() {
                 options      ={[
                   { value: "true",  label: "Ativo"   },
                   { value: "false", label: "Inativo" },
+                ]}
+              />
+            </TCol>
+          </TRow>
+
+          <TRow>
+            <TCol>
+              <TCombo
+                name         ="enviarConfirmacaoLeituraCombo"
+                label        ="Enviar confirmação de leitura (visto) ao cliente"
+                width        ="360px"
+                defaultValue ={enviarConfirmacaoLeitura ? "true" : "false"}
+                onChange     ={(v) => setEnviarConfirmacaoLeitura(v === "true")}
+                options      ={[
+                  { value: "true",  label: "Sim" },
+                  { value: "false", label: "Não" },
                 ]}
               />
             </TCol>

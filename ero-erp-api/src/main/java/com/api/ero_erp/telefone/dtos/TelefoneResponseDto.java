@@ -21,6 +21,9 @@ public record TelefoneResponseDto(
         @Schema(description = "Numero do telefone", example = "51992006747")
         String numero,
 
+        @Schema(description = "Código do país (DDI)", example = "55")
+        String codigoPais,
+
         @Schema(description = "Observação")
         String observacao,
 

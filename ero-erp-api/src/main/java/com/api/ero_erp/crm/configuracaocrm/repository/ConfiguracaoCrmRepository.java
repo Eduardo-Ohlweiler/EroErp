@@ -9,4 +9,8 @@ import java.util.Optional;
 @Repository
 public interface ConfiguracaoCrmRepository extends JpaRepository<ConfiguracaoCrm, Long> {
     Optional<ConfiguracaoCrm> findByClienteId(Long clienteId);
+
+    Optional<ConfiguracaoCrm> findByInstanceName(String instanceName);
+
+    java.util.List<ConfiguracaoCrm> findByAtivarPendenciasTrue();
 }

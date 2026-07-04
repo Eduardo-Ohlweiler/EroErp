@@ -1,5 +1,5 @@
 import type { MenuItem } from "../types/MenuItem"
-import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine, FaUtensils, FaPills, FaHeartbeat, FaAssistiveListeningSystems, FaShoppingCart, FaColumns /*, FaPhone, FaTools*/} from "react-icons/fa"
+import { FaUsers, FaCogs, FaUserShield, FaCog, FaClipboardList, FaFileInvoice, FaWhatsapp, FaCalendarAlt, FaCommentDots, FaTachometerAlt, FaBoxOpen, FaTag, FaWarehouse, FaExchangeAlt, FaSlidersH, FaPlug, FaStethoscope, FaUniversity, FaCreditCard, FaMoneyBill, FaArrowDown, FaArrowUp, FaHandHoldingUsd, FaList, FaDumbbell, FaRuler, FaFileAlt, FaBaby, FaCalculator, FaFlask, FaChartLine, FaUtensils, FaPills, FaHeartbeat, FaAssistiveListeningSystems, FaShoppingCart, FaColumns, FaComments, FaChartPie /*, FaPhone, FaTools*/} from "react-icons/fa"
 
 export const menu: MenuItem[] = [
   {
@@ -489,6 +489,24 @@ export const menu: MenuItem[] = [
     icon:  FaWhatsapp,
     roles: ["SUPERADMIN", "ADMIN"],
     children: [
+      {
+        label: "Dashboard CRM",
+        path:  "/crm/dashboard",
+        icon:  FaChartPie,
+        roles: ["SUPERADMIN", "ADMIN"],
+      },
+      {
+        label: "Atendimentos",
+        path:  "/crm/atendimentos",
+        icon:  FaComments,
+        roles: ["SUPERADMIN", "ADMIN"],
+      },
+      {
+        label: "Atendimentos (Lista)",
+        path:  "/crm/atendimentos-lista",
+        icon:  FaList,
+        roles: ["SUPERADMIN", "ADMIN"],
+      },
       {
         label: "Auxiliar CRM",
         icon:  FaCogs,

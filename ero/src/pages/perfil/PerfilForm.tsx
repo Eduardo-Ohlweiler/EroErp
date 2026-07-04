@@ -11,6 +11,7 @@ import { TForm, TFormFooter, TFormActionsLeft, TFormActionsRight } from "../../c
 import { TRow } from "../../components/trow"
 import { TCol } from "../../components/tcol"
 import { TEntry } from "../../components/tentry"
+import { TPaisCombo } from "../../components/tpaiscombo"
 import { TPanel } from "../../components/tpanel"
 import { TButton } from "../../components/tbutton"
 
@@ -64,9 +65,10 @@ export default function PerfilForm() {
         setSaving(true)
         try {
             const payload: Record<string, string> = {
-                nome:     data.nome,
-                email:    data.email,
-                telefone: data.telefone
+                nome:       data.nome,
+                email:      data.email,
+                codigoPais: data.codigoPais || "55",
+                telefone:   data.telefone
             }
 
             if (novaSenha) {
@@ -130,6 +132,12 @@ export default function PerfilForm() {
                     </TCol>
                 </TRow>
                 <TRow>
+                    <TCol>
+                        <TPaisCombo
+                            name         ="codigoPais"
+                            defaultValue ={usuario?.codigoPais ?? "55"}
+                        />
+                    </TCol>
                     <TCol>
                         <TEntry
                             name        ="telefone"

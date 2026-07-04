@@ -34,6 +34,9 @@ public class Usuario extends BaseEntity {
     @Column(name = "telefone", length = 20)
     private String telefone;
 
+    @Column(name = "codigo_pais", nullable = false, length = 4)
+    private String codigoPais = "55";
+
     @Column(name = "ativo", nullable = false)
     private Boolean ativo;
 

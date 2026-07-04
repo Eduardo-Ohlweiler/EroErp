@@ -13,5 +13,6 @@ public record ConfiguracaoCrmUpsertDto(
         String  numero,
         Boolean ativo,
         Boolean ativarPendencias,
+        Boolean enviarConfirmacaoLeitura,
         List<LembretePendenciaItemDto> lembretes
 ) {}

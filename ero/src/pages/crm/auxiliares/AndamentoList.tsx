@@ -11,6 +11,7 @@ import { TRow } from "../../../components/trow"
 import { TCol } from "../../../components/tcol"
 import { TEntry } from "../../../components/tentry"
 import { TCombo } from "../../../components/tcombo"
+import { TColor } from "../../../components/tcolor"
 import { TButton } from "../../../components/tbutton"
 import { TDataGrid } from "../../../components/tdatagrid"
 import { TWindow } from "../../../components/twindow"
@@ -29,6 +30,7 @@ export default function AndamentoList() {
 
   const [windowOpen, setWindowOpen] = useState(false)
   const [editando,   setEditando]   = useState<AndamentoResponse | null>(null)
+  const [cor,        setCor]        = useState<string>("#3B82F6")
 
   useEffect(() => { load() }, [])
 
@@ -46,11 +48,13 @@ export default function AndamentoList() {
 
   function handleNovo() {
     setEditando(null)
+    setCor("#3B82F6")
     setWindowOpen(true)
   }
 
   function handleEditar(row: AndamentoResponse) {
     setEditando(row)
+    setCor(row.cor ?? "#3B82F6")
     setWindowOpen(true)
   }
 
@@ -251,13 +255,11 @@ export default function AndamentoList() {
           </TRow>
           <TRow>
             <TCol>
-              <TEntry
-                name         ="cor"
-                label        ="Cor"
-                maxLength    ={20}
-                placeholder  ="#RRGGBB"
-                width        ="160px"
-                defaultValue ={editando?.cor ?? ""}
+              <TColor
+                name     ="cor"
+                label    ="Cor"
+                value    ={cor}
+                onChange ={setCor}
               />
             </TCol>
           </TRow>

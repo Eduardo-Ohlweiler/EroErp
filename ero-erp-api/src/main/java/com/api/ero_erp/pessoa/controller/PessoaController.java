@@ -1,5 +1,6 @@
 package com.api.ero_erp.pessoa.controller;
 
+import com.api.ero_erp.pessoa.dtos.PessoaBuscaDto;
 import com.api.ero_erp.pessoa.dtos.PessoaCreateDto;
 import com.api.ero_erp.pessoa.dtos.PessoaResponseDto;
 import com.api.ero_erp.pessoa.dtos.PessoaSelectDto;
@@ -66,6 +67,22 @@ public class PessoaController {
             @Parameter(description = "ID de pessoa a excluir dos resultados") @RequestParam(required = false) Long ignorarId
     ) {
         return ResponseEntity.ok(pessoaService.select(nome, ignorarId));
+    }
+
+    @Operation(summary = "Busca de pessoas para vínculo",
+            description = "Retorna lista paginada e leve de pessoas ativas, filtrando por nome, documento (CPF/CNPJ) e telefone")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
+    })
+    @GetMapping("/busca")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<PessoaBuscaDto>> buscarParaVinculo(
+            @PageableDefault(size = 10, sort = "nome") Pageable pageable,
+            @Parameter(description = "Filtrar por nome")          @RequestParam(required = false) String nome,
+            @Parameter(description = "Filtrar por CPF ou CNPJ")   @RequestParam(required = false) String documento,
+            @Parameter(description = "Filtrar por telefone")      @RequestParam(required = false) String telefone
+    ) {
+        return ResponseEntity.ok(pessoaService.buscarParaVinculo(pageable, nome, documento, telefone));
     }
 
     @Operation(summary = "Select de pessoas", description = "Retorna lista simplificada de pessoas ativas para uso em combos")
