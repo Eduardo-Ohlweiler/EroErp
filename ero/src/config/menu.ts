@@ -93,7 +93,7 @@ export const menu: MenuItem[] = [
   {
     label: "Cadastros",
     icon: FaClipboardList,
-    roles: ["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST", "PRODUTO", "PRODUTO_GET", "ESTOQUE", "ESTOQUE_GET", "ESTOQUE_AJUSTE", "ESTOQUE_TRANSFERENCIA"],
+    roles: ["SUPERADMIN", "ADMIN", "PESSOA", "PESSOA_GET", "PESSOA_POST", "EMITENTE", "EMITENTE_GET", "PRODUTO", "PRODUTO_GET", "ESTOQUE", "ESTOQUE_GET", "ESTOQUE_AJUSTE", "ESTOQUE_TRANSFERENCIA"],
     children: [
       {
         label: "Pessoas",
@@ -487,34 +487,34 @@ export const menu: MenuItem[] = [
   {
     label: "CRM",
     icon:  FaWhatsapp,
-    roles: ["SUPERADMIN", "ADMIN"],
+    roles: ["SUPERADMIN", "ADMIN", "CRM"],
     children: [
       {
         label: "Dashboard CRM",
         path:  "/crm/dashboard",
         icon:  FaChartPie,
-        roles: ["SUPERADMIN", "ADMIN"],
+        roles: ["SUPERADMIN", "ADMIN", "CRM"],
       },
       {
         label: "Atendimentos",
         path:  "/crm/atendimentos",
         icon:  FaComments,
-        roles: ["SUPERADMIN", "ADMIN"],
+        roles: ["SUPERADMIN", "ADMIN", "CRM"],
       },
       {
         label: "Atendimentos (Lista)",
         path:  "/crm/atendimentos-lista",
         icon:  FaList,
-        roles: ["SUPERADMIN", "ADMIN"],
+        roles: ["SUPERADMIN", "ADMIN", "CRM"],
       },
       {
         label: "Auxiliar CRM",
         icon:  FaCogs,
-        roles: ["SUPERADMIN", "ADMIN"],
+        roles: ["SUPERADMIN", "ADMIN", "CRM"],
         children: [
-          { label: "Configuração CRM", path: "/crm/configuracao",  icon: FaCog,     roles: ["SUPERADMIN", "ADMIN"] },
-          { label: "Andamentos CRM",   path: "/crm/andamentos",     icon: FaList,    roles: ["SUPERADMIN", "ADMIN"] },
-          { label: "Fluxo Kanban",     path: "/crm/fluxo-kanban",   icon: FaColumns, roles: ["SUPERADMIN", "ADMIN"] },
+          { label: "Configuração CRM", path: "/crm/configuracao",  icon: FaCog,     roles: ["SUPERADMIN", "ADMIN", "CRM"] },
+          { label: "Andamentos CRM",   path: "/crm/andamentos",     icon: FaList,    roles: ["SUPERADMIN", "ADMIN", "CRM"] },
+          { label: "Fluxo Kanban",     path: "/crm/fluxo-kanban",   icon: FaColumns, roles: ["SUPERADMIN", "ADMIN", "CRM"] },
         ],
       },
     ],

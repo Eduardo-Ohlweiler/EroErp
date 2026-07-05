@@ -408,7 +408,7 @@ export function Router() {
             </Route>
 
             {/* ── CRM ── */}
-            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN"]} />}>
+            <Route element={<TRoleRoute roles={["SUPERADMIN", "ADMIN", "CRM"]} />}>
               <Route path="/crm/dashboard"          element={<CrmBiDashboard />} />
               <Route path="/crm/atendimentos"       element={<AtendimentoKanbanPage />} />
               <Route path="/crm/atendimentos-lista" element={<AtendimentoListPage />} />

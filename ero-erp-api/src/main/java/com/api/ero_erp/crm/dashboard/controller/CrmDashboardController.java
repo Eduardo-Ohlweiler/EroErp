@@ -20,7 +20,7 @@ public class CrmDashboardController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<CrmDashboardDto> getDashboard(
             @RequestParam(defaultValue = "30") int    dias,
             @RequestParam(required = false)    Long   usuarioId,

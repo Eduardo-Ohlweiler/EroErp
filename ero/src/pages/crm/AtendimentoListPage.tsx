@@ -73,8 +73,8 @@ export default function AtendimentoListPage() {
         api.get("/crm/andamentos")
             .then((res) => setAndamentos((res.data ?? []).map((a: { id: number; nome: string }) => ({ id: a.id, nome: a.nome }))))
             .catch(() => {})
-        api.get("/usuarios?size=1000&sort=nome")
-            .then((res) => setUsuarios((res.data?.content ?? []).map((u: { id: number; nome: string }) => ({ id: u.id, nome: u.nome }))))
+        api.get("/usuarios/select-personal")
+            .then((res) => setUsuarios((res.data?.content ?? res.data ?? []).map((u: { id: number; nome: string }) => ({ id: u.id, nome: u.nome }))))
             .catch(() => {})
     }, [])
 

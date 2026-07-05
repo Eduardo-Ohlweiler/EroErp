@@ -20,13 +20,13 @@ public class FluxoKanbanController {
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<List<FluxoKanbanColunaResponseDto>> getFluxo() {
         return ResponseEntity.ok(service.getFluxo());
     }
 
     @PutMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<List<FluxoKanbanColunaResponseDto>> salvar(
             @RequestBody List<FluxoKanbanColunaItemDto> itens
     ) {

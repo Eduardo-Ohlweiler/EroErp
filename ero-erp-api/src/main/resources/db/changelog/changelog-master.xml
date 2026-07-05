@@ -116,4 +116,5 @@
     <include file="109-add-codigo-pais-cliente.xml"         relativeToChangelogFile="true" />
     <include file="110-add-codigo-pais-usuario.xml"         relativeToChangelogFile="true" />
     <include file="111-create-grupo-acesso.xml"             relativeToChangelogFile="true" />
+    <include file="112-insert-grupos-acesso.xml"            relativeToChangelogFile="true" />
 </databaseChangeLog>

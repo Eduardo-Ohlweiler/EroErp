@@ -48,7 +48,7 @@ public class AtendimentoController {
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public List<AtendimentoResponseDto> listarKanban(
             @RequestParam(required = false) Long usuarioId,
             @RequestParam(required = false) Long andamentoId
@@ -57,7 +57,7 @@ public class AtendimentoController {
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<AtendimentoResponseDto> iniciar(
             @Valid @RequestBody IniciarAtendimentoDto dto
     ) {
@@ -65,7 +65,7 @@ public class AtendimentoController {
     }
 
     @GetMapping("/lista")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public Page<AtendimentoListaResponseDto> listar(
             @RequestParam(required = false) Long   andamentoId,
             @RequestParam(required = false) Long   usuarioId,
@@ -78,13 +78,13 @@ public class AtendimentoController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<AtendimentoResponseDto> getAtendimento(@PathVariable Long id) {
         return ResponseEntity.ok(service.getAtendimento(id));
     }
 
     @PutMapping("/{id}/pessoa")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<AtendimentoResponseDto> vincularPessoa(
             @PathVariable Long id,
             @Valid @RequestBody VincularPessoaDto dto
@@ -93,7 +93,7 @@ public class AtendimentoController {
     }
 
     @GetMapping("/{id}/mensagens")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public Page<MensagemResponseDto> listarMensagens(
             @PathVariable Long id,
             @PageableDefault(size = 30, sort = "dataMensagem", direction = Sort.Direction.DESC) Pageable pageable
@@ -102,7 +102,7 @@ public class AtendimentoController {
     }
 
     @PostMapping("/{id}/mensagens")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<MensagemResponseDto> enviarMensagem(
             @PathVariable Long id,
             @RequestBody EnviarMensagemDto dto
@@ -111,7 +111,7 @@ public class AtendimentoController {
     }
 
     @PutMapping("/{id}/andamento")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<AtendimentoResponseDto> moverAndamento(
             @PathVariable Long id,
             @Valid @RequestBody MoverAndamentoDto dto
@@ -120,13 +120,13 @@ public class AtendimentoController {
     }
 
     @PostMapping("/{id}/pegar")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<AtendimentoResponseDto> pegar(@PathVariable Long id) {
         return ResponseEntity.ok(service.pegar(id));
     }
 
     @PostMapping("/{id}/assumir")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<AtendimentoResponseDto> assumir(
             @PathVariable Long id,
             @RequestBody(required = false) AssumirAtendimentoDto dto
@@ -135,14 +135,14 @@ public class AtendimentoController {
     }
 
     @PutMapping("/{id}/ler")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<Void> marcarLido(@PathVariable Long id) {
         service.marcarLido(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/mensagens/{id}/midia")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<ByteArrayResource> baixarMidia(@PathVariable Long id) {
         AtendimentoService.MidiaBaixada midia = service.baixarMidia(id);
         return ResponseEntity.ok()
@@ -152,7 +152,7 @@ public class AtendimentoController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public SseEmitter stream() {
         Long clienteId = securityUtils.getClienteIdLogado();
         return sseService.subscribe(clienteId);

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="112-insert-roles-faltantes" author="eduardo">
+
+        <insert tableName="role">
+            <column name="nome" value="CRM"/>
+            <column name="descricao" value="Permissão geral para o módulo CRM"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="COMPROMISSO"/>
+            <column name="descricao" value="Permissão geral para compromissos/agenda"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="COMPROMISSO_GET"/>
+            <column name="descricao" value="Permissão para consultar compromissos"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="COMPROMISSO_POST"/>
+            <column name="descricao" value="Permissão para criar/alterar compromissos"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="COMPROMISSO_DELETE"/>
+            <column name="descricao" value="Permissão para excluir compromissos"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="DOCUMENTO"/>
+            <column name="descricao" value="Permissão geral para documentos"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="DOCUMENTO_GET"/>
+            <column name="descricao" value="Permissão para consultar documentos"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="MODELO_DOCUMENTO"/>
+            <column name="descricao" value="Permissão geral para modelos de documento"/>
+        </insert>
+
+        <insert tableName="role">
+            <column name="nome" value="MODELO_DOCUMENTO_GET"/>
+            <column name="descricao" value="Permissão para consultar modelos de documento"/>
+        </insert>
+
+    </changeSet>
+
+    <changeSet id="112-insert-grupos-acesso" author="eduardo">
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Pessoas"/>
+            <column name="descricao" value="Cadastro de pessoas (clientes, fornecedores, pacientes)"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Emitentes"/>
+            <column name="descricao" value="Cadastro de emitentes"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Produtos"/>
+            <column name="descricao" value="Cadastro de produtos e auxiliares (grupos, subgrupos, categorias, marcas)"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Estoque"/>
+            <column name="descricao" value="Estoque, ajustes, transferências e movimentações"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Pedidos"/>
+            <column name="descricao" value="Venda PDV, créditos de clientes e tipos de pedido"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Financeiro"/>
+            <column name="descricao" value="Contas a pagar/receber, lançamentos, transferências e auxiliares"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Clínica"/>
+            <column name="descricao" value="Consultas, pacotes, anamnese, planos alimentares e refeições"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Agenda"/>
+            <column name="descricao" value="Calendário e compromissos"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Documentos"/>
+            <column name="descricao" value="Documentos, assinaturas e modelos de documento"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="CRM"/>
+            <column name="descricao" value="Atendimentos, kanban, andamentos e configuração do CRM"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Gym"/>
+            <column name="descricao" value="Planos de treino e exercícios"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Avaliação Física"/>
+            <column name="descricao" value="Avaliações físicas e evolução"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Pediatria"/>
+            <column name="descricao" value="Avaliações pediátricas, calculadora e fórmulas lácteas"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Terapia Nutricional"/>
+            <column name="descricao" value="Avaliações nutricionais UTI, acompanhamento diário e auxiliares"/>
+        </insert>
+
+        <insert tableName="grupo_acesso">
+            <column name="nome" value="Otorrino"/>
+            <column name="descricao" value="Audiometrias, imitanciometrias, escalas e laudos"/>
+        </insert>
+
+    </changeSet>
+
+    <changeSet id="112-insert-grupo-acesso-roles" author="eduardo">
+
+        <sql>
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('PESSOA', 'PESSOA_GET', 'PESSOA_POST', 'CIDADE_GET')
+            WHERE g.nome = 'Pessoas';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('EMITENTE', 'EMITENTE_GET')
+            WHERE g.nome = 'Emitentes';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('PRODUTO', 'PRODUTO_GET', 'GRUPO', 'GRUPO_GET', 'SUBGRUPO', 'SUBGRUPO_GET', 'CATEGORIA', 'CATEGORIA_GET', 'MARCA', 'MARCA_GET')
+            WHERE g.nome = 'Produtos';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('ESTOQUE', 'ESTOQUE_GET', 'ESTOQUE_AJUSTE', 'ESTOQUE_TRANSFERENCIA', 'PRODUTO_GET', 'EMITENTE_GET')
+            WHERE g.nome = 'Estoque';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('PEDIDO', 'PEDIDO_GET', 'PRODUTO_GET', 'EMITENTE_GET', 'FINANCEIRO_GET')
+            WHERE g.nome = 'Pedidos';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('FINANCEIRO', 'FINANCEIRO_GET', 'EMITENTE_GET')
+            WHERE g.nome = 'Financeiro';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('CLINICA', 'CLINICA_GET', 'ANAMNESE', 'ANAMNESE_GET', 'TEMPLATE_ANAMNESE', 'TEMPLATE_ANAMNESE_GET', 'PLANO_ALIMENTAR', 'PLANO_ALIMENTAR_GET', 'REFEICAO', 'REFEICAO_GET', 'EMITENTE_GET', 'FINANCEIRO_GET')
+            WHERE g.nome = 'Clínica';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('COMPROMISSO', 'COMPROMISSO_GET', 'COMPROMISSO_POST', 'COMPROMISSO_DELETE', 'EMITENTE_GET')
+            WHERE g.nome = 'Agenda';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('DOCUMENTO', 'DOCUMENTO_GET', 'MODELO_DOCUMENTO', 'MODELO_DOCUMENTO_GET', 'EMITENTE_GET', 'FINANCEIRO_GET', 'ESTOQUE_GET')
+            WHERE g.nome = 'Documentos';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('CRM', 'PESSOA', 'PESSOA_GET', 'PESSOA_POST', 'CIDADE_GET')
+            WHERE g.nome = 'CRM';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('PLANO_TREINO', 'PLANO_TREINO_GET', 'EXERCICIO', 'EXERCICIO_GET')
+            WHERE g.nome = 'Gym';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('AVALIACAO_FISICA', 'AVALIACAO_FISICA_GET')
+            WHERE g.nome = 'Avaliação Física';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('PEDIATRIA', 'PEDIATRIA_GET')
+            WHERE g.nome = 'Pediatria';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('TERAPIA_NUTRICIONAL', 'TERAPIA_NUTRICIONAL_GET')
+            WHERE g.nome = 'Terapia Nutricional';
+
+            INSERT INTO grupo_acesso_role (grupo_acesso_id, role_id)
+            SELECT g.id, r.id FROM grupo_acesso g
+            JOIN role r ON r.nome IN ('OTORRINO', 'OTORRINO_GET')
+            WHERE g.nome = 'Otorrino';
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

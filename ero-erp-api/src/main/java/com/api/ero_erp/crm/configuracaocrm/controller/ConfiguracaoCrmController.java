@@ -20,32 +20,32 @@ public class ConfiguracaoCrmController {
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<ConfiguracaoCrmResponseDto> get() {
         return ResponseEntity.ok(service.getAtual());
     }
 
     @PutMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<ConfiguracaoCrmResponseDto> salvar(@RequestBody ConfiguracaoCrmUpsertDto dto) {
         return ResponseEntity.ok(service.salvar(dto));
     }
 
     @DeleteMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<Void> deletar() {
         service.deletar();
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/qrcode")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<CrmQrCodeResponseDto> gerarQrCode() {
         return ResponseEntity.ok(service.gerarQrCode());
     }
 
     @GetMapping("/status")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<CrmStatusResponseDto> consultarStatus() {
         return ResponseEntity.ok(service.consultarStatus());
     }

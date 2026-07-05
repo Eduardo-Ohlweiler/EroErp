@@ -640,7 +640,7 @@ export default function PedidoForm() {
             <TDbCombo
               name         ="vendedorId"
               label        ="Vendedor"
-              url          ="/usuarios/select"
+              url          ="/usuarios/select-personal"
               valueField   ="id"
               displayField ="nome"
               searchField  ="nome"

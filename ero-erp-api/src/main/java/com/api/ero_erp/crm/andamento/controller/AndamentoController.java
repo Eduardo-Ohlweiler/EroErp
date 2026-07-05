@@ -22,19 +22,19 @@ public class AndamentoController {
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<List<AndamentoResponseDto>> listar() {
         return ResponseEntity.ok(service.listar());
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<AndamentoResponseDto> criar(@Valid @RequestBody AndamentoUpsertDto dto) {
         return new ResponseEntity<>(service.criar(dto), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<AndamentoResponseDto> atualizar(
             @PathVariable Long id,
             @Valid @RequestBody AndamentoUpsertDto dto
@@ -43,7 +43,7 @@ public class AndamentoController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'CRM')")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         service.deletar(id);
         return ResponseEntity.noContent().build();

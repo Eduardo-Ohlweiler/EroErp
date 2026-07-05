@@ -37,7 +37,7 @@ export default function AtendimentoKanbanPage() {
       try {
         const [fluxoRes, usuariosRes] = await Promise.all([
           api.get("/crm/fluxo-kanban"),
-          api.get("/usuarios?size=1000&sort=nome").catch(() => ({ data: { content: [] } })),
+          api.get("/usuarios/select-personal").catch(() => ({ data: [] })),
         ])
         setColunas((fluxoRes.data ?? []) as FluxoKanbanColunaResponse[])
         const content = (usuariosRes.data?.content ?? usuariosRes.data ?? []) as Array<{ id: number; nome: string }>
@@ -211,7 +211,7 @@ export default function AtendimentoKanbanPage() {
 
         {/* chat: painel lateral no desktop, tela cheia no mobile */}
         {temChat && atendimentoAtivo && (
-          <div className="w-full border-l border-(--border) lg:w-[420px] lg:shrink-0">
+          <div className="w-full border-l border-(--border) lg:w-105 lg:shrink-0">
             <ChatPanel
               key={atendimentoAtivo.id}
               atendimento={atendimentoAtivo}
