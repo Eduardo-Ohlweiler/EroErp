@@ -58,6 +58,8 @@ public class TelefoneService {
         if (quantidadePrincipais > 1)
             throw new BadRequestException("Apenas um telefone pode ser o principal");
 
+        validarNumerosUnicos(pessoa, dtos, cliente);
+
         Set<Long> idsRecebidos = dtos.stream()
                 .filter(d -> d.id() != null)
                 .map(TelefoneItemDto::id)
@@ -108,6 +110,35 @@ public class TelefoneService {
                 Telefone salvo = telefoneRepository.save(telefone);
                 pessoa.getTelefones().add(salvo);
             }
+        }
+    }
+
+    /**
+     * Garante que um número pertença a apenas UM cadastro do cliente: bloqueia números
+     * repetidos no próprio payload e números já cadastrados em outra pessoa, informando
+     * de quem é. A comparação usa as variantes com/sem o nono dígito brasileiro
+     * ({@link TelefoneUtils#variantes}) — para o WhatsApp/CRM as duas formas são o
+     * mesmo contato, e é isso que evita atendimentos duplicados no Kanban.
+     */
+    private void validarNumerosUnicos(Pessoa pessoa, List<TelefoneItemDto> dtos, Cliente cliente) {
+        Set<String> vistos = new java.util.HashSet<>();
+
+        for (TelefoneItemDto dto : dtos) {
+            String completo = TelefoneUtils.montarNumeroEnvio(dto.codigoPais(), dto.numero());
+
+            if (!vistos.add(TelefoneUtils.canonico(completo)))
+                throw new BadRequestException(
+                        "Telefone " + dto.numero() + " informado mais de uma vez, verifique!");
+
+            telefoneRepository.findByClienteIdAndNumeroCompleto(cliente.getId(), TelefoneUtils.variantes(completo))
+                    .stream()
+                    .filter(t -> t.getPessoa() != null && !t.getPessoa().getId().equals(pessoa.getId()))
+                    .findFirst()
+                    .ifPresent(t -> {
+                        throw new BadRequestException(
+                                "O telefone " + dto.numero() + " já está cadastrado para "
+                                + t.getPessoa().getNome() + ", verifique!");
+                    });
         }
     }
 }

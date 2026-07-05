@@ -1,5 +1,6 @@
 package com.api.ero_erp.usuario.mapper;
 
+import com.api.ero_erp.grupoacesso.entity.GrupoAcesso;
 import com.api.ero_erp.role.entity.Role;
 import com.api.ero_erp.usuario.dtos.UsuarioResponseDto;
 import com.api.ero_erp.usuario.entity.Usuario;
@@ -27,6 +28,14 @@ public class UsuarioMapper {
                 u.getRoles()
                         .stream()
                         .map(Role::getNome)
+                        .collect(Collectors.toSet()),
+                u.getGrupos()
+                        .stream()
+                        .map(GrupoAcesso::getId)
+                        .collect(Collectors.toSet()),
+                u.getGrupos()
+                        .stream()
+                        .map(GrupoAcesso::getNome)
                         .collect(Collectors.toSet())
         );
     }

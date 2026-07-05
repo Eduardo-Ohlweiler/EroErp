@@ -31,6 +31,7 @@ export default function UsuarioForm() {
     const [loading,  setLoading]  = useState(false)
     const [saving,   setSaving]   = useState(false)
     const [roleIds,  setRoleIds]  = useState<string[]>([])
+    const [grupoIds, setGrupoIds] = useState<string[]>([])
     const [usuario,  setUsuario]  = useState<Usuario | null>(null)
 
     useEffect(() => {
@@ -44,6 +45,7 @@ export default function UsuarioForm() {
             .then((response) => {
                 setUsuario(response.data)
                 setRoleIds(response.data.roles ?? [])
+                setGrupoIds((response.data.grupoIds ?? []).map(String))
                 setClienteId(String(response.data.clienteId))
             })
             .catch(() => {
@@ -59,6 +61,7 @@ export default function UsuarioForm() {
         setUsuario(null)
         setClienteId("")
         setRoleIds([])
+        setGrupoIds([])
         setFormKey((prev) => prev + 1)
     }
 
@@ -68,6 +71,7 @@ export default function UsuarioForm() {
             setUsuario(response.data)
             setClienteId(String(response.data.clienteId))
             setRoleIds(response.data.roles ?? [])
+            setGrupoIds((response.data.grupoIds ?? []).map(String))
             setFormKey((prev) => prev + 1)
         } catch {
             showMessage("error", "Erro ao recarregar usuário")
@@ -81,8 +85,9 @@ export default function UsuarioForm() {
             const { createdById, createdAt, updatedById, updatedAt, ...rest } = data
             const payload = {
                 ...rest,
-                ativo:   data.ativo === "true",
-                roleIds: data.roleIds ? data.roleIds.split(",") : []
+                ativo:    data.ativo === "true",
+                roleIds:  data.roleIds  ? data.roleIds.split(",")  : [],
+                grupoIds: data.grupoIds ? data.grupoIds.split(",") : []
             }
             
 
@@ -221,6 +226,18 @@ export default function UsuarioForm() {
                 <TRow>
                     <TCol>
                         <TDbCheckbox
+                            name="grupoIds"
+                            label="Grupos de acesso"
+                            url="/grupos-acesso/select"
+                            valueField="id"
+                            labelField="nome"
+                            direction="column"
+                            values={grupoIds}
+                            onChange={setGrupoIds}
+                        />
+                    </TCol>
+                    <TCol>
+                        <TDbCheckbox
                             name="roleIds"
                             label="Perfis de acesso"
                             url="/roles"
@@ -231,6 +248,7 @@ export default function UsuarioForm() {
                             onChange={setRoleIds}
                         />
                     </TCol>
+                    <TSpace />
                 </TRow>
                 
                 {isEdit && (

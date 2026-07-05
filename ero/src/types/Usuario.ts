@@ -13,4 +13,6 @@ export interface Usuario {
   updatedById:    number | null
   updatedByNome:  string | null 
   roles:          string[]
+  grupoIds?:      number[]
+  grupos?:        string[]
 }

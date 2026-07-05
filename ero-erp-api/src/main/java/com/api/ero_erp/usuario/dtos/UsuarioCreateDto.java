@@ -42,5 +42,11 @@ public record UsuarioCreateDto(
                 description = "Nome das roles do usuário",
                 example = "[SUPERADMIN, ADMIN]"
         )
-        Set<String> roleIds
+        Set<String> roleIds,
+
+        @Schema(
+                description = "Ids dos grupos de acesso do usuário",
+                example = "[1, 2]"
+        )
+        Set<Long> grupoIds
 ) {}

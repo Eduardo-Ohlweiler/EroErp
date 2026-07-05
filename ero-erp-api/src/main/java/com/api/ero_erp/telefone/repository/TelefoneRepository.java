@@ -20,16 +20,20 @@ public interface TelefoneRepository extends JpaRepository<Telefone, Long> {
 
     /**
      * Auto-vínculo CRM: o número recebido do webhook vem COMPLETO (DDI + DDD + número,
-     * ex.: "5551992006747"). Compara contra a concatenação DDI + número cadastrado.
-     * CAST(:numero AS string) é obrigatório no PostgreSQL (Hibernate 6 passa param nullable como bytea).
+     * ex.: "5551992006747"). Compara contra a concatenação DDI + número cadastrado,
+     * aceitando as variantes com/sem o nono dígito brasileiro (o remoteJid do WhatsApp
+     * identifica contas antigas sem o 9; o cadastro costuma ter o número com o 9).
+     * Pode haver mais de um telefone com o mesmo número (pessoas distintas ou duplicado),
+     * então retorna lista com o principal primeiro — o caller usa o primeiro resultado.
      */
     @Query("""
             SELECT t FROM Telefone t
             WHERE t.cliente.id = :clienteId
-              AND CONCAT(t.codigoPais, t.numero) = CAST(:numero AS string)
+              AND CONCAT(t.codigoPais, t.numero) IN :numeros
+            ORDER BY t.principal DESC, t.id ASC
             """)
-    Optional<Telefone> findByClienteIdAndNumeroCompleto(@Param("clienteId") Long clienteId,
-                                                        @Param("numero") String numero);
+    List<Telefone> findByClienteIdAndNumeroCompleto(@Param("clienteId") Long clienteId,
+                                                    @Param("numeros") List<String> numeros);
 
     /**
      * Fallback tolerante para números legados (sem DDI ou formatados de forma diferente):

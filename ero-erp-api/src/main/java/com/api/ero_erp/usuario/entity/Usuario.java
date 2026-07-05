@@ -2,6 +2,7 @@ package com.api.ero_erp.usuario.entity;
 
 import com.api.ero_erp.baseentity.BaseEntity;
 import com.api.ero_erp.cliente.entity.Cliente;
+import com.api.ero_erp.grupoacesso.entity.GrupoAcesso;
 import com.api.ero_erp.role.entity.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -55,6 +56,14 @@ public class Usuario extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "usuario_grupo_acesso",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "grupo_acesso_id")
+    )
+    private Set<GrupoAcesso> grupos = new HashSet<>();
 
     @PrePersist
     public void prePersist() {

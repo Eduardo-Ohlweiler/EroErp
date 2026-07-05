@@ -534,6 +534,7 @@ export const menu: MenuItem[] = [
     children: [
       { label: "Clientes",          path: "/clientes",               icon: FaUsers },
       { label: "Usuários",          path: "/usuarios",               icon: FaUsers },
+      { label: "Grupos de Acesso",  path: "/grupos-acesso",          icon: FaUserShield },
       { label: "Config. WhatsApp",  path: "/whatsapp/config-global", icon: FaWhatsapp },
       {
         label: "Logs",

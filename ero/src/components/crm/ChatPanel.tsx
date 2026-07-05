@@ -29,6 +29,13 @@ interface ChatPanelProps {
 
 const PAGE_SIZE = 30
 
+// Ordem dos status de entrega (checks). Espelha o rank do backend: nunca regride
+// (ex.: evento ENTREGUE retido no estado não pode sobrescrever uma mensagem já LIDA).
+const RANK_STATUS: Record<string, number> = { ENVIADA: 1, ENTREGUE: 2, LIDA: 3 }
+function rankStatus(status: string | null | undefined): number {
+  return status ? RANK_STATUS[status] ?? 0 : 0
+}
+
 export function ChatPanel({
   atendimento,
   colunas,
@@ -111,7 +118,8 @@ export function ChatPanel({
     if (mensagemAtualizadaExterna.atendimentoId !== atendimento.id) return
     setMensagens((prev) =>
       prev.map((m) =>
-        m.id === mensagemAtualizadaExterna.id
+        m.id === mensagemAtualizadaExterna.id &&
+        rankStatus(mensagemAtualizadaExterna.status) > rankStatus(m.status)
           ? { ...m, status: mensagemAtualizadaExterna.status }
           : m
       )

@@ -10,6 +10,8 @@ import ClienteForm                                from "../pages/administrativo/
 import UsuarioForm                                from "../pages/administrativo/usuarios/UsuarioForm";
 import TipoTelefoneFormList                       from "../pages/administrativo/auxiliares/TipoTelefoneFormList";
 import UsuarioList                                from "../pages/administrativo/usuarios/UsuarioList";
+import GrupoAcessoList                            from "../pages/administrativo/grupos-acesso/GrupoAcessoList";
+import GrupoAcessoForm                            from "../pages/administrativo/grupos-acesso/GrupoAcessoForm";
 import LoginLogList                                from "../pages/administrativo/logs/LoginLogList";
 import TipoEmailFormList                          from "../pages/administrativo/auxiliares/TipoEmailFormList";
 import TipoRedeSocialFormList                     from "../pages/administrativo/auxiliares/TipoRedeSocialFormList";
@@ -160,6 +162,9 @@ export function Router() {
               <Route path="/usuarios"         element={<UsuarioList />} />
               <Route path="/usuarios/novo"    element={<UsuarioForm />} />
               <Route path="/usuarios/:id"     element={<UsuarioForm />} />
+              <Route path="/grupos-acesso"      element={<GrupoAcessoList />} />
+              <Route path="/grupos-acesso/novo" element={<GrupoAcessoForm />} />
+              <Route path="/grupos-acesso/:id"  element={<GrupoAcessoForm />} />
 
               <Route path="/whatsapp/config-global" element={<WhatsappConfigGlobalForm />} />
 

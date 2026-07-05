@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,9 +58,13 @@ public class AuthService {
         if (!passwordEncoder.matches(dto.senha(), usuario.getSenha()))
             throw new UnauthorizedException("Email ou senha inválidos");
 
+        // Roles efetivas: roles diretas do usuário + roles herdadas dos grupos de acesso
         Set<String> roles = usuario.getRoles().stream()
                 .map(r -> r.getNome())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(HashSet::new));
+
+        usuario.getGrupos().forEach(grupo ->
+                grupo.getRoles().forEach(r -> roles.add(r.getNome())));
 
         Long sessionId = loginLogService.registrarLogin(usuario, enderecoIp);
 

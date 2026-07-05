@@ -5,6 +5,8 @@ import com.api.ero_erp.cliente.service.ClienteService;
 import com.api.ero_erp.config.SecurityUtils;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.grupoacesso.entity.GrupoAcesso;
+import com.api.ero_erp.grupoacesso.repository.GrupoAcessoRepository;
 import com.api.ero_erp.role.entity.Role;
 import com.api.ero_erp.role.repository.RoleRepository;
 import com.api.ero_erp.telefone.util.TelefoneUtils;
@@ -30,27 +32,30 @@ import java.util.Set;
 @Service
 public class UsuarioService {
 
-    private final UsuarioRepository usuarioRepository;
-    private final ClienteService    clienteService;
-    private final RoleRepository    roleRepository;
-    private final UsuarioMapper     usuarioMapper;
-    private final PasswordEncoder   passwordEncoder;
-    private final SecurityUtils     securityUtils;
+    private final UsuarioRepository     usuarioRepository;
+    private final ClienteService        clienteService;
+    private final RoleRepository        roleRepository;
+    private final GrupoAcessoRepository grupoAcessoRepository;
+    private final UsuarioMapper         usuarioMapper;
+    private final PasswordEncoder       passwordEncoder;
+    private final SecurityUtils         securityUtils;
 
     public UsuarioService(
-            UsuarioRepository usuarioRepository,
-            ClienteService    clienteService,
-            RoleRepository    roleRepository,
-            UsuarioMapper     usuarioMapper,
-            PasswordEncoder   passwordEncoder,
-            SecurityUtils     securityUtils
+            UsuarioRepository     usuarioRepository,
+            ClienteService        clienteService,
+            RoleRepository        roleRepository,
+            GrupoAcessoRepository grupoAcessoRepository,
+            UsuarioMapper         usuarioMapper,
+            PasswordEncoder       passwordEncoder,
+            SecurityUtils         securityUtils
     ) {
-        this.usuarioRepository = usuarioRepository;
-        this.clienteService    = clienteService;
-        this.roleRepository    = roleRepository;
-        this.usuarioMapper     = usuarioMapper;
-        this.passwordEncoder   = passwordEncoder;
-        this.securityUtils     = securityUtils;
+        this.usuarioRepository     = usuarioRepository;
+        this.clienteService        = clienteService;
+        this.roleRepository        = roleRepository;
+        this.grupoAcessoRepository = grupoAcessoRepository;
+        this.usuarioMapper         = usuarioMapper;
+        this.passwordEncoder       = passwordEncoder;
+        this.securityUtils         = securityUtils;
     }
 
     @Transactional(readOnly = true)
@@ -123,6 +128,10 @@ public class UsuarioService {
         usuario.setTelefone(dto.telefone());
         usuario.setCodigoPais(TelefoneUtils.defaultDdi(dto.codigoPais()));
         usuario.setRoles(roles);
+
+        if (dto.grupoIds() != null)
+            usuario.setGrupos(this.resolveGrupos(dto.grupoIds()));
+
         usuario.setCreatedBy(createdBy);
 
         return usuarioMapper.toDTO(usuarioRepository.save(usuario));
@@ -174,6 +183,9 @@ public class UsuarioService {
             usuario.setRoles(roles);
         }
 
+        if (dto.grupoIds() != null)
+            usuario.setGrupos(this.resolveGrupos(dto.grupoIds()));
+
         usuario.setUpdatedBy(updatedBy);
 
         return usuarioMapper.toDTO(usuarioRepository.save(usuario));
@@ -222,6 +234,13 @@ public class UsuarioService {
     @Transactional
     public void delete(Long id) {
         usuarioRepository.delete(this.findById(id));
+    }
+
+    private Set<GrupoAcesso> resolveGrupos(Set<Long> grupoIds) {
+        List<GrupoAcesso> grupos = grupoAcessoRepository.findAllById(grupoIds);
+        if (grupos.size() != grupoIds.size())
+            throw new NotFoundException("Grupo de acesso não encontrado, verifique!");
+        return new HashSet<>(grupos);
     }
 
     private Long getLoggedUserId() {

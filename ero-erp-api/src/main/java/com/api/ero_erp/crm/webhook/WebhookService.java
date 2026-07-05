@@ -1,7 +1,5 @@
 package com.api.ero_erp.crm.webhook;
 
-import com.api.ero_erp.crm.andamento.entity.Andamento;
-import com.api.ero_erp.crm.andamento.repository.AndamentoRepository;
 import com.api.ero_erp.crm.atendimento.entity.Atendimento;
 import com.api.ero_erp.crm.atendimento.entity.Mensagem;
 import com.api.ero_erp.crm.atendimento.enums.DirecaoMensagem;
@@ -10,11 +8,10 @@ import com.api.ero_erp.crm.atendimento.mapper.AtendimentoMapper;
 import com.api.ero_erp.crm.atendimento.mapper.MensagemMapper;
 import com.api.ero_erp.crm.atendimento.repository.AtendimentoRepository;
 import com.api.ero_erp.crm.atendimento.repository.MensagemRepository;
+import com.api.ero_erp.crm.atendimento.service.AtendimentoService;
 import com.api.ero_erp.crm.configuracaocrm.entity.ConfiguracaoCrm;
 import com.api.ero_erp.crm.configuracaocrm.repository.ConfiguracaoCrmRepository;
 import com.api.ero_erp.crm.sse.CrmSseService;
-import com.api.ero_erp.telefone.entity.Telefone;
-import com.api.ero_erp.telefone.repository.TelefoneRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * Processa os webhooks recebidos da Evolution API.
@@ -33,28 +29,23 @@ public class WebhookService {
 
     private static final Logger log = LoggerFactory.getLogger(WebhookService.class);
 
-    private static final String CHAVE_AGUARDANDO = "AGUARDANDO_ATENDIMENTO";
-
     private final ConfiguracaoCrmRepository configuracaoCrmRepository;
     private final AtendimentoRepository     atendimentoRepository;
     private final MensagemRepository        mensagemRepository;
-    private final AndamentoRepository       andamentoRepository;
-    private final TelefoneRepository        telefoneRepository;
+    private final AtendimentoService        atendimentoService;
     private final CrmSseService             sseService;
 
     public WebhookService(
             ConfiguracaoCrmRepository configuracaoCrmRepository,
             AtendimentoRepository     atendimentoRepository,
             MensagemRepository        mensagemRepository,
-            AndamentoRepository       andamentoRepository,
-            TelefoneRepository        telefoneRepository,
+            AtendimentoService        atendimentoService,
             CrmSseService             sseService
     ) {
         this.configuracaoCrmRepository = configuracaoCrmRepository;
         this.atendimentoRepository     = atendimentoRepository;
         this.mensagemRepository        = mensagemRepository;
-        this.andamentoRepository       = andamentoRepository;
-        this.telefoneRepository        = telefoneRepository;
+        this.atendimentoService        = atendimentoService;
         this.sseService                = sseService;
     }
 
@@ -152,9 +143,17 @@ public class WebhookService {
         TipoMensagem tipo = detectarTipo(message);
         String conteudo   = extrairConteudo(message, tipo);
 
-        // acha ou cria atendimento aberto
-        Atendimento atendimento = acharOuCriarAtendimento(config, clienteId, numero, pushName);
+        // acha ou cria atendimento aberto (mensagem recebida: sem dono, auto-vínculo por telefone)
+        Atendimento atendimento = atendimentoService.acharOuCriarAtendimento(
+                config, clienteId, numero, pushName, null, null);
         boolean novo = atendimento.getId() == null;
+
+        // o remoteJid é a identidade autoritativa do WhatsApp: se o atendimento foi criado
+        // com a outra variante do nono dígito (ex.: número do cadastro), converge para o JID
+        // — garante envios/confirmações de leitura no formato que o WhatsApp reconhece.
+        if (!numero.equals(atendimento.getNumero())) {
+            atendimento.setNumero(numero);
+        }
 
         if (novo || (pushName != null && !pushName.isBlank() && atendimento.getContatoNome() == null)) {
             if (pushName != null && !pushName.isBlank()) atendimento.setContatoNome(pushName);
@@ -252,46 +251,6 @@ public class WebhookService {
             case "LIDA"     -> 3;
             default          -> 0;
         };
-    }
-
-    private Atendimento acharOuCriarAtendimento(ConfiguracaoCrm config, Long clienteId,
-                                                String numero, String pushName) {
-        List<Atendimento> abertos = atendimentoRepository.findAbertosByClienteAndNumero(clienteId, numero);
-        if (!abertos.isEmpty()) {
-            return abertos.get(0);
-        }
-
-        Andamento aguardando = andamentoRepository.findByChave(CHAVE_AGUARDANDO)
-                .orElseGet(() -> andamentoRepository.listarAtivosParaKanban(clienteId)
-                        .stream().findFirst().orElse(null));
-
-        Atendimento atendimento = new Atendimento();
-        atendimento.setCliente(config.getCliente());
-        atendimento.setNumero(numero);
-        atendimento.setContatoNome(pushName);
-        atendimento.setAndamento(aguardando);
-        atendimento.setAtivo(true);
-        atendimento.setDataAbertura(LocalDateTime.now());
-
-        // auto-vínculo de pessoa por telefone cadastrado.
-        // 'numero' vem completo do remoteJid (DDI+DDD+número); casa exato pela concatenação
-        // DDI+número e, em último caso, por sufixo (números legados sem DDI/formatados).
-        Telefone telefone = telefoneRepository.findByClienteIdAndNumeroCompleto(clienteId, numero)
-                .orElseGet(() -> telefoneRepository.findByClienteIdAndNumeroSufixo(clienteId, numero)
-                        .stream().findFirst().orElse(null));
-        if (telefone != null && telefone.getPessoa() != null) {
-            atendimento.setPessoa(telefone.getPessoa());
-        }
-
-        // memória de vínculo: se não casou por telefone cadastrado, herda a pessoa do
-        // último atendimento desse mesmo número que já teve vínculo (manual ou automático).
-        if (atendimento.getPessoa() == null) {
-            atendimentoRepository
-                    .findFirstByClienteIdAndNumeroAndPessoaIsNotNullOrderByDataAberturaDesc(clienteId, numero)
-                    .ifPresent(anterior -> atendimento.setPessoa(anterior.getPessoa()));
-        }
-
-        return atendimento;
     }
 
     // ----------------------------------------------------------------- parsing helpers

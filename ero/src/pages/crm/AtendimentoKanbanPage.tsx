@@ -12,6 +12,7 @@ import { TCombo } from "../../components/tcombo"
 import { TButton } from "../../components/tbutton"
 import { KanbanBoard } from "../../components/crm/KanbanBoard"
 import { ChatPanel } from "../../components/crm/ChatPanel"
+import { IniciarAtendimentoModal } from "../../components/crm/IniciarAtendimentoModal"
 
 export default function AtendimentoKanbanPage() {
   const { showMessage } = useMessage()
@@ -23,6 +24,8 @@ export default function AtendimentoKanbanPage() {
 
   const [filtroUsuario, setFiltroUsuario] = useState("")
   const [filtroAndamento, setFiltroAndamento] = useState("")
+
+  const [contatoOpen, setContatoOpen] = useState(false)
 
   const [atendimentoAtivo, setAtendimentoAtivo] = useState<AtendimentoResponse | null>(null)
   const [mensagemExterna, setMensagemExterna] = useState<MensagemResponse | null>(null)
@@ -174,9 +177,17 @@ export default function AtendimentoKanbanPage() {
           />
         )}
 
-        <span className="ml-auto text-xs text-(--text-muted)">
-          {atendimentos.length} atendimento(s)
-        </span>
+        <div className="ml-auto flex items-center gap-3">
+          <TButton
+            label="Entrar em contato"
+            variant="new"
+            type="button"
+            onClick={() => setContatoOpen(true)}
+          />
+          <span className="text-xs text-(--text-muted)">
+            {atendimentos.length} atendimento(s)
+          </span>
+        </div>
       </div>
 
       {/* corpo: board + chat */}
@@ -214,6 +225,15 @@ export default function AtendimentoKanbanPage() {
           </div>
         )}
       </div>
+
+      <IniciarAtendimentoModal
+        open={contatoOpen}
+        onClose={() => setContatoOpen(false)}
+        onIniciado={(at) => {
+          upsertAtendimento(at)
+          setAtendimentoAtivo(at)
+        }}
+      />
     </div>
   )
 }

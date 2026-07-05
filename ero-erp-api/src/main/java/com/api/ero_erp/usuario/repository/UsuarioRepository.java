@@ -16,7 +16,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByIdAndClienteId(Long id, Long clienteId);
 
-    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.roles WHERE LOWER(u.email) = LOWER(:email)")
+    @Query("""
+        SELECT DISTINCT u FROM Usuario u
+            LEFT JOIN FETCH u.roles
+            LEFT JOIN FETCH u.grupos g
+            LEFT JOIN FETCH g.roles
+        WHERE LOWER(u.email) = LOWER(:email)
+    """)
     Optional<Usuario> findByEmailIgnoreCase(String email);
 
     @Query("SELECT COUNT(u) > 0 FROM Usuario u JOIN u.roles r WHERE r.nome = 'SUPERADMIN'")

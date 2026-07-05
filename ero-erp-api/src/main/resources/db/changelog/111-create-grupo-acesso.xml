@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="111-create-grupo-acesso" author="eduardo">
+
+        <createTable tableName="grupo_acesso">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true"/>
+            </column>
+
+            <column name="nome" type="VARCHAR(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="descricao" type="VARCHAR(255)"/>
+        </createTable>
+
+        <createTable tableName="grupo_acesso_role">
+            <column name="grupo_acesso_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+                tableName="grupo_acesso_role"
+                columnNames="grupo_acesso_id, role_id"
+                constraintName="pk_grupo_acesso_role"/>
+
+        <addForeignKeyConstraint
+                baseTableName="grupo_acesso_role"
+                baseColumnNames="grupo_acesso_id"
+                referencedTableName="grupo_acesso"
+                referencedColumnNames="id"
+                onDelete="CASCADE"
+                constraintName="fk_grupo_acesso_role_grupo"/>
+
+        <addForeignKeyConstraint
+                baseTableName="grupo_acesso_role"
+                baseColumnNames="role_id"
+                referencedTableName="role"
+                referencedColumnNames="id"
+                onDelete="CASCADE"
+                constraintName="fk_grupo_acesso_role_role"/>
+
+        <createTable tableName="usuario_grupo_acesso">
+            <column name="usuario_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="grupo_acesso_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+                tableName="usuario_grupo_acesso"
+                columnNames="usuario_id, grupo_acesso_id"
+                constraintName="pk_usuario_grupo_acesso"/>
+
+        <addForeignKeyConstraint
+                baseTableName="usuario_grupo_acesso"
+                baseColumnNames="usuario_id"
+                referencedTableName="usuario"
+                referencedColumnNames="id"
+                onDelete="CASCADE"
+                constraintName="fk_usuario_grupo_acesso_usuario"/>
+
+        <addForeignKeyConstraint
+                baseTableName="usuario_grupo_acesso"
+                baseColumnNames="grupo_acesso_id"
+                referencedTableName="grupo_acesso"
+                referencedColumnNames="id"
+                onDelete="CASCADE"
+                constraintName="fk_usuario_grupo_acesso_grupo"/>
+
+    </changeSet>
+
+</databaseChangeLog>

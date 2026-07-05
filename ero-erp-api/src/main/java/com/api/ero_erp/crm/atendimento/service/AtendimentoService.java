@@ -7,6 +7,7 @@ import com.api.ero_erp.crm.atendimento.dtos.AssumirAtendimentoDto;
 import com.api.ero_erp.crm.atendimento.dtos.AtendimentoListaResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.AtendimentoResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.EnviarMensagemDto;
+import com.api.ero_erp.crm.atendimento.dtos.IniciarAtendimentoDto;
 import com.api.ero_erp.crm.atendimento.dtos.MensagemResponseDto;
 import com.api.ero_erp.crm.atendimento.entity.Atendimento;
 import com.api.ero_erp.crm.atendimento.entity.AtendimentoAssuncao;
@@ -25,6 +26,9 @@ import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.pessoa.repository.PessoaRepository;
+import com.api.ero_erp.telefone.entity.Telefone;
+import com.api.ero_erp.telefone.repository.TelefoneRepository;
+import com.api.ero_erp.telefone.util.TelefoneUtils;
 import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.repository.UsuarioRepository;
 import com.api.ero_erp.whatsapp.service.WhatsappEvolutionClient;
@@ -45,6 +49,9 @@ public class AtendimentoService {
 
     private static final Logger log = LoggerFactory.getLogger(AtendimentoService.class);
 
+    /** Chave do andamento (coluna) inicial onde os atendimentos novos são abertos. */
+    private static final String CHAVE_AGUARDANDO = "AGUARDANDO_ATENDIMENTO";
+
     private final AtendimentoRepository          atendimentoRepository;
     private final MensagemRepository             mensagemRepository;
     private final AtendimentoAssuncaoRepository  assuncaoRepository;
@@ -52,6 +59,7 @@ public class AtendimentoService {
     private final ConfiguracaoCrmRepository      configuracaoCrmRepository;
     private final UsuarioRepository              usuarioRepository;
     private final PessoaRepository               pessoaRepository;
+    private final TelefoneRepository             telefoneRepository;
     private final WhatsappEvolutionClient        evolutionClient;
     private final CrmSseService                  sseService;
     private final SecurityUtils                  securityUtils;
@@ -64,6 +72,7 @@ public class AtendimentoService {
             ConfiguracaoCrmRepository     configuracaoCrmRepository,
             UsuarioRepository             usuarioRepository,
             PessoaRepository              pessoaRepository,
+            TelefoneRepository            telefoneRepository,
             WhatsappEvolutionClient       evolutionClient,
             CrmSseService                 sseService,
             SecurityUtils                 securityUtils
@@ -75,6 +84,7 @@ public class AtendimentoService {
         this.configuracaoCrmRepository = configuracaoCrmRepository;
         this.usuarioRepository         = usuarioRepository;
         this.pessoaRepository          = pessoaRepository;
+        this.telefoneRepository        = telefoneRepository;
         this.evolutionClient           = evolutionClient;
         this.sseService                = sseService;
         this.securityUtils             = securityUtils;
@@ -174,6 +184,141 @@ public class AtendimentoService {
         sseService.emit(clienteId, "atendimento-atualizado", dto);
         log.info("Pessoa {} vinculada ao atendimento {} pelo cliente {}", pessoaId, atendimentoId, clienteId);
         return dto;
+    }
+
+    /**
+     * Inicia um atendimento proativamente a partir do Kanban (o atendente "entra em contato").
+     * Reaproveita a mesma lógica de coluna inicial/auto-vínculo do webhook, mas define o
+     * atendente logado como dono. Se já existir um atendimento aberto para o número — ou para
+     * a pessoa, em qualquer telefone dela — bloqueia e informa quem é o dono da conversa.
+     */
+    @Transactional
+    public AtendimentoResponseDto iniciarAtendimento(IniciarAtendimentoDto dto) {
+        Long clienteId = securityUtils.getClienteIdLogado();
+        Long usuarioId = securityUtils.getUsuarioIdLogado();
+
+        String numero = normalizarNumero(dto.numero());
+        if (numero == null || numero.isBlank())
+            throw new BadRequestException("Número inválido, verifique!");
+
+        // exige a configuração do CRM: sem ela não há como enviar a mensagem depois
+        ConfiguracaoCrm config = carregarConfigValida(clienteId);
+
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado, verifique!"));
+
+        Pessoa pessoa = null;
+        if (dto.pessoaId() != null) {
+            pessoa = pessoaRepository.findByIdAndClienteId(dto.pessoaId(), clienteId)
+                    .orElseThrow(() -> new NotFoundException("Pessoa não encontrada, verifique!"));
+        }
+
+        // bloqueia se já houver conversa aberta (não concluída/cancelada) para o número
+        // (em qualquer variante do nono dígito) ou para a pessoa em qualquer outro telefone dela
+        List<Atendimento> abertos = atendimentoRepository.findAbertosByClienteAndNumeros(
+                clienteId, variantesNumero(numero));
+        if (abertos.isEmpty() && pessoa != null) {
+            abertos = atendimentoRepository.findAbertosByClienteAndPessoa(clienteId, pessoa.getId());
+        }
+        if (!abertos.isEmpty()) {
+            Atendimento existente = abertos.get(0);
+            String dono = existente.getUsuario() != null
+                    ? "com o usuário " + existente.getUsuario().getNome()
+                    : "sem dono (aguardando atendimento)";
+            throw new BadRequestException(
+                    "Já existe um atendimento aberto para este contato " + dono + ", verifique!");
+        }
+
+        Atendimento atendimento = acharOuCriarAtendimento(config, clienteId, numero,
+                pessoa != null ? pessoa.getNome() : null, usuario, pessoa);
+
+        Atendimento salvo = atendimentoRepository.save(atendimento);
+        AtendimentoResponseDto respDto = AtendimentoMapper.toDto(salvo);
+        sseService.emit(clienteId, "atendimento-atualizado", respDto);
+        log.info("Atendimento {} iniciado (proativo) para número {} pelo usuário {}",
+                salvo.getId(), numero, usuarioId);
+        return respDto;
+    }
+
+    /**
+     * Acha o atendimento aberto do número (dedupe: no máx. 1 aberto por cliente+número) ou constrói
+     * um novo (NÃO persistido — id nulo) na coluna inicial {@code AGUARDANDO_ATENDIMENTO}. {@code dono}
+     * e {@code pessoaForcada} são aplicados somente quando um novo atendimento é criado; num atendimento
+     * já aberto nada é alterado. Quando {@code pessoaForcada} é nulo, tenta o auto-vínculo por telefone
+     * cadastrado e, em último caso, herda a pessoa do último atendimento do mesmo número.
+     * Usado tanto pelo webhook (mensagem recebida, sem dono) quanto pelo contato proativo do Kanban.
+     */
+    public Atendimento acharOuCriarAtendimento(ConfiguracaoCrm config, Long clienteId,
+                                               String numero, String pushName,
+                                               Usuario dono, Pessoa pessoaForcada) {
+        List<String> variantes = variantesNumero(numero);
+
+        List<Atendimento> abertos = atendimentoRepository.findAbertosByClienteAndNumeros(clienteId, variantes);
+        if (!abertos.isEmpty()) {
+            return abertos.get(0);
+        }
+
+        Andamento aguardando = andamentoRepository.findByChave(CHAVE_AGUARDANDO)
+                .orElseGet(() -> andamentoRepository.listarAtivosParaKanban(clienteId)
+                        .stream().findFirst().orElse(null));
+
+        Atendimento atendimento = new Atendimento();
+        atendimento.setCliente(config.getCliente());
+        atendimento.setNumero(numero);
+        atendimento.setContatoNome(pushName);
+        atendimento.setAndamento(aguardando);
+        atendimento.setAtivo(true);
+        atendimento.setDataAbertura(LocalDateTime.now());
+        if (dono != null) atendimento.setUsuario(dono);
+
+        if (pessoaForcada != null) {
+            atendimento.setPessoa(pessoaForcada);
+            return atendimento;
+        }
+
+        // auto-vínculo de pessoa por telefone cadastrado.
+        // 'numero' vem completo (DDI+DDD+número); casa exato pela concatenação DDI+número
+        // (nas variantes com/sem o nono dígito) e, em último caso, por sufixo (números
+        // legados sem DDI/formatados). Havendo mais de um, usa o primeiro (principal antes).
+        Telefone telefone = telefoneRepository.findByClienteIdAndNumeroCompleto(clienteId, variantes)
+                .stream().findFirst()
+                .orElseGet(() -> variantes.stream()
+                        .flatMap(n -> telefoneRepository.findByClienteIdAndNumeroSufixo(clienteId, n).stream())
+                        .findFirst().orElse(null));
+        if (telefone != null && telefone.getPessoa() != null) {
+            atendimento.setPessoa(telefone.getPessoa());
+        }
+
+        // memória de vínculo: se não casou por telefone cadastrado, herda a pessoa do
+        // último atendimento desse mesmo número que já teve vínculo (manual ou automático).
+        if (atendimento.getPessoa() == null) {
+            atendimentoRepository
+                    .findFirstByClienteIdAndNumeroInAndPessoaIsNotNullOrderByDataAberturaDesc(clienteId, variantes)
+                    .ifPresent(anterior -> atendimento.setPessoa(anterior.getPessoa()));
+        }
+
+        return atendimento;
+    }
+
+    /**
+     * Normaliza um número para apenas dígitos com DDI. O front já envia com DDI (código do país +
+     * DDD + número); como salvaguarda, prefixa "55" quando vier um número nacional (10 ou 11 dígitos).
+     */
+    private String normalizarNumero(String numero) {
+        if (numero == null) return null;
+        String digitos = numero.replaceAll("\\D", "");
+        if (digitos.length() == 10 || digitos.length() == 11) {
+            digitos = "55" + digitos;
+        }
+        return digitos;
+    }
+
+    /**
+     * Variantes de um número para busca (com/sem o nono dígito brasileiro).
+     * Regra centralizada em {@link TelefoneUtils#variantes(String)}.
+     */
+    private List<String> variantesNumero(String numero) {
+        return TelefoneUtils.variantes(numero);
     }
 
     @Transactional(readOnly = true)

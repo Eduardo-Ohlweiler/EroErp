@@ -17,5 +17,7 @@ public record UsuarioResponseDto(
         String          createdByNome,
         Long            updatedById,
         String          updatedByNome,
-        Set<String>     roles
+        Set<String>     roles,
+        Set<Long>       grupoIds,
+        Set<String>     grupos
 ) {}

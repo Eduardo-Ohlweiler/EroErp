@@ -5,6 +5,7 @@ import com.api.ero_erp.crm.atendimento.dtos.AssumirAtendimentoDto;
 import com.api.ero_erp.crm.atendimento.dtos.AtendimentoListaResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.AtendimentoResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.EnviarMensagemDto;
+import com.api.ero_erp.crm.atendimento.dtos.IniciarAtendimentoDto;
 import com.api.ero_erp.crm.atendimento.dtos.MensagemResponseDto;
 import com.api.ero_erp.crm.atendimento.dtos.MoverAndamentoDto;
 import com.api.ero_erp.crm.atendimento.dtos.VincularPessoaDto;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -52,6 +54,14 @@ public class AtendimentoController {
             @RequestParam(required = false) Long andamentoId
     ) {
         return service.listarKanban(usuarioId, andamentoId);
+    }
+
+    @PostMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AtendimentoResponseDto> iniciar(
+            @Valid @RequestBody IniciarAtendimentoDto dto
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.iniciarAtendimento(dto));
     }
 
     @GetMapping("/lista")

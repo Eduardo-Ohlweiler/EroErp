@@ -16,29 +16,50 @@ import java.util.Optional;
 public interface AtendimentoRepository extends JpaRepository<Atendimento, Long> {
 
     /**
-     * Atendimento aberto (ativo) de um número específico para o cliente.
+     * Atendimento aberto (ativo) de um número para o cliente. Recebe as VARIANTES do
+     * número (com/sem o nono dígito brasileiro): o remoteJid do WhatsApp identifica
+     * contas antigas sem o 9, enquanto o cadastro costuma ter o número com o 9.
      * Regra de negócio: no máximo um aberto por (cliente, numero).
      */
     @Query("""
             SELECT a FROM Atendimento a
             WHERE a.cliente.id = :clienteId
-              AND a.numero = :numero
+              AND a.numero IN :numeros
               AND a.ativo = true
               AND a.dataConclusao IS NULL
             ORDER BY a.dataAbertura DESC
             """)
-    List<Atendimento> findAbertosByClienteAndNumero(
+    List<Atendimento> findAbertosByClienteAndNumeros(
             @Param("clienteId") Long clienteId,
-            @Param("numero")    String numero
+            @Param("numeros")   List<String> numeros
     );
 
     /**
-     * Memória de vínculo: último atendimento (qualquer status) daquele número que
-     * já teve uma pessoa vinculada. Usado para herdar a pessoa em novos atendimentos
-     * do mesmo número, sem depender do telefone estar no cadastro da pessoa.
+     * Atendimentos abertos (ativos) de uma pessoa vinculada, independente do número.
+     * Usado no contato proativo: a pessoa pode ter mais de um telefone e a conversa
+     * aberta pode estar em outro número dela.
      */
-    Optional<Atendimento> findFirstByClienteIdAndNumeroAndPessoaIsNotNullOrderByDataAberturaDesc(
-            Long clienteId, String numero);
+    @Query("""
+            SELECT a FROM Atendimento a
+            LEFT JOIN FETCH a.usuario
+            WHERE a.cliente.id = :clienteId
+              AND a.pessoa.id = :pessoaId
+              AND a.ativo = true
+              AND a.dataConclusao IS NULL
+            ORDER BY a.dataAbertura DESC
+            """)
+    List<Atendimento> findAbertosByClienteAndPessoa(
+            @Param("clienteId") Long clienteId,
+            @Param("pessoaId")  Long pessoaId
+    );
+
+    /**
+     * Memória de vínculo: último atendimento (qualquer status) daquele número (em qualquer
+     * variante do nono dígito) que já teve uma pessoa vinculada. Usado para herdar a pessoa
+     * em novos atendimentos do mesmo número, sem depender do telefone estar no cadastro.
+     */
+    Optional<Atendimento> findFirstByClienteIdAndNumeroInAndPessoaIsNotNullOrderByDataAberturaDesc(
+            Long clienteId, List<String> numeros);
 
     /** Kanban: atendimentos do cliente com filtros opcionais de usuário e andamento. */
     @Query("""
