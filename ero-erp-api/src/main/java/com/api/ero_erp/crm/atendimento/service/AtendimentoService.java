@@ -204,6 +204,21 @@ public class AtendimentoService {
         // exige a configuração do CRM: sem ela não há como enviar a mensagem depois
         ConfiguracaoCrm config = carregarConfigValida(clienteId);
 
+        // valida na Evolution se o número tem WhatsApp (best-effort: se a consulta falhar,
+        // segue sem validar). Com resposta, evita criar card morto e adota o número do JID —
+        // formato canônico do WhatsApp (contas antigas vêm sem o nono dígito brasileiro).
+        Map<?, ?> verificacao = evolutionClient.verificarNumero(
+                config.getApiUrl(), config.getInstanceName(), config.getApiKey(), numero);
+        if (verificacao != null) {
+            if (!Boolean.TRUE.equals(verificacao.get("exists")))
+                throw new BadRequestException("Este número não possui WhatsApp, verifique!");
+            Object jid = verificacao.get("jid");
+            if (jid != null) {
+                String numeroJid = jid.toString().replaceAll("@.*$", "").replaceAll("\\D", "");
+                if (!numeroJid.isBlank()) numero = numeroJid;
+            }
+        }
+
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado, verifique!"));
 
@@ -400,6 +415,9 @@ public class AtendimentoService {
             throw e;
         } catch (Exception e) {
             log.error("Falha ao enviar mensagem no atendimento {}: {}", id, e.getMessage());
+            // Evolution retorna 400 com "exists":false quando o número não tem conta no WhatsApp
+            if (e.getMessage() != null && e.getMessage().contains("\"exists\":false"))
+                throw new BadRequestException("Este número não possui WhatsApp, verifique!");
             throw new BadRequestException("Falha ao enviar mensagem via WhatsApp, verifique!");
         }
 

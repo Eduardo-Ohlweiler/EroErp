@@ -31,8 +31,12 @@ public class CrmSseService {
         lista.add(emitter);
 
         emitter.onCompletion(() -> remover(clienteId, emitter));
-        emitter.onTimeout(()    -> remover(clienteId, emitter));
         emitter.onError(e       -> remover(clienteId, emitter));
+        emitter.onTimeout(() -> {
+            // timeout natural: encerra o response de forma limpa (o front reconecta sozinho)
+            remover(clienteId, emitter);
+            emitter.complete();
+        });
 
         try {
             emitter.send(SseEmitter.event().name("conectado").data("ok"));

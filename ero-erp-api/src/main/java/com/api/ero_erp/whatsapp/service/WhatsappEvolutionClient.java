@@ -18,6 +18,35 @@ public class WhatsappEvolutionClient {
         this.restClient = RestClient.create();
     }
 
+    /**
+     * Verifica se um número possui conta no WhatsApp via POST /chat/whatsappNumbers/{instance}.
+     * Retorna o item da resposta ({@code {exists, jid, number}}) ou null se a consulta falhar
+     * (Evolution fora do ar, etc.) — o caller decide se segue sem validar (best-effort).
+     * Quando {@code exists=true}, o {@code jid} traz o número no formato canônico do WhatsApp
+     * (contas antigas vêm sem o nono dígito brasileiro).
+     */
+    public Map<?, ?> verificarNumero(String apiUrl, String instanceName, String apiKey, String numero) {
+        String url = apiUrl.replaceAll("/+$", "") + "/chat/whatsappNumbers/" + instanceName;
+
+        try {
+            java.util.List<?> resposta = restClient.post()
+                    .uri(url)
+                    .header("Content-Type", "application/json")
+                    .header("apikey", apiKey)
+                    .body(Map.of("numbers", java.util.List.of(numero)))
+                    .retrieve()
+                    .body(java.util.List.class);
+
+            if (resposta != null && !resposta.isEmpty() && resposta.get(0) instanceof Map<?, ?> item) {
+                return item;
+            }
+            return null;
+        } catch (Exception e) {
+            log.warn("Falha ao verificar número {} na Evolution: {}", numero, e.getMessage());
+            return null;
+        }
+    }
+
     public String enviar(String apiUrl, String instanceName, String apiKey, String numero, String mensagem) {
         String url = apiUrl.replaceAll("/+$", "") + "/message/sendText/" + instanceName;
 

@@ -17,14 +17,38 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // Cliente de streaming (SSE) desconectou — não há resposta a escrever. Evita o ruído
-    // do "broken pipe" e o erro secundário de serializar ErrorResponse num text/event-stream.
+    // Cliente de streaming (SSE) desconectou ou o emitter expirou naturalmente — não há
+    // resposta a escrever. Evita o ruído do "broken pipe" e o erro secundário de serializar
+    // ErrorResponse num text/event-stream (o front reconecta sozinho).
     @ExceptionHandler({
             org.springframework.web.context.request.async.AsyncRequestNotUsableException.class,
+            org.springframework.web.context.request.async.AsyncRequestTimeoutException.class,
             java.io.IOException.class
     })
     public void handleClientDisconnect(Exception e) {
         log.debug("Conexão de streaming encerrada pelo cliente: {}", e.getMessage());
+    }
+
+    // POST/PUT com corpo interrompido: se a causa raiz é o cliente que abortou a conexão
+    // (fechou o browser, túnel caiu), é ruído — não há o que responder. JSON realmente
+    // malformado responde 400 em vez de cair no handler genérico como 500.
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<Object> handleNotReadable(
+            org.springframework.http.converter.HttpMessageNotReadableException e, WebRequest request) {
+        for (Throwable causa = e.getCause(); causa != null; causa = causa.getCause()) {
+            if (causa instanceof java.io.EOFException
+                    || causa instanceof org.apache.catalina.connector.ClientAbortException) {
+                log.debug("Requisição abortada pelo cliente durante a leitura do corpo: {}", e.getMessage());
+                return null; // conexão morta — nada a escrever
+            }
+        }
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .erro("Requisição inválida: corpo malformado ou ausente")
+                .codigo(HttpStatus.BAD_REQUEST.value())
+                .timestamp(new Date())
+                .path(request.getDescription(false))
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
