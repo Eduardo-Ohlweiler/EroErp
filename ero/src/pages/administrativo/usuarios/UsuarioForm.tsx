@@ -240,7 +240,7 @@ export default function UsuarioForm() {
                         <TDbCheckbox
                             name="roleIds"
                             label="Perfis de acesso"
-                            url="/roles"
+                            url="/roles/select"
                             valueField="nome"
                             labelField="nome"
                             direction="column"

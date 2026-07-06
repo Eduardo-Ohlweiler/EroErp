@@ -41,6 +41,17 @@ public class RoleController {
         return this.roleService.findById(id);
     }
 
+    @Operation(summary = "Busca um role por id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Role encontrado"),
+            @ApiResponse(responseCode = "404", description = "Role não encontrado")
+    })
+    @GetMapping("/select/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN')")
+    public Role findByIdSselect(@PathVariable Long id){
+        return this.roleService.findById(id);
+    }
+
     @Operation(
             summary = "Lista todos os roles",
             description = "Exemplo: /roles?page=0&size=10"
