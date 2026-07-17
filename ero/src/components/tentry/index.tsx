@@ -207,6 +207,7 @@ interface TEntryProps {
   hint?:         string
   maxLength?:    number
   mask?:         MaskType
+  autoComplete?: string
   onChange?:     (value: string) => void
 }
 
@@ -223,6 +224,7 @@ export function TEntry({
   minWidth,
   maxLength,
   mask,
+  autoComplete,
   onChange
 }: TEntryProps) {
 
@@ -274,6 +276,7 @@ export function TEntry({
         maxLength   ={maxLength}
         value       ={displayValue}
         onChange    ={handleChange}
+        autoComplete={autoComplete ?? (type === "password" ? "new-password" : undefined)}
         className={`w-full h-9.5 border rounded-md px-3 text-sm leading-9.5
               focus:outline-none focus:ring-1 transition
               disabled:cursor-not-allowed

@@ -82,14 +82,18 @@ export default function UsuarioForm() {
         setSaving(true)
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { createdById, createdAt, updatedById, updatedAt, ...rest } = data
-            const payload = {
+            const { createdById, createdAt, updatedById, updatedAt, senha, ...rest } = data
+            const payload: Record<string, unknown> = {
                 ...rest,
                 ativo:    data.ativo === "true",
                 roleIds:  data.roleIds  ? data.roleIds.split(",")  : [],
                 grupoIds: data.grupoIds ? data.grupoIds.split(",") : []
             }
-            
+
+            // só envia a senha quando realmente digitada (respeita "deixe vazio para manter"
+            // e evita gravar valor injetado por autofill do navegador)
+            if (senha) payload.senha = senha
+
 
             if (isEdit) {
                 await api.patch(`/usuarios/${currentId}`, payload)

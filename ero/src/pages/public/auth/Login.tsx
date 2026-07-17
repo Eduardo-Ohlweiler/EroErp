@@ -69,6 +69,7 @@ export function Login() {
               }}
               placeholder="seu@email.com"
               required
+              autoComplete="username"
               className="bg-(--bg-input) border border-(--border) rounded-md px-3 py-2 text-sm
               text-(--text-primary) placeholder-(--text-muted)
               focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent) transition"
@@ -86,6 +87,7 @@ export function Login() {
               }}
               placeholder="••••••••"
               required
+              autoComplete="current-password"
               className="bg-(--bg-input) border border-(--border) rounded-md px-3 py-2 text-sm
               text-(--text-primary) placeholder-(--text-muted)
               focus:outline-none focus:border-(--accent) focus:ring-1 focus:ring-(--accent) transition"
