@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ero-api",
+      "runtimeExecutable": "C:\\Program Files\\Git\\bin\\bash.exe",
+      "runtimeArgs": [
+        "-c",
+        "cd ero-erp-api && ./run-dev.sh"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "ero-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "ero"],
+      "port": 5173
+    }
+  ]
+}

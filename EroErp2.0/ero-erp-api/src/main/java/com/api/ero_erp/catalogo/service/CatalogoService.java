@@ -1,0 +1,118 @@
+package com.api.ero_erp.catalogo.service;
+
+import com.api.ero_erp.catalogo.dtos.CatalogoSelectDto;
+import com.api.ero_erp.catalogo.entity.CatalogoEntity;
+import com.api.ero_erp.catalogo.entity.TipoCadastro;
+import com.api.ero_erp.catalogo.entity.TipoEmail;
+import com.api.ero_erp.catalogo.entity.TipoEndereco;
+import com.api.ero_erp.catalogo.entity.TipoRedeSocial;
+import com.api.ero_erp.catalogo.entity.TipoTelefone;
+import com.api.ero_erp.catalogo.repository.TipoCadastroRepository;
+import com.api.ero_erp.catalogo.repository.TipoEmailRepository;
+import com.api.ero_erp.catalogo.repository.TipoEnderecoRepository;
+import com.api.ero_erp.catalogo.repository.TipoRedeSocialRepository;
+import com.api.ero_erp.catalogo.repository.TipoTelefoneRepository;
+import com.api.ero_erp.exceptions.BadRequestException;
+import com.api.ero_erp.exceptions.NotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Leitura dos catálogos do cadastro de pessoas.
+ *
+ * <p>Só leitura: os valores vêm do seed da migration
+ * {@code 009-catalogos-pessoa.xml}. Não há tela de manutenção de catálogo, e
+ * não haverá enquanto ninguém pedir — cinco tipos de cadastro não justificam
+ * um CRUD.
+ */
+@Service
+@RequiredArgsConstructor
+public class CatalogoService {
+
+    private final TipoCadastroRepository tipoCadastroRepository;
+    private final TipoTelefoneRepository tipoTelefoneRepository;
+    private final TipoEmailRepository tipoEmailRepository;
+    private final TipoRedeSocialRepository tipoRedeSocialRepository;
+    private final TipoEnderecoRepository tipoEnderecoRepository;
+
+    @Transactional(readOnly = true)
+    public List<CatalogoSelectDto> tiposCadastro() {
+        return paraSelect(tipoCadastroRepository.findAllByAtivoTrueOrderByNome());
+    }
+
+    @Transactional(readOnly = true)
+    public List<CatalogoSelectDto> tiposTelefone() {
+        return paraSelect(tipoTelefoneRepository.findAllByAtivoTrueOrderByNome());
+    }
+
+    @Transactional(readOnly = true)
+    public List<CatalogoSelectDto> tiposEmail() {
+        return paraSelect(tipoEmailRepository.findAllByAtivoTrueOrderByNome());
+    }
+
+    @Transactional(readOnly = true)
+    public List<CatalogoSelectDto> tiposRedeSocial() {
+        return paraSelect(tipoRedeSocialRepository.findAllByAtivoTrueOrderByNome());
+    }
+
+    @Transactional(readOnly = true)
+    public List<CatalogoSelectDto> tiposEndereco() {
+        return paraSelect(tipoEnderecoRepository.findAllByAtivoTrueOrderByNome());
+    }
+
+    /**
+     * Resolve os tipos de cadastro de uma pessoa.
+     *
+     * <p>Recusa a lista vazia e o id inexistente: sem isso, um id errado vindo
+     * da tela sumiria em silêncio e a pessoa seria salva sem classificação
+     * nenhuma.
+     */
+    @Transactional(readOnly = true)
+    public Set<TipoCadastro> exigirTiposCadastro(Set<UUID> ids) {
+        if (ids == null || ids.isEmpty())
+            throw new BadRequestException("Selecione ao menos um tipo de cadastro");
+
+        List<TipoCadastro> encontrados = tipoCadastroRepository.findAllById(ids);
+
+        if (encontrados.size() != ids.size())
+            throw new BadRequestException("Tipo de cadastro inválido");
+
+        return new LinkedHashSet<>(encontrados);
+    }
+
+    @Transactional(readOnly = true)
+    public TipoTelefone exigirTipoTelefone(UUID id) {
+        return tipoTelefoneRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tipo de telefone não encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    public TipoEmail exigirTipoEmail(UUID id) {
+        return tipoEmailRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tipo de e-mail não encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    public TipoRedeSocial exigirTipoRedeSocial(UUID id) {
+        return tipoRedeSocialRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tipo de rede social não encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    public TipoEndereco exigirTipoEndereco(UUID id) {
+        return tipoEnderecoRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tipo de endereço não encontrado"));
+    }
+
+    private List<CatalogoSelectDto> paraSelect(List<? extends CatalogoEntity> itens) {
+        return itens.stream()
+                .map(i -> new CatalogoSelectDto(i.getId(), i.getNome()))
+                .toList();
+    }
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Paleta de cores por tenant (docs/05 §11).
+
+        A cor é do CLIENTE, não do sistema: cada tenant tem a sua, e só o
+        superadmin a escolhe, no cadastro do tenant. A sessão a recebe no login
+        (AuthResponseDto.paleta), então não há rota pública de leitura — a tela
+        de login, que ainda não sabe o tenant, abre sempre na PADRAO.
+
+        Dez paletas, cada uma com a variante _MENU_ESCURO (menu e cabeçalho nos
+        tons escuros da própria paleta, conteúdo claro — docs/05 §11.6): vinte
+        chaves. VARCHAR(40) porque FLORESTA_MENU_ESCURO já tem 20 caracteres.
+        O enum também é validado no banco, como tenant.periodo_acesso.
+    -->
+    <changeSet id="015-tenant-paleta" author="eduardo">
+
+        <addColumn tableName="tenant">
+            <column name="paleta" type="VARCHAR(40)" defaultValue="PADRAO">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <sql>
+            ALTER TABLE tenant ADD CONSTRAINT ck_tenant_paleta
+            CHECK (paleta IN
+                ('PADRAO','MENTA','FLORESTA','LAVANDA','AMEIXA',
+                 'OCEANO','CAFE','INDIGO','MALVA','JADE',
+                 'PADRAO_MENU_ESCURO','MENTA_MENU_ESCURO','FLORESTA_MENU_ESCURO',
+                 'LAVANDA_MENU_ESCURO','AMEIXA_MENU_ESCURO','OCEANO_MENU_ESCURO',
+                 'CAFE_MENU_ESCURO','INDIGO_MENU_ESCURO','MALVA_MENU_ESCURO',
+                 'JADE_MENU_ESCURO'));
+        </sql>
+
+        <rollback>
+            <sql>ALTER TABLE tenant DROP CONSTRAINT ck_tenant_paleta;</sql>
+            <dropColumn tableName="tenant" columnName="paleta"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

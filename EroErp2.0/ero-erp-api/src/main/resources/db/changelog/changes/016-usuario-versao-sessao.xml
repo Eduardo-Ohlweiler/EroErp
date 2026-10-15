@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Versão das sessões do usuário. Sobe de um quando o superadmin redefine
+        a senha dele (PATCH /usuarios/{id}/senha).
+
+        Revogar os refresh tokens não basta: o access token vive até 8 h, e
+        quem estivesse com a sessão aberta — inclusive quem tomou a conta, que
+        é um dos motivos de redefinir — continuaria entrando. O access token
+        leva a versão em que foi emitido (claim `versaoSessao`), e o JwtFilter,
+        que já recarrega o usuário a cada requisição, recusa o que não bate.
+
+        Contador, e não carimbo de tempo: o `iat` do JWT tem resolução de
+        segundo, e um token emitido no mesmo segundo da redefinição ficaria do
+        lado errado da comparação — para mais ou para menos.
+    -->
+    <changeSet id="016-usuario-versao-sessao" author="eduardo">
+
+        <addColumn tableName="usuario">
+            <column name="versao_sessao" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="usuario" columnName="versao_sessao"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
