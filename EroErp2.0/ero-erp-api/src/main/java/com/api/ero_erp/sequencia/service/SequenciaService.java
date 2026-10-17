@@ -23,6 +23,7 @@ public class SequenciaService {
 
     /** As chaves gravadas em {@code tenant_sequencia.chave}. Renomear exige migration. */
     public static final String SERVICO = "SERVICO";
+    public static final String PRODUTO = "PRODUTO";
 
     private static final String PROXIMO = """
             INSERT INTO tenant_sequencia (tenant_id, chave, ultimo)

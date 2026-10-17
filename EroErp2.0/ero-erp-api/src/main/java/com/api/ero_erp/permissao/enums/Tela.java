@@ -20,7 +20,10 @@ public enum Tela {
 
     PESSOAS(Modulo.PESSOAS, "Pessoas"),
     FILIAIS(Modulo.FILIAIS, "Filiais"),
-    SERVICOS(Modulo.SERVICOS, "Serviços");
+    SERVICOS(Modulo.SERVICOS, "Serviços"),
+    PRODUTOS(Modulo.PRODUTOS, "Produtos"),
+    AUXILIARES_PRODUTO(Modulo.PRODUTOS, "Auxiliares de produto"),
+    ESTOQUE(Modulo.ESTOQUE, "Estoque");
 
     private final Modulo modulo;
     private final String rotulo;

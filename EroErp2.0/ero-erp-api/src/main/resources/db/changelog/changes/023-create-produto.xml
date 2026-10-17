@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Produto — o que o tenant vende ou consome e pode ter estoque. Ver
+        docs/11. O preço de venda NÃO mora aqui: é por filial, no estoque
+        (024), como no antigo.
+
+        Diferenças para o antigo, todas de propósito:
+        - SEM parte fiscal: nada de NCM, CEST, origem, substituição
+          tributária, GTIN à parte nem tipo_produto. Serviço tem tabela
+          própria (020), então não há "classificação";
+        - código curto por tenant (tenant_sequencia, chave PRODUTO), gerado
+          pelo sistema e nunca editado — lá era um Integer digitado, sem
+          unicidade;
+        - nome único no tenant; EAN único no tenant QUANDO informado (índice
+          parcial), validado pelo dígito verificador no service;
+        - custo opcional: vazio é NULL, nunca 0 — lá o @PrePersist trocava o
+          nulo por zero;
+        - sem a coluna órfã baixar_estoque: "controla estoque" é do estoque,
+          por filial;
+        - sem delete físico: inativa-se;
+        - quantidade_sessoes_padrao (clínica) não veio.
+    -->
+    <changeSet id="023-create-produto" author="eduardo">
+
+        <createTable tableName="produto">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_produto"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_produto_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <column name="codigo" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="nome" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="descricao" type="VARCHAR(2000)"/>
+
+            <!-- Só dígitos, 8, 12, 13 ou 14 (GTIN). Opcional. -->
+            <column name="ean" type="VARCHAR(14)"/>
+
+            <column name="unidade_medida_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_produto_unidade_medida"
+                             references="unidade_medida(id)"/>
+            </column>
+
+            <column name="subgrupo_id" type="UUID">
+                <constraints foreignKeyName="fk_produto_subgrupo"
+                             references="subgrupo_produto(id)"/>
+            </column>
+            <column name="categoria_id" type="UUID">
+                <constraints foreignKeyName="fk_produto_categoria"
+                             references="categoria_produto(id)"/>
+            </column>
+            <column name="marca_id" type="UUID">
+                <constraints foreignKeyName="fk_produto_marca"
+                             references="marca_produto(id)"/>
+            </column>
+
+            <column name="fornecedor_id" type="UUID">
+                <constraints foreignKeyName="fk_produto_fornecedor"
+                             references="pessoa(id)"/>
+            </column>
+
+            <!-- Opcional. NULL = não informado; 0 = informado como zero -->
+            <column name="custo" type="NUMERIC(15,2)"/>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_by" type="UUID">
+                <constraints foreignKeyName="fk_produto_created_by" references="usuario(id)"/>
+            </column>
+            <column name="updated_by" type="UUID">
+                <constraints foreignKeyName="fk_produto_updated_by" references="usuario(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="produto"
+                             columnNames="tenant_id, codigo"
+                             constraintName="uk_produto_tenant_codigo"/>
+
+        <sql>
+            CREATE UNIQUE INDEX uk_produto_tenant_nome ON produto (tenant_id, lower(nome));
+            CREATE UNIQUE INDEX uk_produto_tenant_ean ON produto (tenant_id, ean) WHERE ean IS NOT NULL;
+
+            ALTER TABLE produto ADD CONSTRAINT ck_produto_codigo CHECK (codigo &gt; 0);
+            ALTER TABLE produto ADD CONSTRAINT ck_produto_custo CHECK (custo IS NULL OR custo &gt;= 0);
+            ALTER TABLE produto ADD CONSTRAINT ck_produto_ean
+                CHECK (ean IS NULL OR ean ~ '^([0-9]{8}|[0-9]{12,14})$');
+        </sql>
+
+        <createIndex tableName="produto" indexName="idx_produto_tenant_id">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex tableName="produto" indexName="idx_produto_subgrupo_id">
+            <column name="subgrupo_id"/>
+        </createIndex>
+        <createIndex tableName="produto" indexName="idx_produto_categoria_id">
+            <column name="categoria_id"/>
+        </createIndex>
+        <createIndex tableName="produto" indexName="idx_produto_marca_id">
+            <column name="marca_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="produto"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

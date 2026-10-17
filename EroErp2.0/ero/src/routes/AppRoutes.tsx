@@ -12,6 +12,12 @@ import { LoginLogList } from '@/pages/loginlog/LoginLogList'
 import { Perfil } from '@/pages/perfil/Perfil'
 import { PessoaForm } from '@/pages/pessoa/PessoaForm'
 import { PessoaList } from '@/pages/pessoa/PessoaList'
+import { EstoqueForm } from '@/pages/estoque/EstoqueForm'
+import { EstoqueList } from '@/pages/estoque/EstoqueList'
+import { MovimentacaoList } from '@/pages/estoque/MovimentacaoList'
+import { AuxiliaresProduto } from '@/pages/produto/AuxiliaresProduto'
+import { ProdutoForm } from '@/pages/produto/ProdutoForm'
+import { ProdutoList } from '@/pages/produto/ProdutoList'
 import { ServicoForm } from '@/pages/servico/ServicoForm'
 import { ServicoList } from '@/pages/servico/ServicoList'
 import { TenantForm } from '@/pages/tenant/TenantForm'
@@ -76,6 +82,29 @@ export function AppRoutes() {
             </Route>
             <Route element={<TProtected tela="SERVICOS" escrita />}>
               <Route path="servicos/novo" element={<PorRegistro><ServicoForm /></PorRegistro>} />
+            </Route>
+
+            <Route element={<TProtected tela="PRODUTOS" />}>
+              <Route path="produtos" element={<ProdutoList />} />
+              <Route path="produtos/:id" element={<PorRegistro><ProdutoForm /></PorRegistro>} />
+            </Route>
+            <Route element={<TProtected tela="PRODUTOS" escrita />}>
+              <Route path="produtos/novo" element={<PorRegistro><ProdutoForm /></PorRegistro>} />
+            </Route>
+
+            {/* Rota própria, não debaixo de /produtos: o item do menu de
+                Produtos acenderia junto (o NavLink casa por prefixo). */}
+            <Route element={<TProtected tela="AUXILIARES_PRODUTO" />}>
+              <Route path="auxiliares-produto" element={<AuxiliaresProduto />} />
+            </Route>
+
+            <Route element={<TProtected tela="ESTOQUE" />}>
+              <Route path="estoque" element={<EstoqueList />} />
+              <Route path="estoque/:id" element={<PorRegistro><EstoqueForm /></PorRegistro>} />
+              <Route path="estoque-movimentacoes" element={<MovimentacaoList />} />
+            </Route>
+            <Route element={<TProtected tela="ESTOQUE" escrita />}>
+              <Route path="estoque/novo" element={<PorRegistro><EstoqueForm /></PorRegistro>} />
             </Route>
 
             {/*

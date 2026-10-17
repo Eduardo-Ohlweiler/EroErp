@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Unidade de medida do produto — catálogo GLOBAL, sem tenant_id, pela
+        mesma razão dos catálogos de pessoa (009): "KG" é quilograma em todo
+        cliente, e replicar por tenant só criaria divergência de grafia.
+
+        Somente leitura pela API (/unidades-medida/select). Diferenças para o
+        antigo:
+        - sigla única (lá não havia unique);
+        - "H" (hora) e "SV" (serviço) não vieram: serviço tem cadastro
+          próprio (docs/10) e não tem unidade.
+    -->
+    <changeSet id="021-create-unidade-medida" author="eduardo">
+
+        <createTable tableName="unidade_medida">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_unidade_medida"/>
+            </column>
+            <column name="sigla" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descricao" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="unidade_medida" columnNames="sigla"
+                             constraintName="uk_unidade_medida_sigla"/>
+
+        <sql>
+            INSERT INTO unidade_medida (sigla, descricao, ativo, created_at) VALUES
+                ('UN', 'Unidade', true, now()),
+                ('KG', 'Quilograma', true, now()),
+                ('G',  'Grama', true, now()),
+                ('LT', 'Litro', true, now()),
+                ('ML', 'Mililitro', true, now()),
+                ('CX', 'Caixa', true, now()),
+                ('PC', 'Peça', true, now()),
+                ('MT', 'Metro', true, now()),
+                ('M2', 'Metro quadrado', true, now()),
+                ('M3', 'Metro cúbico', true, now());
+        </sql>
+
+        <rollback>
+            <dropTable tableName="unidade_medida"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

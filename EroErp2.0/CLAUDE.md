@@ -44,7 +44,8 @@ EroErp2.0/
 │       ├── jobs/                  # ManutencaoJob
 │       └── {modulo}/              # tenant, usuario, auth, loginlog, refreshtoken,
 │           ├── controller/        # pessoa, contato, vinculo, catalogo, localidade,
-│           │                      # filial, servico, sequencia
+│           │                      # filial, servico, sequencia, produto,
+│           │                      # auxiliarproduto, estoque
 │           ├── dtos/
 │           ├── entity/
 │           ├── enums/
@@ -52,14 +53,19 @@ EroErp2.0/
 │           ├── repository/
 │           └── service/
 │                                  # catalogo/ = tipos de cadastro, telefone, e-mail,
-│                                  #   rede social e endereço (sem tenant)
+│                                  #   rede social e endereço, e a unidade de
+│                                  #   medida do produto (sem tenant)
+│                                  # auxiliarproduto/ = grupo, subgrupo, categoria
+│                                  #   e marca, por tenant (docs/11 §2)
+│                                  # estoque/ = produto × filial, preço de venda,
+│                                  #   movimentação com sinal e trava (docs/11 §3)
 │                                  # localidade/ = estados e cidades do IBGE, e o
 │                                  #   CEP (GET /cep/{cep}, ViaCEP pelo backend,
 │                                  #   cidade pelo código IBGE — docs/08 §3.4)
 │                                  # tenant/ = também a paleta de cores de cada
 │                                  #   tenant (PaletaSistema, docs/05 §11)
 │                                  # sequencia/ = código curto por tenant
-│                                  #   (serviço 1, 2, 3… — docs/10 §2)
+│                                  #   (serviço e produto 1, 2, 3… — docs/10 §2)
 └── ero/                           # frontend
     ├── public/                    # favicon e ícones
     ├── scripts/validar-paletas.mjs  # npm run paletas — contraste e cascata
@@ -88,9 +94,10 @@ EroErp2.0/
         ├── hooks/                 # useAuth · useTheme · useDebounce · useMenuRecolhido
         ├── services/              # api.ts (interceptor + refresh) + um por módulo
         ├── pages/                 # auth/Login · Inicio · usuario · tenant · pessoa · filial
-        │                          # servico · loginlog · perfil
+        │                          # servico · produto · estoque · loginlog · perfil
         ├── types/ utils/          # utils/format.ts (paraNumero, máscaras, datas)
         │                          # utils/planilha.ts (exportação CSV)
+        │                          # utils/estoque.ts (máscara da quantidade pela unidade)
         └── routes/AppRoutes.tsx
 ```
 
@@ -107,7 +114,7 @@ Testes contra o banco `ero_erp_test` — nada de H2 nem Testcontainers.
 | **Permissões por tela** | ✅ pronto · o superadmin libera módulos ao USER e, por tela, leitura ou escrita (`permissao/`, migration 017, [docs/02 §1.2](docs/02-modulo-usuarios.md)). Módulo é o assunto que se libera (Pessoas, Filiais), não o grupo do menu |
 | **Filiais** | ✅ pronto · o "emitente" do antigo: matriz e filiais apontando para uma pessoa, várias matrizes por tenant (`filial/`, migration 018, [docs/09](docs/09-modulo-filiais.md)) |
 | **Serviços** | ✅ pronto · cadastro próprio, separado de produto e sem estoque: código curto por tenant (`tenant_sequencia`), nome único no tenant, valor **opcional por filial** — vazio não é zero (`servico/`, migrations 019–020, [docs/10](docs/10-modulo-servicos.md)) |
-| Produtos, auxiliares e estoque | próxima fatia · do antigo, sem a parte fiscal: produto com custo opcional; unidade (global), grupo/subgrupo, categoria e marca (por tenant); estoque só de produto, por filial, com "controlar estoque" e preço de venda opcional. Reconfirmar antes de começar |
+| **Produtos, auxiliares e estoque** | ✅ pronto · do antigo, sem a parte fiscal: produto com código por tenant, EAN com dígito verificador e custo opcional; unidade global; grupo/subgrupo, categoria e marca por tenant; estoque só de produto, por filial, com preço de venda opcional, "controla estoque" (sem ele, a linha só guarda o preço), entrada, ajuste e transferência com quantidade **com sinal** e a linha travada (`produto/`, `auxiliarproduto/`, `estoque/`, migrations 021–024, [docs/11](docs/11-modulo-produtos-estoque.md)). Mínimo só guardado: o alerta vem com o painel |
 | **Menu recolhível** | ✅ pronto · expandido ↔ só ícones em `lg+`, Ctrl+B, lembrado no navegador ([docs/04](docs/04-arquitetura-frontend.md), "O menu recolhe") |
 | Próximas | **migrar módulos do EroErp antigo**, um de cada vez, perguntando antes qual e como |
 | `audit_log` | pendente · especificação em [docs/06 §A09](docs/06-seguranca-owasp.md); molde estrutural é o `loginlog`, com o expurgo no `ManutencaoJob` |
@@ -476,6 +483,7 @@ de fechar no papel.
 | [docs/08-modulo-pessoas.md](docs/08-modulo-pessoas.md) | Cadastro de pessoas — PF/PJ, contatos, endereços e vínculos |
 | [docs/09-modulo-filiais.md](docs/09-modulo-filiais.md) | Filiais — matriz e filiais (o emitente do antigo), várias matrizes por tenant |
 | [docs/10-modulo-servicos.md](docs/10-modulo-servicos.md) | Serviços — código por tenant, valor opcional por filial, sem estoque |
+| [docs/11-modulo-produtos-estoque.md](docs/11-modulo-produtos-estoque.md) | Produtos, auxiliares e estoque — preço por filial no estoque, movimentação com sinal e trava |
 
 ---
 
@@ -557,8 +565,9 @@ POPULAR_EMAIL=... POPULAR_SENHA=... node ero-erp-api/scripts/popular-dev.mjs
 
 **Bateria multi-tenant** — com o superadmin do `.env`, abre três tenants
 `(demo)` (Mercado Bom Preço, Grupo Vida Plena com duas matrizes, Auto Center
-Rápido), cada um com ADMIN, USER, pessoas, filiais e serviços próprios, e
-confere isolamento, regras e permissão de cada módulo. Reaproveita o que existe; os
+Rápido), cada um com ADMIN, USER, pessoas, filiais, serviços, produtos e estoque
+próprios, e confere isolamento, regras e permissão de cada módulo. As
+transferências dela vão e voltam, então rodar de novo não muda saldo. Reaproveita o que existe; os
 usuários `admin@<tenant>.demo.local` entram com a senha que ela imprime. Cada
 módulo novo que tiver tenant acrescenta aqui as suas conferências.
 

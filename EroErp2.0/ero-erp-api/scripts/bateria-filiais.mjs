@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Bateria de ponta a ponta dos cadastros de Filiais e Serviços, em VÁRIOS
+ * Bateria de ponta a ponta de Filiais, Serviços, Produtos e Estoque, em VÁRIOS
  * tenants — pela API HTTP, contra a aplicação em execução. Cria dados de
  * demonstração e confere, de fora, o que os testes de integração conferem de
  * dentro: cada tenant enxerga só as suas pessoas, filiais e serviços.
@@ -23,7 +23,12 @@
  *     negócios separados), e um mesmo fornecedor (mesmo CNPJ) nos três —
  *     documento é único por tenant, não no sistema;
  *   - em cada tenant, serviços com valor por filial (alguns sem valor: vazio
- *     não é zero), com o código curto contado dentro do tenant.
+ *     não é zero), com o código curto contado dentro do tenant;
+ *   - em cada tenant, grupos, subgrupos, categorias e marcas de produto,
+ *     produtos (o mesmo EAN em tenants diferentes; custo vazio e custo zero)
+ *     e o estoque deles por filial, com preço de venda e saldo inicial — uma
+ *     linha sem controle de estoque, que guarda só o preço.
+ *   As transferências da bateria vão e voltam: rodar de novo não muda saldo.
  * Os usuários criados entram com a senha de demonstração impressa no fim.
  *
  * Nada é apagado. Sai com código 1 se qualquer conferência falhar.
@@ -164,6 +169,9 @@ function cpf(semente) {
 
 // ─── O cenário ──────────────────────────────────────────────────────────────
 
+/** Um EAN válido usado em dois tenants: a unicidade do EAN é por tenant. */
+const EAN_COMUM = '7891000315507'
+
 /** O mesmo fornecedor nos três tenants: mesmo CNPJ, três cadastros. */
 const FORNECEDOR = { nome: 'Distribuidora Sul Atacado Ltda', cnpj: cnpj(70707070), cidade: 'Porto Alegre' }
 
@@ -191,6 +199,35 @@ const TENANTS = [
       // No Centro o valor não foi informado: fica vazio, não zero.
       { nome: 'Montagem de cesta básica', valores: { 'Mercado Bom Preço Ltda': 8.5, 'Mercado Bom Preço Centro Ltda': null } },
       { nome: 'Encomenda especial', observacao: 'Valor combinado com o cliente a cada pedido.', valores: {} },
+    ],
+    produtos: [
+      {
+        nome: 'Refrigerante cola 2L', unidade: 'UN', ean: EAN_COMUM, grupo: 'Bebidas', subgrupo: 'Refrigerantes',
+        categoria: 'Alimentos e bebidas', marca: 'Refri Sul', custo: 6.2, fornecedor: true,
+        estoque: {
+          'Mercado Bom Preço Ltda': { preco: 9.99, inicial: 48, minimo: 12 },
+          'Mercado Bom Preço Centro Ltda': { preco: 9.99, inicial: 24 },
+          'Mercado Bom Preço Canoas Ltda': { preco: 10.49, inicial: 12 },
+        },
+      },
+      {
+        nome: 'Arroz branco 5kg', unidade: 'UN', ean: '7891234567895', grupo: 'Mercearia', subgrupo: 'Grãos',
+        categoria: 'Alimentos e bebidas', marca: 'Grão Bom', custo: 18.9,
+        estoque: {
+          'Mercado Bom Preço Ltda': { preco: 27.9, inicial: 30 },
+          'Mercado Bom Preço Centro Ltda': { preco: 27.9, inicial: 10 },
+        },
+      },
+      // Custo não informado (vazio, não zero), vendido a granel por quilo.
+      {
+        nome: 'Feijão preto a granel', unidade: 'KG', grupo: 'Mercearia', subgrupo: 'Grãos',
+        estoque: { 'Mercado Bom Preço Ltda': { preco: 8.99, inicial: 25.5, minimo: 5 } },
+      },
+      // Custo zero informado; sem controle de estoque: a linha guarda só o preço.
+      {
+        nome: 'Sacola retornável', unidade: 'UN', custo: 0,
+        estoque: { 'Mercado Bom Preço Ltda': { preco: 2.5, controla: false } },
+      },
     ],
   },
   {
@@ -224,6 +261,31 @@ const TENANTS = [
       },
       { nome: 'Aplicação de injetável', valores: { 'Farmácia Vida Plena Ltda': 12 } },
     ],
+    produtos: [
+      {
+        nome: 'Dipirona 500mg (10 comprimidos)', unidade: 'CX', ean: '7896004700014', grupo: 'Medicamentos',
+        subgrupo: 'Analgésicos', marca: 'Genérico', custo: 4.1, fornecedor: true,
+        estoque: { 'Farmácia Vida Plena Ltda': { preco: 12.9, inicial: 40, minimo: 10 } },
+      },
+      {
+        nome: 'Soro fisiológico 500ml', unidade: 'UN', ean: '7891012345608', grupo: 'Medicamentos',
+        subgrupo: 'Soluções', custo: 3.75,
+        estoque: { 'Farmácia Vida Plena Ltda': { preco: 8.5, inicial: 20 } },
+      },
+      // Material de consumo da clínica: estoque sem preço de venda.
+      {
+        nome: 'Seringa descartável 5ml', unidade: 'UN', grupo: 'Materiais', subgrupo: 'Descartáveis', custo: 0.42,
+        estoque: {
+          'Clínica Vida Plena Ltda': { inicial: 200, minimo: 50 },
+          'Clínica Vida Plena Bento Ltda': { inicial: 50 },
+        },
+      },
+      // O mesmo EAN do refrigerante do Mercado: EAN é único por tenant.
+      {
+        nome: 'Água mineral 500ml', unidade: 'UN', ean: EAN_COMUM, grupo: 'Bebidas', subgrupo: 'Águas',
+        estoque: { 'Farmácia Vida Plena Ltda': { preco: 3.5, inicial: 36 } },
+      },
+    ],
   },
   {
     nome: 'Auto Center Rápido (demo)',
@@ -243,6 +305,27 @@ const TENANTS = [
       { nome: 'Alinhamento e balanceamento', valores: { 'Auto Center Rápido Ltda': 120, 'Auto Center Rápido Rio Grande Ltda': 110 } },
       { nome: 'Troca de óleo (mão de obra)', valores: { 'Auto Center Rápido Ltda': 40 } },
       { nome: 'Diagnóstico eletrônico', observacao: 'Orçamento depois da avaliação.', valores: {} },
+    ],
+    produtos: [
+      // Litro: quantidade com casas.
+      {
+        nome: 'Óleo de motor 5W30', unidade: 'LT', ean: '7895550001231', grupo: 'Lubrificantes', subgrupo: 'Óleos',
+        marca: 'Lubrimax', categoria: 'Manutenção', custo: 24.3, fornecedor: true,
+        estoque: { 'Auto Center Rápido Ltda': { preco: 39.9, inicial: 60.5, minimo: 20 } },
+      },
+      {
+        nome: 'Filtro de óleo', unidade: 'UN', ean: '7897770004566', grupo: 'Peças', subgrupo: 'Filtros',
+        marca: 'Lubrimax', categoria: 'Manutenção', custo: 18,
+        estoque: {
+          'Auto Center Rápido Ltda': { preco: 35, inicial: 15 },
+          // A filial de Rio Grande fica inativa no fim; o estoque dela fica.
+          'Auto Center Rápido Rio Grande Ltda': { preco: 37, inicial: 5 },
+        },
+      },
+      {
+        nome: 'Palheta do limpador', unidade: 'PC', grupo: 'Peças', subgrupo: 'Acessórios',
+        estoque: { 'Auto Center Rápido Ltda': { preco: 29.9, inicial: 8 } },
+      },
     ],
   },
 ]
@@ -336,6 +419,54 @@ async function garantirServico(s, sv, filiais) {
   })
 }
 
+const unidades = Object.fromEntries((await root.get('/unidades-medida/select')).map((u) => [u.sigla, u.id]))
+
+/** Grupo, categoria ou marca, pelo nome exato. */
+async function garantirAuxiliar(s, rota, nome) {
+  const achados = await s.get(rota + q({ termo: nome, size: 20 }))
+  const existente = achados.content.find((x) => x.nome === nome)
+  if (existente) return existente.id
+  return (await s.post(rota, { nome })).id
+}
+
+async function garantirSubgrupo(s, grupoId, nome) {
+  const achados = await s.get('/subgrupos-produto' + q({ grupoId, termo: nome, size: 20 }))
+  const existente = achados.content.find((x) => x.nome === nome)
+  if (existente) return existente.id
+  return (await s.post('/subgrupos-produto', { grupoId, nome })).id
+}
+
+async function garantirProduto(s, p, fornecedorId) {
+  const achados = await s.get('/produtos' + q({ termo: p.nome, size: 20 }))
+  const existente = achados.content.find((x) => x.nome === p.nome)
+  if (existente) return existente
+  const grupoId = p.grupo ? await garantirAuxiliar(s, '/grupos-produto', p.grupo) : undefined
+  return s.post('/produtos', {
+    nome: p.nome,
+    unidadeMedidaId: unidades[p.unidade],
+    ean: p.ean,
+    subgrupoId: grupoId ? await garantirSubgrupo(s, grupoId, p.subgrupo) : undefined,
+    categoriaId: p.categoria ? await garantirAuxiliar(s, '/categorias-produto', p.categoria) : undefined,
+    marcaId: p.marca ? await garantirAuxiliar(s, '/marcas-produto', p.marca) : undefined,
+    fornecedorId: p.fornecedor ? fornecedorId : undefined,
+    custo: p.custo ?? null,
+  })
+}
+
+/** A linha produto × filial; o saldo inicial só entra quando ela nasce. */
+async function garantirEstoque(s, produtoId, filialId, e) {
+  const achados = await s.get('/estoques' + q({ produtoId, filialId }))
+  if (achados.content.length) return achados.content[0]
+  return s.post('/estoques', {
+    produtoId,
+    filialId,
+    precoVenda: e.preco ?? null,
+    controlaEstoque: e.controla ?? true,
+    quantidadeMinima: e.minimo ?? null,
+    quantidadeInicial: e.inicial ?? null,
+  })
+}
+
 console.log(`\nBateria de Filiais em ${BASE}\n`)
 
 const montados = []
@@ -360,8 +491,17 @@ for (const t of TENANTS) {
   for (const sv of t.servicos) {
     servicos[sv.nome] = (await garantirServico(s, sv, filiais)).id
   }
-  montados.push({ t, tenantId, adminEmail, userEmail, userId, pessoas, filiais, servicos })
-  console.log(`  ✓ ${t.nome}: ${Object.keys(pessoas).length} pessoas, ${t.filiais.length} filiais, ${t.servicos.length} serviços`)
+  const produtos = {}
+  const estoques = {}
+  for (const p of t.produtos) {
+    produtos[p.nome] = (await garantirProduto(s, p, pessoas[FORNECEDOR.nome])).id
+    for (const [pessoa, e] of Object.entries(p.estoque)) {
+      estoques[`${p.nome} @ ${pessoa}`] = (await garantirEstoque(s, produtos[p.nome], filiais[pessoa], e)).id
+    }
+  }
+  montados.push({ t, tenantId, adminEmail, userEmail, userId, pessoas, filiais, servicos, produtos, estoques })
+  console.log(`  ✓ ${t.nome}: ${Object.keys(pessoas).length} pessoas, ${t.filiais.length} filiais, `
+    + `${t.servicos.length} serviços, ${t.produtos.length} produtos, ${Object.keys(estoques).length} linhas de estoque`)
 }
 
 // ─── 1. Cada tenant vê só o que é dele ──────────────────────────────────────
@@ -569,6 +709,137 @@ for (const m of montados) {
     admin.chamar('POST', '/servicos', { nome: 'Serviço em filial inativa', filiais: [{ filialId: rioGrande, valor: 1 }] }), 409)
 }
 
+// ─── 6. Produtos e estoque: cada tenant vê só o que é dele ─────────────────
+
+for (const m of montados) {
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const g = `Produtos e estoque · ${m.t.nome}`
+
+  const lista = (await admin.get('/produtos' + q({ size: 100 }))).content
+  const esperados = m.t.produtos.map((p) => p.nome).sort()
+  const vistos = lista.map((p) => p.nome).sort()
+  conferir(g, `lista traz exatamente os ${esperados.length} produtos do tenant`,
+    JSON.stringify(esperados) === JSON.stringify(vistos), `vistos: ${vistos.join(', ')}`)
+  const codigos = lista.map((p) => p.codigo)
+  conferir(g, 'código curto, sem repetir dentro do tenant',
+    new Set(codigos).size === codigos.length && codigos.every((c) => Number.isInteger(c) && c >= 1), codigos.join(', '))
+  conferir(g, 'custo como cadastrado (vazio continua vazio, zero é zero)',
+    m.t.produtos.every((p) => (lista.find((x) => x.nome === p.nome)?.custo ?? null) === (p.custo ?? null)))
+
+  const combo = await admin.get('/produtos/select')
+  conferir(g, '/produtos/select não vaza produto de outro tenant e não traz custo',
+    combo.every((c) => Object.values(m.produtos).includes(c.id) && c.custo === undefined))
+
+  // As transferências da seção 7 vão e voltam: o saldo é sempre o inicial
+  const linhas = (await admin.get('/estoques' + q({ size: 100 }))).content
+  const cadastradas = m.t.produtos.flatMap((p) => Object.entries(p.estoque).map(([pessoa, e]) => ({ p, pessoa, e })))
+  conferir(g, `estoque traz exatamente as ${cadastradas.length} linhas do tenant`, linhas.length === cadastradas.length,
+    `vieram ${linhas.length}`)
+  for (const { p, pessoa, e } of cadastradas) {
+    const linha = linhas.find((l) => l.id === m.estoques[`${p.nome} @ ${pessoa}`])
+    const confere = !!linha && linha.quantidade === (e.inicial ?? 0)
+      && (linha.precoVenda ?? null) === (e.preco ?? null) && linha.controlaEstoque === (e.controla ?? true)
+    conferir(g, `"${p.nome}" em ${pessoa}: saldo, preço e controle como cadastrados`, confere, JSON.stringify(linha))
+  }
+
+  for (const outro of montados.filter((x) => x !== m)) {
+    const produtoAlheio = Object.values(outro.produtos)[0]
+    const estoqueAlheio = Object.values(outro.estoques)[0]
+    const filialAlheia = Object.values(outro.filiais)[0]
+    await conferirStatus(g, `abrir produto de "${outro.t.nome}" → 404`, admin.chamar('GET', `/produtos/${produtoAlheio}`), 404)
+    await conferirStatus(g, `abrir estoque de "${outro.t.nome}" → 404`, admin.chamar('GET', `/estoques/${estoqueAlheio}`), 404)
+    await conferirStatus(g, `entrada no estoque de "${outro.t.nome}" → 404`,
+      admin.chamar('POST', `/estoques/${estoqueAlheio}/entradas`, { quantidade: 1 }), 404)
+    await conferirStatus(g, `abrir estoque de produto de "${outro.t.nome}" → 404`,
+      admin.chamar('POST', '/estoques', {
+        produtoId: produtoAlheio, filialId: Object.values(m.filiais)[0], controlaEstoque: true,
+      }), 404)
+    const combo = await admin.get('/estoques/movimentaveis' + q({ filialId: filialAlheia }))
+    conferir(g, `combo de movimentação na filial de "${outro.t.nome}" vem vazio`, combo.length === 0)
+  }
+}
+
+// ─── 7. Produtos e estoque: regras, no tenant do mercado ───────────────────
+
+{
+  const m = montados[0]
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const g = `Produtos e estoque · regras · ${m.t.nome}`
+  const un = unidades.UN
+  const matriz = m.filiais['Mercado Bom Preço Ltda']
+  const centro = m.filiais['Mercado Bom Preço Centro Ltda']
+  const refri = m.produtos['Refrigerante cola 2L']
+
+  await conferirStatus(g, 'nome repetido, em maiúsculas → 409',
+    admin.chamar('POST', '/produtos', { nome: 'REFRIGERANTE COLA 2L', unidadeMedidaId: un }), 409)
+  await conferirStatus(g, 'EAN com o dígito verificador errado → 400',
+    admin.chamar('POST', '/produtos', { nome: 'Produto de EAN errado', unidadeMedidaId: un, ean: '7891000315508' }), 400)
+  await conferirStatus(g, 'EAN de outro produto do tenant → 409',
+    admin.chamar('POST', '/produtos', { nome: 'Produto de EAN repetido', unidadeMedidaId: un, ean: EAN_COMUM }), 409)
+  await conferirStatus(g, 'o mesmo produto duas vezes na filial → 409',
+    admin.chamar('POST', '/estoques', { produtoId: refri, filialId: matriz, controlaEstoque: true }), 409)
+
+  const movimentaveis = await admin.get('/estoques/movimentaveis' + q({ filialId: matriz }))
+  conferir(g, 'sem controle de estoque, a sacola não aparece na movimentação',
+    !movimentaveis.some((x) => x.produtoNome === 'Sacola retornável') && movimentaveis.length === 3,
+    movimentaveis.map((x) => x.produtoNome).join(', '))
+  await conferirStatus(g, 'e não aceita entrada → 409',
+    admin.chamar('POST', `/estoques/${m.estoques['Sacola retornável @ Mercado Bom Preço Ltda']}/entradas`, { quantidade: 1 }), 409)
+
+  const idMatriz = m.estoques['Refrigerante cola 2L @ Mercado Bom Preço Ltda']
+  const saldoMatriz = (await admin.get(`/estoques/${idMatriz}`)).quantidade
+  await conferirStatus(g, 'transferir mais do que há → 409',
+    admin.chamar('POST', '/estoques/transferencias', {
+      produtoId: refri, filialOrigemId: matriz, filialDestinoId: centro, quantidade: saldoMatriz + 1,
+    }), 409)
+  await conferirStatus(g, 'ajuste para a mesma quantidade → 400',
+    admin.chamar('POST', `/estoques/${idMatriz}/ajustes`, { quantidadeNova: saldoMatriz, motivo: 'Contagem' }), 400)
+
+  const ida = await admin.post('/estoques/transferencias', {
+    produtoId: refri, filialOrigemId: matriz, filialDestinoId: centro, quantidade: 6, motivo: 'Reposição (bateria)',
+  })
+  conferir(g, 'transferência grava saída negativa e entrada positiva, ligadas',
+    ida[0].tipo === 'TRANSFERENCIA_SAIDA' && ida[0].quantidade === -6 && ida[1].quantidade === 6
+      && ida[0].transferenciaId === ida[1].transferenciaId, JSON.stringify(ida.map((x) => [x.tipo, x.quantidade])))
+  await admin.post('/estoques/transferencias', {
+    produtoId: refri, filialOrigemId: centro, filialDestinoId: matriz, quantidade: 6, motivo: 'Devolução (bateria)',
+  })
+  conferir(g, 'ida e volta: o saldo da matriz é o de antes',
+    (await admin.get(`/estoques/${idMatriz}`)).quantidade === saldoMatriz)
+}
+
+// ─── 8. Permissão do USER: Produtos, auxiliares e Estoque são telas à parte ─
+
+{
+  const m = montados[0]
+  const g = `Permissão · produtos e estoque · ${m.t.nome}`
+  const u = sessao(await login(m.userEmail, SENHA_DEMO))
+  const atualizarUser = async (permissoes) => {
+    const s = await entrarNoTenant(m.tenantId)
+    const atual = await s.get(`/usuarios/${m.userId}`)
+    await s.put(`/usuarios/${m.userId}`, {
+      nome: atual.nome, email: atual.email, telefone: atual.telefone, codigoPais: atual.codigoPais, role: 'USER', permissoes,
+    })
+  }
+  const base = [{ tela: 'FILIAIS', nivel: 'LEITURA' }, { tela: 'SERVICOS', nivel: 'LEITURA' }]
+
+  await atualizarUser(base)
+  await conferirStatus(g, 'sem Produtos não lista produtos → 403', u.chamar('GET', '/produtos'), 403)
+  await conferirStatus(g, 'mas usa o /select de produtos → 200', u.chamar('GET', '/produtos/select'), 200)
+  await conferirStatus(g, 'sem Estoque não lista estoque → 403', u.chamar('GET', '/estoques'), 403)
+
+  await atualizarUser([...base, { tela: 'PRODUTOS', nivel: 'LEITURA' }, { tela: 'ESTOQUE', nivel: 'LEITURA' }])
+  await conferirStatus(g, 'Produtos em leitura lista → 200', u.chamar('GET', '/produtos'), 200)
+  await conferirStatus(g, 'Produtos em leitura não grava → 403',
+    u.chamar('POST', '/produtos', { nome: 'Produto do USER', unidadeMedidaId: unidades.UN }), 403)
+  await conferirStatus(g, 'Produtos liberado não abre os auxiliares → 403', u.chamar('GET', '/marcas-produto'), 403)
+  await conferirStatus(g, 'Estoque em leitura lista → 200', u.chamar('GET', '/estoques'), 200)
+  await conferirStatus(g, 'Estoque em leitura não movimenta → 403',
+    u.chamar('POST', `/estoques/${m.estoques['Arroz branco 5kg @ Mercado Bom Preço Ltda']}/entradas`, { quantidade: 1 }), 403)
+
+  // Fica assim para você ver o menu e as telas só de leitura com este usuário.
+}
+
 // ─── Relatório ──────────────────────────────────────────────────────────────
 
 let grupoAtual = ''
@@ -580,5 +851,5 @@ const falhas = resultados.filter((r) => !r.ok).length
 console.log(`\n${resultados.length - falhas}/${resultados.length} conferências passaram.`)
 console.log('\nUsuários de demonstração (senha ' + SENHA_DEMO + '):')
 montados.forEach((m, i) => console.log(
-  `  ${m.t.nome.padEnd(28)} ${m.adminEmail} (ADMIN) · ${m.userEmail} (USER, ${i === 0 ? 'Filiais e Serviços só leitura' : 'sem permissão'})`))
+  `  ${m.t.nome.padEnd(28)} ${m.adminEmail} (ADMIN) · ${m.userEmail} (USER, ${i === 0 ? 'Filiais, Serviços, Produtos e Estoque só leitura' : 'sem permissão'})`))
 process.exit(falhas ? 1 : 0)

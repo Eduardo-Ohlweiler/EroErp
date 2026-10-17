@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -182,6 +183,111 @@ class PermissaoTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Produtos: sem permissão não lê, mas usa os combos de produto, auxiliares e unidade")
+    void produtosSemPermissaoNaoLe() throws Exception {
+        String token = autenticar(userA.getEmail());
+
+        mockMvc.perform(get("/produtos").header(AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/produtos").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(produtoJson("Parafuso")))
+                .andExpect(status().isForbidden());
+
+        for (String combo : List.of("/produtos/select", "/grupos-produto/select", "/subgrupos-produto/select",
+                "/categorias-produto/select", "/marcas-produto/select", "/unidades-medida/select")) {
+            mockMvc.perform(get(combo).header(AUTHORIZATION, token))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    @DisplayName("Produtos: leitura lê e não grava; escrita grava")
+    void produtosLeituraEEscrita() throws Exception {
+        conceder(userA, Tela.PRODUTOS, NivelAcesso.LEITURA);
+        String token = autenticar(userA.getEmail());
+
+        mockMvc.perform(get("/produtos").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/produtos").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(produtoJson("Parafuso")))
+                .andExpect(status().isForbidden());
+        assertThat(produtoRepository.findAll()).isEmpty();
+
+        usuarioPermissaoRepository.deleteAllInBatch();
+        conceder(userA, Tela.PRODUTOS, NivelAcesso.ESCRITA);
+        mockMvc.perform(post("/produtos").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(produtoJson("Parafuso")))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("Auxiliares: Produtos liberado não abre os auxiliares; leitura lê e não grava; escrita grava")
+    void auxiliaresLeituraEEscrita() throws Exception {
+        conceder(userA, Tela.PRODUTOS, NivelAcesso.ESCRITA);
+        String token = autenticar(userA.getEmail());
+        mockMvc.perform(get("/marcas-produto").header(AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+
+        conceder(userA, Tela.AUXILIARES_PRODUTO, NivelAcesso.LEITURA);
+        mockMvc.perform(get("/marcas-produto").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/subgrupos-produto").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/marcas-produto").header(AUTHORIZATION, token)
+                        .contentType("application/json").content("{\"nome\":\"Acme\"}"))
+                .andExpect(status().isForbidden());
+        assertThat(marcaProdutoRepository.findAll()).isEmpty();
+
+        usuarioPermissaoRepository.deleteAllInBatch();
+        conceder(userA, Tela.AUXILIARES_PRODUTO, NivelAcesso.ESCRITA);
+        mockMvc.perform(post("/marcas-produto").header(AUTHORIZATION, token)
+                        .contentType("application/json").content("{\"nome\":\"Acme\"}"))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("Estoque: sem permissão não lê nem o combo de movimentação; leitura lê e não movimenta; escrita movimenta")
+    void estoqueLeituraEEscrita() throws Exception {
+        String tokenAdmin = autenticar(adminA.getEmail());
+        UUID filial = criarFilial(tokenAdmin, "Loja");
+        UUID produto = UUID.fromString(objectMapper.readTree(mockMvc.perform(post("/produtos")
+                        .header(AUTHORIZATION, tokenAdmin)
+                        .contentType("application/json").content(produtoJson("Parafuso")))
+                .andReturn().getResponse().getContentAsString()).get("id").asText());
+        String estoque = objectMapper.readTree(mockMvc.perform(post("/estoques").header(AUTHORIZATION, tokenAdmin)
+                        .contentType("application/json")
+                        .content("{\"produtoId\":\"%s\",\"filialId\":\"%s\",\"controlaEstoque\":true}"
+                                .formatted(produto, filial)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString()).get("id").asText();
+
+        // Produtos liberado não abre o Estoque: o saldo é dado do estoque
+        conceder(userA, Tela.PRODUTOS, NivelAcesso.ESCRITA);
+        String token = autenticar(userA.getEmail());
+        mockMvc.perform(get("/estoques").header(AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/estoques/movimentaveis").header(AUTHORIZATION, token)
+                        .param("filialId", filial.toString()))
+                .andExpect(status().isForbidden());
+
+        conceder(userA, Tela.ESTOQUE, NivelAcesso.LEITURA);
+        mockMvc.perform(get("/estoques").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/estoques/movimentacoes").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/estoques/{id}/entradas", estoque).header(AUTHORIZATION, token)
+                        .contentType("application/json").content("{\"quantidade\":1}"))
+                .andExpect(status().isForbidden());
+        assertThat(estoqueMovimentacaoRepository.findAll()).isEmpty();
+
+        usuarioPermissaoRepository.deleteAllInBatch();
+        conceder(userA, Tela.ESTOQUE, NivelAcesso.ESCRITA);
+        mockMvc.perform(post("/estoques/{id}/entradas", estoque).header(AUTHORIZATION, token)
+                        .contentType("application/json").content("{\"quantidade\":1}"))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     @DisplayName("mudar a permissão vale na requisição seguinte, com o mesmo token")
     void mudancaValeSemNovoLogin() throws Exception {
         String token = autenticar(userA.getEmail());
@@ -242,7 +348,16 @@ class PermissaoTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[1].telas[0].tela").value("FILIAIS"))
                 .andExpect(jsonPath("$[2].modulo").value("SERVICOS"))
                 .andExpect(jsonPath("$[2].rotulo").value("Serviços"))
-                .andExpect(jsonPath("$[2].telas[0].tela").value("SERVICOS"));
+                .andExpect(jsonPath("$[2].telas[0].tela").value("SERVICOS"))
+                // Produtos e os auxiliares são um módulo, com duas telas;
+                // o estoque é outro assunto
+                .andExpect(jsonPath("$[3].modulo").value("PRODUTOS"))
+                .andExpect(jsonPath("$[3].telas", hasSize(2)))
+                .andExpect(jsonPath("$[3].telas[0].tela").value("PRODUTOS"))
+                .andExpect(jsonPath("$[3].telas[1].tela").value("AUXILIARES_PRODUTO"))
+                .andExpect(jsonPath("$[3].telas[1].rotulo").value("Auxiliares de produto"))
+                .andExpect(jsonPath("$[4].modulo").value("ESTOQUE"))
+                .andExpect(jsonPath("$[4].telas[0].tela").value("ESTOQUE"));
 
         mockMvc.perform(get("/permissoes/catalogo").header(AUTHORIZATION, autenticar(adminA.getEmail())))
                 .andExpect(status().isForbidden());
@@ -402,6 +517,21 @@ class PermissaoTest extends AbstractIntegrationTest {
         return """
                 {"nome":"%s","filiais":[]}
                 """.formatted(nome);
+    }
+
+    private String produtoJson(String nome) {
+        return """
+                {"nome":"%s","unidadeMedidaId":"%s"}
+                """.formatted(nome, unidade("UN"));
+    }
+
+    private UUID criarFilial(String token, String nome) throws Exception {
+        String corpo = mockMvc.perform(post("/filiais").header(AUTHORIZATION, token)
+                        .contentType("application/json")
+                        .content(filialJson(salvarPessoa(tenantA, nome).getId())))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return UUID.fromString(objectMapper.readTree(corpo).get("id").asText());
     }
 
     private static String filialJson(UUID pessoaId) {

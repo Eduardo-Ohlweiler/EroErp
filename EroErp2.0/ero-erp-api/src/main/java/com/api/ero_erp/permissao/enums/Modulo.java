@@ -17,7 +17,9 @@ public enum Modulo {
 
     PESSOAS("Pessoas"),
     FILIAIS("Filiais"),
-    SERVICOS("Serviços");
+    SERVICOS("Serviços"),
+    PRODUTOS("Produtos"),
+    ESTOQUE("Estoque");
 
     private final String rotulo;
 

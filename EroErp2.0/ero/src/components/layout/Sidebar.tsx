@@ -3,12 +3,16 @@ import { createPortal } from 'react-dom'
 import { NavLink } from 'react-router-dom'
 import type { ComponentType, FocusEvent, MouseEvent, SVGProps } from 'react'
 import {
+  IconCadastroAuxiliar,
   IconDashboard,
+  IconEstoque,
   IconFechar,
   IconFilial,
   IconLog,
+  IconMovimentacao,
   IconPessoas,
   IconPerfil,
+  IconProduto,
   IconServico,
   IconTenants,
   IconUsuarios,
@@ -43,6 +47,25 @@ const GRUPOS: Grupo[] = [
       { para: '/app/pessoas', rotulo: 'Pessoas', Icone: IconPessoas, tela: 'PESSOAS' },
       { para: '/app/filiais', rotulo: 'Filiais', Icone: IconFilial, tela: 'FILIAIS' },
       { para: '/app/servicos', rotulo: 'Serviços', Icone: IconServico, tela: 'SERVICOS' },
+      { para: '/app/produtos', rotulo: 'Produtos', Icone: IconProduto, tela: 'PRODUTOS' },
+      {
+        para: '/app/auxiliares-produto',
+        rotulo: 'Auxiliares de produto',
+        Icone: IconCadastroAuxiliar,
+        tela: 'AUXILIARES_PRODUTO',
+      },
+    ],
+  },
+  {
+    titulo: 'Estoque',
+    itens: [
+      { para: '/app/estoque', rotulo: 'Estoque', Icone: IconEstoque, tela: 'ESTOQUE' },
+      {
+        para: '/app/estoque-movimentacoes',
+        rotulo: 'Movimentações',
+        Icone: IconMovimentacao,
+        tela: 'ESTOQUE',
+      },
     ],
   },
   {

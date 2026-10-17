@@ -41,4 +41,10 @@
     <!-- ══ Serviços ═════════════════════════════════════════════════ -->
     <include file="db/changelog/changes/020-create-servico.xml"/>
 
+    <!-- ══ Produtos, auxiliares e estoque ═══════════════════════════ -->
+    <include file="db/changelog/changes/021-create-unidade-medida.xml"/>
+    <include file="db/changelog/changes/022-create-produto-auxiliares.xml"/>
+    <include file="db/changelog/changes/023-create-produto.xml"/>
+    <include file="db/changelog/changes/024-create-estoque.xml"/>
+
 </databaseChangeLog>

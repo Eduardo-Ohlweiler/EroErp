@@ -66,6 +66,31 @@ export const IconServico = (p: IconProps) => (
   </Icon>
 )
 
+/** Caixa fechada: o produto, que se estoca. */
+export const IconProduto = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
+    <path d="m3 8 9 5 9-5M12 13v8M7.5 5.5l9 5" />
+  </Icon>
+)
+
+/** Prateleira com caixas: o saldo de cada filial. */
+export const IconEstoque = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 21V4M21 21V4M3 12h18M3 21h18" />
+    <rect x="6" y="6" width="5" height="6" rx="0.5" />
+    <rect x="13" y="8" width="5" height="4" rx="0.5" />
+    <rect x="8" y="15" width="6" height="6" rx="0.5" />
+  </Icon>
+)
+
+/** Setas opostas: o que entrou, saiu ou foi de uma filial a outra. */
+export const IconMovimentacao = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />
+  </Icon>
+)
+
 export const IconLog = (p: IconProps) => (
   <Icon {...p}>
     <circle cx="12" cy="12" r="9" />

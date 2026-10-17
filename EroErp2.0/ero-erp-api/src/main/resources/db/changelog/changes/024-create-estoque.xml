@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Estoque — SÓ de produto, uma linha por produto × filial. Ver docs/11.
+
+        A linha é também onde mora o PREÇO DE VENDA daquela filial, como no
+        antigo. Com controla_estoque = false ela continua existindo — o preço
+        e a situação valem —, mas não se movimenta e não aparece nas consultas
+        de movimentação e transferência.
+
+        Diferenças para o antigo, todas correções:
+        - toda consulta filtra por tenant. Lá a busca por (emitente, produto)
+          e o GET /estoque/preco-venda ignoravam o cliente: dava para ler
+          saldo e preço de outro tenant com ids adivinháveis;
+        - o saldo se movimenta com a linha travada (SELECT … FOR UPDATE) e
+          com @Version (versao): lá duas baixas simultâneas perdiam uma;
+        - quantidade NUMERIC(15,3) e CHECK >= 0 — lá (15,4), sem trava;
+        - preço de venda opcional: vazio é NULL, não 0. O /preco-venda de lá
+          devolvia 0 quando não achava;
+        - sem custo_medio: lá era copiado do produto uma vez e nunca mais
+          recalculado — um número que mentia. Volta quando houver compra;
+        - a quantidade mínima é só um campo, sem alerta (o painel virá).
+    -->
+    <changeSet id="024-create-estoque" author="eduardo">
+
+        <createTable tableName="estoque">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_estoque"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_estoque_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <column name="produto_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_estoque_produto"
+                             references="produto(id)"/>
+            </column>
+
+            <column name="filial_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_estoque_filial"
+                             references="filial(id)"/>
+            </column>
+
+            <!-- Só muda por movimentação: o PUT do cadastro não toca nela -->
+            <column name="quantidade" type="NUMERIC(15,3)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Opcional. NULL = não informado; 0 = informado como zero -->
+            <column name="preco_venda" type="NUMERIC(15,2)"/>
+
+            <column name="controla_estoque" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="quantidade_minima" type="NUMERIC(15,3)"/>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- @Version: a gravação que leu uma versão velha é recusada -->
+            <column name="versao" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_by" type="UUID">
+                <constraints foreignKeyName="fk_estoque_created_by" references="usuario(id)"/>
+            </column>
+            <column name="updated_by" type="UUID">
+                <constraints foreignKeyName="fk_estoque_updated_by" references="usuario(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="estoque"
+                             columnNames="produto_id, filial_id"
+                             constraintName="uk_estoque_produto_filial"/>
+
+        <sql>
+            ALTER TABLE estoque ADD CONSTRAINT ck_estoque_quantidade CHECK (quantidade &gt;= 0);
+            ALTER TABLE estoque ADD CONSTRAINT ck_estoque_preco_venda
+                CHECK (preco_venda IS NULL OR preco_venda &gt;= 0);
+            ALTER TABLE estoque ADD CONSTRAINT ck_estoque_quantidade_minima
+                CHECK (quantidade_minima IS NULL OR quantidade_minima &gt;= 0);
+        </sql>
+
+        <createIndex tableName="estoque" indexName="idx_estoque_tenant_id">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex tableName="estoque" indexName="idx_estoque_filial_id">
+            <column name="filial_id"/>
+        </createIndex>
+
+        <!-- ══ Movimentação — o histórico, imutável ═══════════════════════ -->
+
+        <!--
+            A quantidade é COM SINAL: entrada positiva, saída negativa, e o
+            ajuste leva a diferença (nova − anterior) com o sinal dela. Lá o
+            ajuste gravava |nova − anterior| e o sentido se perdia. O CHECK
+            amarra posterior = anterior + quantidade, e o sinal ao tipo.
+
+            Transferência não tem cabeçalho: são dois movimentos, um em cada
+            linha, com o mesmo transferencia_id e a filial do outro lado em
+            filial_contraparte_id.
+        -->
+        <createTable tableName="estoque_movimentacao">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_estoque_movimentacao"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_estoque_movimentacao_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <column name="estoque_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_estoque_movimentacao_estoque"
+                             references="estoque(id)"/>
+            </column>
+
+            <!-- ENTRADA · AJUSTE · TRANSFERENCIA_SAIDA · TRANSFERENCIA_ENTRADA -->
+            <column name="tipo" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="quantidade" type="NUMERIC(15,3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantidade_anterior" type="NUMERIC(15,3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantidade_posterior" type="NUMERIC(15,3)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="motivo" type="VARCHAR(255)"/>
+
+            <column name="transferencia_id" type="UUID"/>
+
+            <column name="filial_contraparte_id" type="UUID">
+                <constraints foreignKeyName="fk_estoque_movimentacao_contraparte"
+                             references="filial(id)"/>
+            </column>
+
+            <column name="created_by" type="UUID">
+                <constraints foreignKeyName="fk_estoque_movimentacao_created_by"
+                             references="usuario(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <sql>
+            ALTER TABLE estoque_movimentacao ADD CONSTRAINT ck_estoque_movimentacao_tipo
+                CHECK (tipo IN ('ENTRADA', 'AJUSTE', 'TRANSFERENCIA_SAIDA', 'TRANSFERENCIA_ENTRADA'));
+            ALTER TABLE estoque_movimentacao ADD CONSTRAINT ck_estoque_movimentacao_conta
+                CHECK (quantidade_posterior = quantidade_anterior + quantidade);
+            ALTER TABLE estoque_movimentacao ADD CONSTRAINT ck_estoque_movimentacao_sinal
+                CHECK (quantidade &lt;&gt; 0
+                       AND (tipo NOT IN ('ENTRADA', 'TRANSFERENCIA_ENTRADA') OR quantidade &gt; 0)
+                       AND (tipo &lt;&gt; 'TRANSFERENCIA_SAIDA' OR quantidade &lt; 0));
+            ALTER TABLE estoque_movimentacao ADD CONSTRAINT ck_estoque_movimentacao_transferencia
+                CHECK ((tipo LIKE 'TRANSFERENCIA%')
+                       = (transferencia_id IS NOT NULL AND filial_contraparte_id IS NOT NULL));
+        </sql>
+
+        <createIndex tableName="estoque_movimentacao" indexName="idx_estoque_movimentacao_estoque">
+            <column name="estoque_id"/>
+            <column name="created_at"/>
+        </createIndex>
+        <createIndex tableName="estoque_movimentacao" indexName="idx_estoque_movimentacao_tenant">
+            <column name="tenant_id"/>
+            <column name="created_at"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="estoque_movimentacao"/>
+            <dropTable tableName="estoque"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

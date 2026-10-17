@@ -1,5 +1,6 @@
 import { api } from './api'
 import type { SelectOption } from '@/types/comum'
+import type { UnidadeMedidaSelect } from '@/types/produto'
 
 const buscar = (rota: string) => api.get<SelectOption[]>(rota).then((r) => r.data)
 
@@ -13,4 +14,8 @@ export const catalogoService = {
   tiposEmail: () => buscar('/tipos-email/select'),
   tiposRedeSocial: () => buscar('/tipos-rede-social/select'),
   tiposEndereco: () => buscar('/tipos-endereco/select'),
+
+  /** Unidade de medida do produto (UN, KG…): global, como os tipos acima. */
+  unidadesMedida: () =>
+    api.get<UnidadeMedidaSelect[]>('/unidades-medida/select').then((r) => r.data),
 }

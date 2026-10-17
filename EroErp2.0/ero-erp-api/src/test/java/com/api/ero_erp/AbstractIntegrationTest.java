@@ -1,6 +1,14 @@
 package com.api.ero_erp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.api.ero_erp.auxiliarproduto.repository.CategoriaProdutoRepository;
+import com.api.ero_erp.auxiliarproduto.repository.GrupoProdutoRepository;
+import com.api.ero_erp.auxiliarproduto.repository.MarcaProdutoRepository;
+import com.api.ero_erp.auxiliarproduto.repository.SubgrupoProdutoRepository;
+import com.api.ero_erp.catalogo.entity.UnidadeMedida;
+import com.api.ero_erp.catalogo.repository.UnidadeMedidaRepository;
+import com.api.ero_erp.estoque.repository.EstoqueMovimentacaoRepository;
+import com.api.ero_erp.estoque.repository.EstoqueRepository;
 import com.api.ero_erp.filial.repository.FilialRepository;
 import com.api.ero_erp.loginlog.repository.LoginLogRepository;
 import com.api.ero_erp.permissao.entity.UsuarioPermissao;
@@ -10,6 +18,7 @@ import com.api.ero_erp.permissao.repository.UsuarioPermissaoRepository;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.pessoa.repository.PessoaRepository;
+import com.api.ero_erp.produto.repository.ProdutoRepository;
 import com.api.ero_erp.refreshtoken.repository.RefreshTokenRepository;
 import com.api.ero_erp.servico.repository.ServicoRepository;
 import com.api.ero_erp.tenant.entity.Tenant;
@@ -24,6 +33,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -55,6 +66,14 @@ public abstract class AbstractIntegrationTest {
     @Autowired protected PessoaRepository pessoaRepository;
     @Autowired protected FilialRepository filialRepository;
     @Autowired protected ServicoRepository servicoRepository;
+    @Autowired protected EstoqueMovimentacaoRepository estoqueMovimentacaoRepository;
+    @Autowired protected EstoqueRepository estoqueRepository;
+    @Autowired protected ProdutoRepository produtoRepository;
+    @Autowired protected SubgrupoProdutoRepository subgrupoProdutoRepository;
+    @Autowired protected GrupoProdutoRepository grupoProdutoRepository;
+    @Autowired protected CategoriaProdutoRepository categoriaProdutoRepository;
+    @Autowired protected MarcaProdutoRepository marcaProdutoRepository;
+    @Autowired protected UnidadeMedidaRepository unidadeMedidaRepository;
     @Autowired protected UsuarioPermissaoRepository usuarioPermissaoRepository;
     @Autowired protected PasswordEncoder passwordEncoder;
 
@@ -67,8 +86,11 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void montarCenario() {
-        // Ordem de dependência: refresh_token → login_log → servico → filial →
-        // pessoa → usuario_permissao → usuario → tenant.
+        // Ordem de dependência: refresh_token → login_log → movimentação →
+        // estoque → produto → subgrupo → grupo, categoria, marca → servico →
+        // filial → pessoa → usuario_permissao → usuario → tenant.
+        // O produto aponta para a pessoa (fornecedor) e o estoque para a
+        // filial: os dois saem antes delas. A unidade de medida é seed global.
         // Apagar o serviço leva junto os valores por filial, e apagar o
         // tenant leva o contador de código: as FKs são ON DELETE CASCADE.
         // Apagar a pessoa leva junto telefone, e-mail, rede social, endereço,
@@ -77,6 +99,13 @@ public abstract class AbstractIntegrationTest {
         // sai antes, num DELETE só, que resolve a autorreferência de uma vez.
         refreshTokenRepository.deleteAllInBatch();
         loginLogRepository.deleteAllInBatch();
+        estoqueMovimentacaoRepository.deleteAllInBatch();
+        estoqueRepository.deleteAllInBatch();
+        produtoRepository.deleteAllInBatch();
+        subgrupoProdutoRepository.deleteAllInBatch();
+        grupoProdutoRepository.deleteAllInBatch();
+        categoriaProdutoRepository.deleteAllInBatch();
+        marcaProdutoRepository.deleteAllInBatch();
         servicoRepository.deleteAllInBatch();
         filialRepository.deleteAllInBatch();
         pessoaRepository.deleteAllInBatch();
@@ -114,6 +143,15 @@ public abstract class AbstractIntegrationTest {
         pessoa.setNome(nome);
         pessoa.setTipoPessoa(TipoPessoa.PESSOA_JURIDICA);
         return pessoaRepository.save(pessoa);
+    }
+
+    /** O id da unidade de medida do seed (021) pela sigla. */
+    protected UUID unidade(String sigla) {
+        return unidadeMedidaRepository.findAllByAtivoTrueOrderBySigla().stream()
+                .filter(u -> u.getSigla().equals(sigla))
+                .map(UnidadeMedida::getId)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Seed sem a unidade " + sigla));
     }
 
     /** Libera uma tela ao usuário direto no banco — o caminho do cadastro tem teste próprio. */

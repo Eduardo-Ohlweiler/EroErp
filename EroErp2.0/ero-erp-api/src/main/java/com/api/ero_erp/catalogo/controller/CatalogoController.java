@@ -1,6 +1,7 @@
 package com.api.ero_erp.catalogo.controller;
 
 import com.api.ero_erp.catalogo.dtos.CatalogoSelectDto;
+import com.api.ero_erp.catalogo.dtos.UnidadeMedidaSelectDto;
 import com.api.ero_erp.catalogo.service.CatalogoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,5 +54,11 @@ public class CatalogoController {
     @Operation(summary = "Tipos de endereço")
     public ResponseEntity<List<CatalogoSelectDto>> tiposEndereco() {
         return ResponseEntity.ok(catalogoService.tiposEndereco());
+    }
+
+    @GetMapping("/unidades-medida/select")
+    @Operation(summary = "Unidades de medida do produto (UN, KG, …)")
+    public ResponseEntity<List<UnidadeMedidaSelectDto>> unidadesMedida() {
+        return ResponseEntity.ok(catalogoService.unidadesMedida());
     }
 }

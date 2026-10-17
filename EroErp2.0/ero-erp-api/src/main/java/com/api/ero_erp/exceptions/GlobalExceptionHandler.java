@@ -3,6 +3,7 @@ package com.api.ero_erp.exceptions;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -84,6 +85,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErroResponseDto> naoAutenticado(AuthenticationException e, HttpServletRequest req) {
         return build(HttpStatus.UNAUTHORIZED, "Não autenticado", req);
+    }
+
+    /**
+     * O {@code @Version} recusou: outra gravação mexeu na linha entre a
+     * leitura e esta escrita (no estoque, uma movimentação enquanto o
+     * cadastro era salvo). Não é erro do sistema — é recarregar e repetir.
+     */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErroResponseDto> concorrencia(OptimisticLockingFailureException e,
+                                                        HttpServletRequest req) {
+        log.info("Gravação recusada pela versão em {}", req.getRequestURI());
+        return build(HttpStatus.CONFLICT,
+                "Este registro foi alterado por outra operação enquanto você o editava. Recarregue e tente de novo",
+                req);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

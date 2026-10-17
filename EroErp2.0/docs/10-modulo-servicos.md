@@ -5,8 +5,9 @@
 > cada um tem cadastro e tela próprios, e **estoque é só de produto** — serviço
 > não aparece na lista de estoque porque não está na tabela dele.
 >
-> Produto, auxiliares e estoque vêm na fatia seguinte, com o preço de venda por
-> filial **no estoque** (como no antigo) e o custo opcional no produto.
+> Produto, auxiliares e estoque vieram na fatia seguinte
+> ([docs/11](11-modulo-produtos-estoque.md)), com o preço de venda por filial
+> **no estoque** (como no antigo) e o custo opcional no produto.
 
 ---
 

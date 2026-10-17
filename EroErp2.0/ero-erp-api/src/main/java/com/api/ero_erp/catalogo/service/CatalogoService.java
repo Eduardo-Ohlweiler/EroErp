@@ -1,17 +1,20 @@
 package com.api.ero_erp.catalogo.service;
 
 import com.api.ero_erp.catalogo.dtos.CatalogoSelectDto;
+import com.api.ero_erp.catalogo.dtos.UnidadeMedidaSelectDto;
 import com.api.ero_erp.catalogo.entity.CatalogoEntity;
 import com.api.ero_erp.catalogo.entity.TipoCadastro;
 import com.api.ero_erp.catalogo.entity.TipoEmail;
 import com.api.ero_erp.catalogo.entity.TipoEndereco;
 import com.api.ero_erp.catalogo.entity.TipoRedeSocial;
 import com.api.ero_erp.catalogo.entity.TipoTelefone;
+import com.api.ero_erp.catalogo.entity.UnidadeMedida;
 import com.api.ero_erp.catalogo.repository.TipoCadastroRepository;
 import com.api.ero_erp.catalogo.repository.TipoEmailRepository;
 import com.api.ero_erp.catalogo.repository.TipoEnderecoRepository;
 import com.api.ero_erp.catalogo.repository.TipoRedeSocialRepository;
 import com.api.ero_erp.catalogo.repository.TipoTelefoneRepository;
+import com.api.ero_erp.catalogo.repository.UnidadeMedidaRepository;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +27,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Leitura dos catálogos do cadastro de pessoas.
+ * Leitura dos catálogos do cadastro de pessoas e da unidade de medida do
+ * produto (migration {@code 021-create-unidade-medida.xml}).
  *
  * <p>Só leitura: os valores vêm do seed da migration
  * {@code 009-catalogos-pessoa.xml}. Não há tela de manutenção de catálogo, e
@@ -40,6 +44,24 @@ public class CatalogoService {
     private final TipoEmailRepository tipoEmailRepository;
     private final TipoRedeSocialRepository tipoRedeSocialRepository;
     private final TipoEnderecoRepository tipoEnderecoRepository;
+    private final UnidadeMedidaRepository unidadeMedidaRepository;
+
+    @Transactional(readOnly = true)
+    public List<UnidadeMedidaSelectDto> unidadesMedida() {
+        return unidadeMedidaRepository.findAllByAtivoTrueOrderBySigla().stream()
+                .map(u -> new UnidadeMedidaSelectDto(u.getId(), u.getSigla(), u.getDescricao()))
+                .toList();
+    }
+
+    /**
+     * A unidade do produto. Se está ativa quem confere é o
+     * {@code ProdutoService}: a que o produto já tinha continua valendo.
+     */
+    @Transactional(readOnly = true)
+    public UnidadeMedida exigirUnidadeMedida(UUID id) {
+        return unidadeMedidaRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Unidade de medida não encontrada"));
+    }
 
     @Transactional(readOnly = true)
     public List<CatalogoSelectDto> tiposCadastro() {
