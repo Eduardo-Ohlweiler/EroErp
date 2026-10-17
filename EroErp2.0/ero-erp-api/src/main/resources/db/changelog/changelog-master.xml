@@ -32,4 +32,7 @@
     <!-- ══ Permissões por tela ══════════════════════════════════════ -->
     <include file="db/changelog/changes/017-create-usuario-permissao.xml"/>
 
+    <!-- ══ Filiais (o emitente do EroErp antigo) ════════════════════ -->
+    <include file="db/changelog/changes/018-create-filial.xml"/>
+
 </databaseChangeLog>

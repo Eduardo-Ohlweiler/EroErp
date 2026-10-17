@@ -50,6 +50,15 @@ export const IconTenants = (p: IconProps) => (
   </Icon>
 )
 
+/** Fachada de loja: a filial. O prédio (`IconTenants`) é o cliente do sistema. */
+export const IconFilial = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 10v10h16V10" />
+    <path d="M3 10 5 4h14l2 6c0 1.2-1 2-2.2 2s-2.3-.8-2.3-2c0 1.2-1 2-2.25 2S12 11.2 12 10c0 1.2-1 2-2.25 2S7.5 11.2 7.5 10c0 1.2-1 2-2.25 2S3 11.2 3 10Z" />
+    <path d="M10 20v-5h4v5" />
+  </Icon>
+)
+
 export const IconLog = (p: IconProps) => (
   <Icon {...p}>
     <circle cx="12" cy="12" r="9" />

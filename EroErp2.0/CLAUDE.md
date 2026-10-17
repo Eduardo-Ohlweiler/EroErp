@@ -43,7 +43,8 @@ EroErp2.0/
 │       ├── baseentity/            # BaseEntity, TenantEntity
 │       ├── jobs/                  # ManutencaoJob
 │       └── {modulo}/              # tenant, usuario, auth, loginlog, refreshtoken,
-│           ├── controller/        # pessoa, contato, vinculo, catalogo, localidade
+│           ├── controller/        # pessoa, contato, vinculo, catalogo, localidade,
+│           │                      # filial
 │           ├── dtos/
 │           ├── entity/
 │           ├── enums/
@@ -52,14 +53,17 @@ EroErp2.0/
 │           └── service/
 │                                  # catalogo/ = tipos de cadastro, telefone, e-mail,
 │                                  #   rede social e endereço (sem tenant)
-│                                  # localidade/ = estados e cidades do IBGE
+│                                  # localidade/ = estados e cidades do IBGE, e o
+│                                  #   CEP (GET /cep/{cep}, ViaCEP pelo backend,
+│                                  #   cidade pelo código IBGE — docs/08 §3.4)
 │                                  # tenant/ = também a paleta de cores de cada
 │                                  #   tenant (PaletaSistema, docs/05 §11)
 └── ero/                           # frontend
     ├── public/                    # favicon e ícones
     ├── scripts/validar-paletas.mjs  # npm run paletas — contraste e cascata
     └── src/
-        ├── assets/brand/          # logo-ero-horizontal.svg (menu) · logo-ero.svg
+        ├── assets/brand/          # logo-ero-horizontal.svg (menu) · logo-ero-simbolo.svg
+        │                          # (menu recolhido) · logo-ero.svg
         │                          # (login, 404) — vetor nas cores do tema
         │                          # logo-full.svg (texto, só na folha impressa)
         ├── assets/icons/          # SVG inline, módulo único
@@ -79,9 +83,9 @@ EroErp2.0/
         ├── components/tenant/     # SeletorPaleta (as 20 paletas, com miniaturas)
         ├── components/usuario/    # RedefinirSenhaModal
         ├── contexts/              # AuthContext · ThemeContext
-        ├── hooks/                 # useAuth · useTheme · useDebounce
+        ├── hooks/                 # useAuth · useTheme · useDebounce · useMenuRecolhido
         ├── services/              # api.ts (interceptor + refresh) + um por módulo
-        ├── pages/                 # auth/Login · Inicio · usuario · tenant · pessoa
+        ├── pages/                 # auth/Login · Inicio · usuario · tenant · pessoa · filial
         │                          # loginlog · perfil
         ├── types/ utils/          # utils/format.ts (paraNumero, máscaras, datas)
         │                          # utils/planilha.ts (exportação CSV)
@@ -98,18 +102,27 @@ Testes contra o banco `ero_erp_test` — nada de H2 nem Testcontainers.
 | Fatia | Situação |
 |---|---|
 | **0 — Esqueleto** | ✅ pronto · herdado do projeto anterior: acesso (login, refresh com rotação, troca de tenant), tenants com período de acesso e **paleta de cores por tenant**, usuários (com **redefinição de senha pelo superadmin**), log de acesso, perfil e **cadastro de pessoas** (PF/PJ, contatos, endereços com IBGE, vínculos). Migrations 001–016 |
-| **Permissões por tela** | ✅ pronto · o superadmin libera módulos ao USER e, por tela, leitura ou escrita (`permissao/`, migration 017, [docs/02 §1.2](docs/02-modulo-usuarios.md)) |
+| **Permissões por tela** | ✅ pronto · o superadmin libera módulos ao USER e, por tela, leitura ou escrita (`permissao/`, migration 017, [docs/02 §1.2](docs/02-modulo-usuarios.md)). Módulo é o assunto que se libera (Pessoas, Filiais), não o grupo do menu |
+| **Filiais** | ✅ pronto · o "emitente" do antigo: matriz e filiais apontando para uma pessoa, várias matrizes por tenant (`filial/`, migration 018, [docs/09](docs/09-modulo-filiais.md)) |
+| **Menu recolhível** | ✅ pronto · expandido ↔ só ícones em `lg+`, Ctrl+B, lembrado no navegador ([docs/04](docs/04-arquitetura-frontend.md), "O menu recolhe") |
 | Próximas | **migrar módulos do EroErp antigo**, um de cada vez, perguntando antes qual e como |
 | `audit_log` | pendente · especificação em [docs/06 §A09](docs/06-seguranca-owasp.md); molde estrutural é o `loginlog`, com o expurgo no `ManutencaoJob` |
 | Recuperação de senha por e-mail | pendente · depende de escolher o serviço de e-mail (não há `spring-boot-starter-mail` no `pom.xml`). Enquanto isso, o superadmin redefine em `PATCH /usuarios/{id}/senha` |
 | Marca | o logo do EroErp antigo, redesenhado em SVG que segue o tema, entra no menu (horizontal), no login e no 404; favicons ainda são os do projeto anterior |
 
-Ainda **não existe banco criado** para este projeto.
+Bancos `ero_erp` e `ero_erp_test` criados no PostgreSQL 17 local.
 
 ### Migrando do EroErp antigo
 
-O antigo mora em `C:\Users\eduardoohlweiler\Documents\EroErp`
-(`ero-erp-api`, pacote `com.api.ero_erp`; front em `ero/`). Ao trazer um módulo:
+O antigo mora em `C:\Users\eduardoohlweiler\Documents\EroErp` ou em
+`C:\Users\Eduardo\Documents\GitHub\EroErp`, conforme a máquina — nesta
+segunda, esta pasta é subpasta dele (`ero-erp-api`, pacote `com.api.ero_erp`;
+front em `ero/`).
+
+Para pesquisar sem encher o contexto, há dois agentes **só de leitura** em
+`.claude/agents/`: **`pesquisa-eroerp-antigo`** (como o antigo fazia) e
+**`pesquisa-silvia`** (o sistema da Silvia, base de infraestrutura deste:
+como já foi resolvido lá). Ao trazer um módulo:
 
 1. **Perguntar** qual módulo e o que muda nele antes de começar.
 2. Ler o módulo lá, entender o que ele resolve, e redesenhá-lo no padrão daqui —
@@ -123,7 +136,8 @@ O antigo mora em `C:\Users\eduardoohlweiler\Documents\EroErp`
 4. Migration nova em `db/changelog/changes/NNN-descricao.xml`, continuando a
    numeração.
 5. Permissão: cada tela nova vira constante em `Tela` (e no `Modulo`, se for
-   módulo novo) e em `types/permissao.ts`; GET com `hasAuthority('<TELA>_LER')`,
+   módulo novo — módulo é o **assunto que se libera**, não o grupo do menu) e em
+   `types/permissao.ts`; o item do menu leva `tela:` para só aparecer a quem lê; GET com `hasAuthority('<TELA>_LER')`,
    escrita com `hasAuthority('<TELA>_ESCREVER')`, `/select` com
    `isAuthenticated()`; a tela usa `useSomenteLeitura` e a rota, `TProtected tela`.
 6. Testes de integração no molde dos que existem (`AbstractIntegrationTest`),
@@ -456,6 +470,7 @@ de fechar no papel.
 | [docs/06-seguranca-owasp.md](docs/06-seguranca-owasp.md) | OWASP Top 10 aplicado a Java/Spring |
 | [docs/07-banco-liquibase.md](docs/07-banco-liquibase.md) | PostgreSQL + Liquibase |
 | [docs/08-modulo-pessoas.md](docs/08-modulo-pessoas.md) | Cadastro de pessoas — PF/PJ, contatos, endereços e vínculos |
+| [docs/09-modulo-filiais.md](docs/09-modulo-filiais.md) | Filiais — matriz e filiais (o emitente do antigo), várias matrizes por tenant |
 
 ---
 
@@ -493,6 +508,9 @@ node .claude/skills/olhar-telas/olhar.mjs /app/pessoas lista --pdf
 node .claude/skills/olhar-telas/olhar.mjs /app/usuarios usuarios --360
 ```
 
+Entra com o superadmin do `ero-erp-api/.env` (abaixo, "Rodar"). No Git Bash,
+prefixe `MSYS_NO_PATHCONV=1`, senão `/app/...` vira caminho do Windows.
+
 Sai em `<tmp do SO>/olhar/`, e reporta rolagem horizontal, elemento culpado e
 erro de console. **Depois abra o arquivo** — gerar e não olhar não vale.
 
@@ -508,6 +526,15 @@ cp .env.example .env      # ajuste DB_PASSWORD e JWT_SECRET
 ./run-dev.sh test         # testes contra ero_erp_test
 ```
 
+**Login de desenvolvimento.** O superadmin desta máquina está no
+`ero-erp-api/.env` (`SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`), local e fora
+do git — o `.env.example` tem só um valor de exemplo, que não é a senha do
+banco. Os scripts (`bateria-filiais.mjs`, `olhar.mjs`) leem de lá sozinhos.
+**Não chute senha**: login que falha conta tentativa e bloqueia a conta; e são
+no máximo 5 logins por minuto. Os testes usam outro banco e outros usuários
+(`root@teste.local`, `admin.a@teste.local`… senha `SenhaDeTeste123`, do
+`AbstractIntegrationTest`).
+
 Antes da primeira subida, crie os dois bancos:
 
 ```bash
@@ -521,6 +548,17 @@ reaproveita o que já existe. **Nunca em produção.**
 
 ```bash
 POPULAR_EMAIL=... POPULAR_SENHA=... node ero-erp-api/scripts/popular-dev.mjs
+```
+
+**Bateria multi-tenant** — com o superadmin do `.env`, abre três tenants
+`(demo)` (Mercado Bom Preço, Grupo Vida Plena com duas matrizes, Auto Center
+Rápido), cada um com ADMIN, USER, pessoas e filiais próprias, e confere 50
+pontos de isolamento, regras e permissão. Reaproveita o que existe; os
+usuários `admin@<tenant>.demo.local` entram com a senha que ela imprime. Cada
+módulo novo que tiver tenant acrescenta aqui as suas conferências.
+
+```bash
+node ero-erp-api/scripts/bateria-filiais.mjs
 ```
 
 Exige **JDK 21**. O `run-dev.sh` localiza o JDK certo mesmo que o `JAVA_HOME` da

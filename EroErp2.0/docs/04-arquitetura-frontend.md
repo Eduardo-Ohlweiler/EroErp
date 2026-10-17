@@ -26,7 +26,8 @@ O que existe hoje, no esqueleto do EroErp:
 ```
 src/
 ├── assets/
-│   ├── brand/             logo-ero-horizontal.svg (menu) · logo-ero.svg (login,
+│   ├── brand/             logo-ero-horizontal.svg (menu) · logo-ero-simbolo.svg
+│   │                      (menu recolhido) · logo-ero.svg (login,
 │   │                      404) — vetor nas cores do tema ·
 │   │                      logo-full.svg (marca em texto, só na folha impressa)
 │   └── icons/index.tsx    ícones em SVG inline, num módulo único
@@ -130,6 +131,24 @@ radio, grid, modal ou container de página novos quando já existe equivalente.
 Em `components/layout/`: `Layout` (header, faixa de impersonação, conteúdo),
 `Sidebar` (fixa em `lg`, drawer abaixo), `TenantSwitcher` (só superadmin) e
 `TProtected` (guarda de rota, com `roles` opcional).
+
+**O menu recolhe.** A partir de `lg`, o botão ☰ do header (ou **Ctrl+B**)
+alterna o menu entre expandido (248 px, `--spacing-sidebar`) e só ícones
+(68 px, `--spacing-sidebar-min`); abaixo de `lg` o mesmo botão abre o drawer, e
+**Esc** o fecha. A escolha fica no navegador (`localStorage`
+`ero.menuRecolhido`, `hooks/useMenuRecolhido`). Os movimentos:
+
+- a largura do `aside` e o recuo do conteúdo animam juntos, 300 ms `ease-out`
+  — o conteúdo acompanha, não salta;
+- rótulos e títulos de grupo **não saem do DOM**: somem por opacidade, e o
+  título vira um filete; o ícone fica parado no centro dos 68 px, porque o
+  padding do item é o mesmo nos dois estados;
+- o logo horizontal cede lugar ao símbolo (`logo-ero-simbolo.svg`, o "e" do
+  logo, mesmas cores);
+- recolhido, passar o mouse ou o foco num item mostra a dica com o rótulo —
+  por **portal** no `body`, porque o `nav` rola e o `aside` tem `translate`, e
+  os dois prenderiam uma caixa posicionada dentro deles;
+- o scrim do drawer entra e sai com fade; `prefers-reduced-motion` desliga tudo.
 
 ### A criar quando a fatia pedir
 
@@ -709,8 +728,8 @@ Funciona em desktop, tablet e mobile, sem quebrar:
 
 | Faixa | Comportamento |
 |---|---|
-| ≥1280px | sidebar expandida, grid com todas as colunas, painel de resultado lateral |
-| 768–1279px | sidebar recolhida em ícones, colunas secundárias ocultas |
+| ≥1024px | sidebar fixa, expandida ou só ícones à escolha do usuário ("O menu recolhe", acima); grid com todas as colunas |
+| 768–1023px | sidebar em *drawer*, colunas secundárias ocultas |
 | <768px | sidebar em *drawer*, grid vira lista de cartões, painel de resultado abaixo |
 
 Acessibilidade: `<label>` associado a todo campo, `aria-invalid` e

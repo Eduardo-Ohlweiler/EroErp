@@ -9,20 +9,41 @@
  * Sai em <tmp do SO>/olhar/<nome>.png (e .pdf). Depois ABRA o arquivo — gerar
  * e não olhar não vale de nada.
  *
- * Variáveis opcionais: CHROME_PATH, OLHAR_EMAIL, OLHAR_SENHA.
+ * Variáveis opcionais: CHROME_PATH, OLHAR_EMAIL, OLHAR_SENHA. Sem as duas
+ * últimas, entra com o superadmin do ero-erp-api/.env.
+ *
+ * No Git Bash do Windows, rode com MSYS_NO_PATHCONV=1: sem isso o shell
+ * transforma "/app/..." em "C:/Program Files/Git/app/...".
  */
 import { chromium } from '../../../ero/node_modules/playwright-core/index.mjs'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const CHROME = process.env.CHROME_PATH
   ?? (process.platform === 'win32'
-    ? 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
     : '/usr/bin/google-chrome')
-// Credencial do superadmin de desenvolvimento (ero-erp-api/.env.example).
-const EMAIL = process.env.OLHAR_EMAIL ?? 'ohlweilereduardo@gmail.com'
-const SENHA = process.env.OLHAR_SENHA ?? 'Admin123@Ero'
+
+/**
+ * Credencial do superadmin de desenvolvimento: OLHAR_EMAIL/OLHAR_SENHA, senão
+ * o SUPERADMIN_EMAIL/SUPERADMIN_PASSWORD do `ero-erp-api/.env` (local, fora do
+ * git — é o que vale na máquina), senão o `.env.example`.
+ */
+function lerDotEnv() {
+  try {
+    const caminho = new URL('../../../ero-erp-api/.env', import.meta.url)
+    return Object.fromEntries(readFileSync(caminho, 'utf8').split(/\r?\n/)
+      .map((l) => l.match(/^\s*([A-Z_]+)\s*=\s*(.*?)\s*$/))
+      .filter(Boolean)
+      .map(([, k, v]) => [k, v.replace(/^"(.*)"$/, '$1')]))
+  } catch {
+    return {}
+  }
+}
+const dotEnv = lerDotEnv()
+const EMAIL = process.env.OLHAR_EMAIL ?? dotEnv.SUPERADMIN_EMAIL ?? 'ohlweilereduardo@gmail.com'
+const SENHA = process.env.OLHAR_SENHA ?? dotEnv.SUPERADMIN_PASSWORD ?? 'Admin123@Ero'
 
 const [, , rota = '/app', nome = 'tela', ...flags] = process.argv
 const pdf = flags.includes('--pdf')

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -14,11 +14,12 @@ import {
   TSelect,
   type OpcaoSelect,
 } from '@/components/common'
+import { CampoCep } from '@/components/pessoa/CampoCep'
 import { PessoaRapidaModal } from '@/components/pessoa/PessoaRapidaModal'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
 import { handleApiError } from '@/services/api'
 import { catalogoService } from '@/services/catalogoService'
-import { localidadeService } from '@/services/localidadeService'
+import { localidadeService, type CepResponse } from '@/services/localidadeService'
 import { pessoaService } from '@/services/pessoaService'
 import {
   OPCOES_SEXO,
@@ -133,6 +134,11 @@ export function PessoaForm() {
   const [tiposEndereco, setTiposEndereco] = useState<OpcaoSelect[]>([])
   /** Índice da linha de vínculo que abriu o cadastro rápido. */
   const [linhaDoModal, setLinhaDoModal] = useState<number>()
+  /**
+   * Rua e bairro que o CEP preencheu, por linha de endereço. Trocar o CEP
+   * corrige o que foi automático; o que o usuário digitou fica.
+   */
+  const preenchidoPeloCep = useRef<Record<string, { rua: string; bairro: string }>>({})
 
   const {
     register,
@@ -141,6 +147,8 @@ export function PessoaForm() {
     reset,
     watch,
     setValue,
+    getValues,
+    setFocus,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: VAZIO })
 
@@ -241,6 +249,38 @@ export function PessoaForm() {
   }, [id, reset])
 
   /** Principal é exclusivo: marcar um desmarca os outros. */
+  /**
+   * O CEP achou o endereço. A cidade vem sempre — o CEP a determina. Rua e
+   * bairro só entram onde o campo está vazio ou ainda tem o que o CEP anterior
+   * pôs. No CEP único (Venâncio Aires) eles vêm vazios, e o foco vai para a
+   * rua, que é o que falta.
+   */
+  function preencherPeloCep(i: number, chave: string, endereco: CepResponse) {
+    const anterior = preenchidoPeloCep.current[chave] ?? { rua: '', bairro: '' }
+    const atual = getValues(`enderecos.${i}`)
+    const opcoes = { shouldDirty: true, shouldValidate: true }
+
+    if (endereco.cidadeId) {
+      // Rótulo antes do id: o combo usa o rótulo quando o valor muda por fora.
+      setValue(`enderecos.${i}.cidadeRotulo`, `${endereco.cidadeNome} — ${endereco.estadoSigla}`)
+      setValue(`enderecos.${i}.cidadeId`, endereco.cidadeId, opcoes)
+    }
+
+    const automatico = (campo: 'rua' | 'bairro') => !atual[campo] || atual[campo] === anterior[campo]
+    const novo = { rua: anterior.rua, bairro: anterior.bairro }
+    if (automatico('rua')) {
+      setValue(`enderecos.${i}.rua`, endereco.logradouro, opcoes)
+      novo.rua = endereco.logradouro
+    }
+    if (automatico('bairro')) {
+      setValue(`enderecos.${i}.bairro`, endereco.bairro, opcoes)
+      novo.bairro = endereco.bairro
+    }
+    preenchidoPeloCep.current[chave] = novo
+
+    setFocus(endereco.cepUnico ? `enderecos.${i}.rua` : `enderecos.${i}.numero`)
+  }
+
   function marcarPrincipal(lista: 'telefones' | 'emails' | 'enderecos', indice: number) {
     const atual = watch(lista)
     atual.forEach((_, i) => setValue(`${lista}.${i}.principal`, i === indice))
@@ -658,6 +698,19 @@ export function PessoaForm() {
                           opcoes={tiposEndereco}
                           {...register(`enderecos.${i}.tipoEnderecoId`)}
                         />
+                        {/* CEP antes da cidade: ao completar, ele preenche a
+                            cidade (e rua e bairro, quando o CEP os tem). */}
+                        <Controller
+                          control={control}
+                          name={`enderecos.${i}.cep`}
+                          render={({ field }) => (
+                            <CampoCep
+                              value={field.value ?? ''}
+                              onChange={field.onChange}
+                              onEncontrado={(endereco) => preencherPeloCep(i, campo.id, endereco)}
+                            />
+                          )}
+                        />
                         <Controller
                           control={control}
                           name={`enderecos.${i}.cidadeId`}
@@ -670,19 +723,6 @@ export function PessoaForm() {
                               onChange={field.onChange}
                               buscar={localidadeService.cidadesParaCombo}
                               error={errors.enderecos?.[i]?.cidadeId?.message}
-                            />
-                          )}
-                        />
-                        <Controller
-                          control={control}
-                          name={`enderecos.${i}.cep`}
-                          render={({ field }) => (
-                            <TEntry
-                              label="CEP"
-                              inputMode="numeric"
-                              placeholder="00000-000"
-                              value={field.value ?? ''}
-                              onChange={(e) => field.onChange(mascararCep(e.target.value))}
                             />
                           )}
                         />

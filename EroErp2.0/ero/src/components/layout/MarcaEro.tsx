@@ -1,12 +1,14 @@
 import LogoEro from '@/assets/brand/logo-ero.svg?react'
 import LogoEroHorizontal from '@/assets/brand/logo-ero-horizontal.svg?react'
+import LogoEroSimbolo from '@/assets/brand/logo-ero-simbolo.svg?react'
 
 interface MarcaEroProps {
   /**
-   * `menu` para o topo do menu lateral; `destaque` para o 404 público;
-   * `faixa` ocupa a largura toda, como cabeçalho de um cartão (o login).
+   * `menu` para o topo do menu lateral; `simbolo` para o menu recolhido, só
+   * com ícones; `destaque` para o 404 público; `faixa` ocupa a largura toda,
+   * como cabeçalho de um cartão (o login).
    */
-  tamanho?: 'menu' | 'destaque' | 'faixa'
+  tamanho?: 'menu' | 'simbolo' | 'destaque' | 'faixa'
   className?: string
 }
 
@@ -30,6 +32,10 @@ export function MarcaEro({ tamanho = 'menu', className = '' }: MarcaEroProps) {
 
   if (tamanho === 'menu') {
     return <LogoEroHorizontal className={`h-11 w-auto max-w-full ${cores} ${className}`} />
+  }
+
+  if (tamanho === 'simbolo') {
+    return <LogoEroSimbolo className={`h-8 w-auto ${cores} ${className}`} />
   }
 
   if (tamanho === 'faixa') {

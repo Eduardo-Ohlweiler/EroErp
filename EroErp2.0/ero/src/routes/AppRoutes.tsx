@@ -2,6 +2,8 @@ import { Fragment, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
 import { TProtected } from '@/components/layout/TProtected'
+import { FilialForm } from '@/pages/filial/FilialForm'
+import { FilialList } from '@/pages/filial/FilialList'
 import { Inicio } from '@/pages/Inicio'
 import { NaoEncontrado } from '@/pages/NaoEncontrado'
 import { NaoEncontradoPublico } from '@/pages/NaoEncontradoPublico'
@@ -56,6 +58,14 @@ export function AppRoutes() {
             </Route>
             <Route element={<TProtected tela="PESSOAS" escrita />}>
               <Route path="pessoas/nova" element={<PorRegistro><PessoaForm /></PorRegistro>} />
+            </Route>
+
+            <Route element={<TProtected tela="FILIAIS" />}>
+              <Route path="filiais" element={<FilialList />} />
+              <Route path="filiais/:id" element={<PorRegistro><FilialForm /></PorRegistro>} />
+            </Route>
+            <Route element={<TProtected tela="FILIAIS" escrita />}>
+              <Route path="filiais/nova" element={<PorRegistro><FilialForm /></PorRegistro>} />
             </Route>
 
             {/*

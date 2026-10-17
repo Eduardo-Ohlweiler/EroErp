@@ -1,11 +1,14 @@
 package com.api.ero_erp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.api.ero_erp.filial.repository.FilialRepository;
 import com.api.ero_erp.loginlog.repository.LoginLogRepository;
 import com.api.ero_erp.permissao.entity.UsuarioPermissao;
 import com.api.ero_erp.permissao.enums.NivelAcesso;
 import com.api.ero_erp.permissao.enums.Tela;
 import com.api.ero_erp.permissao.repository.UsuarioPermissaoRepository;
+import com.api.ero_erp.pessoa.entity.Pessoa;
+import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.pessoa.repository.PessoaRepository;
 import com.api.ero_erp.refreshtoken.repository.RefreshTokenRepository;
 import com.api.ero_erp.tenant.entity.Tenant;
@@ -49,6 +52,7 @@ public abstract class AbstractIntegrationTest {
     @Autowired protected LoginLogRepository loginLogRepository;
     @Autowired protected RefreshTokenRepository refreshTokenRepository;
     @Autowired protected PessoaRepository pessoaRepository;
+    @Autowired protected FilialRepository filialRepository;
     @Autowired protected UsuarioPermissaoRepository usuarioPermissaoRepository;
     @Autowired protected PasswordEncoder passwordEncoder;
 
@@ -61,12 +65,15 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void montarCenario() {
-        // Ordem de dependência: refresh_token → login_log → pessoa →
+        // Ordem de dependência: refresh_token → login_log → filial → pessoa →
         // usuario_permissao → usuario → tenant.
         // Apagar a pessoa leva junto telefone, e-mail, rede social, endereço,
         // vínculos e os tipos de cadastro: as FKs são ON DELETE CASCADE.
+        // A filial não tem cascade (aponta para a pessoa e para a matriz):
+        // sai antes, num DELETE só, que resolve a autorreferência de uma vez.
         refreshTokenRepository.deleteAllInBatch();
         loginLogRepository.deleteAllInBatch();
+        filialRepository.deleteAllInBatch();
         pessoaRepository.deleteAllInBatch();
         usuarioPermissaoRepository.deleteAllInBatch();
         usuarioRepository.deleteAllInBatch();
@@ -90,6 +97,18 @@ public abstract class AbstractIntegrationTest {
         usuario.setSenha(passwordEncoder.encode(SENHA_PADRAO));
         usuario.setRole(role);
         return usuarioRepository.save(usuario);
+    }
+
+    /**
+     * Pessoa jurídica gravada direto no banco, para os módulos que só a
+     * referenciam (filial). O cadastro de pessoa tem os testes dele.
+     */
+    protected Pessoa salvarPessoa(Tenant tenant, String nome) {
+        Pessoa pessoa = new Pessoa();
+        pessoa.setTenant(tenant);
+        pessoa.setNome(nome);
+        pessoa.setTipoPessoa(TipoPessoa.PESSOA_JURIDICA);
+        return pessoaRepository.save(pessoa);
     }
 
     /** Libera uma tela ao usuário direto no banco — o caminho do cadastro tem teste próprio. */

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 220" fill="currentColor" role="img" aria-label="EroErp">
+  <!-- Só o "e" do logo-ero-horizontal.svg, com a barra de acento por cima:
+       o símbolo do menu recolhido. Mesmos traços e mesmas cores. -->
+  <path fill="var(--logo-acento, currentColor)" d="M5 4H232Q247 4 241 18L236 30Q231 42 216 42H5Z"/>
+  <path d="M5 105Q5 84 26 84H170Q190 84 190 104Q190 125 170 125H46V175H203Q215 175 215 187V203Q215 215 203 215H26Q5 215 5 194Z"/>
+</svg>

@@ -154,6 +154,26 @@ A busca (`GET /cidades/select`) é sempre no servidor, com `unaccent` e
 `LIMIT 100`. `estadoId` restringe à UF, que é como se acha "Bom Jesus" — existe
 em nove estados. O CEP é gravado só com dígitos, como os demais documentos.
 
+**O CEP vem antes da cidade e preenche o endereço.** Ao completar 8 dígitos, a
+tela chama `GET /cep/{cep}` (`components/pessoa/CampoCep`), que consulta o
+**ViaCEP pelo backend** (`localidade/cep/ViaCepConsulta`) e devolve a cidade
+já como `cidadeId` — achada pelo **código IBGE** que o ViaCEP manda, não pelo
+nome. Regras:
+
+- a **cidade** vem sempre: o CEP a determina;
+- **rua e bairro** só entram onde o campo está vazio ou ainda tem o que o CEP
+  anterior pôs — trocar o CEP corrige o automático, nunca o digitado;
+- **CEP único** de cidade (Venâncio Aires, 95800-000) volta só com a cidade e
+  `cepUnico: true`; a tela avisa e põe o foco na rua;
+- erro aparece **na linha do campo**, não em toast: 400 (sem 8 dígitos), 404
+  (inexistente), 503 (ViaCEP fora ou lento — timeout de 3 s). O preenchimento
+  manual continua funcionando sem a consulta.
+
+Segurança (doc 06 §A10): o host é fixo (`app.cep.url`), o CEP é validado com 8
+dígitos antes de sair, e nada do endereço vai para o log. O provedor fica atrás
+da interface `ConsultaCep` — trocar de provedor é trocar uma classe, e os
+testes não dependem de rede.
+
 ### 3.5 Vínculo — uma linha serve os dois cadastros
 
 Cadastrar "Maria é responsável de José" faz **José aparecer como dependente no
@@ -277,11 +297,6 @@ no envio — a API recebe e devolve só dígitos.
 
 ## 7. Fora do escopo, de propósito
 
-- **Busca de CEP** (ViaCEP e afins). O endereço é digitado e a cidade escolhida
-  no combo. Um formulário que depende de serviço externo para ser preenchido
-  trava justamente quando a rede falha, e a SSRF passa a ser assunto (doc 06
-  §A10). Entra se o uso pedir — com allowlist, timeout e o preenchimento manual
-  continuando a funcionar sem ela.
 - **Manutenção de cidade e estado.** São referência do IBGE, não cadastro do
   cliente: a API só expõe `/select`.
 - **`audit_log` de operações de negócio.** Entra como fatia própria — ver

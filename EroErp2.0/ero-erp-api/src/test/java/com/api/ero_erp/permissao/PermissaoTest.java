@@ -102,6 +102,45 @@ class PermissaoTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Filiais: sem permissão não lê, mas usa o /select dos combos")
+    void filiaisSemPermissaoNaoLe() throws Exception {
+        conceder(userA, Tela.PESSOAS, NivelAcesso.ESCRITA);
+        String token = autenticar(userA.getEmail());
+
+        // Pessoas liberada não abre Filiais: são módulos separados
+        mockMvc.perform(get("/filiais").header(AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/filiais").header(AUTHORIZATION, token)
+                        .contentType("application/json")
+                        .content(filialJson(salvarPessoa(tenantA, "Loja").getId())))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/filiais/select").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Filiais: leitura lê e não grava; escrita grava")
+    void filiaisLeituraEEscrita() throws Exception {
+        UUID pessoa = salvarPessoa(tenantA, "Loja").getId();
+        conceder(userA, Tela.FILIAIS, NivelAcesso.LEITURA);
+        String token = autenticar(userA.getEmail());
+
+        mockMvc.perform(get("/filiais").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/filiais").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(filialJson(pessoa)))
+                .andExpect(status().isForbidden());
+        assertThat(filialRepository.findAll()).isEmpty();
+
+        usuarioPermissaoRepository.deleteAllInBatch();
+        conceder(userA, Tela.FILIAIS, NivelAcesso.ESCRITA);
+        mockMvc.perform(post("/filiais").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(filialJson(pessoa)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     @DisplayName("mudar a permissão vale na requisição seguinte, com o mesmo token")
     void mudancaValeSemNovoLogin() throws Exception {
         String token = autenticar(userA.getEmail());
@@ -125,7 +164,8 @@ class PermissaoTest extends AbstractIntegrationTest {
     @DisplayName("o login publica as permissões já resolvidas: ADMIN tudo, USER só as dele")
     void loginPublicaPermissoesEfetivas() throws Exception {
         login(adminA.getEmail())
-                .andExpect(jsonPath("$.permissoes.PESSOAS").value("ESCRITA"));
+                .andExpect(jsonPath("$.permissoes.PESSOAS").value("ESCRITA"))
+                .andExpect(jsonPath("$.permissoes.FILIAIS").value("ESCRITA"));
 
         login(userA.getEmail())
                 .andExpect(jsonPath("$.permissoes").isEmpty());
@@ -151,10 +191,14 @@ class PermissaoTest extends AbstractIntegrationTest {
     void catalogoESoDoSuperadmin() throws Exception {
         mockMvc.perform(get("/permissoes/catalogo").header(AUTHORIZATION, autenticar(superadmin.getEmail())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].modulo").value("CADASTROS"))
-                .andExpect(jsonPath("$[0].rotulo").value("Cadastros"))
+                // Módulo é o assunto que se libera, não o grupo do menu:
+                // Pessoas e Filiais são dois, embora o menu os junte.
+                .andExpect(jsonPath("$[0].modulo").value("PESSOAS"))
+                .andExpect(jsonPath("$[0].rotulo").value("Pessoas"))
                 .andExpect(jsonPath("$[0].telas[0].tela").value("PESSOAS"))
-                .andExpect(jsonPath("$[0].telas[0].rotulo").value("Pessoas"));
+                .andExpect(jsonPath("$[0].telas[0].rotulo").value("Pessoas"))
+                .andExpect(jsonPath("$[1].modulo").value("FILIAIS"))
+                .andExpect(jsonPath("$[1].telas[0].tela").value("FILIAIS"));
 
         mockMvc.perform(get("/permissoes/catalogo").header(AUTHORIZATION, autenticar(adminA.getEmail())))
                 .andExpect(status().isForbidden());
@@ -308,6 +352,12 @@ class PermissaoTest extends AbstractIntegrationTest {
         return usuarioPermissaoRepository.findAll().stream()
                 .map(UsuarioPermissao::getNivel)
                 .findFirst().orElseThrow();
+    }
+
+    private static String filialJson(UUID pessoaId) {
+        return """
+                {"pessoaId":"%s","tipo":"MATRIZ","cor":"#3B82F6"}
+                """.formatted(pessoaId);
     }
 
     private String pessoaJson(String nome) {

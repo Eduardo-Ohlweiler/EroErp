@@ -18,7 +18,8 @@ interface PermissoesUsuarioProps {
 /**
  * Módulos e telas que um usuário USER acessa.
  *
- * Cada módulo é uma caixa: marcar libera todas as telas dele em leitura e
+ * Módulo de uma tela só mostra o nível direto. Nos de várias telas, cada
+ * módulo é uma caixa: marcar libera todas as telas dele em leitura e
  * escrita; desmarcar tira todas. Depois, tela a tela, dá para baixar a
  * leitura ou tirar o acesso — a caixa fica indeterminada quando o módulo está
  * liberado só em parte.
@@ -47,6 +48,23 @@ export function PermissoesUsuario({ catalogo, value, onChange }: PermissoesUsuar
   return (
     <div className="flex flex-col gap-4">
       {catalogo.map((modulo) => {
+        // Módulo de uma tela só (Pessoas, Filiais): a caixa e a tela seriam
+        // a mesma coisa escrita duas vezes. O nível fica direto no módulo.
+        if (modulo.telas.length === 1) {
+          const [tela] = modulo.telas
+          return (
+            <section key={modulo.modulo} className="rounded-md border border-line-strong p-4">
+              <p className="mb-2 text-body font-medium text-txt">{modulo.rotulo}</p>
+              <TRadio
+                label="Acesso"
+                opcoes={OPCOES_NIVEL}
+                value={nivelDe(tela.tela)}
+                onChange={(nivel) => definir(tela.tela, nivel as '' | NivelAcesso)}
+              />
+            </section>
+          )
+        }
+
         const liberadas = modulo.telas.filter((t) => nivelDe(t.tela)).length
         const todasEmEscrita = modulo.telas.every((t) => nivelDe(t.tela) === 'ESCRITA')
 

@@ -56,8 +56,10 @@ pg.on('console', (m) => m.type() === 'error' && erros.push(m.text()))
 await pg.addInitScript(() => { window.print = () => {} })
 
 await pg.goto('http://localhost:5173/app/login', { waitUntil: 'domcontentloaded' })
-await pg.fill('input[type="email"]', 'ohlweilereduardo@gmail.com')
-await pg.fill('input[type="password"]', 'Admin123@Ero')
+// Superadmin de desenvolvimento: SUPERADMIN_EMAIL / SUPERADMIN_PASSWORD do
+// ero-erp-api/.env (local, fora do git). O olhar.mjs já lê de lá sozinho.
+await pg.fill('input[type="email"]', EMAIL)
+await pg.fill('input[type="password"]', SENHA)
 await pg.click('button[type="submit"]')
 await pg.waitForSelector('aside', { timeout: 20000 })   // ver armadilha 1
 
@@ -243,16 +245,28 @@ O banco de desenvolvimento é `ero_erp`, e às vezes a tabela que você quer olh
 está vazia. Criar pelo **endpoint**, com o token do login, é mais rápido e mais
 fiel que pela tela:
 
+A credencial do superadmin é a do `ero-erp-api/.env` (`SUPERADMIN_EMAIL`,
+`SUPERADMIN_PASSWORD`) — local, fora do git; o `.env.example` traz só um
+valor de exemplo, que **não** é a senha do banco desta máquina. Não chute
+senha: login que falha conta tentativa e bloqueia a conta. O limite é de 5
+logins por minuto (Bucket4j): reaproveite o token.
+
 ```bash
+set -a; source ero-erp-api/.env; set +a
 TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"ohlweilereduardo@gmail.com","senha":"Admin123@Ero"}' \
-  | python3 -c "import sys,json;print(json.load(sys.stdin)['accessToken'])")
+  -d "{\"email\":\"$SUPERADMIN_EMAIL\",\"senha\":\"$SUPERADMIN_PASSWORD\"}" \
+  | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).accessToken))")
 ```
 
-**Limpe o que criar.** São dados que aparecem nas listas de quem usa o
-sistema. `PGPASSWORD=admin psql -h localhost -U postgres -d ero_erp`, e
-apague só as linhas que você inseriu, por nome ou por data.
+Corpo com acento pelo `curl` do Git Bash chega quebrado ("Corpo da requisição
+inválido"): para texto com acento, monte a requisição num script Node.
+
+**Dados de demonstração que ficam:** os três tenants `(demo)` da
+`ero-erp-api/scripts/bateria-filiais.mjs` existem de propósito, para ver o
+isolamento entre tenants na tela. O resto que você criar à mão, **limpe**:
+`PGPASSWORD=admin psql -h localhost -U postgres -d ero_erp`, e apague só as
+linhas que você inseriu, por nome ou por data.
 
 > As credenciais acima são do `.env` de desenvolvimento local e servem só para
 > entrar no `localhost`. Não vão para lugar nenhum fora desta máquina.

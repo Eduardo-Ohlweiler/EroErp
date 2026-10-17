@@ -86,6 +86,12 @@ export function TCombo({
   const [carregando, setCarregando] = useState(false)
   /** Guardado à parte: o rótulo do selecionado precisa sobreviver ao filtro. */
   const [rotuloSelecionado, setRotuloSelecionado] = useState(rotuloInicial ?? '')
+  /**
+   * A qual id o rótulo pertence. O `value` pode mudar por fora — sair do
+   * tenant devolve o seletor ao tenant raiz — e um rótulo de OUTRO id não
+   * pode continuar na tela só porque "já se sabe um rótulo".
+   */
+  const idDoRotulo = useRef(rotuloInicial ? value : '')
 
   const termoBusca = useDebounce(termo, 300)
 
@@ -115,32 +121,39 @@ export function TCombo({
   useEffect(() => {
     if (!value) {
       setRotuloSelecionado('')
+      idDoRotulo.current = ''
       return
     }
 
     const naLista = opcoes.find((o) => o.id === value)
     if (naLista) {
       setRotuloSelecionado(naLista.nome)
+      idDoRotulo.current = value
       return
     }
 
-    // Só quando ainda não se sabe o rótulo: um já conhecido não pode ser
-    // sobrescrito, senão digitar uma busca nova trocaria o nome do que está
-    // selecionado pelo nome antigo.
-    if (rotuloSelecionado) return
+    // Só quando ainda não se sabe o rótulo DESTE id: um já conhecido não pode
+    // ser sobrescrito, senão digitar uma busca nova trocaria o nome do que
+    // está selecionado pelo nome antigo.
+    if (rotuloSelecionado && idDoRotulo.current === value) return
 
     if (rotuloInicial) {
       setRotuloSelecionado(rotuloInicial)
+      idDoRotulo.current = value
       return
     }
 
     // Último recurso, e falho de propósito: procurar o id numa busca sem termo
     // só acha o que estiver na primeira página do endpoint. É exatamente para
     // não depender disto que existe `rotuloInicial`.
+    setRotuloSelecionado('')
     buscar()
       .then((r) => {
         const achado = r.find((o) => o.id === value)
-        if (achado) setRotuloSelecionado(achado.nome)
+        if (achado) {
+          setRotuloSelecionado(achado.nome)
+          idDoRotulo.current = value
+        }
       })
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,6 +172,7 @@ export function TCombo({
   function selecionar(opcao: SelectOption | null) {
     onChange(opcao?.id ?? '')
     setRotuloSelecionado(opcao?.nome ?? '')
+    idDoRotulo.current = opcao?.id ?? ''
     fechar()
   }
 

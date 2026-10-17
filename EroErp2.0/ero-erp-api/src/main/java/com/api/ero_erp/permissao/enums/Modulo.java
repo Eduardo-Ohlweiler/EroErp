@@ -1,15 +1,22 @@
 package com.api.ero_erp.permissao.enums;
 
 /**
- * Grupo de telas — o que o cadastro de usuário mostra como "módulo" a liberar.
+ * O que o cadastro de usuário mostra como "módulo" a liberar.
+ *
+ * <p>Módulo é o <b>assunto que se libera</b>, não o grupo do menu: Pessoas e
+ * Filiais moram juntas em "Cadastros" no menu, mas aqui são dois módulos, para
+ * o superadmin ver exatamente o que está dando. Um módulo com várias telas
+ * (pedido, por exemplo) as agrupa.
  *
  * <p>A ordem das constantes é a ordem em que a tela de usuário os apresenta.
- * Cada módulo trazido do EroErp antigo entra aqui, com as telas dele em
- * {@link Tela}. A área administrativa não é módulo: é do superadmin pela role.
+ * Não é gravado — {@code usuario_permissao} guarda só a {@link Tela} —, então
+ * reagrupar telas não exige migration. A área administrativa não é módulo: é
+ * do superadmin pela role.
  */
 public enum Modulo {
 
-    CADASTROS("Cadastros");
+    PESSOAS("Pessoas"),
+    FILIAIS("Filiais");
 
     private final String rotulo;
 

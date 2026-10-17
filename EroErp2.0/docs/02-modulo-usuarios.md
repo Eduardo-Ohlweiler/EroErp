@@ -96,7 +96,12 @@ de telas) e, em cada tela, escolhe **Sem acesso · Leitura · Leitura e escrita*
 `ADMIN` e `SUPERADMIN` acessam tudo e não têm linha gravada.
 
 **Catálogo em código.** `permissao/enums/Modulo` e `permissao/enums/Tela` —
-hoje `CADASTROS` › `PESSOAS`. Uma tela só existe se existe o código dela, então
+hoje `PESSOAS` › `PESSOAS` e `FILIAIS` › `FILIAIS`. **Módulo é o assunto que se
+libera, não o grupo do menu**: Pessoas e Filiais moram juntas em "Cadastros" no
+menu, mas o superadmin as libera em separado, vendo exatamente o que dá. Módulo
+de uma tela só aparece no cadastro de usuário com o nível direto, sem caixa e
+sem repetir o nome. O `Modulo` não é gravado — `usuario_permissao` guarda só a
+tela —, então reagrupar não exige migration. Uma tela só existe se existe o código dela, então
 o catálogo não é tabela: nada a semear, nada a esquecer. O front espelha `Tela`
 em `types/permissao.ts` e pede rótulos e ordem a `GET /permissoes/catalogo`.
 

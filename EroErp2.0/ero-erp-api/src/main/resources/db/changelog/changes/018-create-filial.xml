@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Filial — o "emitente" do EroErp antigo: a empresa (ou o profissional)
+        em nome de quem o tenant opera. Pedido, estoque e financeiro vão
+        apontar para cá quando chegarem.
+
+        A FILIAL NÃO DUPLICA CADASTRO. CNPJ, inscrições, razão social e
+        endereço moram na pessoa (pessoa_id); aqui fica só o papel: matriz ou
+        filial, a qual matriz responde, a cor que a identifica nas telas.
+        PF também serve — um consultório pode operar com CPF.
+
+        VÁRIAS MATRIZES POR TENANT, DE PROPÓSITO. Um cliente pode contratar o
+        sistema para negócios separados (uma loja e um consultório): cada um é
+        uma matriz com as suas filiais.
+
+        Diferenças para o antigo, todas correções:
+        - matriz_id aponta para FILIAL, não para pessoa: a matriz é um papel,
+          e precisa ser MATRIZ (o service garante que esteja ativa);
+        - CHECK amarra tipo e matriz: MATRIZ sem matriz, FILIAL com;
+        - sem delete físico: inativa-se, como a pessoa;
+        - created_by / updated_by, como a pessoa.
+    -->
+    <changeSet id="018-create-filial" author="eduardo">
+
+        <createTable tableName="filial">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_filial"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_filial_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <column name="pessoa_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_filial_pessoa"
+                             references="pessoa(id)"/>
+            </column>
+
+            <column name="tipo" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="matriz_id" type="UUID">
+                <constraints foreignKeyName="fk_filial_matriz"
+                             references="filial(id)"/>
+            </column>
+
+            <!-- #RRGGBB: identifica a filial em listas e combos -->
+            <column name="cor" type="VARCHAR(7)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="filial" baseColumnNames="created_by"
+                                 referencedTableName="usuario" referencedColumnNames="id"
+                                 constraintName="fk_filial_created_by"/>
+        <addForeignKeyConstraint baseTableName="filial" baseColumnNames="updated_by"
+                                 referencedTableName="usuario" referencedColumnNames="id"
+                                 constraintName="fk_filial_updated_by"/>
+
+        <!-- Uma pessoa é uma filial só, dentro do tenant -->
+        <addUniqueConstraint tableName="filial"
+                             columnNames="tenant_id, pessoa_id"
+                             constraintName="uk_filial_tenant_pessoa"/>
+
+        <sql>
+            ALTER TABLE filial ADD CONSTRAINT ck_filial_tipo
+            CHECK (tipo IN ('MATRIZ', 'FILIAL'));
+        </sql>
+
+        <!-- Matriz não responde a ninguém; filial responde a uma matriz -->
+        <sql>
+            ALTER TABLE filial ADD CONSTRAINT ck_filial_matriz_por_tipo
+            CHECK ((tipo = 'MATRIZ' AND matriz_id IS NULL)
+                OR (tipo = 'FILIAL' AND matriz_id IS NOT NULL));
+        </sql>
+
+        <sql>
+            ALTER TABLE filial ADD CONSTRAINT ck_filial_matriz_distinta
+            CHECK (matriz_id &lt;&gt; id);
+        </sql>
+
+        <createIndex tableName="filial" indexName="idx_filial_tenant_id">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex tableName="filial" indexName="idx_filial_matriz_id">
+            <column name="matriz_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="filial"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

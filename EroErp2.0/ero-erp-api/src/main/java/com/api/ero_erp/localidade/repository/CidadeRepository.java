@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -32,4 +33,8 @@ public interface CidadeRepository extends JpaRepository<Cidade, UUID> {
             """, nativeQuery = true)
     List<Cidade> findForSelect(@Param("nome") String nome,
                                @Param("estadoId") UUID estadoId);
+
+    /** Para o CEP: o provedor devolve o município pelo código do IBGE. */
+    @Query("SELECT c FROM Cidade c JOIN FETCH c.estado WHERE c.codigoIbge = :codigoIbge")
+    Optional<Cidade> findByCodigoIbge(@Param("codigoIbge") Integer codigoIbge);
 }
