@@ -26,14 +26,15 @@ O que existe hoje, no esqueleto do EroErp:
 ```
 src/
 ├── assets/
-│   ├── brand/             logo-ero.png (logo do EroErp, para fundo escuro) ·
+│   ├── brand/             logo-ero-horizontal.svg (menu) · logo-ero.svg (login,
+│   │                      404) — vetor nas cores do tema ·
 │   │                      logo-full.svg (marca em texto, só na folha impressa)
 │   └── icons/index.tsx    ícones em SVG inline, num módulo único
 ├── components/
 │   ├── common/            biblioteca interna T* — §4
 │   ├── impressao/         Folha · DocumentoLista (folha impressa, doc 05 §8)
 │   ├── layout/            Layout · Sidebar · TenantSwitcher · TProtected ·
-│   │                      MarcaEro (o logo no selo navy — doc 05 §2)
+│   │                      MarcaEro (o logo nas cores do tema — doc 05 §2)
 │   ├── pessoa/            PessoaRapidaModal (cadastro rápido)
 │   ├── tenant/            SeletorPaleta (TenantNovo e painel Aparência do TenantForm)
 │   └── usuario/           RedefinirSenhaModal (senha nova, no UsuarioForm)

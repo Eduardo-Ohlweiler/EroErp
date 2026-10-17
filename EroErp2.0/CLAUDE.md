@@ -59,7 +59,8 @@ EroErp2.0/
     ├── public/                    # favicon e ícones
     ├── scripts/validar-paletas.mjs  # npm run paletas — contraste e cascata
     └── src/
-        ├── assets/brand/          # logo-ero.png (sobre chip navy: menu, login)
+        ├── assets/brand/          # logo-ero-horizontal.svg (menu) · logo-ero.svg
+        │                          # (login, 404) — vetor nas cores do tema
         │                          # logo-full.svg (texto, só na folha impressa)
         ├── assets/icons/          # SVG inline, módulo único
         ├── styles/theme.css       # tokens Tailwind v4 + temas claro/escuro
@@ -73,7 +74,7 @@ EroErp2.0/
         ├── components/impressao/  # Folha · TiraIndicadores · Secao · LinhasDeValor
         │                          # TabelaDoc · DocumentoLista (doc 05 §8)
         ├── components/layout/     # Layout · Sidebar · TenantSwitcher · TProtected
-        │                          # MarcaEro (logo sobre chip navy)
+        │                          # MarcaEro (logo nas cores do tema)
         ├── components/pessoa/     # PessoaRapidaModal (cadastro rápido)
         ├── components/tenant/     # SeletorPaleta (as 20 paletas, com miniaturas)
         ├── components/usuario/    # RedefinirSenhaModal
@@ -100,7 +101,7 @@ Testes contra o banco `ero_erp_test` — nada de H2 nem Testcontainers.
 | Próximas | **migrar módulos do EroErp antigo**, um de cada vez, perguntando antes qual e como |
 | `audit_log` | pendente · especificação em [docs/06 §A09](docs/06-seguranca-owasp.md); molde estrutural é o `loginlog`, com o expurgo no `ManutencaoJob` |
 | Recuperação de senha por e-mail | pendente · depende de escolher o serviço de e-mail (não há `spring-boot-starter-mail` no `pom.xml`). Enquanto isso, o superadmin redefine em `PATCH /usuarios/{id}/senha` |
-| Marca | o logo do EroErp antigo (`logo-ero.png`) entra no menu e no login; favicons ainda são os do projeto anterior |
+| Marca | o logo do EroErp antigo, redesenhado em SVG que segue o tema, entra no menu (horizontal), no login e no 404; favicons ainda são os do projeto anterior |
 
 Ainda **não existe banco criado** para este projeto.
 
@@ -216,10 +217,13 @@ abre Tomcat. O `run-dev.sh` aponta `jdk.net.unixdomain.tmpdir` para
 `ero-erp-api/.tmp/` no Windows. Subir a API de outro jeito (IDE, `mvn` direto)
 precisa da mesma propriedade.
 
-**Logo branco some em fundo claro.** O `logo-ero.png` é prateado e branco,
-desenhado para fundo escuro. `MarcaEro` o põe num chip de cor **fixa**
-(`bg-navy`, não token de tema), para ler igual em toda paleta e nos dois temas.
-Na folha impressa fica o logotipo de texto: no papel o chip gastaria tinta.
+**Logo em cor fixa destoa de metade das paletas.** O logo antigo era um PNG
+branco num chip navy fixo, e no menu claro virava um selo pequeno e estranho.
+Agora os SVGs de `assets/brand/` têm letras em `currentColor` e acento em
+`var(--logo-acento)`, e o `MarcaEro` os importa inline (`?react`) com `txt` e
+`primary` do tema — um arquivo serve as 20 paletas e os dois temas. Nada de hex
+dentro deles, nem um arquivo por tema. Login e 404 (sem tenant) mantêm a faixa
+`bg-navy` com `data-theme="dark"`. Na folha impressa fica o logotipo de texto.
 
 
 Cada uma destas custou depuração no projeto de origem. Não repita.

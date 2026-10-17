@@ -1,7 +1,7 @@
 # Identidade Visual — EroErp
 
 > **A identidade do EroErp ainda não está fechada.** Na tela está o logo antigo
-> do EroErp (`logo-ero.png`, num selo navy); na folha impressa, a palavra
+> do EroErp, redesenhado em vetor que segue o tema; na folha impressa, a palavra
 > "EroErp" em texto; e os favicons ainda são os do projeto de origem deste
 > código. Tudo o que está aqui sobre paleta, tipografia, tokens, componentes e
 > impressão **vale e está em uso**; o que muda quando a identidade nova chegar é
@@ -46,24 +46,32 @@ palavra **"EroErp"** em texto. Os favicons continuam pendentes.
 
 | Arquivo | Conteúdo | Uso |
 |---|---|---|
-| `logo-ero.png` | o logo do EroErp antigo, prateado e branco com azul, desenhado para **fundo escuro** | topo do menu lateral, tela de login, 404 público — sempre pelo `MarcaEro` |
+| `logo-ero-horizontal.svg` | o logo do EroErp antigo em vetor plano: "ero" com "SISTEMA" ao lado | topo do menu lateral — pelo `MarcaEro` |
+| `logo-ero.svg` | o mesmo desenho empilhado, "SISTEMA" embaixo, como o original | tela de login, 404 público — pelo `MarcaEro` |
 | `logo-full.svg` | "EroErp" em texto, peso 600, `fill="currentColor"` | **só** a folha impressa (`Folha`) |
 
-**O selo navy.** O `logo-ero.png` posto direto sobre o menu claro ou o fundo do
-login some — o "ero" é branco. Por isso ele só aparece dentro de
-`components/layout/MarcaEro.tsx`, que o põe sobre um selo `bg-navy`: cor
-**fixa**, e não token de tema, de propósito. É o fundo para o qual o logo foi
-desenhado, e precisa ser o mesmo nas vinte paletas e nos dois temas — um token
-viraria claro no tema escuro, ou na paleta errada, e levaria o logo junto.
+**O logo segue o tema.** O original era um PNG prateado e branco, desenhado para
+fundo escuro, e vivia num selo navy fixo — no menu claro virava um chip pequeno
+e destoante. Os dois SVGs redesenham o mesmo logo sem o metálico: as letras são
+`currentColor` e o acento (a barra do "e", o arco e as barras do "o") é
+`var(--logo-acento)`. O `components/layout/MarcaEro.tsx` os importa inline
+(svgr `?react`) e dá `text-txt` às letras e `--color-primary` ao acento, então
+um arquivo só serve as vinte paletas e os dois temas — nas `_MENU_ESCURO` o
+`<aside>` já tem `data-theme="dark"` e o logo clareia junto. Um arquivo por
+tema seriam dezenas de cópias com hex repetido, fora do `theme.css`.
+
+No menu não há selo: o fundo é o próprio menu. Login e 404 são públicos, sem
+tenant, e mantêm a faixa `bg-navy` da marca com `data-theme="dark"` — letras e
+acento vêm claros, da paleta Padrão.
 
 ```tsx
-<MarcaEro />                       {/* menu lateral */}
+<MarcaEro />                       {/* menu lateral — horizontal */}
 <MarcaEro tamanho="faixa" />       {/* cabeçalho do cartão de login */}
 <MarcaEro tamanho="destaque" />    {/* 404 público */}
 ```
 
-**No papel fica o texto.** Na folha impressa o logo branco sumiria no papel, e o
-selo navy gastaria tinta numa área que não informa nada. A `Folha` usa o
+**No papel fica o texto.** Na folha impressa o logotipo de texto é discreto e
+não disputa com o título do documento. A `Folha` usa o
 `logo-full.svg`, que segue **`currentColor`**: a cor vem do CSS (`--primary`,
 §8), então o mesmo arquivo serve em qualquer paleta.
 
@@ -82,12 +90,13 @@ Os favicons ainda são **os do projeto de origem**, à espera da marca nova. Nã
 
 | Situação | Versão |
 |---|---|
-| Tela — menu, login, 404 público, em qualquer paleta e tema | `logo-ero.png` no selo navy (`MarcaEro`) |
+| Menu, em qualquer paleta e tema | `logo-ero-horizontal.svg` nas cores do tema (`MarcaEro`) |
+| Login, 404 público | `logo-ero.svg` sobre a faixa navy (`MarcaEro`) |
 | Folha impressa | `logo-full.svg` em `--primary` da versão clara |
 | Monocromático | uma cor só, sem gradiente |
 
-- Nunca pôr o `logo-ero.png` fora do `MarcaEro`, nem trocar o `bg-navy` do selo
-  por token de tema.
+- Nunca pôr os SVGs do logo fora do `MarcaEro`, nem escrever hex dentro deles:
+  as cores são `currentColor` e `--logo-acento`, e quem as define é o tema.
 
 - Nunca distorcer, rotacionar, aplicar sombra, contorno ou trocar as cores.
 - Nunca aplicar sobre foto sem camada de contraste sólida por baixo.
@@ -720,8 +729,9 @@ também (logo de texto em `--primary`, filete e título de seção em
 **Não segue:** semânticos (`success`, `warning`, `danger`, `info`) e acentos de
 contexto (`sage`, `peach`) — têm significado fixo; séries categóricas, rampa
 ordinal e faixas de referência do claro (§10) — validadas contra o branco, que é
-a superfície de todas as paletas; e a marca: o logo da tela, no selo `bg-navy`
-fixo (§2), e o favicon.
+a superfície de todas as paletas; a faixa `bg-navy` do logo no login e no 404
+(§2); e o favicon. O logo do **menu** segue: letras em `txt`, acento em
+`primary` (§2).
 
 ### 11.3 A cascata — o ponto delicado
 

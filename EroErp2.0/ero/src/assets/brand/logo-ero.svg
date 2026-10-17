@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 298" fill="currentColor" role="img" aria-label="EroErp">
+  <!-- Logo do EroErp antigo redesenhado em vetor plano. Letras em currentColor;
+       acento em --logo-acento, para seguir o tema de quem o usa (MarcaEro). -->
+  <g fill="var(--logo-acento, currentColor)">
+    <path d="M5 4H232Q247 4 241 18L236 30Q231 42 216 42H5Z"/>
+    <path d="M459 161L479 154V190H459Z"/>
+    <path d="M490 131L511 123V190H490Z"/>
+    <path d="M522 107L545 98V190H522Z"/>
+    <path d="M553.1 74.9A85 85 0 0 1 522.1 214.9" fill="none" stroke="var(--logo-acento, currentColor)" stroke-width="30"/>
+    <rect x="5" y="270" width="92" height="4" rx="2"/>
+    <rect x="503" y="270" width="92" height="4" rx="2"/>
+  </g>
+  <path d="M5 105Q5 84 26 84H170Q190 84 190 104Q190 125 170 125H46V175H203Q215 175 215 187V203Q215 215 203 215H26Q5 215 5 194Z"/>
+  <path d="M235 215V102Q235 51 286 51H368Q388 51 388 71Q388 92 368 92H292Q278 92 278 106V215Z"/>
+  <path d="M532.9 60.0A85 85 0 1 0 522.1 214.9" fill="none" stroke="currentColor" stroke-width="30"/>
+  <text x="300" y="290" text-anchor="middle" font-family="inherit" font-size="30" font-weight="400" letter-spacing="0" textLength="320" lengthAdjust="spacing">SISTEMA</text>
+</svg>

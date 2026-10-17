@@ -1,4 +1,5 @@
-import logoEro from '@/assets/brand/logo-ero.png'
+import LogoEro from '@/assets/brand/logo-ero.svg?react'
+import LogoEroHorizontal from '@/assets/brand/logo-ero-horizontal.svg?react'
 
 interface MarcaEroProps {
   /**
@@ -10,31 +11,38 @@ interface MarcaEroProps {
 }
 
 /**
- * O logo do EroErp sobre um chip navy.
+ * O logo do EroErp, em vetor que segue o tema.
  *
- * O arquivo é prateado e branco, desenhado para fundo escuro: direto sobre o
- * menu claro ou o fundo do login, o "ero" some. O chip tem cor FIXA (`navy`,
- * não token de tema) de propósito — é o fundo para o qual o logo foi
- * desenhado, e precisa ser o mesmo em toda paleta e nos dois temas.
+ * As letras são `currentColor` e o acento (a barra do "e", o arco e as barras
+ * do "o") é `--logo-acento`. Inline, o SVG herda os tokens de onde está: no
+ * menu, `txt` e `primary` da paleta e do tema da moldura — inclusive nas
+ * variantes `_MENU_ESCURO`, cujo `<aside>` tem `data-theme="dark"`. Sem selo:
+ * o fundo é o próprio menu, então combina em toda paleta.
  *
- * A folha impressa não usa este componente: no papel o chip gastaria tinta, e
- * lá fica o logotipo de texto (`logo-full.svg`).
+ * Login e 404 são públicos, sem tenant: ali o logo fica sobre a faixa `navy`
+ * da marca, com `data-theme="dark"` para as letras e o acento virem claros.
+ *
+ * A folha impressa não usa este componente: lá fica o logotipo de texto
+ * (`logo-full.svg`).
  */
 export function MarcaEro({ tamanho = 'menu', className = '' }: MarcaEroProps) {
+  const cores = 'text-txt [--logo-acento:var(--color-primary)]'
+
+  if (tamanho === 'menu') {
+    return <LogoEroHorizontal className={`h-11 w-auto max-w-full ${cores} ${className}`} />
+  }
+
   if (tamanho === 'faixa') {
     return (
-      <div className={`flex justify-center bg-navy px-6 py-7 ${className}`}>
-        <img src={logoEro} alt="EroErp" className="h-auto w-44" />
+      <div data-theme="dark" className={`flex justify-center bg-navy px-6 py-7 ${className}`}>
+        <LogoEro className={`h-auto w-44 ${cores}`} />
       </div>
     )
   }
 
-  const chip = tamanho === 'menu' ? 'rounded-md px-3 py-1.5' : 'rounded-lg px-6 py-4'
-  const altura = tamanho === 'menu' ? 'h-8' : 'h-16 sm:h-20'
-
   return (
-    <span className={`inline-flex items-center bg-navy ${chip} ${className}`}>
-      <img src={logoEro} alt="EroErp" className={`${altura} w-auto`} />
+    <span data-theme="dark" className={`inline-flex items-center rounded-lg bg-navy px-6 py-4 ${className}`}>
+      <LogoEro className={`h-16 w-auto sm:h-20 ${cores}`} />
     </span>
   )
 }

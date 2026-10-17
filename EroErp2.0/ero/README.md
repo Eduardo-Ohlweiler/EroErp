@@ -100,18 +100,19 @@ antes** — com toast avisando e a faixa amarela confirmando.
 
 ## A marca
 
-O logo do EroErp (`src/assets/brand/logo-ero.png`) é prateado e branco,
-desenhado para fundo escuro. `components/layout/MarcaEro.tsx` o põe sobre um
-chip de cor **fixa** (`bg-navy`) — no topo do menu, no login e no 404 público —
-para ler igual em toda paleta e nos dois temas.
+O logo do EroErp é vetor que segue o tema (`src/assets/brand/`):
+`logo-ero-horizontal.svg` no topo do menu, `logo-ero.svg` (empilhado) no login
+e no 404 público. Letras em `currentColor`, acento em `--logo-acento`;
+`components/layout/MarcaEro.tsx` dá a elas `txt` e `primary` do tema. Login e
+404 mantêm a faixa `bg-navy`, com `data-theme="dark"`. Detalhe na doc 05 §2.
 
 Na folha impressa fica `logo-full.svg`, só o texto "EroErp" com
-`fill="currentColor"`: no papel o logo branco some, e o chip gastaria tinta.
+`fill="currentColor"`.
 
 ```tsx
 import { MarcaEro } from '@/components/layout/MarcaEro'
 
-<MarcaEro />                     {/* menu */}
+<MarcaEro />                     {/* menu, horizontal */}
 <MarcaEro tamanho="faixa" />     {/* cabeçalho do cartão de login */}
 <MarcaEro tamanho="destaque" />  {/* 404 público */}
 ```
