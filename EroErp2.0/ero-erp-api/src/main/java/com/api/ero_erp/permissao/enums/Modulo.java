@@ -16,7 +16,8 @@ package com.api.ero_erp.permissao.enums;
 public enum Modulo {
 
     PESSOAS("Pessoas"),
-    FILIAIS("Filiais");
+    FILIAIS("Filiais"),
+    SERVICOS("Serviços");
 
     private final String rotulo;
 

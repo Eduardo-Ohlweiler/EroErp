@@ -12,6 +12,8 @@ import { LoginLogList } from '@/pages/loginlog/LoginLogList'
 import { Perfil } from '@/pages/perfil/Perfil'
 import { PessoaForm } from '@/pages/pessoa/PessoaForm'
 import { PessoaList } from '@/pages/pessoa/PessoaList'
+import { ServicoForm } from '@/pages/servico/ServicoForm'
+import { ServicoList } from '@/pages/servico/ServicoList'
 import { TenantForm } from '@/pages/tenant/TenantForm'
 import { TenantNovo } from '@/pages/tenant/TenantNovo'
 import { TenantList } from '@/pages/tenant/TenantList'
@@ -66,6 +68,14 @@ export function AppRoutes() {
             </Route>
             <Route element={<TProtected tela="FILIAIS" escrita />}>
               <Route path="filiais/nova" element={<PorRegistro><FilialForm /></PorRegistro>} />
+            </Route>
+
+            <Route element={<TProtected tela="SERVICOS" />}>
+              <Route path="servicos" element={<ServicoList />} />
+              <Route path="servicos/:id" element={<PorRegistro><ServicoForm /></PorRegistro>} />
+            </Route>
+            <Route element={<TProtected tela="SERVICOS" escrita />}>
+              <Route path="servicos/novo" element={<PorRegistro><ServicoForm /></PorRegistro>} />
             </Route>
 
             {/*

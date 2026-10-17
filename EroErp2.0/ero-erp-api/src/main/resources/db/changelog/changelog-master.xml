@@ -35,4 +35,10 @@
     <!-- ══ Filiais (o emitente do EroErp antigo) ════════════════════ -->
     <include file="db/changelog/changes/018-create-filial.xml"/>
 
+    <!-- ══ Código curto por tenant ══════════════════════════════════ -->
+    <include file="db/changelog/changes/019-create-tenant-sequencia.xml"/>
+
+    <!-- ══ Serviços ═════════════════════════════════════════════════ -->
+    <include file="db/changelog/changes/020-create-servico.xml"/>
+
 </databaseChangeLog>

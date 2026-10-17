@@ -19,7 +19,8 @@ package com.api.ero_erp.permissao.enums;
 public enum Tela {
 
     PESSOAS(Modulo.PESSOAS, "Pessoas"),
-    FILIAIS(Modulo.FILIAIS, "Filiais");
+    FILIAIS(Modulo.FILIAIS, "Filiais"),
+    SERVICOS(Modulo.SERVICOS, "Serviços");
 
     private final Modulo modulo;
     private final String rotulo;

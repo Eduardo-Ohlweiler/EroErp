@@ -9,6 +9,7 @@ import {
   IconLog,
   IconPessoas,
   IconPerfil,
+  IconServico,
   IconTenants,
   IconUsuarios,
 } from '@/assets/icons'
@@ -41,6 +42,7 @@ const GRUPOS: Grupo[] = [
     itens: [
       { para: '/app/pessoas', rotulo: 'Pessoas', Icone: IconPessoas, tela: 'PESSOAS' },
       { para: '/app/filiais', rotulo: 'Filiais', Icone: IconFilial, tela: 'FILIAIS' },
+      { para: '/app/servicos', rotulo: 'Serviços', Icone: IconServico, tela: 'SERVICOS' },
     ],
   },
   {

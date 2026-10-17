@@ -11,6 +11,7 @@ import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import com.api.ero_erp.pessoa.repository.PessoaRepository;
 import com.api.ero_erp.refreshtoken.repository.RefreshTokenRepository;
+import com.api.ero_erp.servico.repository.ServicoRepository;
 import com.api.ero_erp.tenant.entity.Tenant;
 import com.api.ero_erp.tenant.repository.TenantRepository;
 import com.api.ero_erp.usuario.entity.Usuario;
@@ -53,6 +54,7 @@ public abstract class AbstractIntegrationTest {
     @Autowired protected RefreshTokenRepository refreshTokenRepository;
     @Autowired protected PessoaRepository pessoaRepository;
     @Autowired protected FilialRepository filialRepository;
+    @Autowired protected ServicoRepository servicoRepository;
     @Autowired protected UsuarioPermissaoRepository usuarioPermissaoRepository;
     @Autowired protected PasswordEncoder passwordEncoder;
 
@@ -65,14 +67,17 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void montarCenario() {
-        // Ordem de dependência: refresh_token → login_log → filial → pessoa →
-        // usuario_permissao → usuario → tenant.
+        // Ordem de dependência: refresh_token → login_log → servico → filial →
+        // pessoa → usuario_permissao → usuario → tenant.
+        // Apagar o serviço leva junto os valores por filial, e apagar o
+        // tenant leva o contador de código: as FKs são ON DELETE CASCADE.
         // Apagar a pessoa leva junto telefone, e-mail, rede social, endereço,
         // vínculos e os tipos de cadastro: as FKs são ON DELETE CASCADE.
         // A filial não tem cascade (aponta para a pessoa e para a matriz):
         // sai antes, num DELETE só, que resolve a autorreferência de uma vez.
         refreshTokenRepository.deleteAllInBatch();
         loginLogRepository.deleteAllInBatch();
+        servicoRepository.deleteAllInBatch();
         filialRepository.deleteAllInBatch();
         pessoaRepository.deleteAllInBatch();
         usuarioPermissaoRepository.deleteAllInBatch();

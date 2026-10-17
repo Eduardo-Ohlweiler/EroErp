@@ -14,7 +14,8 @@
  *   POPULAR_SENHA  senha dele. Nenhuma das duas é impressa.
  *
  * O que ele cria, no tenant de quem entra: pessoas (clientes, fornecedores e
- * funcionários), com telefone, e-mail e endereço. Cada módulo novo do EroErp
+ * funcionários), com telefone, e-mail e endereço, e serviços (com valor na
+ * primeira filial ativa, se o tenant tiver alguma). Cada módulo novo do EroErp
  * acrescenta aqui os seus dados e as suas conferências.
  *
  * Nada é apagado, nunca. Rodar de novo REAPROVEITA o que já existe — pessoa
@@ -229,6 +230,36 @@ async function garantirPessoa(p, tipoId, i) {
 
 const idDe = (nome) => pessoas[nome]?.id;
 
+// ─── Serviços ───────────────────────────────────────────────────────────────
+
+/** `valor: null` é de propósito: o serviço sem valor informado, que não é zero. */
+const SERVICOS = [
+  { nome: 'Visita técnica', valor: 90, observacao: 'Cadastro de demonstração.' },
+  { nome: 'Instalação', valor: 150 },
+  { nome: 'Orçamento', valor: null, observacao: 'Valor combinado a cada pedido.' },
+];
+
+const servicos = {}; // nome → resposta completa
+
+/** O valor vai para a primeira filial ativa do tenant, se houver alguma. */
+async function garantirServico(sv, filiais) {
+  const achados = await get('/servicos' + qs({ termo: sv.nome, size: 20 }));
+  const existente = achados.content.find((x) => x.nome === sv.nome);
+  if (existente) {
+    contar('serviços', 'reaproveitado');
+    servicos[sv.nome] = existente;
+    return existente;
+  }
+  const criado = await post('/servicos', {
+    nome: sv.nome,
+    observacao: sv.observacao,
+    filiais: filiais.length ? [{ filialId: filiais[0].id, valor: sv.valor }] : [],
+  });
+  contar('serviços', 'criado');
+  servicos[sv.nome] = criado;
+  return criado;
+}
+
 // ─── Conferência: reler tudo ────────────────────────────────────────────────
 
 async function conferirTudo() {
@@ -242,9 +273,19 @@ async function conferirTudo() {
     });
   }
 
+  for (const sv of SERVICOS) {
+    const id = servicos[sv.nome]?.id;
+    if (!id) continue;
+    await passo(`serviço ${sv.nome}`, async () => {
+      const r = await get('/servicos/' + id);
+      conferir(`serviço "${sv.nome}" relido, código ${r.codigo}`, r.nome === sv.nome && Number.isInteger(r.codigo));
+    });
+  }
+
   const rotas = [
     ['/pessoas', { tipoCadastroId: cat.cliente, ativo: true }], ['/pessoas', { nome: 'Ferreira' }],
     ['/pessoas', { documento: cpfDe('Antônio Carlos Ferreira') }], ['/pessoas/select', { termo: 'Maria', tipoCadastroId: cat.cliente }],
+    ['/servicos', { ativo: true }], ['/servicos/select', { termo: 'Inst' }],
   ];
   for (const [rota, filtros] of rotas)
     await passo(`GET ${rota}`, async () => {
@@ -263,6 +304,9 @@ await carregarCatalogos();
 for (const [i, p] of CLIENTES.entries()) await passo(`pessoa ${p.nome}`, () => garantirPessoa(p, cat.cliente, i));
 for (const [i, p] of FORNECEDORES.entries()) await passo(`pessoa ${p.nome}`, () => garantirPessoa(p, cat.fornecedor, i + 6));
 for (const [i, p] of FUNCIONARIOS.entries()) await passo(`pessoa ${p.nome}`, () => garantirPessoa(p, cat.funcionario, i + 8));
+
+const filiaisAtivas = (await passo('filiais do tenant', () => get('/filiais/select'))) ?? [];
+for (const sv of SERVICOS) await passo(`serviço ${sv.nome}`, () => garantirServico(sv, filiaisAtivas));
 
 await conferirTudo();
 

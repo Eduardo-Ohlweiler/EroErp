@@ -154,6 +154,15 @@ export function formatarNumero(
 }
 
 /**
+ * `R$ 1.234,50`. Valor opcional não informado continua o traço {@link AUSENTE}
+ * — vazio não é `R$ 0,00`.
+ */
+export function formatarMoeda(valor?: number | null): string {
+  if (valor === null || valor === undefined || Number.isNaN(valor)) return AUSENTE
+  return `R$ ${formatarNumero(valor, 2, 2)}`
+}
+
+/**
  * `1.234.567` e `1.500` são milhar. `0.750` e `72.5` não são — ver `paraNumero`.
  */
 const PONTO_DE_MILHAR = /^-?(?:\d{1,3}(?:\.\d{3}){2,}|[1-9]\d{0,2}\.\d{3})$/

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Bateria de ponta a ponta do cadastro de Filiais, em VÁRIOS tenants — pela
- * API HTTP, contra a aplicação em execução. Cria dados de demonstração e
- * confere, de fora, o que os testes de integração conferem de dentro: cada
- * tenant enxerga só as suas pessoas e filiais.
+ * Bateria de ponta a ponta dos cadastros de Filiais e Serviços, em VÁRIOS
+ * tenants — pela API HTTP, contra a aplicação em execução. Cria dados de
+ * demonstração e confere, de fora, o que os testes de integração conferem de
+ * dentro: cada tenant enxerga só as suas pessoas, filiais e serviços.
  *
  *   node ero-erp-api/scripts/bateria-filiais.mjs
  *   BATERIA_EMAIL=... BATERIA_SENHA=... node ero-erp-api/scripts/bateria-filiais.mjs
@@ -21,7 +21,9 @@
  *   - 3 tenants de demonstração, cada um com um ADMIN e um USER sem permissão;
  *   - em cada tenant, pessoas e filiais próprias (um deles com DUAS matrizes:
  *     negócios separados), e um mesmo fornecedor (mesmo CNPJ) nos três —
- *     documento é único por tenant, não no sistema.
+ *     documento é único por tenant, não no sistema;
+ *   - em cada tenant, serviços com valor por filial (alguns sem valor: vazio
+ *     não é zero), com o código curto contado dentro do tenant.
  * Os usuários criados entram com a senha de demonstração impressa no fim.
  *
  * Nada é apagado. Sai com código 1 se qualquer conferência falhar.
@@ -181,6 +183,15 @@ const TENANTS = [
       { pessoa: 'Mercado Bom Preço Centro Ltda', tipo: 'FILIAL', matriz: 'Mercado Bom Preço Ltda', cor: '#10B981' },
       { pessoa: 'Mercado Bom Preço Canoas Ltda', tipo: 'FILIAL', matriz: 'Mercado Bom Preço Ltda', cor: '#F59E0B' },
     ],
+    servicos: [
+      {
+        nome: 'Entrega em domicílio',
+        valores: { 'Mercado Bom Preço Ltda': 15, 'Mercado Bom Preço Centro Ltda': 15, 'Mercado Bom Preço Canoas Ltda': 20 },
+      },
+      // No Centro o valor não foi informado: fica vazio, não zero.
+      { nome: 'Montagem de cesta básica', valores: { 'Mercado Bom Preço Ltda': 8.5, 'Mercado Bom Preço Centro Ltda': null } },
+      { nome: 'Encomenda especial', observacao: 'Valor combinado com o cliente a cada pedido.', valores: {} },
+    ],
   },
   {
     // Dois negócios separados no mesmo tenant: duas matrizes.
@@ -200,6 +211,19 @@ const TENANTS = [
       // Consultório com CPF: filial também pode ser pessoa física.
       { pessoa: 'Dra. Helena Martins', tipo: 'FILIAL', matriz: 'Clínica Vida Plena Ltda', cor: '#64748B' },
     ],
+    servicos: [
+      {
+        nome: 'Consulta clínica',
+        valores: { 'Clínica Vida Plena Ltda': 250, 'Clínica Vida Plena Bento Ltda': 220, 'Dra. Helena Martins': 300 },
+      },
+      // Zero informado, que é diferente de vazio.
+      {
+        nome: 'Retorno de consulta',
+        observacao: 'Gratuito até 30 dias depois da consulta.',
+        valores: { 'Clínica Vida Plena Ltda': 0, 'Clínica Vida Plena Bento Ltda': 0 },
+      },
+      { nome: 'Aplicação de injetável', valores: { 'Farmácia Vida Plena Ltda': 12 } },
+    ],
   },
   {
     nome: 'Auto Center Rápido (demo)',
@@ -213,6 +237,12 @@ const TENANTS = [
       { pessoa: 'Auto Center Rápido Ltda', tipo: 'MATRIZ', cor: '#EF4444' },
       // Esta fica inativa no fim: a lista mostra o filtro de situação.
       { pessoa: 'Auto Center Rápido Rio Grande Ltda', tipo: 'FILIAL', matriz: 'Auto Center Rápido Ltda', cor: '#F59E0B', inativa: true },
+    ],
+    servicos: [
+      // A filial de Rio Grande fica inativa no fim; o valor dela continua aqui.
+      { nome: 'Alinhamento e balanceamento', valores: { 'Auto Center Rápido Ltda': 120, 'Auto Center Rápido Rio Grande Ltda': 110 } },
+      { nome: 'Troca de óleo (mão de obra)', valores: { 'Auto Center Rápido Ltda': 40 } },
+      { nome: 'Diagnóstico eletrônico', observacao: 'Orçamento depois da avaliação.', valores: {} },
     ],
   },
 ]
@@ -286,8 +316,24 @@ async function garantirPessoa(s, p) {
 async function garantirFilial(s, f, pessoaId, matrizId) {
   const achadas = await s.get('/filiais' + q({ size: 100 }))
   const existente = achadas.content.find((x) => x.pessoaId === pessoaId)
-  if (existente) return existente
+  if (existente) {
+    // A inativa da rodada anterior volta a ativa durante a montagem — serviço
+    // novo só aceita filial ativa. A seção 3 a inativa de novo.
+    if (!existente.ativo) await s.patch(`/filiais/${existente.id}/ativo?ativo=true`)
+    return existente
+  }
   return s.post('/filiais', { pessoaId, tipo: f.tipo, matrizId, cor: f.cor })
+}
+
+async function garantirServico(s, sv, filiais) {
+  const achados = await s.get('/servicos' + q({ termo: sv.nome, size: 20 }))
+  const existente = achados.content.find((x) => x.nome === sv.nome)
+  if (existente) return existente
+  return s.post('/servicos', {
+    nome: sv.nome,
+    observacao: sv.observacao,
+    filiais: Object.entries(sv.valores).map(([pessoa, valor]) => ({ filialId: filiais[pessoa], valor })),
+  })
 }
 
 console.log(`\nBateria de Filiais em ${BASE}\n`)
@@ -310,8 +356,12 @@ for (const t of TENANTS) {
     const filial = await garantirFilial(s, f, pessoas[f.pessoa], f.matriz ? filiais[f.matriz] : undefined)
     filiais[f.pessoa] = filial.id
   }
-  montados.push({ t, tenantId, adminEmail, userEmail, userId, pessoas, filiais })
-  console.log(`  ✓ ${t.nome}: ${Object.keys(pessoas).length} pessoas, ${t.filiais.length} filiais`)
+  const servicos = {}
+  for (const sv of t.servicos) {
+    servicos[sv.nome] = (await garantirServico(s, sv, filiais)).id
+  }
+  montados.push({ t, tenantId, adminEmail, userEmail, userId, pessoas, filiais, servicos })
+  console.log(`  ✓ ${t.nome}: ${Object.keys(pessoas).length} pessoas, ${t.filiais.length} filiais, ${t.servicos.length} serviços`)
 }
 
 // ─── 1. Cada tenant vê só o que é dele ──────────────────────────────────────
@@ -435,7 +485,88 @@ for (const m of montados) {
   await conferirStatus(g, 'Filiais em leitura não grava → 403',
     u.chamar('POST', '/filiais', { pessoaId: m.pessoas[FORNECEDOR.nome], tipo: 'MATRIZ', cor: '#000000' }), 403)
 
-  // Fica assim para você ver o menu e a tela só de leitura com este usuário.
+  await conferirStatus(g, 'Filiais liberada não abre Serviços → 403', u.chamar('GET', '/servicos'), 403)
+  await conferirStatus(g, 'mas usa o /select de serviços → 200', u.chamar('GET', '/servicos/select'), 200)
+
+  await atualizarUser([{ tela: 'FILIAIS', nivel: 'LEITURA' }, { tela: 'SERVICOS', nivel: 'LEITURA' }])
+  await conferirStatus(g, 'Serviços em leitura lista → 200', u.chamar('GET', '/servicos'), 200)
+  await conferirStatus(g, 'Serviços em leitura não grava → 403',
+    u.chamar('POST', '/servicos', { nome: 'Serviço do USER', filiais: [] }), 403)
+
+  // Fica assim para você ver o menu e as telas só de leitura com este usuário.
+}
+
+// ─── 5. Serviços: código por tenant, valor por filial, isolamento ──────────
+
+for (const m of montados) {
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const g = `Serviços · ${m.t.nome}`
+  const lista = (await admin.get('/servicos' + q({ size: 100 }))).content
+  const esperados = m.t.servicos.map((sv) => sv.nome).sort()
+  const vistos = lista.map((sv) => sv.nome).sort()
+  conferir(g, `lista traz exatamente os ${esperados.length} serviços do tenant`,
+    JSON.stringify(esperados) === JSON.stringify(vistos), `vistos: ${vistos.join(', ')}`)
+  const codigos = lista.map((sv) => sv.codigo)
+  conferir(g, 'código curto, sem repetir dentro do tenant',
+    new Set(codigos).size === codigos.length && codigos.every((c) => Number.isInteger(c) && c >= 1), codigos.join(', '))
+
+  const combo = await admin.get('/servicos/select')
+  conferir(g, '/select não vaza serviço de outro tenant e não traz valor',
+    combo.every((c) => Object.values(m.servicos).includes(c.id) && c.filiais === undefined))
+
+  for (const sv of m.t.servicos) {
+    const gravado = lista.find((x) => x.nome === sv.nome)
+    const confere = !!gravado && gravado.filiais.length === Object.keys(sv.valores).length
+      && Object.entries(sv.valores).every(([pessoa, valor]) => {
+        const linha = gravado.filiais.find((l) => l.filialId === m.filiais[pessoa])
+        return linha && (linha.valor ?? null) === valor
+      })
+    conferir(g, `"${sv.nome}": valores por filial como cadastrados (vazio continua vazio)`, confere)
+  }
+
+  for (const outro of montados.filter((x) => x !== m)) {
+    const idAlheio = Object.values(outro.servicos)[0]
+    await conferirStatus(g, `abrir serviço de "${outro.t.nome}" → 404`, admin.chamar('GET', `/servicos/${idAlheio}`), 404)
+    await conferirStatus(g, `inativar serviço de "${outro.t.nome}" → 404`,
+      admin.chamar('PATCH', `/servicos/${idAlheio}/ativo?ativo=false`), 404)
+    await conferirStatus(g, `dar valor numa filial de "${outro.t.nome}" → 404`,
+      admin.chamar('POST', '/servicos', {
+        nome: 'Serviço com filial alheia', filiais: [{ filialId: Object.values(outro.filiais)[0], valor: 1 }],
+      }), 404)
+  }
+}
+
+{
+  const m = montados[0]
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const g = `Serviços · regras · ${m.t.nome}`
+  const matriz = m.filiais['Mercado Bom Preço Ltda']
+  await conferirStatus(g, 'nome repetido, em maiúsculas e sem acento → 409',
+    admin.chamar('POST', '/servicos', { nome: 'ENTREGA EM DOMICILIO', filiais: [] }), 409)
+  await conferirStatus(g, 'a mesma filial duas vezes → 400',
+    admin.chamar('POST', '/servicos', {
+      nome: 'Serviço duplicado', filiais: [{ filialId: matriz, valor: 1 }, { filialId: matriz, valor: 2 }],
+    }), 400)
+  await conferirStatus(g, 'valor negativo → 400',
+    admin.chamar('POST', '/servicos', { nome: 'Serviço negativo', filiais: [{ filialId: matriz, valor: -5 }] }), 400)
+  const canoas = await admin.get('/servicos' + q({ filialId: m.filiais['Mercado Bom Preço Canoas Ltda'] }))
+  conferir(g, 'filtro por filial traz só quem tem linha nela',
+    canoas.totalElements === 1 && canoas.content[0].nome === 'Entrega em domicílio',
+    canoas.content.map((sv) => sv.nome).join(', '))
+}
+
+{
+  // A filial de Rio Grande foi inativada na seção 3: o valor dela fica.
+  const m = montados[2]
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const g = `Serviços · filial inativa · ${m.t.nome}`
+  const rioGrande = m.filiais['Auto Center Rápido Rio Grande Ltda']
+  const alinhamento = await admin.get(`/servicos/${m.servicos['Alinhamento e balanceamento']}`)
+  const linha = alinhamento.filiais.find((l) => l.filialId === rioGrande)
+  conferir(g, 'filial inativada depois continua na lista, com o valor e sinalizada',
+    linha && linha.valor === 110 && linha.filialAtiva === false, JSON.stringify(linha))
+  await conferirStatus(g, 'mas não entra num serviço novo → 409',
+    admin.chamar('POST', '/servicos', { nome: 'Serviço em filial inativa', filiais: [{ filialId: rioGrande, valor: 1 }] }), 409)
 }
 
 // ─── Relatório ──────────────────────────────────────────────────────────────
@@ -449,5 +580,5 @@ const falhas = resultados.filter((r) => !r.ok).length
 console.log(`\n${resultados.length - falhas}/${resultados.length} conferências passaram.`)
 console.log('\nUsuários de demonstração (senha ' + SENHA_DEMO + '):')
 montados.forEach((m, i) => console.log(
-  `  ${m.t.nome.padEnd(28)} ${m.adminEmail} (ADMIN) · ${m.userEmail} (USER, ${i === 0 ? 'Filiais só leitura' : 'sem permissão'})`))
+  `  ${m.t.nome.padEnd(28)} ${m.adminEmail} (ADMIN) · ${m.userEmail} (USER, ${i === 0 ? 'Filiais e Serviços só leitura' : 'sem permissão'})`))
 process.exit(falhas ? 1 : 0)

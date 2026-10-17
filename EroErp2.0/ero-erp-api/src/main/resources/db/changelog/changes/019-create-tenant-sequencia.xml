@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Contador por tenant — o código curto que gente lê (serviço 1, 2, 3...).
+
+        O id de tudo é UUID, que ninguém lê nem dita ao telefone. O código é
+        outra coisa: sequencial DENTRO do tenant, gerado pelo sistema, nunca
+        editado. No antigo o id Long fazia esse papel, e era global — o
+        segundo cliente começava no 47.
+
+        Uma linha por (tenant, chave). O próximo número sai de um comando só:
+
+            INSERT ... VALUES (:t, :chave, 1)
+            ON CONFLICT (tenant_id, chave)
+            DO UPDATE SET ultimo = tenant_sequencia.ultimo + 1
+            RETURNING ultimo
+
+        que trava a linha até o commit: duas gravações simultâneas não
+        repetem número, e um rollback devolve o número junto, sem buraco.
+
+        ON DELETE CASCADE no tenant: o contador não tem vida sem ele.
+    -->
+    <changeSet id="019-create-tenant-sequencia" author="eduardo">
+
+        <createTable tableName="tenant_sequencia">
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_tenant_sequencia_tenant"
+                             references="tenant(id)"
+                             deleteCascade="true"/>
+            </column>
+
+            <!-- SERVICO, e PRODUTO quando vier -->
+            <column name="chave" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ultimo" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="tenant_sequencia"
+                       columnNames="tenant_id, chave"
+                       constraintName="pk_tenant_sequencia"/>
+
+        <sql>
+            ALTER TABLE tenant_sequencia ADD CONSTRAINT ck_tenant_sequencia_ultimo
+            CHECK (ultimo &gt; 0);
+        </sql>
+
+        <rollback>
+            <dropTable tableName="tenant_sequencia"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

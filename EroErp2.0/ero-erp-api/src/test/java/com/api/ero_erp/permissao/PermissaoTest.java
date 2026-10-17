@@ -141,6 +141,47 @@ class PermissaoTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Serviços: sem permissão não lê, mas usa o /select dos combos")
+    void servicosSemPermissaoNaoLe() throws Exception {
+        conceder(userA, Tela.FILIAIS, NivelAcesso.ESCRITA);
+        String token = autenticar(userA.getEmail());
+
+        // Filiais liberada não abre Serviços, embora o serviço tenha valor por filial
+        mockMvc.perform(get("/servicos").header(AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/servicos").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(servicoJson("Instalação")))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/servicos/select").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Serviços: leitura lê e não grava; escrita grava")
+    void servicosLeituraEEscrita() throws Exception {
+        conceder(userA, Tela.SERVICOS, NivelAcesso.LEITURA);
+        String token = autenticar(userA.getEmail());
+
+        mockMvc.perform(get("/servicos").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/servicos").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(servicoJson("Instalação")))
+                .andExpect(status().isForbidden());
+        assertThat(servicoRepository.findAll()).isEmpty();
+
+        usuarioPermissaoRepository.deleteAllInBatch();
+        conceder(userA, Tela.SERVICOS, NivelAcesso.ESCRITA);
+        String id = objectMapper.readTree(mockMvc.perform(post("/servicos").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(servicoJson("Instalação")))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString()).get("id").asText();
+        mockMvc.perform(patch("/servicos/{id}/ativo", id).header(AUTHORIZATION, token)
+                        .param("ativo", "false"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("mudar a permissão vale na requisição seguinte, com o mesmo token")
     void mudancaValeSemNovoLogin() throws Exception {
         String token = autenticar(userA.getEmail());
@@ -198,7 +239,10 @@ class PermissaoTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[0].telas[0].tela").value("PESSOAS"))
                 .andExpect(jsonPath("$[0].telas[0].rotulo").value("Pessoas"))
                 .andExpect(jsonPath("$[1].modulo").value("FILIAIS"))
-                .andExpect(jsonPath("$[1].telas[0].tela").value("FILIAIS"));
+                .andExpect(jsonPath("$[1].telas[0].tela").value("FILIAIS"))
+                .andExpect(jsonPath("$[2].modulo").value("SERVICOS"))
+                .andExpect(jsonPath("$[2].rotulo").value("Serviços"))
+                .andExpect(jsonPath("$[2].telas[0].tela").value("SERVICOS"));
 
         mockMvc.perform(get("/permissoes/catalogo").header(AUTHORIZATION, autenticar(adminA.getEmail())))
                 .andExpect(status().isForbidden());
@@ -352,6 +396,12 @@ class PermissaoTest extends AbstractIntegrationTest {
         return usuarioPermissaoRepository.findAll().stream()
                 .map(UsuarioPermissao::getNivel)
                 .findFirst().orElseThrow();
+    }
+
+    private static String servicoJson(String nome) {
+        return """
+                {"nome":"%s","filiais":[]}
+                """.formatted(nome);
     }
 
     private static String filialJson(UUID pessoaId) {

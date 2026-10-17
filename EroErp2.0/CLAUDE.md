@@ -44,7 +44,7 @@ EroErp2.0/
 │       ├── jobs/                  # ManutencaoJob
 │       └── {modulo}/              # tenant, usuario, auth, loginlog, refreshtoken,
 │           ├── controller/        # pessoa, contato, vinculo, catalogo, localidade,
-│           │                      # filial
+│           │                      # filial, servico, sequencia
 │           ├── dtos/
 │           ├── entity/
 │           ├── enums/
@@ -58,6 +58,8 @@ EroErp2.0/
 │                                  #   cidade pelo código IBGE — docs/08 §3.4)
 │                                  # tenant/ = também a paleta de cores de cada
 │                                  #   tenant (PaletaSistema, docs/05 §11)
+│                                  # sequencia/ = código curto por tenant
+│                                  #   (serviço 1, 2, 3… — docs/10 §2)
 └── ero/                           # frontend
     ├── public/                    # favicon e ícones
     ├── scripts/validar-paletas.mjs  # npm run paletas — contraste e cascata
@@ -86,7 +88,7 @@ EroErp2.0/
         ├── hooks/                 # useAuth · useTheme · useDebounce · useMenuRecolhido
         ├── services/              # api.ts (interceptor + refresh) + um por módulo
         ├── pages/                 # auth/Login · Inicio · usuario · tenant · pessoa · filial
-        │                          # loginlog · perfil
+        │                          # servico · loginlog · perfil
         ├── types/ utils/          # utils/format.ts (paraNumero, máscaras, datas)
         │                          # utils/planilha.ts (exportação CSV)
         └── routes/AppRoutes.tsx
@@ -104,6 +106,8 @@ Testes contra o banco `ero_erp_test` — nada de H2 nem Testcontainers.
 | **0 — Esqueleto** | ✅ pronto · herdado do projeto anterior: acesso (login, refresh com rotação, troca de tenant), tenants com período de acesso e **paleta de cores por tenant**, usuários (com **redefinição de senha pelo superadmin**), log de acesso, perfil e **cadastro de pessoas** (PF/PJ, contatos, endereços com IBGE, vínculos). Migrations 001–016 |
 | **Permissões por tela** | ✅ pronto · o superadmin libera módulos ao USER e, por tela, leitura ou escrita (`permissao/`, migration 017, [docs/02 §1.2](docs/02-modulo-usuarios.md)). Módulo é o assunto que se libera (Pessoas, Filiais), não o grupo do menu |
 | **Filiais** | ✅ pronto · o "emitente" do antigo: matriz e filiais apontando para uma pessoa, várias matrizes por tenant (`filial/`, migration 018, [docs/09](docs/09-modulo-filiais.md)) |
+| **Serviços** | ✅ pronto · cadastro próprio, separado de produto e sem estoque: código curto por tenant (`tenant_sequencia`), nome único no tenant, valor **opcional por filial** — vazio não é zero (`servico/`, migrations 019–020, [docs/10](docs/10-modulo-servicos.md)) |
+| Produtos, auxiliares e estoque | próxima fatia · do antigo, sem a parte fiscal: produto com custo opcional; unidade (global), grupo/subgrupo, categoria e marca (por tenant); estoque só de produto, por filial, com "controlar estoque" e preço de venda opcional. Reconfirmar antes de começar |
 | **Menu recolhível** | ✅ pronto · expandido ↔ só ícones em `lg+`, Ctrl+B, lembrado no navegador ([docs/04](docs/04-arquitetura-frontend.md), "O menu recolhe") |
 | Próximas | **migrar módulos do EroErp antigo**, um de cada vez, perguntando antes qual e como |
 | `audit_log` | pendente · especificação em [docs/06 §A09](docs/06-seguranca-owasp.md); molde estrutural é o `loginlog`, com o expurgo no `ManutencaoJob` |
@@ -471,6 +475,7 @@ de fechar no papel.
 | [docs/07-banco-liquibase.md](docs/07-banco-liquibase.md) | PostgreSQL + Liquibase |
 | [docs/08-modulo-pessoas.md](docs/08-modulo-pessoas.md) | Cadastro de pessoas — PF/PJ, contatos, endereços e vínculos |
 | [docs/09-modulo-filiais.md](docs/09-modulo-filiais.md) | Filiais — matriz e filiais (o emitente do antigo), várias matrizes por tenant |
+| [docs/10-modulo-servicos.md](docs/10-modulo-servicos.md) | Serviços — código por tenant, valor opcional por filial, sem estoque |
 
 ---
 
@@ -552,8 +557,8 @@ POPULAR_EMAIL=... POPULAR_SENHA=... node ero-erp-api/scripts/popular-dev.mjs
 
 **Bateria multi-tenant** — com o superadmin do `.env`, abre três tenants
 `(demo)` (Mercado Bom Preço, Grupo Vida Plena com duas matrizes, Auto Center
-Rápido), cada um com ADMIN, USER, pessoas e filiais próprias, e confere 50
-pontos de isolamento, regras e permissão. Reaproveita o que existe; os
+Rápido), cada um com ADMIN, USER, pessoas, filiais e serviços próprios, e
+confere isolamento, regras e permissão de cada módulo. Reaproveita o que existe; os
 usuários `admin@<tenant>.demo.local` entram com a senha que ela imprime. Cada
 módulo novo que tiver tenant acrescenta aqui as suas conferências.
 
