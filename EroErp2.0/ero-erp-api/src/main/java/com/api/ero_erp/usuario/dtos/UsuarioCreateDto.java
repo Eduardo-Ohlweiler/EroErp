@@ -1,12 +1,15 @@
 package com.api.ero_erp.usuario.dtos;
 
+import com.api.ero_erp.permissao.dtos.PermissaoDto;
 import com.api.ero_erp.tenant.enums.PeriodoAcesso;
 import com.api.ero_erp.usuario.enums.Role;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
 import java.util.UUID;
 
 public record UsuarioCreateDto(
@@ -39,5 +42,12 @@ public record UsuarioCreateDto(
          * tenant existente é ignorado, como acontece com a {@code role} no
          * caminho de cliente novo. Nulo é {@code INDETERMINADO}.
          */
-        PeriodoAcesso periodoAcesso
+        PeriodoAcesso periodoAcesso,
+
+        /**
+         * Telas liberadas, só para o nível USER — nos outros é ignorada. Nula
+         * ou vazia: o usuário nasce sem acesso aos módulos.
+         */
+        @Valid
+        List<PermissaoDto> permissoes
 ) {}

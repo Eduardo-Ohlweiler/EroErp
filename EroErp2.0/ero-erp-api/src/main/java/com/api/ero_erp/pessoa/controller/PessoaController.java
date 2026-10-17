@@ -30,9 +30,15 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Cadastro de pessoas — módulo de negócio, e não área administrativa: ADMIN e
- * USER do tenant operam aqui. O isolamento vem do tenant efetivo do token, não
- * da role.
+ * Cadastro de pessoas — módulo de negócio, e não área administrativa. Cada
+ * método exige a permissão da tela {@code PESSOAS} ({@code Tela}): leitura nos
+ * GET, escrita no resto. ADMIN e SUPERADMIN têm as duas.
+ *
+ * <p>O {@code isAuthenticated()} da classe fica para o {@code /select}: ele
+ * devolve só o que um combo precisa e serve outras telas (o vínculo, e os
+ * módulos que vierem), então não exige a permissão de Pessoas.
+ *
+ * <p>O isolamento vem do tenant efetivo do token, não da permissão.
  */
 @RestController
 @RequestMapping("/pessoas")
@@ -44,6 +50,7 @@ public class PessoaController {
     private final PessoaService pessoaService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('PESSOAS_LER')")
     @Operation(summary = "Lista as pessoas do tenant",
             description = "O filtro `documento` procura em CPF e CNPJ, com ou sem máscara.")
     public ResponseEntity<Page<PessoaResponseDto>> getAll(
@@ -71,12 +78,14 @@ public class PessoaController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('PESSOAS_LER')")
     @Operation(summary = "Detalha uma pessoa, com contatos")
     public ResponseEntity<PessoaResponseDto> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(pessoaService.findByIdResponse(id));
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('PESSOAS_ESCREVER')")
     @Operation(summary = "Cadastra uma pessoa")
     public ResponseEntity<PessoaResponseDto> create(@Valid @RequestBody PessoaCreateDto dto) {
         PessoaResponseDto criada = pessoaService.create(dto);
@@ -84,6 +93,7 @@ public class PessoaController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('PESSOAS_ESCREVER')")
     @Operation(summary = "Altera uma pessoa",
             description = """
                     As listas de contato são o estado completo: item com `id`
@@ -95,6 +105,7 @@ public class PessoaController {
     }
 
     @PatchMapping("/{id}/ativo")
+    @PreAuthorize("hasAuthority('PESSOAS_ESCREVER')")
     @Operation(summary = "Ativa ou inativa uma pessoa",
             description = "Cadastro de pessoa não se apaga — inativa-se.")
     public ResponseEntity<PessoaResponseDto> alterarAtivo(@PathVariable UUID id,

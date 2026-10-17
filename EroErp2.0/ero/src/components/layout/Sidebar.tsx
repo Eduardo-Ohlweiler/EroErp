@@ -12,6 +12,7 @@ import {
 import { MarcaEro } from '@/components/layout/MarcaEro'
 import { useAuth } from '@/hooks/useAuth'
 import type { Role } from '@/types/auth'
+import type { Tela } from '@/types/permissao'
 
 interface Item {
   para: string
@@ -19,6 +20,8 @@ interface Item {
   Icone: ComponentType<SVGProps<SVGSVGElement>>
   /** Sem roles, todo autenticado vê. */
   roles?: Role[]
+  /** Tela de módulo de negócio: aparece para quem ao menos a lê. */
+  tela?: Tela
 }
 
 interface Grupo {
@@ -32,7 +35,7 @@ const GRUPOS: Grupo[] = [
   },
   {
     titulo: 'Cadastros',
-    itens: [{ para: '/app/pessoas', rotulo: 'Pessoas', Icone: IconPessoas }],
+    itens: [{ para: '/app/pessoas', rotulo: 'Pessoas', Icone: IconPessoas, tela: 'PESSOAS' }],
   },
   {
     titulo: 'Administração',
@@ -63,10 +66,14 @@ interface SidebarProps {
  * regra de responsividade.
  */
 export function Sidebar({ aberta, onFechar, moldura }: SidebarProps) {
-  const { hasRole } = useAuth()
+  const { hasRole, podeLer } = useAuth()
 
-  /** Sem `roles`, todo autenticado vê. Com, só quem tem o nível. */
-  const podeVer = (item: Item) => !item.roles || hasRole(...item.roles)
+  /**
+   * Sem `roles` nem `tela`, todo autenticado vê. Com `roles`, só quem tem o
+   * nível; com `tela`, só quem ao menos lê a tela.
+   */
+  const podeVer = (item: Item) =>
+    (!item.roles || hasRole(...item.roles)) && (!item.tela || podeLer(item.tela))
 
   return (
     <>

@@ -2,6 +2,7 @@ package com.api.ero_erp.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.api.ero_erp.exceptions.ErroResponseDto;
+import com.api.ero_erp.permissao.service.PermissaoService;
 import com.api.ero_erp.tenant.entity.Tenant;
 import com.api.ero_erp.tenant.repository.TenantRepository;
 import com.api.ero_erp.usuario.entity.Usuario;
@@ -19,12 +20,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +43,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final UsuarioRepository usuarioRepository;
     private final TenantRepository tenantRepository;
     private final ObjectMapper objectMapper;
+    private final PermissaoService permissaoService;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -79,10 +83,13 @@ public class JwtFilter extends OncePerRequestFilter {
             if (tenantDeOutrem && !usuario.isSuperadmin())
                 throw new JwtException("Token fora do tenant do usuário");
 
-            var authentication = new UsernamePasswordAuthenticationToken(
-                    usuarioId,
-                    null,
-                    List.of(new SimpleGrantedAuthority(usuario.getRole().authority())));
+            // Permissões por tela lidas do banco, e não do token: mudar uma
+            // permissão vale na próxima requisição, sem novo login.
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority(usuario.getRole().authority()));
+            authorities.addAll(permissaoService.authorities(usuario));
+
+            var authentication = new UsernamePasswordAuthenticationToken(usuarioId, null, authorities);
 
             authentication.setDetails(new AuthDetails(
                     tenantId,

@@ -10,6 +10,7 @@ import {
 import { TPage } from '@/components/common'
 import { useAuth } from '@/hooks/useAuth'
 import type { Role } from '@/types/auth'
+import type { Tela } from '@/types/permissao'
 
 interface Atalho {
   para: string
@@ -18,6 +19,8 @@ interface Atalho {
   Icone: ComponentType<SVGProps<SVGSVGElement>>
   /** Sem roles, todo autenticado vê — o mesmo contrato do menu. */
   roles?: Role[]
+  /** Tela de módulo de negócio: aparece para quem ao menos a lê. */
+  tela?: Tela
 }
 
 const ATALHOS: Atalho[] = [
@@ -26,6 +29,7 @@ const ATALHOS: Atalho[] = [
     titulo: 'Pessoas',
     descricao: 'Clientes, fornecedores e funcionários.',
     Icone: IconPessoas,
+    tela: 'PESSOAS',
   },
   {
     para: '/app/perfil',
@@ -61,9 +65,11 @@ const ATALHOS: Atalho[] = [
  * chegar decide se ganha um cartão aqui ou um resumo próprio.
  */
 export function Inicio() {
-  const { sessao, hasRole } = useAuth()
+  const { sessao, hasRole, podeLer } = useAuth()
   const primeiroNome = sessao?.nome.split(' ')[0] ?? ''
-  const visiveis = ATALHOS.filter((a) => !a.roles || hasRole(...a.roles))
+  const visiveis = ATALHOS.filter(
+    (a) => (!a.roles || hasRole(...a.roles)) && (!a.tela || podeLer(a.tela)),
+  )
 
   return (
     <TPage title={`Olá, ${primeiroNome}`} subtitle={sessao?.tenantNome}>

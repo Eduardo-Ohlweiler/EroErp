@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { TBadge, TButton, TEntry, TPage, TPanel } from '@/components/common'
@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { handleApiError } from '@/services/api'
 import { usuarioService } from '@/services/usuarioService'
 import { ROLE_LABEL } from '@/types/auth'
+import { mascararTelefone, somenteDigitos } from '@/utils/format'
 
 const perfilSchema = z.object({
   nome: z.string().min(1, 'Informe o nome').max(255),
@@ -38,7 +39,7 @@ export function Perfil() {
   useEffect(() => {
     usuarioService
       .getPerfil()
-      .then((u) => perfilForm.reset({ nome: u.nome, telefone: u.telefone ?? '' }))
+      .then((u) => perfilForm.reset({ nome: u.nome, telefone: mascararTelefone(u.telefone ?? '') }))
       .catch(handleApiError)
       .finally(() => setCarregando(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,7 +49,7 @@ export function Perfil() {
     try {
       await usuarioService.updatePerfil({
         nome: dados.nome,
-        telefone: dados.telefone || undefined,
+        telefone: somenteDigitos(dados.telefone),
       })
       toast.success('Perfil salvo. O nome no topo atualiza no próximo acesso.')
     } catch (erro) {
@@ -95,10 +96,18 @@ export function Perfil() {
               error={perfilForm.formState.errors.nome?.message}
               {...perfilForm.register('nome')}
             />
-            <TEntry
-              label="Telefone"
-              placeholder="(51) 99999-0000"
-              {...perfilForm.register('telefone')}
+            <Controller
+              control={perfilForm.control}
+              name="telefone"
+              render={({ field }) => (
+                <TEntry
+                  label="Telefone"
+                  inputMode="numeric"
+                  placeholder="(51) 99999-0000"
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(mascararTelefone(e.target.value))}
+                />
+              )}
             />
 
             <div className="grid gap-3 rounded-md bg-surface-alt p-3 sm:grid-cols-2">

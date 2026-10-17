@@ -11,6 +11,7 @@ import com.api.ero_erp.exceptions.UnauthorizedException;
 import com.api.ero_erp.loginlog.enums.MotivoFalha;
 import com.api.ero_erp.loginlog.enums.TipoLogout;
 import com.api.ero_erp.loginlog.service.LoginLogService;
+import com.api.ero_erp.permissao.service.PermissaoService;
 import com.api.ero_erp.refreshtoken.entity.RefreshToken;
 import com.api.ero_erp.refreshtoken.service.RefreshTokenService;
 import com.api.ero_erp.tenant.entity.Tenant;
@@ -44,6 +45,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final SecurityUtils securityUtils;
+    private final PermissaoService permissaoService;
 
     @Transactional
     public AuthResponseDto login(LoginDto dto, HttpServletRequest request) {
@@ -191,6 +193,7 @@ public class AuthService {
                 tenant.getId(),
                 tenant.getNome(),
                 tenant.getPaleta(),
-                impersonating);
+                impersonating,
+                permissaoService.efetivas(usuario));
     }
 }

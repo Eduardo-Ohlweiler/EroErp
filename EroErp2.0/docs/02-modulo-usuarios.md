@@ -15,7 +15,7 @@ Sem tabela de role, sem grupo de acesso, sem tabela de junção.
 
 | Nível | Alcance |
 |---|---|
-| `SUPERADMIN` | administra o sistema; **único que atravessa tenants** |
+| `SUPERADMIN` | administra o sistema; **único que atravessa tenants**; só existe no tenant do sistema |
 | `ADMIN` | administra o próprio tenant |
 | `USER` | opera dentro do próprio tenant |
 
@@ -28,15 +28,24 @@ public enum Role {
 ```
 
 A **área administrativa** — `/tenants`, `/usuarios`, `/login-logs` — é exclusiva do
-`SUPERADMIN`. `ADMIN` e `USER` acessam os módulos de negócio e o próprio perfil.
+`SUPERADMIN`. `ADMIN` acessa todos os módulos de negócio; `USER`, só as telas
+liberadas a ele (§1.2). Todos acessam o próprio perfil.
+
+**SUPERADMIN só no tenant do sistema.** Só um superadmin concede o nível, e só a
+quem mora no tenant de origem dele (`UsuarioService.validarConcessaoDeRole`);
+num tenant de cliente é 400. O tenant que abriga um superadmin nunca expira
+(§1.1), e um cliente não pode ganhar isso por engano. A tela de usuário só
+oferece a opção quando o destino é esse tenant.
 
 > **Consequência a ter em mente:** o administrador de um tenant não cadastra os
-> próprios usuários — quem provisiona é o superadmin. Foi decisão deliberada, e
-> muda com uma linha em `@PreAuthorize` se o produto pedir.
+> próprios usuários nem as permissões deles — quem provisiona é o superadmin.
+> Foi decisão deliberada, e muda com uma linha em `@PreAuthorize` se o produto
+> pedir.
 
-> **Por que não há grupo de acesso.** Com três níveis fixos, um grupo não teria o
-> que agrupar. Permissão por módulo entra quando houver demanda concreta: uma
-> migration nova e um campo a mais, sem quebrar o que existe.
+> **Por que não há grupo de acesso.** O EroErp antigo tinha `role` e
+> `grupo_acesso` em tabela, globais, e o catálogo de telas espalhado entre
+> migration, menu e rota — que discordavam. Aqui o nível fica no enum, e o que
+> varia por usuário é a permissão por tela (§1.2), com o catálogo em código.
 
 ### 1.1 Período de acesso — a licença do cliente
 
@@ -80,9 +89,57 @@ sistema por causa de uma data gravada errado.
 
 ---
 
+### 1.2 Permissões por tela
+
+O superadmin, ao criar ou editar um usuário **USER**, libera **módulos** (grupos
+de telas) e, em cada tela, escolhe **Sem acesso · Leitura · Leitura e escrita**.
+`ADMIN` e `SUPERADMIN` acessam tudo e não têm linha gravada.
+
+**Catálogo em código.** `permissao/enums/Modulo` e `permissao/enums/Tela` —
+hoje `CADASTROS` › `PESSOAS`. Uma tela só existe se existe o código dela, então
+o catálogo não é tabela: nada a semear, nada a esquecer. O front espelha `Tela`
+em `types/permissao.ts` e pede rótulos e ordem a `GET /permissoes/catalogo`.
+
+**Gravação.** `usuario_permissao (tenant_id, usuario_id, tela, nivel)`, uma
+linha por tela liberada, `UNIQUE (usuario_id, tela)`. Sem linha, sem acesso;
+"módulo liberado" é ter ao menos uma tela dele. A lista vai no próprio
+`POST`/`PUT /usuarios` como estado completo (`PermissaoService.sincronizar`):
+tela que não vem perde o acesso, tela repetida é 400, e fora do nível USER o
+que houver é apagado — um ADMIN rebaixado não reaparece com permissões velhas.
+Um `PUT` **sem** o campo `permissoes` também apaga: nulo é lista vazia.
+
+**Aplicação.** O `JwtFilter`, que já recarrega o usuário a cada requisição, dá
+a ele as authorities `<TELA>_LER` (leitura ou escrita) e `<TELA>_ESCREVER`
+(escrita). O controller protege:
+
+```java
+@GetMapping       @PreAuthorize("hasAuthority('PESSOAS_LER')")
+@PostMapping      @PreAuthorize("hasAuthority('PESSOAS_ESCREVER')")
+@GetMapping("/select")   // isAuthenticated() da classe: combo de outras telas
+```
+
+O `/select` fica de fora de propósito: devolve só o que um combo precisa e
+serve outras telas (o vínculo, os módulos que vierem). Sem isso volta a "role de
+apoio" do antigo — `EMITENTE_GET` espalhado em todo grupo.
+
+**Por que não vai no token.** No antigo as roles iam no JWT de 24 h: tirar uma
+permissão só valia no próximo login. Aqui a permissão vem do banco a cada
+requisição e muda na hora, sem `versaoSessao`.
+
+**No front.** `AuthResponseDto.permissoes` traz o mapa já resolvido
+(`{ "PESSOAS": "ESCRITA" }`; ADMIN vem com tudo) — a tela não reimplementa o
+"se é admin". `useAuth().podeLer/podeEscrever` alimentam o menu, o Início e o
+`TProtected tela`. Como o access token dura 8 h, a cada **403** o
+`AuthContext` relê `GET /usuarios/perfil/acesso`, e menu e botões se acertam.
+
+**Somente leitura.** `useSomenteLeitura(tela)`: a lista esconde "Novo" e
+Inativar; o formulário põe o corpo num `<fieldset disabled>`, esconde Salvar e
+os botões de acrescentar/remover linha, e troca Cancelar por Voltar. O cadastro
+novo (`/nova`) exige escrita na rota.
+
 ## 2. Tabelas
 
-Quatro. Nada além do necessário.
+Cinco. Nada além do necessário.
 
 | Tabela | Conteúdo | Escopo |
 |---|---|---|
@@ -90,12 +147,15 @@ Quatro. Nada além do necessário.
 | `usuario` | `tenant_id`, `nome`, `email`, `senha`, `telefone`, `codigo_pais`, **`role`**, `ativo`, `tentativas_falhas`, `bloqueado_ate`, **`versao_sessao`**, `created_by`, `updated_by` | **tenant** |
 | `login_log` | `tenant_id`, `usuario_id`, `email_tentativa`, `sucesso`, `motivo_falha`, `data_login`, `data_logout`, `tipo_logout`, `endereco_ip`, `user_agent`, `impersonado_por` | **tenant** |
 | `refresh_token` | `usuario_id`, `session_id`, `token_hash`, `expira_em`, `revogado_em` | via usuário |
+| `usuario_permissao` | `tenant_id`, `usuario_id`, **`tela`**, **`nivel`** (LEITURA · ESCRITA), timestamps — só para USER (§1.2) | **tenant** |
 
 Constraints que importam:
 
 ```
 uk_usuario_email               (email)                -- GLOBAL: é a credencial de login
 uk_refresh_token_hash          (token_hash)
+uk_usuario_permissao_tela      (usuario_id, tela)
+ck_usuario_permissao_nivel     CHECK nivel IN ('LEITURA','ESCRITA')   -- tela sem CHECK: o enum cresce
 ck_usuario_role                CHECK role IN ('SUPERADMIN','ADMIN','USER')
 ck_tenant_periodo_acesso       CHECK periodo_acesso IN ('INDETERMINADO','UM_MES',…)
 ck_tenant_acesso_coerente      CHECK INDETERMINADO ⇔ acesso_expira_em IS NULL
@@ -360,6 +420,7 @@ Padrão ([05 §11](05-identidade-visual.md)).
 | `POST` | `/auth/logout` |
 | `GET` `PUT` | `/usuarios/perfil` |
 | `PATCH` | `/usuarios/perfil/senha` — exige a senha atual |
+| `GET` | `/usuarios/perfil/acesso` — telas e nível do logado, o mesmo mapa da autenticação (§1.2) |
 
 ### Somente `SUPERADMIN`
 
@@ -372,7 +433,8 @@ Padrão ([05 §11](05-identidade-visual.md)).
 | `PATCH` | `/tenants/{id}/paleta` | `{ "paleta": "JADE" }`; chega aos usuários do tenant na próxima sessão — [05 §11](05-identidade-visual.md) |
 | `GET` | `/usuarios`, `/usuarios/{id}`, `/usuarios/select` | escopo do tenant **efetivo** |
 | `GET` | `/usuarios/global` | atravessa tenants — §6.1 |
-| `POST` `PUT` | `/usuarios`, `/usuarios/{id}` | o `POST` abre um cliente novo quando não há tenant indicado — §3.1 |
+| `POST` `PUT` | `/usuarios`, `/usuarios/{id}` | o `POST` abre um cliente novo quando não há tenant indicado — §3.1; `permissoes` é o estado completo das telas do USER — §1.2 |
+| `GET` | `/permissoes/catalogo` | módulos e telas que se libera, com rótulos — §1.2 |
 | `PATCH` | `/usuarios/{id}/ativo`, `/usuarios/{id}/desbloquear` | |
 | `PATCH` | `/usuarios/{id}/senha` | redefine a senha, desbloqueia e derruba as sessões — §3.6 |
 | `GET` | `/login-logs` | tenant efetivo |

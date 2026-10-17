@@ -20,6 +20,7 @@ import {
 import { DocumentoLista } from '@/components/impressao/DocumentoLista'
 import { useAuth } from '@/hooks/useAuth'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
 import { handleApiError } from '@/services/api'
 import { catalogoService } from '@/services/catalogoService'
 import { pessoaService } from '@/services/pessoaService'
@@ -31,6 +32,7 @@ import type { ColunaExportavel } from '@/utils/planilha'
 export function PessoaList() {
   const navigate = useNavigate()
   const { sessao } = useAuth()
+  const somenteLeitura = useSomenteLeitura('PESSOAS')
 
   const [nome, setNome] = useState('')
   const [documento, setDocumento] = useState('')
@@ -220,10 +222,12 @@ export function PessoaList() {
             carregar={carregarTudo}
             aoCarregarParaImprimir={setParaImprimir}
           />
-          <TButton onClick={() => navigate('/app/pessoas/nova')}>
-            <IconAdicionar className="size-4" />
-            Nova pessoa
-          </TButton>
+          {!somenteLeitura && (
+            <TButton onClick={() => navigate('/app/pessoas/nova')}>
+              <IconAdicionar className="size-4" />
+              Nova pessoa
+            </TButton>
+          )}
         </>
       }
       documento={
@@ -316,8 +320,12 @@ export function PessoaList() {
         onLinhaClick={(p) => navigate(`/app/pessoas/${p.id}`)}
         tituloCartao={(p) => p.nome}
         vazioTitulo="Nenhuma pessoa encontrada"
-        vazioDescricao="Ajuste os filtros ou cadastre a primeira pessoa."
-        acoes={(p) => (
+        vazioDescricao={
+          somenteLeitura
+            ? 'Ajuste os filtros.'
+            : 'Ajuste os filtros ou cadastre a primeira pessoa.'
+        }
+        acoes={somenteLeitura ? undefined : (p) => (
           <TButton
             variant="secondary"
             size="sm"

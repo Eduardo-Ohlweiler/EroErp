@@ -332,7 +332,7 @@ public class ProdutoController {
     private final ProdutoService produtoService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','USER')")
+    @PreAuthorize("hasAuthority('PRODUTOS_LER')")
     public ResponseEntity<Page<ProdutoResponseDto>> getAll(
             @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) String descricao,
@@ -342,20 +342,20 @@ public class ProdutoController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','USER')")
+    @PreAuthorize("hasAuthority('PRODUTOS_LER')")
     public ResponseEntity<ProdutoResponseDto> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(produtoService.findById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','USER')")
+    @PreAuthorize("hasAuthority('PRODUTOS_ESCREVER')")
     public ResponseEntity<ProdutoResponseDto> create(@Valid @RequestBody ProdutoCreateDto dto) {
         ProdutoResponseDto criado = produtoService.create(dto);
         return ResponseEntity.created(URI.create("/produtos/" + criado.id())).body(criado);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','USER')")
+    @PreAuthorize("hasAuthority('PRODUTOS_ESCREVER')")
     public ResponseEntity<ProdutoResponseDto> update(@PathVariable UUID id,
                                                      @Valid @RequestBody ProdutoUpdateDto dto) {
         return ResponseEntity.ok(produtoService.update(id, dto));
@@ -365,8 +365,11 @@ public class ProdutoController {
 
 Regras:
 
-- **`@PreAuthorize` em todos os métodos.** Não existe endpoint apenas autenticado
-  fora de `/auth/**` e `/usuarios/perfil`.
+- **`@PreAuthorize` em todos os métodos.** Módulo de negócio usa a permissão da
+  tela: `<TELA>_LER` nos GET, `<TELA>_ESCREVER` em POST, PUT, PATCH e DELETE. A
+  tela nasce como constante no enum `Tela` (docs/02 §1.2). O `/select` dos combos
+  é a exceção: `isAuthenticated()`, porque serve outras telas e devolve só id e
+  rótulo.
 - Rotas no plural e em kebab-case: `/pessoas`, `/login-logs`, `/unidades-medida`.
 - `@Valid` em todo `@RequestBody`.
 - Status: `200` leitura e update, `201` create (com `Location`), `204` delete,

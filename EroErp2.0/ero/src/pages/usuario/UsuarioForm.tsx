@@ -6,13 +6,17 @@ import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { IconTenants } from '@/assets/icons'
 import { TButton, TCombo, TEntry, TPage, TPanel, TSelect } from '@/components/common'
+import { PermissoesUsuario } from '@/components/usuario/PermissoesUsuario'
 import { RedefinirSenhaModal } from '@/components/usuario/RedefinirSenhaModal'
 import { useAuth } from '@/hooks/useAuth'
 import { handleApiError } from '@/services/api'
+import { permissaoService } from '@/services/permissaoService'
 import { tenantService } from '@/services/tenantService'
 import { usuarioService } from '@/services/usuarioService'
 import { ROLE_LABEL, type Role } from '@/types/auth'
+import type { CatalogoModulo, Permissao } from '@/types/permissao'
 import { OPCOES_PERIODO_ACESSO, type PeriodoAcesso } from '@/types/tenant'
+import { mascararTelefone, somenteDigitos } from '@/utils/format'
 
 const schema = z.object({
   nome: z.string().min(1, 'Informe o nome').max(255),
@@ -35,10 +39,16 @@ interface TenantDoAtalho {
   tenantNome: string
 }
 
-const OPCOES_ROLE = (['ADMIN', 'USER'] as Role[]).map((r) => ({
-  valor: r,
-  rotulo: ROLE_LABEL[r],
-}))
+const opcoesDe = (roles: Role[]) => roles.map((r) => ({ valor: r, rotulo: ROLE_LABEL[r] }))
+
+/**
+ * Superadministrador só existe no tenant do sistema — o tenant que abriga um
+ * superadmin nunca expira, e um cliente não pode ganhar isso por engano. O
+ * backend recusa fora dele (`UsuarioService.validarConcessaoDeRole`); aqui a
+ * opção simplesmente não aparece.
+ */
+const OPCOES_ROLE = opcoesDe(['ADMIN', 'USER'])
+const OPCOES_ROLE_NO_SISTEMA = opcoesDe(['SUPERADMIN', 'ADMIN', 'USER'])
 
 export function UsuarioForm() {
   const { id } = useParams()
@@ -61,7 +71,13 @@ export function UsuarioForm() {
   const [destino, setDestino] = useState<Destino>('novo-cliente')
   const [carregando, setCarregando] = useState(editando)
   const [tenantNome, setTenantNome] = useState<string>()
+  /** Na edição: o tenant e o nível como estão gravados. */
+  const [tenantDoUsuario, setTenantDoUsuario] = useState<string>()
+  const [roleGravada, setRoleGravada] = useState<Role>()
   const [redefinindoSenha, setRedefinindoSenha] = useState(false)
+  const [catalogo, setCatalogo] = useState<CatalogoModulo[]>([])
+  /** Telas liberadas, no formato que o backend grava. Só vale para USER. */
+  const [permissoes, setPermissoes] = useState<Permissao[]>([])
   /** A própria senha se troca no perfil, informando a atual. */
   const ehOProprio = editando && id === sessao?.usuarioId
 
@@ -76,6 +92,7 @@ export function UsuarioForm() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     control,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
@@ -97,17 +114,46 @@ export function UsuarioForm() {
         reset({
           nome: u.nome,
           email: u.email,
-          telefone: u.telefone ?? '',
+          // Normaliza o que estiver gravado, com ou sem máscara.
+          telefone: mascararTelefone(u.telefone ?? ''),
           role: u.role,
         })
         setTenantNome(u.tenantNome)
+        setTenantDoUsuario(u.tenantId)
+        setRoleGravada(u.role)
+        setPermissoes(u.permissoes ?? [])
       })
       .catch(handleApiError)
       .finally(() => setCarregando(false))
   }, [id, reset])
 
+  useEffect(() => {
+    permissaoService.catalogo().then(setCatalogo).catch(handleApiError)
+  }, [])
+
   const clienteNovo =
     !editando && !dentroDeTenant && !tenantDoAtalho && destino === 'novo-cliente'
+
+  /** O cliente novo nasce ADMIN, qualquer que seja o nível no formulário. */
+  const roleEfetiva = clienteNovo ? 'ADMIN' : (watch('role') as Role | undefined)
+  const ehUsuarioComum = roleEfetiva === 'USER'
+
+  /** Onde o usuário fica — o que decide se Superadministrador é opção. */
+  const tenantDestino = editando
+    ? tenantDoUsuario
+    : (tenantDoAtalho?.tenantId ?? (dentroDeTenant ? sessao?.tenantId : watch('tenantId')))
+  // Fora da troca de tenant, o tenant da sessão é o de origem do superadmin:
+  // o do sistema. Um registro que já é SUPERADMIN mostra a opção sempre, para
+  // o select não ficar vazio.
+  const noTenantDoSistema = !dentroDeTenant && !!tenantDestino && tenantDestino === sessao?.tenantId
+  const podeSerSuperadmin = noTenantDoSistema || roleGravada === 'SUPERADMIN'
+  const opcoesRole = podeSerSuperadmin ? OPCOES_ROLE_NO_SISTEMA : OPCOES_ROLE
+
+  // Trocou o cliente de destino depois de escolher Superadministrador: a opção
+  // sumiu, e o valor não pode ficar escondido no formulário.
+  useEffect(() => {
+    if (!podeSerSuperadmin && watch('role') === 'SUPERADMIN') setValue('role', 'USER')
+  }, [podeSerSuperadmin, watch, setValue])
 
   async function onSubmit(dados: FormData) {
     try {
@@ -115,8 +161,10 @@ export function UsuarioForm() {
         await usuarioService.update(id!, {
           nome: dados.nome,
           email: dados.email,
-          telefone: dados.telefone || undefined,
+          telefone: somenteDigitos(dados.telefone),
           role: dados.role as Role,
+          // Estado completo; fora do nível USER o backend apaga o que houver.
+          permissoes: ehUsuarioComum ? permissoes : [],
         })
         toast.success('Usuário salvo')
       } else {
@@ -128,12 +176,13 @@ export function UsuarioForm() {
           nome: dados.nome,
           email: dados.email,
           senha: dados.senha,
-          telefone: dados.telefone || undefined,
+          telefone: somenteDigitos(dados.telefone),
           // Cliente novo: sem tenantId, o backend cria o tenant e força ADMIN
           tenantId: clienteNovo ? undefined : dados.tenantId || undefined,
           role: clienteNovo ? undefined : (dados.role as Role),
           // Licença do tenant que está nascendo — ignorada nos demais casos.
           periodoAcesso: clienteNovo ? (dados.periodoAcesso as PeriodoAcesso) : undefined,
+          permissoes: ehUsuarioComum ? permissoes : undefined,
         })
         toast.success(
           clienteNovo
@@ -217,7 +266,7 @@ export function UsuarioForm() {
                     />
                   )}
                 />
-                <TSelect label="Nível de acesso" opcoes={OPCOES_ROLE} {...register('role')} />
+                <TSelect label="Nível de acesso" opcoes={opcoesRole} {...register('role')} />
               </div>
             )}
           </TPanel>
@@ -253,7 +302,19 @@ export function UsuarioForm() {
               error={errors.email?.message}
               {...register('email')}
             />
-            <TEntry label="Telefone" placeholder="(51) 99999-0000" {...register('telefone')} />
+            <Controller
+              control={control}
+              name="telefone"
+              render={({ field }) => (
+                <TEntry
+                  label="Telefone"
+                  inputMode="numeric"
+                  placeholder="(51) 99999-0000"
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(mascararTelefone(e.target.value))}
+                />
+              )}
+            />
 
             {!editando && (
               <TEntry
@@ -267,7 +328,7 @@ export function UsuarioForm() {
             )}
 
             {(editando || dentroDeTenant || tenantDoAtalho) && (
-              <TSelect label="Nível de acesso" opcoes={OPCOES_ROLE} {...register('role')} />
+              <TSelect label="Nível de acesso" opcoes={opcoesRole} {...register('role')} />
             )}
           </div>
 
@@ -275,6 +336,24 @@ export function UsuarioForm() {
             <p className="mt-4 rounded-md bg-info-bg px-3 py-2 text-caption text-info">
               Será criado o tenant <strong>{watch('nome') || '…'}</strong> e este usuário
               como <strong>administrador</strong> dele.
+            </p>
+          )}
+        </TPanel>
+
+        <TPanel
+          title="Acesso aos módulos"
+          subtitle={
+            ehUsuarioComum
+              ? 'Marque os módulos liberados e, em cada tela, se o usuário só lê ou também grava.'
+              : undefined
+          }
+        >
+          {ehUsuarioComum ? (
+            <PermissoesUsuario catalogo={catalogo} value={permissoes} onChange={setPermissoes} />
+          ) : (
+            <p className="text-caption text-txt-secondary">
+              Superadministradores e administradores acessam todos os módulos, com leitura e
+              escrita.
             </p>
           )}
         </TPanel>

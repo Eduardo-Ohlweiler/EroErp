@@ -1,5 +1,6 @@
 import { api } from './api'
 import type { Page, SelectOption } from '@/types/comum'
+import type { Permissoes } from '@/types/permissao'
 import type {
   PerfilUpdate,
   SenhaRedefinicao,
@@ -48,6 +49,9 @@ export const usuarioService = {
 
   // ─── Perfil próprio — qualquer usuário autenticado ──────────────────
   getPerfil: () => api.get<UsuarioResponse>('/usuarios/perfil').then((r) => r.data),
+
+  /** Telas que o logado acessa — o mesmo mapa `permissoes` da autenticação. */
+  getAcesso: () => api.get<Permissoes>('/usuarios/perfil/acesso').then((r) => r.data),
 
   updatePerfil: (dto: PerfilUpdate) =>
     api.put<UsuarioResponse>('/usuarios/perfil', dto).then((r) => r.data),

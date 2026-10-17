@@ -1,4 +1,5 @@
 import type { PaletaSistema } from './paleta'
+import type { Permissoes } from './permissao'
 
 /** Espelha o enum `Role` do backend. Nível único por usuário. */
 export type Role = 'SUPERADMIN' | 'ADMIN' | 'USER'
@@ -23,6 +24,8 @@ export interface AuthResponse {
   /** Paleta do tenant efetivo — muda junto com ele na troca de tenant. */
   paleta: PaletaSistema
   impersonating: boolean
+  /** Tela → nível, já resolvido: ADMIN e SUPERADMIN vêm com todas em ESCRITA. */
+  permissoes: Permissoes
 }
 
 export interface LoginRequest {
@@ -41,4 +44,6 @@ export interface Sessao {
   paleta: PaletaSistema
   /** true quando um SUPERADMIN está navegando dentro de outro tenant. */
   impersonating: boolean
+  /** Telas que o usuário acessa. Ausente = sem acesso. */
+  permissoes: Permissoes
 }

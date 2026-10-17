@@ -46,10 +46,17 @@ export function AppRoutes() {
             <Route index element={<Inicio />} />
             <Route path="perfil" element={<Perfil />} />
 
-            {/* Módulo de negócio: ADMIN e USER operam, não só o superadmin. */}
-            <Route path="pessoas" element={<PessoaList />} />
-            <Route path="pessoas/nova" element={<PorRegistro><PessoaForm /></PorRegistro>} />
-            <Route path="pessoas/:id" element={<PorRegistro><PessoaForm /></PorRegistro>} />
+            {/*
+              Módulo de negócio: vale a permissão da tela. Quem só lê abre a
+              lista e o registro, mas não o cadastro novo.
+            */}
+            <Route element={<TProtected tela="PESSOAS" />}>
+              <Route path="pessoas" element={<PessoaList />} />
+              <Route path="pessoas/:id" element={<PorRegistro><PessoaForm /></PorRegistro>} />
+            </Route>
+            <Route element={<TProtected tela="PESSOAS" escrita />}>
+              <Route path="pessoas/nova" element={<PorRegistro><PessoaForm /></PorRegistro>} />
+            </Route>
 
             {/*
               Área administrativa. O guard aqui é conveniência de navegação —

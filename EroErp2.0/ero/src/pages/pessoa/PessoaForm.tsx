@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -15,6 +15,7 @@ import {
   type OpcaoSelect,
 } from '@/components/common'
 import { PessoaRapidaModal } from '@/components/pessoa/PessoaRapidaModal'
+import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
 import { handleApiError } from '@/services/api'
 import { catalogoService } from '@/services/catalogoService'
 import { localidadeService } from '@/services/localidadeService'
@@ -122,6 +123,7 @@ export function PessoaForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const editando = !!id
+  const somenteLeitura = useSomenteLeitura('PESSOAS')
 
   const [carregando, setCarregando] = useState(editando)
   const [tiposCadastro, setTiposCadastro] = useState<OpcaoSelect[]>([])
@@ -245,6 +247,7 @@ export function PessoaForm() {
   }
 
   async function onSubmit(dados: FormData) {
+    if (somenteLeitura) return
     const fisica = dados.tipoPessoa === 'PESSOA_FISICA'
 
     const payload = {
@@ -332,445 +335,462 @@ export function PessoaForm() {
   }
 
   return (
-    <TPage title={editando ? 'Editar pessoa' : 'Nova pessoa'}>
+    <TPage title={somenteLeitura ? 'Pessoa' : editando ? 'Editar pessoa' : 'Nova pessoa'}>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
-        <TPanel title="Identificação">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TSelect
-              label="Tipo de pessoa"
-              opcoes={OPCOES_TIPO_PESSOA}
-              ajuda={editando ? 'Trocar o tipo limpa os campos do tipo anterior' : undefined}
-              {...register('tipoPessoa')}
-            />
-            <TEntry
-              label={ehFisica ? 'Nome' : 'Razão social'}
-              autoFocus
-              error={errors.nome?.message}
-              {...register('nome')}
-            />
-          </div>
+        {somenteLeitura && (
+          <p className="rounded-md bg-info-bg px-3 py-2 text-caption text-info">
+            Você tem acesso só de leitura a esta tela.
+          </p>
+        )}
 
-          {ehFisica ? (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Controller
-                control={control}
-                name="cpf"
-                render={({ field }) => (
-                  <TEntry
-                    label="CPF"
-                    inputMode="numeric"
-                    placeholder="000.000.000-00"
-                    value={field.value ?? ''}
-                    onChange={(e) => field.onChange(mascararCpf(e.target.value))}
-                    error={errors.cpf?.message}
-                  />
-                )}
-              />
-              <TEntry label="RG" error={errors.rg?.message} {...register('rg')} />
-              <TEntry label="Data de nascimento" type="date" {...register('dataNascimento')} />
-              {/* Opcional. */}
-              <TSelect
-                label="Sexo"
-                vazio="Não informado"
-                opcoes={OPCOES_SEXO}
-                error={errors.sexo?.message}
-                {...register('sexo')}
-              />
-            </div>
-          ) : (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Controller
-                control={control}
-                name="cnpj"
-                render={({ field }) => (
-                  <TEntry
-                    label="CNPJ"
-                    inputMode="numeric"
-                    placeholder="00.000.000/0000-00"
-                    value={field.value ?? ''}
-                    onChange={(e) => field.onChange(mascararCnpj(e.target.value))}
-                    error={errors.cnpj?.message}
-                  />
-                )}
-              />
-              <TEntry label="Nome fantasia" {...register('nomeFantasia')} />
-              <TEntry label="Inscrição estadual" {...register('inscricaoEstadual')} />
-              <TEntry label="Inscrição municipal" {...register('inscricaoMunicipal')} />
-            </div>
-          )}
-        </TPanel>
+        {/*
+          `disabled` no fieldset trava de uma vez todo campo e botão nativo de
+          dentro — inclusive o input do TCombo. `min-w-0` porque o fieldset
+          nasce com `min-width: min-content` e rolaria em 360 px.
+        */}
+        <SomenteLeitura.Provider value={somenteLeitura}>
+          <fieldset disabled={somenteLeitura} className="m-0 flex min-w-0 flex-col gap-5 border-0 p-0">
+            <TPanel title="Identificação">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <TSelect
+                  label="Tipo de pessoa"
+                  opcoes={OPCOES_TIPO_PESSOA}
+                  ajuda={editando ? 'Trocar o tipo limpa os campos do tipo anterior' : undefined}
+                  {...register('tipoPessoa')}
+                />
+                <TEntry
+                  label={ehFisica ? 'Nome' : 'Razão social'}
+                  autoFocus
+                  error={errors.nome?.message}
+                  {...register('nome')}
+                />
+              </div>
 
-        <TPanel title="Classificação">
-          <Controller
-            control={control}
-            name="tiposCadastroIds"
-            render={({ field }) => (
-              <fieldset className="flex flex-wrap gap-2">
-                <legend className="mb-2 text-caption text-txt-secondary">
-                  Tipo de cadastro
-                </legend>
-                {tiposCadastro.map((tipo) => {
-                  const marcado = field.value.includes(tipo.valor)
-                  return (
-                    <label
-                      key={tipo.valor}
-                      className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2
-                        text-body transition-colors
-                        ${
-                          marcado
-                            ? 'border-primary bg-surface-alt text-txt'
-                            : 'border-line-strong text-txt-secondary hover:bg-surface-alt'
-                        }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={marcado}
-                        onChange={() =>
-                          field.onChange(
-                            marcado
-                              ? field.value.filter((v) => v !== tipo.valor)
-                              : [...field.value, tipo.valor],
-                          )
-                        }
-                        className="size-4 shrink-0 accent-(--primary)"
-                      />
-                      {tipo.rotulo}
-                    </label>
-                  )
-                })}
-              </fieldset>
-            )}
-          />
-          {errors.tiposCadastroIds && (
-            <p role="alert" className="mt-2 text-caption text-danger">
-              {errors.tiposCadastroIds.message}
-            </p>
-          )}
-
-          <div className="mt-4">
-            <TEntry label="Observação" {...register('observacao')} />
-          </div>
-        </TPanel>
-
-        <TPanel
-          title="Telefones"
-          actions={
-            <BotaoAcrescentar
-              onClick={() =>
-                telefones.append({
-                  tipoTelefoneId: tiposTelefone[0]?.valor ?? '',
-                  numero: '',
-                  observacao: '',
-                  principal: telefones.fields.length === 0,
-                })
-              }
-            />
-          }
-        >
-          {telefones.fields.length === 0 ? (
-            <Vazio texto="Nenhum telefone cadastrado." />
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {telefones.fields.map((campo, i) => (
-                <li
-                  key={campo.id}
-                  className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
-                >
-                  <TSelect
-                    label="Tipo"
-                    opcoes={tiposTelefone}
-                    {...register(`telefones.${i}.tipoTelefoneId`)}
-                  />
+              {ehFisica ? (
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <Controller
                     control={control}
-                    name={`telefones.${i}.numero`}
+                    name="cpf"
                     render={({ field }) => (
                       <TEntry
-                        label="Número"
+                        label="CPF"
                         inputMode="numeric"
-                        placeholder="(51) 99999-0000"
-                        value={field.value}
-                        onChange={(e) => field.onChange(mascararTelefone(e.target.value))}
-                        error={errors.telefones?.[i]?.numero?.message}
+                        placeholder="000.000.000-00"
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(mascararCpf(e.target.value))}
+                        error={errors.cpf?.message}
                       />
                     )}
                   />
-                  <TEntry label="Observação" {...register(`telefones.${i}.observacao`)} />
-                  <AcoesLinha
-                    marcado={watch(`telefones.${i}.principal`)}
-                    onPrincipal={() => marcarPrincipal('telefones', i)}
-                    onRemover={() => telefones.remove(i)}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </TPanel>
-
-        <TPanel
-          title="E-mails"
-          actions={
-            <BotaoAcrescentar
-              onClick={() =>
-                emails.append({
-                  tipoEmailId: tiposEmail[0]?.valor ?? '',
-                  email: '',
-                  observacao: '',
-                  principal: emails.fields.length === 0,
-                })
-              }
-            />
-          }
-        >
-          {emails.fields.length === 0 ? (
-            <Vazio texto="Nenhum e-mail cadastrado." />
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {emails.fields.map((campo, i) => (
-                <li
-                  key={campo.id}
-                  className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
-                >
+                  <TEntry label="RG" error={errors.rg?.message} {...register('rg')} />
+                  <TEntry label="Data de nascimento" type="date" {...register('dataNascimento')} />
+                  {/* Opcional. */}
                   <TSelect
-                    label="Tipo"
-                    opcoes={tiposEmail}
-                    {...register(`emails.${i}.tipoEmailId`)}
+                    label="Sexo"
+                    vazio="Não informado"
+                    opcoes={OPCOES_SEXO}
+                    error={errors.sexo?.message}
+                    {...register('sexo')}
                   />
-                  <TEntry
-                    label="E-mail"
-                    type="email"
-                    error={errors.emails?.[i]?.email?.message}
-                    {...register(`emails.${i}.email`)}
-                  />
-                  <TEntry label="Observação" {...register(`emails.${i}.observacao`)} />
-                  <AcoesLinha
-                    marcado={watch(`emails.${i}.principal`)}
-                    onPrincipal={() => marcarPrincipal('emails', i)}
-                    onRemover={() => emails.remove(i)}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </TPanel>
-
-        <TPanel
-          title="Redes sociais"
-          actions={
-            <BotaoAcrescentar
-              onClick={() =>
-                redes.append({
-                  tipoRedeSocialId: tiposRedeSocial[0]?.valor ?? '',
-                  usuario: '',
-                  url: '',
-                })
-              }
-            />
-          }
-        >
-          {redes.fields.length === 0 ? (
-            <Vazio texto="Nenhuma rede social cadastrada." />
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {redes.fields.map((campo, i) => (
-                <li
-                  key={campo.id}
-                  className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
-                >
-                  <TSelect
-                    label="Rede"
-                    opcoes={tiposRedeSocial}
-                    {...register(`redesSociais.${i}.tipoRedeSocialId`)}
-                  />
-                  <TEntry label="Usuário" {...register(`redesSociais.${i}.usuario`)} />
-                  <TEntry label="Link" {...register(`redesSociais.${i}.url`)} />
-                  <div className="flex items-end">
-                    <BotaoRemover onClick={() => redes.remove(i)} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </TPanel>
-
-        <TPanel
-          title="Endereços"
-          actions={
-            <BotaoAcrescentar
-              onClick={() =>
-                enderecos.append({
-                  tipoEnderecoId: tiposEndereco[0]?.valor ?? '',
-                  cidadeId: '',
-                  cidadeRotulo: '',
-                  cep: '',
-                  rua: '',
-                  numero: '',
-                  bairro: '',
-                  complemento: '',
-                  principal: enderecos.fields.length === 0,
-                })
-              }
-            />
-          }
-        >
-          {enderecos.fields.length === 0 ? (
-            <Vazio texto="Nenhum endereço cadastrado." />
-          ) : (
-            <ul className="flex flex-col gap-4">
-              {/*
-                Endereço tem campos demais para uma linha só: cada um é um
-                bloco com borda, que no celular vira coluna única.
-              */}
-              {enderecos.fields.map((campo, i) => (
-                <li key={campo.id} className="rounded-md border border-line-strong p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <label className="flex cursor-pointer items-center gap-1.5 text-caption text-txt-secondary">
-                      <input
-                        type="radio"
-                        checked={watch(`enderecos.${i}.principal`)}
-                        onChange={() => marcarPrincipal('enderecos', i)}
-                        className="size-4 accent-(--primary)"
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <Controller
+                    control={control}
+                    name="cnpj"
+                    render={({ field }) => (
+                      <TEntry
+                        label="CNPJ"
+                        inputMode="numeric"
+                        placeholder="00.000.000/0000-00"
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(mascararCnpj(e.target.value))}
+                        error={errors.cnpj?.message}
                       />
-                      Principal
-                    </label>
-                    <BotaoRemover onClick={() => enderecos.remove(i)} />
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <TSelect
-                      label="Tipo"
-                      opcoes={tiposEndereco}
-                      {...register(`enderecos.${i}.tipoEnderecoId`)}
-                    />
-                    <Controller
-                      control={control}
-                      name={`enderecos.${i}.cidadeId`}
-                      render={({ field }) => (
-                        <TCombo
-                          label="Cidade"
-                          placeholder="Busque pelo nome"
-                          value={field.value}
-                          rotuloInicial={watch(`enderecos.${i}.cidadeRotulo`)}
-                          onChange={field.onChange}
-                          buscar={localidadeService.cidadesParaCombo}
-                          error={errors.enderecos?.[i]?.cidadeId?.message}
-                        />
-                      )}
-                    />
-                    <Controller
-                      control={control}
-                      name={`enderecos.${i}.cep`}
-                      render={({ field }) => (
-                        <TEntry
-                          label="CEP"
-                          inputMode="numeric"
-                          placeholder="00000-000"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(mascararCep(e.target.value))}
-                        />
-                      )}
-                    />
-                    <TEntry
-                      label="Rua"
-                      className="lg:col-span-2"
-                      {...register(`enderecos.${i}.rua`)}
-                    />
-                    <TEntry label="Número" {...register(`enderecos.${i}.numero`)} />
-                    <TEntry label="Bairro" {...register(`enderecos.${i}.bairro`)} />
-                    <TEntry
-                      label="Complemento"
-                      className="lg:col-span-2"
-                      {...register(`enderecos.${i}.complemento`)}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </TPanel>
-
-        <TPanel
-          title="Vínculos"
-          actions={
-            <BotaoAcrescentar
-              onClick={() =>
-                vinculos.append({
-                  pessoaId: '',
-                  pessoaRotulo: '',
-                  tipo: 'RESPONSAVEL',
-                  observacao: '',
-                })
-              }
-            />
-          }
-        >
-          {vinculos.fields.length === 0 ? (
-            <Vazio texto="Nenhum vínculo cadastrado." />
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {vinculos.fields.map((campo, i) => (
-                <li
-                  key={campo.id}
-                  className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
-                >
-                  <div className="flex items-end gap-2">
-                    <Controller
-                      control={control}
-                      name={`vinculos.${i}.pessoaId`}
-                      render={({ field }) => (
-                        <TCombo
-                          label="Pessoa"
-                          className="flex-1"
-                          placeholder="Busque por nome ou documento"
-                          value={field.value}
-                          rotuloInicial={watch(`vinculos.${i}.pessoaRotulo`)}
-                          onChange={field.onChange}
-                          buscar={(termo) =>
-                            pessoaService
-                              .select(termo, undefined, id)
-                              .then((pessoas) =>
-                                pessoas.map((p) => ({
-                                  id: p.id,
-                                  nome: p.documento
-                                    ? `${p.nome} (${formatarDocumento(p.documento)})`
-                                    : p.nome,
-                                })),
-                              )
-                          }
-                          error={errors.vinculos?.[i]?.pessoaId?.message}
-                        />
-                      )}
-                    />
-                    <TButton
-                      type="button"
-                      variant="secondary"
-                      onClick={() => setLinhaDoModal(i)}
-                      title="Cadastrar uma pessoa nova sem sair daqui"
-                      aria-label="Cadastrar pessoa nova"
-                    >
-                      <IconAdicionar className="size-4" />
-                    </TButton>
-                  </div>
-
-                  <TSelect
-                    label="É o quê desta pessoa"
-                    opcoes={OPCOES_TIPO_VINCULO}
-                    {...register(`vinculos.${i}.tipo`)}
+                    )}
                   />
-                  <TEntry label="Observação" {...register(`vinculos.${i}.observacao`)} />
-                  <div className="flex items-end sm:pb-1">
-                    <BotaoRemover onClick={() => vinculos.remove(i)} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                  <TEntry label="Nome fantasia" {...register('nomeFantasia')} />
+                  <TEntry label="Inscrição estadual" {...register('inscricaoEstadual')} />
+                  <TEntry label="Inscrição municipal" {...register('inscricaoMunicipal')} />
+                </div>
+              )}
+            </TPanel>
 
-          <p className="mt-4 rounded-md bg-info-bg px-3 py-2 text-caption text-info">
-            O vínculo vale nos dois sentidos: marcar alguém como responsável faz
-            esta pessoa aparecer como dependente no cadastro dele.
-          </p>
-        </TPanel>
+            <TPanel title="Classificação">
+              <Controller
+                control={control}
+                name="tiposCadastroIds"
+                render={({ field }) => (
+                  <fieldset className="flex flex-wrap gap-2">
+                    <legend className="mb-2 text-caption text-txt-secondary">
+                      Tipo de cadastro
+                    </legend>
+                    {tiposCadastro.map((tipo) => {
+                      const marcado = field.value.includes(tipo.valor)
+                      return (
+                        <label
+                          key={tipo.valor}
+                          className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2
+                            text-body transition-colors
+                            ${
+                              marcado
+                                ? 'border-primary bg-surface-alt text-txt'
+                                : 'border-line-strong text-txt-secondary hover:bg-surface-alt'
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={marcado}
+                            onChange={() =>
+                              field.onChange(
+                                marcado
+                                  ? field.value.filter((v) => v !== tipo.valor)
+                                  : [...field.value, tipo.valor],
+                              )
+                            }
+                            className="size-4 shrink-0 accent-(--primary)"
+                          />
+                          {tipo.rotulo}
+                        </label>
+                      )
+                    })}
+                  </fieldset>
+                )}
+              />
+              {errors.tiposCadastroIds && (
+                <p role="alert" className="mt-2 text-caption text-danger">
+                  {errors.tiposCadastroIds.message}
+                </p>
+              )}
+
+              <div className="mt-4">
+                <TEntry label="Observação" {...register('observacao')} />
+              </div>
+            </TPanel>
+
+            <TPanel
+              title="Telefones"
+              actions={
+                <BotaoAcrescentar
+                  onClick={() =>
+                    telefones.append({
+                      tipoTelefoneId: tiposTelefone[0]?.valor ?? '',
+                      numero: '',
+                      observacao: '',
+                      principal: telefones.fields.length === 0,
+                    })
+                  }
+                />
+              }
+            >
+              {telefones.fields.length === 0 ? (
+                <Vazio texto="Nenhum telefone cadastrado." />
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {telefones.fields.map((campo, i) => (
+                    <li
+                      key={campo.id}
+                      className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+                    >
+                      <TSelect
+                        label="Tipo"
+                        opcoes={tiposTelefone}
+                        {...register(`telefones.${i}.tipoTelefoneId`)}
+                      />
+                      <Controller
+                        control={control}
+                        name={`telefones.${i}.numero`}
+                        render={({ field }) => (
+                          <TEntry
+                            label="Número"
+                            inputMode="numeric"
+                            placeholder="(51) 99999-0000"
+                            value={field.value}
+                            onChange={(e) => field.onChange(mascararTelefone(e.target.value))}
+                            error={errors.telefones?.[i]?.numero?.message}
+                          />
+                        )}
+                      />
+                      <TEntry label="Observação" {...register(`telefones.${i}.observacao`)} />
+                      <AcoesLinha
+                        marcado={watch(`telefones.${i}.principal`)}
+                        onPrincipal={() => marcarPrincipal('telefones', i)}
+                        onRemover={() => telefones.remove(i)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </TPanel>
+
+            <TPanel
+              title="E-mails"
+              actions={
+                <BotaoAcrescentar
+                  onClick={() =>
+                    emails.append({
+                      tipoEmailId: tiposEmail[0]?.valor ?? '',
+                      email: '',
+                      observacao: '',
+                      principal: emails.fields.length === 0,
+                    })
+                  }
+                />
+              }
+            >
+              {emails.fields.length === 0 ? (
+                <Vazio texto="Nenhum e-mail cadastrado." />
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {emails.fields.map((campo, i) => (
+                    <li
+                      key={campo.id}
+                      className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+                    >
+                      <TSelect
+                        label="Tipo"
+                        opcoes={tiposEmail}
+                        {...register(`emails.${i}.tipoEmailId`)}
+                      />
+                      <TEntry
+                        label="E-mail"
+                        type="email"
+                        error={errors.emails?.[i]?.email?.message}
+                        {...register(`emails.${i}.email`)}
+                      />
+                      <TEntry label="Observação" {...register(`emails.${i}.observacao`)} />
+                      <AcoesLinha
+                        marcado={watch(`emails.${i}.principal`)}
+                        onPrincipal={() => marcarPrincipal('emails', i)}
+                        onRemover={() => emails.remove(i)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </TPanel>
+
+            <TPanel
+              title="Redes sociais"
+              actions={
+                <BotaoAcrescentar
+                  onClick={() =>
+                    redes.append({
+                      tipoRedeSocialId: tiposRedeSocial[0]?.valor ?? '',
+                      usuario: '',
+                      url: '',
+                    })
+                  }
+                />
+              }
+            >
+              {redes.fields.length === 0 ? (
+                <Vazio texto="Nenhuma rede social cadastrada." />
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {redes.fields.map((campo, i) => (
+                    <li
+                      key={campo.id}
+                      className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+                    >
+                      <TSelect
+                        label="Rede"
+                        opcoes={tiposRedeSocial}
+                        {...register(`redesSociais.${i}.tipoRedeSocialId`)}
+                      />
+                      <TEntry label="Usuário" {...register(`redesSociais.${i}.usuario`)} />
+                      <TEntry label="Link" {...register(`redesSociais.${i}.url`)} />
+                      <div className="flex items-end">
+                        <BotaoRemover onClick={() => redes.remove(i)} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </TPanel>
+
+            <TPanel
+              title="Endereços"
+              actions={
+                <BotaoAcrescentar
+                  onClick={() =>
+                    enderecos.append({
+                      tipoEnderecoId: tiposEndereco[0]?.valor ?? '',
+                      cidadeId: '',
+                      cidadeRotulo: '',
+                      cep: '',
+                      rua: '',
+                      numero: '',
+                      bairro: '',
+                      complemento: '',
+                      principal: enderecos.fields.length === 0,
+                    })
+                  }
+                />
+              }
+            >
+              {enderecos.fields.length === 0 ? (
+                <Vazio texto="Nenhum endereço cadastrado." />
+              ) : (
+                <ul className="flex flex-col gap-4">
+                  {/*
+                    Endereço tem campos demais para uma linha só: cada um é um
+                    bloco com borda, que no celular vira coluna única.
+                  */}
+                  {enderecos.fields.map((campo, i) => (
+                    <li key={campo.id} className="rounded-md border border-line-strong p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <label className="flex cursor-pointer items-center gap-1.5 text-caption text-txt-secondary">
+                          <input
+                            type="radio"
+                            checked={watch(`enderecos.${i}.principal`)}
+                            onChange={() => marcarPrincipal('enderecos', i)}
+                            className="size-4 accent-(--primary)"
+                          />
+                          Principal
+                        </label>
+                        <BotaoRemover onClick={() => enderecos.remove(i)} />
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <TSelect
+                          label="Tipo"
+                          opcoes={tiposEndereco}
+                          {...register(`enderecos.${i}.tipoEnderecoId`)}
+                        />
+                        <Controller
+                          control={control}
+                          name={`enderecos.${i}.cidadeId`}
+                          render={({ field }) => (
+                            <TCombo
+                              label="Cidade"
+                              placeholder="Busque pelo nome"
+                              value={field.value}
+                              rotuloInicial={watch(`enderecos.${i}.cidadeRotulo`)}
+                              onChange={field.onChange}
+                              buscar={localidadeService.cidadesParaCombo}
+                              error={errors.enderecos?.[i]?.cidadeId?.message}
+                            />
+                          )}
+                        />
+                        <Controller
+                          control={control}
+                          name={`enderecos.${i}.cep`}
+                          render={({ field }) => (
+                            <TEntry
+                              label="CEP"
+                              inputMode="numeric"
+                              placeholder="00000-000"
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(mascararCep(e.target.value))}
+                            />
+                          )}
+                        />
+                        <TEntry
+                          label="Rua"
+                          className="lg:col-span-2"
+                          {...register(`enderecos.${i}.rua`)}
+                        />
+                        <TEntry label="Número" {...register(`enderecos.${i}.numero`)} />
+                        <TEntry label="Bairro" {...register(`enderecos.${i}.bairro`)} />
+                        <TEntry
+                          label="Complemento"
+                          className="lg:col-span-2"
+                          {...register(`enderecos.${i}.complemento`)}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </TPanel>
+
+            <TPanel
+              title="Vínculos"
+              actions={
+                <BotaoAcrescentar
+                  onClick={() =>
+                    vinculos.append({
+                      pessoaId: '',
+                      pessoaRotulo: '',
+                      tipo: 'RESPONSAVEL',
+                      observacao: '',
+                    })
+                  }
+                />
+              }
+            >
+              {vinculos.fields.length === 0 ? (
+                <Vazio texto="Nenhum vínculo cadastrado." />
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {vinculos.fields.map((campo, i) => (
+                    <li
+                      key={campo.id}
+                      className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+                    >
+                      <div className="flex items-end gap-2">
+                        <Controller
+                          control={control}
+                          name={`vinculos.${i}.pessoaId`}
+                          render={({ field }) => (
+                            <TCombo
+                              label="Pessoa"
+                              className="flex-1"
+                              placeholder="Busque por nome ou documento"
+                              value={field.value}
+                              rotuloInicial={watch(`vinculos.${i}.pessoaRotulo`)}
+                              onChange={field.onChange}
+                              buscar={(termo) =>
+                                pessoaService
+                                  .select(termo, undefined, id)
+                                  .then((pessoas) =>
+                                    pessoas.map((p) => ({
+                                      id: p.id,
+                                      nome: p.documento
+                                        ? `${p.nome} (${formatarDocumento(p.documento)})`
+                                        : p.nome,
+                                    })),
+                                  )
+                              }
+                              error={errors.vinculos?.[i]?.pessoaId?.message}
+                            />
+                          )}
+                        />
+                        {!somenteLeitura && (
+                          <TButton
+                            type="button"
+                            variant="secondary"
+                            onClick={() => setLinhaDoModal(i)}
+                            title="Cadastrar uma pessoa nova sem sair daqui"
+                            aria-label="Cadastrar pessoa nova"
+                          >
+                            <IconAdicionar className="size-4" />
+                          </TButton>
+                        )}
+                      </div>
+
+                      <TSelect
+                        label="É o quê desta pessoa"
+                        opcoes={OPCOES_TIPO_VINCULO}
+                        {...register(`vinculos.${i}.tipo`)}
+                      />
+                      <TEntry label="Observação" {...register(`vinculos.${i}.observacao`)} />
+                      <div className="flex items-end sm:pb-1">
+                        <BotaoRemover onClick={() => vinculos.remove(i)} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <p className="mt-4 rounded-md bg-info-bg px-3 py-2 text-caption text-info">
+                O vínculo vale nos dois sentidos: marcar alguém como responsável faz
+                esta pessoa aparecer como dependente no cadastro dele.
+              </p>
+            </TPanel>
+          </fieldset>
+        </SomenteLeitura.Provider>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row">
           <TButton
@@ -779,11 +799,13 @@ export function PessoaForm() {
             onClick={() => navigate('/app/pessoas')}
             className="sm:w-auto"
           >
-            Cancelar
+            {somenteLeitura ? 'Voltar' : 'Cancelar'}
           </TButton>
-          <TButton type="submit" loading={isSubmitting}>
-            Salvar
-          </TButton>
+          {!somenteLeitura && (
+            <TButton type="submit" loading={isSubmitting}>
+              Salvar
+            </TButton>
+          )}
         </div>
       </form>
 
@@ -801,7 +823,15 @@ export function PessoaForm() {
   )
 }
 
+/**
+ * Quem só lê não acrescenta nem remove linha: os botões somem, em vez de
+ * ficarem cinza pelo `fieldset disabled`. Contexto porque eles moram nas
+ * `actions` dos painéis e dentro das linhas, longe de quem sabe a permissão.
+ */
+const SomenteLeitura = createContext(false)
+
 function BotaoAcrescentar({ onClick }: { onClick: () => void }) {
+  if (useContext(SomenteLeitura)) return null
   return (
     <TButton type="button" variant="secondary" size="sm" onClick={onClick}>
       <IconAdicionar className="size-4" />
@@ -811,6 +841,7 @@ function BotaoAcrescentar({ onClick }: { onClick: () => void }) {
 }
 
 function BotaoRemover({ onClick }: { onClick: () => void }) {
+  if (useContext(SomenteLeitura)) return null
   return (
     <TButton
       type="button"

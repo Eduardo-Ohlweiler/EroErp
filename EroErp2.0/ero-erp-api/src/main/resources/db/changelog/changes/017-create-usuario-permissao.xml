@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Permissão do usuário por tela: LEITURA ou ESCRITA. Sem linha, sem
+        acesso. Vale só para o nível USER — ADMIN e SUPERADMIN acessam todas as
+        telas e não têm linha aqui (PermissaoService.sincronizar apaga as que
+        sobrarem ao promover).
+
+        O catálogo de telas é o enum Tela, não uma tabela: uma tela só existe se
+        existe o código dela, e um catálogo em banco envelheceria calado — o
+        EroErp antigo tinha roles usadas no código que nenhuma migration criava.
+        Por isso `tela` não tem CHECK: o enum cresce a cada módulo migrado, e
+        uma CHECK aqui exigiria uma migration por tela nova.
+
+        O módulo (grupo de telas) também não é coluna: "módulo liberado" é ter
+        ao menos uma tela dele.
+    -->
+    <changeSet id="017-create-usuario-permissao" author="eduardo">
+
+        <createTable tableName="usuario_permissao">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_usuario_permissao"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_usuario_permissao_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <column name="usuario_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_usuario_permissao_usuario"
+                             references="usuario(id)"
+                             deleteCascade="true"/>
+            </column>
+
+            <column name="tela" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nivel" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="usuario_permissao"
+                             columnNames="usuario_id, tela"
+                             constraintName="uk_usuario_permissao_tela"/>
+
+        <sql>
+            ALTER TABLE usuario_permissao ADD CONSTRAINT ck_usuario_permissao_nivel
+            CHECK (nivel IN ('LEITURA', 'ESCRITA'));
+        </sql>
+
+        <createIndex tableName="usuario_permissao" indexName="idx_usuario_permissao_tenant_usuario">
+            <column name="tenant_id"/>
+            <column name="usuario_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="usuario_permissao"/>
+        </rollback>
+    </changeSet>
+
+    <!--
+        Até aqui todo USER escrevia em Pessoas. Quem já existe continua
+        escrevendo; o usuário novo nasce sem acesso e recebe as telas no
+        cadastro.
+    -->
+    <changeSet id="017-usuario-permissao-preserva-acesso" author="eduardo">
+        <sql>
+            INSERT INTO usuario_permissao (tenant_id, usuario_id, tela, nivel, created_at)
+            SELECT u.tenant_id, u.id, 'PESSOAS', 'ESCRITA', now()
+              FROM usuario u
+             WHERE u.role = 'USER';
+        </sql>
+
+        <rollback>
+            <sql>DELETE FROM usuario_permissao WHERE tela = 'PESSOAS';</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

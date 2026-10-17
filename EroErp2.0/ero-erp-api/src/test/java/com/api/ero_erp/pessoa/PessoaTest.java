@@ -8,6 +8,8 @@ import com.api.ero_erp.catalogo.repository.TipoCadastroRepository;
 import com.api.ero_erp.catalogo.repository.TipoEmailRepository;
 import com.api.ero_erp.catalogo.repository.TipoTelefoneRepository;
 import com.api.ero_erp.contato.repository.TelefoneRepository;
+import com.api.ero_erp.permissao.enums.NivelAcesso;
+import com.api.ero_erp.permissao.enums.Tela;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.pessoa.enums.TipoPessoa;
 import org.junit.jupiter.api.BeforeEach;
@@ -323,8 +325,9 @@ class PessoaTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("USER opera o cadastro — é módulo de negócio, não área administrativa")
+    @DisplayName("USER com escrita em Pessoas opera o cadastro — é módulo de negócio, não área administrativa")
     void usuarioComumOperaOCadastro() throws Exception {
+        conceder(userA, Tela.PESSOAS, NivelAcesso.ESCRITA);
         String token = autenticar(userA.getEmail());
 
         mockMvc.perform(post("/pessoas").header(AUTHORIZATION, token)

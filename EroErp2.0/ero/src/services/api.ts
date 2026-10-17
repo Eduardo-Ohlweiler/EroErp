@@ -72,10 +72,18 @@ export function registrarPerdaDeSessao(callback: () => void) {
   aoPerderSessao = callback
 }
 
+/** Chamado pelo AuthContext a cada 403, para reler as permissões. */
+let aoNegarAcesso: (() => void) | null = null
+export function registrarAcessoNegado(callback: () => void) {
+  aoNegarAcesso = callback
+}
+
 api.interceptors.response.use(
   (resposta) => resposta,
   async (erro: AxiosError<ErroResponse>) => {
     const original = erro.config as RequisicaoRepetivel | undefined
+
+    if (erro.response?.status === 403) aoNegarAcesso?.()
 
     const deveRenovar =
       erro.response?.status === 401 &&

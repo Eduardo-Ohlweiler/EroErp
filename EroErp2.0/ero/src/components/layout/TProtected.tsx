@@ -1,18 +1,23 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import type { Role } from '@/types/auth'
+import type { Tela } from '@/types/permissao'
 
 interface TProtectedProps {
   /** Sem roles, basta estar autenticado. */
   roles?: Role[]
+  /** Tela cuja permissão a rota exige: leitura, ou escrita com `escrita`. */
+  tela?: Tela
+  /** Rota que só existe para gravar (o cadastro novo): exige escrita na tela. */
+  escrita?: boolean
 }
 
 /**
  * Guarda de rota. É **conveniência de navegação**, não segurança: a autorização
  * real é o `@PreAuthorize` do backend. Esconder rota não protege dado.
  */
-export function TProtected({ roles }: TProtectedProps) {
-  const { autenticado, carregando, hasRole } = useAuth()
+export function TProtected({ roles, tela, escrita = false }: TProtectedProps) {
+  const { autenticado, carregando, hasRole, podeLer, podeEscrever } = useAuth()
   const location = useLocation()
 
   // Enquanto a sessão é restaurada pelo refresh token, não decidir nada —
@@ -38,6 +43,10 @@ export function TProtected({ roles }: TProtectedProps) {
   }
 
   if (roles && !hasRole(...roles)) {
+    return <Navigate to="/app" replace />
+  }
+
+  if (tela && !(escrita ? podeEscrever(tela) : podeLer(tela))) {
     return <Navigate to="/app" replace />
   }
 

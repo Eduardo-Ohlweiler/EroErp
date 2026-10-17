@@ -571,6 +571,7 @@ interface Sessao {
   tenantNome: string
   paleta: PaletaSistema       // paleta do tenant efetivo
   impersonating: boolean      // superadmin dentro de outro tenant
+  permissoes: Permissoes      // { PESSOAS: 'ESCRITA' } — já resolvido pelo servidor
 }
 ```
 
@@ -608,6 +609,24 @@ Rotas protegidas por `TProtected`, nunca com verificação dentro da página:
   </Route>
 </Route>
 ```
+
+### Permissão por tela e somente leitura
+
+`useAuth().podeLer(tela)` e `podeEscrever(tela)` leem `sessao.permissoes`, que o
+servidor manda já resolvido (ADMIN e SUPERADMIN vêm com tudo). O item de menu, o
+atalho do Início e a rota levam a `tela`:
+
+```tsx
+<Route element={<TProtected tela="PESSOAS" />}>          {/* lista e registro */}
+<Route element={<TProtected tela="PESSOAS" escrita />}>  {/* /nova */}
+```
+
+Na tela, `useSomenteLeitura(tela)`: quem só lê não vê Salvar, Novo, Inativar nem
+os botões de acrescentar e remover linha — somem, não ficam cinza —, e o corpo
+do formulário vai num `<fieldset disabled className="min-w-0 …">`, que trava todo
+input nativo de uma vez (o `min-w-0` porque o fieldset nasce com
+`min-width: min-content` e rolaria em 360 px). A cada 403 o `AuthContext` relê
+`/usuarios/perfil/acesso`: se o superadmin mudou algo, menu e botões se acertam.
 
 ### O front não autoriza
 

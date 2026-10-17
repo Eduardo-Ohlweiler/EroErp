@@ -1,5 +1,7 @@
 package com.api.ero_erp.usuario.controller;
 
+import com.api.ero_erp.permissao.enums.NivelAcesso;
+import com.api.ero_erp.permissao.enums.Tela;
 import com.api.ero_erp.usuario.dtos.PerfilUpdateDto;
 import com.api.ero_erp.usuario.dtos.SenhaRedefinicaoDto;
 import com.api.ero_erp.usuario.dtos.SenhaUpdateDto;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -134,6 +137,14 @@ public class UsuarioController {
     @Operation(summary = "Dados do usuário autenticado")
     public ResponseEntity<UsuarioResponseDto> getPerfil() {
         return ResponseEntity.ok(usuarioService.getPerfil());
+    }
+
+    @GetMapping("/perfil/acesso")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Telas que o usuário autenticado acessa, e com que nível",
+            description = "Mesmo mapa de `permissoes` da autenticação. ADMIN e SUPERADMIN vêm com todas em ESCRITA.")
+    public ResponseEntity<Map<Tela, NivelAcesso>> getAcesso() {
+        return ResponseEntity.ok(usuarioService.getAcesso());
     }
 
     @PutMapping("/perfil")

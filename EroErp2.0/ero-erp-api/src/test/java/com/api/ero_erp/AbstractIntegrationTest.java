@@ -2,6 +2,10 @@ package com.api.ero_erp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.api.ero_erp.loginlog.repository.LoginLogRepository;
+import com.api.ero_erp.permissao.entity.UsuarioPermissao;
+import com.api.ero_erp.permissao.enums.NivelAcesso;
+import com.api.ero_erp.permissao.enums.Tela;
+import com.api.ero_erp.permissao.repository.UsuarioPermissaoRepository;
 import com.api.ero_erp.pessoa.repository.PessoaRepository;
 import com.api.ero_erp.refreshtoken.repository.RefreshTokenRepository;
 import com.api.ero_erp.tenant.entity.Tenant;
@@ -45,6 +49,7 @@ public abstract class AbstractIntegrationTest {
     @Autowired protected LoginLogRepository loginLogRepository;
     @Autowired protected RefreshTokenRepository refreshTokenRepository;
     @Autowired protected PessoaRepository pessoaRepository;
+    @Autowired protected UsuarioPermissaoRepository usuarioPermissaoRepository;
     @Autowired protected PasswordEncoder passwordEncoder;
 
     protected Tenant tenantA;
@@ -56,12 +61,14 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void montarCenario() {
-        // Ordem de dependência: refresh_token → login_log → pessoa → usuario → tenant.
+        // Ordem de dependência: refresh_token → login_log → pessoa →
+        // usuario_permissao → usuario → tenant.
         // Apagar a pessoa leva junto telefone, e-mail, rede social, endereço,
         // vínculos e os tipos de cadastro: as FKs são ON DELETE CASCADE.
         refreshTokenRepository.deleteAllInBatch();
         loginLogRepository.deleteAllInBatch();
         pessoaRepository.deleteAllInBatch();
+        usuarioPermissaoRepository.deleteAllInBatch();
         usuarioRepository.deleteAllInBatch();
         tenantRepository.deleteAllInBatch();
 
@@ -83,6 +90,16 @@ public abstract class AbstractIntegrationTest {
         usuario.setSenha(passwordEncoder.encode(SENHA_PADRAO));
         usuario.setRole(role);
         return usuarioRepository.save(usuario);
+    }
+
+    /** Libera uma tela ao usuário direto no banco — o caminho do cadastro tem teste próprio. */
+    protected void conceder(Usuario usuario, Tela tela, NivelAcesso nivel) {
+        UsuarioPermissao permissao = new UsuarioPermissao();
+        permissao.setUsuario(usuario);
+        permissao.setTenant(usuario.getTenant());
+        permissao.setTela(tela);
+        permissao.setNivel(nivel);
+        usuarioPermissaoRepository.save(permissao);
     }
 
     /** Autentica de verdade, pelo endpoint — o token sai igual ao de produção. */

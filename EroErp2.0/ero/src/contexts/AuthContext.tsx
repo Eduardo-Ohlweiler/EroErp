@@ -6,12 +6,14 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { registrarPerdaDeSessao, renovarSessao } from '@/services/api'
+import { registrarAcessoNegado, registrarPerdaDeSessao, renovarSessao } from '@/services/api'
 import { useTheme } from '@/hooks/useTheme'
 import { authService } from '@/services/authService'
 import { tokenStore } from '@/services/tokenStore'
+import { usuarioService } from '@/services/usuarioService'
 import { ehPaletaValida } from '@/styles/paletas'
 import type { AuthResponse, LoginRequest, Role, Sessao } from '@/types/auth'
+import type { Tela } from '@/types/permissao'
 
 interface AuthContextValor {
   sessao: Sessao | null
@@ -25,6 +27,12 @@ interface AuthContextValor {
   exitTenant: () => Promise<Sessao>
   /** Conveniência visual. A autorização real é o `@PreAuthorize` do backend. */
   hasRole: (...roles: Role[]) => boolean
+  /**
+   * Permissão por tela, já resolvida pelo servidor (ADMIN e SUPERADMIN têm
+   * todas). Também conveniência visual: quem barra é o backend.
+   */
+  podeLer: (tela: Tela) => boolean
+  podeEscrever: (tela: Tela) => boolean
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -40,6 +48,7 @@ function paraSessao(resposta: AuthResponse): Sessao {
     tenantNome: resposta.tenantNome,
     paleta: resposta.paleta,
     impersonating: resposta.impersonating,
+    permissoes: resposta.permissoes ?? {},
   }
 }
 
@@ -92,6 +101,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /** O interceptor avisa quando a renovação falhou de vez. */
   useEffect(() => registrarPerdaDeSessao(encerrar), [encerrar])
 
+  /**
+   * Um 403 pode ser permissão retirada pelo superadmin depois do login — o
+   * access token dura 8 h, e a sessão em memória ficaria mostrando o que o
+   * servidor já recusa. Relê as permissões para o menu e os botões
+   * acompanharem.
+   */
+  useEffect(
+    () =>
+      registrarAcessoNegado(() => {
+        usuarioService
+          .getAcesso()
+          .then((permissoes) => setSessao((atual) => (atual ? { ...atual, permissoes } : atual)))
+          .catch(() => {})
+      }),
+    [],
+  )
+
   const valor = useMemo<AuthContextValor>(
     () => ({
       sessao,
@@ -119,6 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (sessao.role === 'SUPERADMIN') return true
         return roles.includes(sessao.role)
       },
+
+      podeLer: (tela) => !!sessao?.permissoes[tela],
+      podeEscrever: (tela) => sessao?.permissoes[tela] === 'ESCRITA',
     }),
     [sessao, carregando, aplicar, encerrar],
   )

@@ -29,4 +29,7 @@
     <include file="db/changelog/changes/015-tenant-paleta.xml"/>
     <include file="db/changelog/changes/016-usuario-versao-sessao.xml"/>
 
+    <!-- ══ Permissões por tela ══════════════════════════════════════ -->
+    <include file="db/changelog/changes/017-create-usuario-permissao.xml"/>
+
 </databaseChangeLog>

@@ -98,6 +98,7 @@ Testes contra o banco `ero_erp_test` — nada de H2 nem Testcontainers.
 | Fatia | Situação |
 |---|---|
 | **0 — Esqueleto** | ✅ pronto · herdado do projeto anterior: acesso (login, refresh com rotação, troca de tenant), tenants com período de acesso e **paleta de cores por tenant**, usuários (com **redefinição de senha pelo superadmin**), log de acesso, perfil e **cadastro de pessoas** (PF/PJ, contatos, endereços com IBGE, vínculos). Migrations 001–016 |
+| **Permissões por tela** | ✅ pronto · o superadmin libera módulos ao USER e, por tela, leitura ou escrita (`permissao/`, migration 017, [docs/02 §1.2](docs/02-modulo-usuarios.md)) |
 | Próximas | **migrar módulos do EroErp antigo**, um de cada vez, perguntando antes qual e como |
 | `audit_log` | pendente · especificação em [docs/06 §A09](docs/06-seguranca-owasp.md); molde estrutural é o `loginlog`, com o expurgo no `ManutencaoJob` |
 | Recuperação de senha por e-mail | pendente · depende de escolher o serviço de e-mail (não há `spring-boot-starter-mail` no `pom.xml`). Enquanto isso, o superadmin redefine em `PATCH /usuarios/{id}/senha` |
@@ -121,18 +122,29 @@ O antigo mora em `C:\Users\eduardoohlweiler\Documents\EroErp`
    - toda tela nasce responsiva (regra 6).
 4. Migration nova em `db/changelog/changes/NNN-descricao.xml`, continuando a
    numeração.
-5. Testes de integração no molde dos que existem (`AbstractIntegrationTest`),
-   incluindo o de isolamento entre tenants.
+5. Permissão: cada tela nova vira constante em `Tela` (e no `Modulo`, se for
+   módulo novo) e em `types/permissao.ts`; GET com `hasAuthority('<TELA>_LER')`,
+   escrita com `hasAuthority('<TELA>_ESCREVER')`, `/select` com
+   `isAuthenticated()`; a tela usa `useSomenteLeitura` e a rota, `TProtected tela`.
+6. Testes de integração no molde dos que existem (`AbstractIntegrationTest`),
+   incluindo o de isolamento entre tenants e o par leitura/escrita do `PermissaoTest`.
 
 ## Modelo de acesso
 
 Nível único por usuário, enum em `usuario.role`: **`SUPERADMIN`** (administra o
-sistema, único que atravessa tenants) · **`ADMIN`** (administra o próprio tenant) ·
+sistema, único que atravessa tenants, e só existe no tenant do sistema — o que
+abriga um superadmin nunca expira) · **`ADMIN`** (administra o próprio tenant) ·
 **`USER`** (opera dentro do tenant). Sem tabela de role, sem grupo de acesso.
 
 A área administrativa — `/tenants`, `/usuarios`, `/login-logs` — é exclusiva
-do `SUPERADMIN`. `ADMIN` e `USER` acessam os
-módulos de negócio e `/usuarios/perfil`.
+do `SUPERADMIN`. `ADMIN` acessa todos os módulos de negócio; **`USER` só as
+telas que o superadmin liberou**, cada uma em leitura ou escrita
+(`usuario_permissao`). O catálogo de módulos e telas é o enum `Tela`, não
+tabela. A permissão não vai no token: o `JwtFilter` a lê do banco a cada
+requisição, então muda na hora. O front recebe o mapa já resolvido em
+`AuthResponseDto.permissoes` e relê em `/usuarios/perfil/acesso` a cada 403.
+Quem só lê não vê Salvar, Novo nem Inativar. Detalhe em
+[docs/02 §1.2](docs/02-modulo-usuarios.md).
 
 **Sem autocadastro.** A superfície pública são duas rotas de autenticação,
 `/auth/login` e `/auth/refresh`. Usuário só nasce por `POST /usuarios`, do

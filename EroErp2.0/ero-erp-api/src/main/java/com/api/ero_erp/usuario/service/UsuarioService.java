@@ -6,6 +6,10 @@ import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.ForbiddenException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.permissao.dtos.PermissaoDto;
+import com.api.ero_erp.permissao.enums.NivelAcesso;
+import com.api.ero_erp.permissao.enums.Tela;
+import com.api.ero_erp.permissao.service.PermissaoService;
 import com.api.ero_erp.refreshtoken.service.RefreshTokenService;
 import com.api.ero_erp.tenant.entity.Tenant;
 import com.api.ero_erp.tenant.service.TenantService;
@@ -33,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -45,6 +50,7 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final SecurityUtils securityUtils;
     private final RefreshTokenService refreshTokenService;
+    private final PermissaoService permissaoService;
 
     @Value("${app.seguranca.max-tentativas-login:5}")
     private int maxTentativasLogin;
@@ -92,7 +98,7 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public UsuarioResponseDto findByIdResponse(UUID id) {
-        return UsuarioMapper.toResponse(findByIdNoTenant(id));
+        return comPermissoes(findByIdNoTenant(id));
     }
 
     @Transactional(readOnly = true)
@@ -118,7 +124,7 @@ public class UsuarioService {
             throw new ConflictException("Tenant inativo");
 
         Role role = tenantNovo ? Role.ADMIN : exigirRole(dto.role());
-        validarConcessaoDeRole(role);
+        validarConcessaoDeRole(role, tenant);
 
         Usuario usuario = new Usuario();
         usuario.setTenant(tenant);
@@ -131,6 +137,7 @@ public class UsuarioService {
         usuario.setCreatedBy(securityUtils.getUsuarioLogado());
 
         Usuario salvo = usuarioRepository.save(usuario);
+        List<PermissaoDto> permissoes = permissaoService.sincronizar(salvo, dto.permissoes());
 
         if (tenantNovo)
             log.info("Cliente novo: tenant {} criado com o admin {}", tenant.getId(), salvo.getId());
@@ -138,7 +145,7 @@ public class UsuarioService {
             log.info("Usuário criado id={} tenantId={} role={}",
                     salvo.getId(), tenant.getId(), salvo.getRole());
 
-        return UsuarioMapper.toResponse(salvo);
+        return UsuarioMapper.toResponse(salvo, permissoes);
     }
 
     @Transactional
@@ -150,7 +157,7 @@ public class UsuarioService {
             throw new ConflictException("Já existe um usuário com esse e-mail");
 
         if (!usuario.getRole().equals(dto.role())) {
-            validarConcessaoDeRole(dto.role());
+            validarConcessaoDeRole(dto.role(), usuario.getTenant());
             impedirRebaixamentoDoProprioAcesso(usuario, dto.role());
             log.info("Role do usuário {} alterada de {} para {}",
                     id, usuario.getRole(), dto.role());
@@ -163,7 +170,8 @@ public class UsuarioService {
         usuario.setRole(dto.role());
         usuario.setUpdatedBy(securityUtils.getUsuarioLogado());
 
-        return UsuarioMapper.toResponse(usuarioRepository.save(usuario));
+        Usuario salvo = usuarioRepository.save(usuario);
+        return UsuarioMapper.toResponse(salvo, permissaoService.sincronizar(salvo, dto.permissoes()));
     }
 
     @Transactional
@@ -179,7 +187,7 @@ public class UsuarioService {
         if (ativo) usuario.registrarLoginValido();      // libera bloqueio por tentativas
 
         log.info("Usuário {} alterado para ativo={}", id, ativo);
-        return UsuarioMapper.toResponse(usuarioRepository.save(usuario));
+        return comPermissoes(usuarioRepository.save(usuario));
     }
 
     @Transactional
@@ -188,7 +196,7 @@ public class UsuarioService {
         usuario.registrarLoginValido();
         usuario.setUpdatedBy(securityUtils.getUsuarioLogado());
         log.info("Usuário {} desbloqueado", id);
-        return UsuarioMapper.toResponse(usuarioRepository.save(usuario));
+        return comPermissoes(usuarioRepository.save(usuario));
     }
 
     /**
@@ -244,6 +252,17 @@ public class UsuarioService {
         return UsuarioMapper.toResponse(securityUtils.getUsuarioLogado());
     }
 
+    /**
+     * As telas que o logado acessa, já resolvidas — o mesmo mapa da resposta de
+     * autenticação. O front relê daqui ao receber um 403, para que o menu e os
+     * botões acompanhem uma mudança feita pelo superadmin sem esperar o
+     * próximo login.
+     */
+    @Transactional(readOnly = true)
+    public Map<Tela, NivelAcesso> getAcesso() {
+        return permissaoService.efetivas(securityUtils.getUsuarioLogado());
+    }
+
     @Transactional
     public UsuarioResponseDto updatePerfil(PerfilUpdateDto dto) {
         Usuario usuario = securityUtils.getUsuarioLogado();
@@ -268,6 +287,10 @@ public class UsuarioService {
         log.info("Senha alterada para o usuário {}", usuario.getId());
     }
 
+    private UsuarioResponseDto comPermissoes(Usuario usuario) {
+        return UsuarioMapper.toResponse(usuario, permissaoService.listar(usuario));
+    }
+
     private boolean ehClienteNovo(UsuarioCreateDto dto) {
         return dto.tenantId() == null && !securityUtils.isImpersonating();
     }
@@ -284,9 +307,21 @@ public class UsuarioService {
         return role;
     }
 
-    private void validarConcessaoDeRole(Role role) {
-        if (Role.SUPERADMIN.equals(role) && !securityUtils.isSuperadmin())
+    /**
+     * Só um superadmin concede SUPERADMIN, e só no tenant de origem dele — o
+     * tenant do sistema. O tenant que abriga um superadmin nunca expira (a
+     * rotina diária e o login o poupam), então um superadmin num tenant de
+     * cliente tiraria esse cliente da licença em silêncio.
+     */
+    private void validarConcessaoDeRole(Role role, Tenant destino) {
+        if (!Role.SUPERADMIN.equals(role)) return;
+
+        if (!securityUtils.isSuperadmin())
             throw new ForbiddenException("Operação não permitida");
+
+        UUID tenantDoSistema = securityUtils.getUsuarioLogado().getTenant().getId();
+        if (!destino.getId().equals(tenantDoSistema))
+            throw new BadRequestException("Superadministrador só existe no tenant do sistema");
     }
 
     private void impedirRebaixamentoDoProprioAcesso(Usuario alvo, Role novaRole) {

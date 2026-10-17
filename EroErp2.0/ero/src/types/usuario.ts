@@ -1,5 +1,6 @@
 import type { Role } from './auth'
 import type { Paginacao } from './comum'
+import type { Permissao } from './permissao'
 import type { PeriodoAcesso } from './tenant'
 
 /** Espelha o `UsuarioResponseDto`. Nunca traz senha nem hash. */
@@ -15,6 +16,11 @@ export interface UsuarioResponse {
   ativo: boolean
   bloqueado: boolean
   createdAt: string
+  /**
+   * Telas liberadas, como gravadas. Só vem no registro aberto; na listagem é
+   * vazia. ADMIN e SUPERADMIN não têm linha: acessam tudo.
+   */
+  permissoes: Permissao[]
 }
 
 /**
@@ -32,6 +38,8 @@ export interface UsuarioCreate {
   tenantId?: string
   /** Licença do cliente novo. Ignorado ao entrar num tenant existente. */
   periodoAcesso?: PeriodoAcesso
+  /** Só para o nível USER — nos outros é ignorada. */
+  permissoes?: Permissao[]
 }
 
 export interface UsuarioUpdate {
@@ -40,6 +48,8 @@ export interface UsuarioUpdate {
   telefone?: string
   codigoPais?: string
   role: Role
+  /** Estado completo: tela que não vem perde o acesso. */
+  permissoes?: Permissao[]
 }
 
 export interface UsuarioFiltros extends Paginacao {
