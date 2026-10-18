@@ -47,4 +47,7 @@
     <include file="db/changelog/changes/023-create-produto.xml"/>
     <include file="db/changelog/changes/024-create-estoque.xml"/>
 
+    <!-- ══ Agenda ═══════════════════════════════════════════════════ -->
+    <include file="db/changelog/changes/025-create-compromisso.xml"/>
+
 </databaseChangeLog>

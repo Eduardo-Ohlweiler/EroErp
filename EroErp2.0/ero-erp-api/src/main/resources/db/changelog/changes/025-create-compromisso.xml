@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Agenda — o compromisso. Ver docs/12.
+
+        Do `compromisso` do EroErp antigo, com estas diferenças, todas de propósito:
+        - o responsável é um usuário ESCOLHIDO (a recepcionista agenda para o
+          profissional), não quem digitou; quem digitou fica em created_by;
+        - convidados são outros usuários (compromisso_convidado);
+        - o conflito é por usuário: o antigo bloqueava o tenant inteiro;
+        - um status só, com CHECK, no lugar de dois booleanos que deixavam
+          "cancelado e concluído" ao mesmo tempo; CONFIRMADO e FALTOU são novos;
+        - a filial é obrigatória; a cor é opcional e, vazia, herda a da filial;
+        - inicio/fim com fuso (timestamptz); o antigo gravava hora de parede;
+        - a série recorrente é um serie_id comum, sem autorreferência;
+        - sem delete físico: cancela-se.
+    -->
+    <changeSet id="025-create-compromisso" author="eduardo">
+
+        <createTable tableName="compromisso">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_compromisso"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_compromisso_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <column name="filial_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_compromisso_filial"
+                             references="filial(id)"/>
+            </column>
+
+            <column name="responsavel_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_compromisso_responsavel"
+                             references="usuario(id)"/>
+            </column>
+
+            <!-- O cliente; compromisso interno (reunião) não tem -->
+            <column name="pessoa_id" type="UUID">
+                <constraints foreignKeyName="fk_compromisso_pessoa" references="pessoa(id)"/>
+            </column>
+
+            <column name="titulo" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="descricao" type="VARCHAR(2000)"/>
+
+            <!-- NULL = a cor da filial -->
+            <column name="cor" type="VARCHAR(7)"/>
+
+            <column name="inicio" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fim" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="status" type="VARCHAR(20)" defaultValue="AGENDADO">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="motivo_cancelamento" type="VARCHAR(500)"/>
+
+            <!-- As ocorrências de uma recorrência compartilham o serie_id -->
+            <column name="serie_id" type="UUID"/>
+            <column name="tipo_recorrencia" type="VARCHAR(20)"/>
+
+            <column name="created_by" type="UUID">
+                <constraints foreignKeyName="fk_compromisso_created_by" references="usuario(id)"/>
+            </column>
+            <column name="updated_by" type="UUID">
+                <constraints foreignKeyName="fk_compromisso_updated_by" references="usuario(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <sql>
+            ALTER TABLE compromisso ADD CONSTRAINT ck_compromisso_status
+            CHECK (status IN ('AGENDADO', 'CONFIRMADO', 'CONCLUIDO', 'CANCELADO', 'FALTOU'));
+
+            ALTER TABLE compromisso ADD CONSTRAINT ck_compromisso_periodo
+            CHECK (fim &gt; inicio);
+
+            ALTER TABLE compromisso ADD CONSTRAINT ck_compromisso_cor
+            CHECK (cor IS NULL OR cor ~ '^#[0-9A-F]{6}$');
+
+            ALTER TABLE compromisso ADD CONSTRAINT ck_compromisso_recorrencia
+            CHECK (tipo_recorrencia IS NULL
+                   OR tipo_recorrencia IN ('DIARIO', 'SEMANAL', 'QUINZENAL', 'MENSAL',
+                                           'TRIMESTRAL', 'SEMESTRAL', 'ANUAL'));
+
+            -- Série e tipo andam juntos: ou os dois, ou nenhum
+            ALTER TABLE compromisso ADD CONSTRAINT ck_compromisso_serie
+            CHECK ((serie_id IS NULL) = (tipo_recorrencia IS NULL));
+
+            -- Motivo só existe no cancelado
+            ALTER TABLE compromisso ADD CONSTRAINT ck_compromisso_motivo
+            CHECK (motivo_cancelamento IS NULL OR status = 'CANCELADO');
+        </sql>
+
+        <!-- O conflito procura pelo usuário num intervalo; o calendário, pela filial -->
+        <createIndex tableName="compromisso" indexName="idx_compromisso_responsavel_periodo">
+            <column name="tenant_id"/>
+            <column name="responsavel_id"/>
+            <column name="inicio"/>
+        </createIndex>
+        <createIndex tableName="compromisso" indexName="idx_compromisso_filial_periodo">
+            <column name="tenant_id"/>
+            <column name="filial_id"/>
+            <column name="inicio"/>
+        </createIndex>
+        <createIndex tableName="compromisso" indexName="idx_compromisso_serie">
+            <column name="serie_id"/>
+        </createIndex>
+        <createIndex tableName="compromisso" indexName="idx_compromisso_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+
+        <!-- ══ Convidados ════════════════════════════════════════════════ -->
+
+        <createTable tableName="compromisso_convidado">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_compromisso_convidado"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_compromisso_convidado_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <!-- A linha não tem vida sem o compromisso -->
+            <column name="compromisso_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_compromisso_convidado_compromisso"
+                             references="compromisso(id)"
+                             deleteCascade="true"/>
+            </column>
+
+            <column name="usuario_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_compromisso_convidado_usuario"
+                             references="usuario(id)"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="compromisso_convidado"
+                             columnNames="compromisso_id, usuario_id"
+                             constraintName="uk_compromisso_convidado"/>
+
+        <createIndex tableName="compromisso_convidado" indexName="idx_compromisso_convidado_usuario">
+            <column name="usuario_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="compromisso_convidado"/>
+            <dropTable tableName="compromisso"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

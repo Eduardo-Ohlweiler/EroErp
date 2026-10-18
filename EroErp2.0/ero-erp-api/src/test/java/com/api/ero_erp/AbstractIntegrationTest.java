@@ -7,6 +7,7 @@ import com.api.ero_erp.auxiliarproduto.repository.MarcaProdutoRepository;
 import com.api.ero_erp.auxiliarproduto.repository.SubgrupoProdutoRepository;
 import com.api.ero_erp.catalogo.entity.UnidadeMedida;
 import com.api.ero_erp.catalogo.repository.UnidadeMedidaRepository;
+import com.api.ero_erp.compromisso.repository.CompromissoRepository;
 import com.api.ero_erp.estoque.repository.EstoqueMovimentacaoRepository;
 import com.api.ero_erp.estoque.repository.EstoqueRepository;
 import com.api.ero_erp.filial.repository.FilialRepository;
@@ -65,6 +66,7 @@ public abstract class AbstractIntegrationTest {
     @Autowired protected RefreshTokenRepository refreshTokenRepository;
     @Autowired protected PessoaRepository pessoaRepository;
     @Autowired protected FilialRepository filialRepository;
+    @Autowired protected CompromissoRepository compromissoRepository;
     @Autowired protected ServicoRepository servicoRepository;
     @Autowired protected EstoqueMovimentacaoRepository estoqueMovimentacaoRepository;
     @Autowired protected EstoqueRepository estoqueRepository;
@@ -86,9 +88,12 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void montarCenario() {
-        // Ordem de dependência: refresh_token → login_log → movimentação →
-        // estoque → produto → subgrupo → grupo, categoria, marca → servico →
-        // filial → pessoa → usuario_permissao → usuario → tenant.
+        // Ordem de dependência: refresh_token → login_log → compromisso →
+        // movimentação → estoque → produto → subgrupo → grupo, categoria,
+        // marca → servico → filial → pessoa → usuario_permissao → usuario →
+        // tenant.
+        // O compromisso aponta para filial, pessoa e usuário: sai antes de
+        // todos, e leva os convidados (ON DELETE CASCADE).
         // O produto aponta para a pessoa (fornecedor) e o estoque para a
         // filial: os dois saem antes delas. A unidade de medida é seed global.
         // Apagar o serviço leva junto os valores por filial, e apagar o
@@ -99,6 +104,7 @@ public abstract class AbstractIntegrationTest {
         // sai antes, num DELETE só, que resolve a autorreferência de uma vez.
         refreshTokenRepository.deleteAllInBatch();
         loginLogRepository.deleteAllInBatch();
+        compromissoRepository.deleteAllInBatch();
         estoqueMovimentacaoRepository.deleteAllInBatch();
         estoqueRepository.deleteAllInBatch();
         produtoRepository.deleteAllInBatch();

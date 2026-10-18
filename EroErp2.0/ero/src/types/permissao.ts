@@ -2,7 +2,14 @@
  * Espelha o enum `Tela` do backend — o catálogo de telas que se libera por
  * usuário. Cada módulo trazido do EroErp antigo acrescenta as suas aqui e lá.
  */
-export type Tela = 'PESSOAS' | 'FILIAIS' | 'SERVICOS' | 'PRODUTOS' | 'AUXILIARES_PRODUTO' | 'ESTOQUE'
+export type Tela =
+  | 'PESSOAS'
+  | 'FILIAIS'
+  | 'SERVICOS'
+  | 'PRODUTOS'
+  | 'AUXILIARES_PRODUTO'
+  | 'ESTOQUE'
+  | 'AGENDA'
 
 /** Espelha `NivelAcesso`. "Sem acesso" não é valor: é a tela não aparecer. */
 export type NivelAcesso = 'LEITURA' | 'ESCRITA'

@@ -45,7 +45,7 @@ EroErp2.0/
 │       └── {modulo}/              # tenant, usuario, auth, loginlog, refreshtoken,
 │           ├── controller/        # pessoa, contato, vinculo, catalogo, localidade,
 │           │                      # filial, servico, sequencia, produto,
-│           │                      # auxiliarproduto, estoque
+│           │                      # auxiliarproduto, estoque, compromisso
 │           ├── dtos/
 │           ├── entity/
 │           ├── enums/
@@ -82,7 +82,10 @@ EroErp2.0/
         │                          # TEntry TSelect TCombo TButton TBadge TModal
         │                          # TThemeToggle TTabs TResult TResultGroup
         │                          # TResultTable TAviso TCheckBox TRadio TTextArea
-        │                          # TBotaoImprimir TAcoesDeExportacao (doc 04 §7)
+        │                          # TBotaoImprimir TAcoesDeExportacao TComboMulti
+        │                          # (doc 04 §7)
+        ├── components/agenda/     # GradeHoras · GradeMes · ListaAgenda
+        │                          # ResumoCompromisso · AcoesCompromisso
         ├── components/impressao/  # Folha · TiraIndicadores · Secao · LinhasDeValor
         │                          # TabelaDoc · DocumentoLista (doc 05 §8)
         ├── components/layout/     # Layout · Sidebar · TenantSwitcher · TProtected
@@ -94,10 +97,11 @@ EroErp2.0/
         ├── hooks/                 # useAuth · useTheme · useDebounce · useMenuRecolhido
         ├── services/              # api.ts (interceptor + refresh) + um por módulo
         ├── pages/                 # auth/Login · Inicio · usuario · tenant · pessoa · filial
-        │                          # servico · produto · estoque · loginlog · perfil
+        │                          # servico · produto · estoque · agenda · loginlog · perfil
         ├── types/ utils/          # utils/format.ts (paraNumero, máscaras, datas)
         │                          # utils/planilha.ts (exportação CSV)
         │                          # utils/estoque.ts (máscara da quantidade pela unidade)
+        │                          # utils/agenda.ts (dia × instante, blocos na grade)
         └── routes/AppRoutes.tsx
 ```
 
@@ -116,6 +120,8 @@ Testes contra o banco `ero_erp_test` — nada de H2 nem Testcontainers.
 | **Serviços** | ✅ pronto · cadastro próprio, separado de produto e sem estoque: código curto por tenant (`tenant_sequencia`), nome único no tenant, valor **opcional por filial** — vazio não é zero (`servico/`, migrations 019–020, [docs/10](docs/10-modulo-servicos.md)) |
 | **Produtos, auxiliares e estoque** | ✅ pronto · do antigo, sem a parte fiscal: produto com código por tenant, EAN com dígito verificador e custo opcional; unidade global; grupo/subgrupo, categoria e marca por tenant; estoque só de produto, por filial, com preço de venda opcional, "controla estoque" (sem ele, a linha só guarda o preço), entrada, ajuste e transferência com quantidade **com sinal** e a linha travada (`produto/`, `auxiliarproduto/`, `estoque/`, migrations 021–024, [docs/11](docs/11-modulo-produtos-estoque.md)). Mínimo só guardado: o alerta vem com o painel |
 | **Menu recolhível** | ✅ pronto · expandido ↔ só ícones em `lg+`, Ctrl+B, lembrado no navegador ([docs/04](docs/04-arquitetura-frontend.md), "O menu recolhe") |
+| **Agenda** | ✅ pronto · compromisso com responsável **escolhido** (usuário), convidados, cliente opcional, filial e cor herdada dela; conflito **por usuário** — o do responsável recusa, o do convidado só avisa; recorrência de 2 a 52 calculada a partir da primeira, no fuso do sistema; status único (agendado, confirmado, concluído, cancelado, faltou); calendário dia/semana/mês/lista feito à mão e responsivo (`compromisso/`, migration 025, [docs/12](docs/12-modulo-agenda-consulta.md)) |
+| Em andamento | plano aprovado, nesta ordem: **consulta** (serviços e produtos sobre o compromisso; o campo some sem a permissão de Serviços/Produtos; baixa de estoque) → **WhatsApp** (Evolution: servidor global do superadmin, conexão por tenant ou por filial, conectar/desconectar por QR) → avisos, lembrete e **pós-atendimento** → **pacotes**. Financeiro fica de fora |
 | Próximas | **migrar módulos do EroErp antigo**, um de cada vez, perguntando antes qual e como |
 | `audit_log` | pendente · especificação em [docs/06 §A09](docs/06-seguranca-owasp.md); molde estrutural é o `loginlog`, com o expurgo no `ManutencaoJob` |
 | Recuperação de senha por e-mail | pendente · depende de escolher o serviço de e-mail (não há `spring-boot-starter-mail` no `pom.xml`). Enquanto isso, o superadmin redefine em `PATCH /usuarios/{id}/senha` |
@@ -409,6 +415,12 @@ Toda rota de cadastro passa por `PorRegistro` (`routes/AppRoutes.tsx`), que
 chaveia o formulário pelo `id`. Sem isso, ir de um registro salvo para o novo
 mantém os dados do anterior, e salvar cria uma cópia calada.
 
+**Tela nova começa no topo, e quem garante é o `Layout`.** O `BrowserRouter`
+não rola sozinho: a janela ficava na altura da tela anterior, e o formulário
+aberto do fim do calendário nascia com os primeiros campos escondidos. O
+`Layout` faz `window.scrollTo(0, 0)` a cada troca de rota, menos no Voltar do
+navegador (`POP`). Não duplicar isso por tela.
+
 **Rota filha de um item de menu acende os dois.** O `NavLink` casa por prefixo:
 página que tem item próprio no menu mora em rota própria, não debaixo de outro
 item.
@@ -484,6 +496,7 @@ de fechar no papel.
 | [docs/09-modulo-filiais.md](docs/09-modulo-filiais.md) | Filiais — matriz e filiais (o emitente do antigo), várias matrizes por tenant |
 | [docs/10-modulo-servicos.md](docs/10-modulo-servicos.md) | Serviços — código por tenant, valor opcional por filial, sem estoque |
 | [docs/11-modulo-produtos-estoque.md](docs/11-modulo-produtos-estoque.md) | Produtos, auxiliares e estoque — preço por filial no estoque, movimentação com sinal e trava |
+| [docs/12-modulo-agenda-consulta.md](docs/12-modulo-agenda-consulta.md) | Agenda — responsável escolhido, convidados, conflito por usuário, recorrência; a consulta vem em seguida |
 
 ---
 

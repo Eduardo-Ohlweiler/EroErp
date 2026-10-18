@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation, useNavigationType } from 'react-router-dom'
 import { IconAlerta, IconMenu, IconSair } from '@/assets/icons'
 import { useAuth } from '@/hooks/useAuth'
 import { useMenuRecolhido } from '@/hooks/useMenuRecolhido'
@@ -23,6 +23,16 @@ export function Layout() {
   // Com a moldura escura, o cabeçalho tem o tom do menu: um degrau mais claro
   // que ele abriria uma emenda no canto do logo.
   const fundoMoldura = moldura ? 'bg-sidebar' : 'bg-surface'
+
+  // Tela nova começa no topo. O `BrowserRouter` não faz isso sozinho: a janela
+  // ficava na altura da tela anterior, e um formulário aberto do fim de uma
+  // lista nascia com os primeiros campos escondidos acima. O Voltar do
+  // navegador (POP) fica de fora — ali o certo é voltar aonde se estava.
+  const { pathname } = useLocation()
+  const tipoDeNavegacao = useNavigationType()
+  useEffect(() => {
+    if (tipoDeNavegacao !== 'POP') window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [pathname, tipoDeNavegacao])
 
   // Esc fecha o drawer.
   useEffect(() => {

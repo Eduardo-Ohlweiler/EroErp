@@ -2,6 +2,8 @@ import { Fragment, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
 import { TProtected } from '@/components/layout/TProtected'
+import { Agenda } from '@/pages/agenda/Agenda'
+import { CompromissoForm } from '@/pages/agenda/CompromissoForm'
 import { FilialForm } from '@/pages/filial/FilialForm'
 import { FilialList } from '@/pages/filial/FilialList'
 import { Inicio } from '@/pages/Inicio'
@@ -105,6 +107,15 @@ export function AppRoutes() {
             </Route>
             <Route element={<TProtected tela="ESTOQUE" escrita />}>
               <Route path="estoque/novo" element={<PorRegistro><EstoqueForm /></PorRegistro>} />
+            </Route>
+
+            {/* O formulário mora debaixo de /agenda: é a mesma tela no menu. */}
+            <Route element={<TProtected tela="AGENDA" />}>
+              <Route path="agenda" element={<Agenda />} />
+              <Route path="agenda/:id" element={<PorRegistro><CompromissoForm /></PorRegistro>} />
+            </Route>
+            <Route element={<TProtected tela="AGENDA" escrita />}>
+              <Route path="agenda/novo" element={<PorRegistro><CompromissoForm /></PorRegistro>} />
             </Route>
 
             {/*

@@ -288,6 +288,48 @@ class PermissaoTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Agenda: sem permissão não lê; leitura lê e consulta a disponibilidade, sem gravar; escrita grava")
+    void agendaLeituraEEscrita() throws Exception {
+        UUID filial = criarFilial(autenticar(adminA.getEmail()), "Clínica");
+        String compromisso = """
+                {"filialId":"%s","responsavelId":"%s","titulo":"Consulta",
+                 "inicio":"2027-03-10T13:00:00Z","fim":"2027-03-10T14:00:00Z"}
+                """.formatted(filial, userA.getId());
+        String disponibilidade = """
+                {"inicio":"2027-03-10T13:00:00Z","fim":"2027-03-10T14:00:00Z","responsavelId":"%s"}
+                """.formatted(userA.getId());
+
+        String token = autenticar(userA.getEmail());
+        mockMvc.perform(get("/compromissos/calendario").header(AUTHORIZATION, token)
+                        .param("inicio", "2027-03-01T03:00:00Z").param("fim", "2027-04-01T03:00:00Z"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/compromissos/disponibilidade").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(disponibilidade))
+                .andExpect(status().isForbidden());
+
+        conceder(userA, Tela.AGENDA, NivelAcesso.LEITURA);
+        mockMvc.perform(get("/compromissos/calendario").header(AUTHORIZATION, token)
+                        .param("inicio", "2027-03-01T03:00:00Z").param("fim", "2027-04-01T03:00:00Z"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/compromissos/disponibilidade").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(disponibilidade))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/compromissos").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(compromisso))
+                .andExpect(status().isForbidden());
+        assertThat(compromissoRepository.findAll()).isEmpty();
+
+        usuarioPermissaoRepository.deleteAllInBatch();
+        conceder(userA, Tela.AGENDA, NivelAcesso.ESCRITA);
+        String id = objectMapper.readTree(mockMvc.perform(post("/compromissos").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(compromisso))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString()).get(0).get("id").asText();
+        mockMvc.perform(patch("/compromissos/{id}/confirmar", id).header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("mudar a permissão vale na requisição seguinte, com o mesmo token")
     void mudancaValeSemNovoLogin() throws Exception {
         String token = autenticar(userA.getEmail());
@@ -357,7 +399,10 @@ class PermissaoTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[3].telas[1].tela").value("AUXILIARES_PRODUTO"))
                 .andExpect(jsonPath("$[3].telas[1].rotulo").value("Auxiliares de produto"))
                 .andExpect(jsonPath("$[4].modulo").value("ESTOQUE"))
-                .andExpect(jsonPath("$[4].telas[0].tela").value("ESTOQUE"));
+                .andExpect(jsonPath("$[4].telas[0].tela").value("ESTOQUE"))
+                .andExpect(jsonPath("$[5].modulo").value("ATENDIMENTO"))
+                .andExpect(jsonPath("$[5].rotulo").value("Agenda e atendimento"))
+                .andExpect(jsonPath("$[5].telas[0].tela").value("AGENDA"));
 
         mockMvc.perform(get("/permissoes/catalogo").header(AUTHORIZATION, autenticar(adminA.getEmail())))
                 .andExpect(status().isForbidden());

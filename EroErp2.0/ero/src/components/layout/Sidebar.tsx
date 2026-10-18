@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { NavLink } from 'react-router-dom'
 import type { ComponentType, FocusEvent, MouseEvent, SVGProps } from 'react'
 import {
+  IconAgenda,
   IconCadastroAuxiliar,
   IconDashboard,
   IconEstoque,
@@ -40,6 +41,10 @@ interface Grupo {
 const GRUPOS: Grupo[] = [
   {
     itens: [{ para: '/app', rotulo: 'Início', Icone: IconDashboard }],
+  },
+  {
+    titulo: 'Atendimento',
+    itens: [{ para: '/app/agenda', rotulo: 'Agenda', Icone: IconAgenda, tela: 'AGENDA' }],
   },
   {
     titulo: 'Cadastros',

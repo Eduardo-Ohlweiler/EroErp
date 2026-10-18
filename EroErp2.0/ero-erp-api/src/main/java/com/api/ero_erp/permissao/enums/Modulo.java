@@ -19,7 +19,8 @@ public enum Modulo {
     FILIAIS("Filiais"),
     SERVICOS("Serviços"),
     PRODUTOS("Produtos"),
-    ESTOQUE("Estoque");
+    ESTOQUE("Estoque"),
+    ATENDIMENTO("Agenda e atendimento");
 
     private final String rotulo;
 

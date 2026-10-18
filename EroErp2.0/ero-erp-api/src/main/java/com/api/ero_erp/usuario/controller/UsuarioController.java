@@ -74,8 +74,13 @@ public class UsuarioController {
                 usuarioService.getAllGlobal(pageable, tenantId, nome, email, role, ativo));
     }
 
+    /**
+     * Aberto a qualquer autenticado, como os outros {@code /select}: a agenda
+     * escolhe o responsável e os convidados por aqui. Só id e nome, e só do
+     * tenant efetivo.
+     */
     @GetMapping("/select")
-    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Usuários ativos do tenant, para combo")
     public ResponseEntity<List<UsuarioSelectDto>> select(@RequestParam(required = false) String nome) {
         return ResponseEntity.ok(usuarioService.select(nome));

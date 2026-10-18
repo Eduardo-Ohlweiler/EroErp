@@ -247,3 +247,37 @@ export const IconDescer = (p: IconProps) => (
     <path d="m19 12-7 7-7-7" />
   </Icon>
 )
+
+export const IconAgenda = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="4.5" width="18" height="16.5" rx="2.5" />
+    <path d="M3 9.5h18" />
+    <path d="M8 2.5v4" />
+    <path d="M16 2.5v4" />
+    <path d="M7.5 13.5h3" />
+    <path d="M7.5 17h6" />
+  </Icon>
+)
+
+export const IconRelogio = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Icon>
+)
+
+export const IconRepetir = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M17 2l3 3-3 3" />
+    <path d="M4 11V9a4 4 0 0 1 4-4h12" />
+    <path d="M7 22l-3-3 3-3" />
+    <path d="M20 13v2a4 4 0 0 1-4 4H4" />
+  </Icon>
+)
+
+export const IconEditar = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16v4Z" />
+    <path d="m13.5 6.5 4 4" />
+  </Icon>
+)
