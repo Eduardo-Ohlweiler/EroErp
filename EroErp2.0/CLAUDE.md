@@ -513,6 +513,7 @@ de fechar no papel.
 | [docs/11-modulo-produtos-estoque.md](docs/11-modulo-produtos-estoque.md) | Produtos, auxiliares e estoque — preço por filial no estoque, movimentação com sinal e trava |
 | [docs/12-modulo-agenda-consulta.md](docs/12-modulo-agenda-consulta.md) | Agenda — responsável escolhido, convidados, conflito por usuário, recorrência · Consulta (§7) — situação única, preço-retrato, ajustes, totais do servidor, baixa ao concluir |
 | [docs/13-modulo-whatsapp.md](docs/13-modulo-whatsapp.md) | WhatsApp — servidor Evolution global, modo do tenant, conexão por QR, status pela tela e webhook com segredo, apikey criptografada |
+| [docs/13-layout-de-telas.md](docs/13-layout-de-telas.md) | Largura e disposição dos campos — formulário, listagem, FormList. Prevalece sobre os grids do doc 04 |
 
 ---
 
@@ -530,6 +531,35 @@ service com `@Transactional` → controller com `@PreAuthorize` → testes.
 Para **módulo de negócio** (não administrativo), a referência é `pessoa`:
 `isAuthenticated()` em vez de role, listas filhas sincronizadas num único PUT e
 catálogo de referência sem tenant. Ver [docs/08](docs/08-modulo-pessoas.md).
+
+---
+
+## A equipe de agentes
+
+Em `.claude/agents/` e `.claude/skills/`, versionada no git — vale nas duas
+máquinas depois de um `git pull`. **Abra o Claude Code dentro de `EroErp2.0/`**:
+aberto na raiz do EroErp antigo, ele não enxerga estes agentes.
+
+| Agente | Papel | Escreve? |
+|---|---|---|
+| `pesquisa-eroerp-antigo` · `pesquisa-silvia` | como o antigo / a Silvia faziam | não |
+| `planejador` | pedido → plano com arquivos, larguras de campo e perguntas | não |
+| `dev-backend` | Java/Spring, migration, testes | sim |
+| `dev-frontend` | telas e biblioteca T*, no padrão do doc 13 | sim |
+| `guardiao-layout` | larguras e disposição contra o doc 13, 360 px | não |
+| `revisor` | tenant, permissão, as 6 regras, as armadilhas abaixo | não |
+| `qa` | build, suíte, bateria, três vias | só script temporário |
+| `operador-deploy` | Hostinger (Docker) e Integrator (painel) | só `deploy/` |
+
+Comandos: **`/fatia <pedido>`** (a equipe inteira, do plano ao relatório),
+**`/revisar`**, **`/padronizar-layout <tela|módulo|todas>`**,
+**`/deploy <hostinger|integrator|preparar …>`**, **`/build-check [test]`**.
+
+Regra de ouro: os agentes trabalham e commitam numa branch de trabalho; **push,
+merge na `main` e qualquer coisa num servidor só com o OK do Eduardo**. O
+`.claude/settings.json` pergunta antes de `git push`, `git merge`, `ssh`, `scp`,
+`rsync` e `docker`, bloqueia `push --force` e a leitura de `.env`, `.pem` e
+`.key`.
 
 ---
 

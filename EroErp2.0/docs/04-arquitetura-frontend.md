@@ -4,6 +4,9 @@
 > com a API.
 >
 > Cores, fontes, espaçamentos e componentes visuais: [05-identidade-visual.md](05-identidade-visual.md).
+>
+> **Largura e disposição dos campos: [13-layout-de-telas.md](13-layout-de-telas.md).**
+> Ele prevalece sobre os `grid sm:grid-cols-N` dos exemplos deste documento.
 
 ---
 
