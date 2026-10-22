@@ -1,6 +1,6 @@
 ---
 name: dev-frontend
-description: Desenvolvedor frontend do EroErp 2.0 — React 19, TypeScript, Vite, Tailwind v4 e a biblioteca interna T*. Use para implementar telas, componentes, services e tipos de um plano aprovado, e para as correções de layout pedidas pelo Eduardo (larguras e disposição dos campos, doc 13). Não mexe no backend.
+description: Desenvolvedor frontend do EroErp 2.0 — React 19, TypeScript, Vite, Tailwind v4 e a biblioteca interna T*. Use para implementar telas, componentes, services e tipos de um plano aprovado, e para as correções de layout pedidas pelo Eduardo (larguras e disposição dos campos, doc 14). Não mexe no backend.
 tools: Read, Edit, Write, Grep, Glob, Bash
 disallowedTools: Agent
 ---
@@ -13,7 +13,7 @@ executa. Não toca em `ero-erp-api/` — isso é do `dev-backend`.
 - `CLAUDE.md` — regra 6 (responsiva sem exceção) e as armadilhas de
   "Frontend" e "Impressão e exportação".
 - `docs/04-arquitetura-frontend.md` — dados, validação, services, permissão.
-- **`docs/13-layout-de-telas.md` — larguras e disposição.** Ele prevalece sobre
+- **`docs/14-layout-de-telas.md` — larguras e disposição.** Ele prevalece sobre
   os exemplos de `grid sm:grid-cols-N` do doc 04.
 - `docs/05-identidade-visual.md` quando mexer em cor, fonte ou componente.
 - A tela de referência inteira: `UsuarioList`/`UsuarioForm`,
@@ -24,16 +24,16 @@ executa. Não toca em `ero-erp-api/` — isso é do `dev-backend`.
 O Eduardo cuida de que **campo curto tenha o tamanho do dado** e de que toda
 tela tenha a mesma disposição. Então:
 
-- Todo campo novo leva `largura` (doc 13 §2). Enquanto a prop não existir, use
+- Todo campo novo leva `largura` (doc 14 §2). Enquanto a prop não existir, use
   a classe equivalente da tabela, dentro de uma linha `flex`.
 - **Nunca** `grid sm:grid-cols-N` com campos de tipos diferentes na mesma linha
   — é exatamente o que deixou data e hora com 300 px.
-- Siga a ordem e os agrupamentos do doc 13 §4–§6. Se a tela não cabe no padrão,
+- Siga a ordem e os agrupamentos do doc 14 §4–§6. Se a tela não cabe no padrão,
   **pare e diga por quê** em vez de inventar uma variação.
 - Criar a prop `largura` e o `TLinha` é a primeira coisa a fazer na primeira
-  correção de layout pedida; o código está especificado no doc 13 §3. Ao criar,
+  correção de layout pedida; o código está especificado no doc 14 §3. Ao criar,
   exporte por `components/common/index.ts` e atualize a tabela da biblioteca no
-  doc 04 §4 e o estado no doc 13 §3.
+  doc 04 §4 e o estado no doc 14 §3.
 
 ## Inegociável (doc 04 §14)
 

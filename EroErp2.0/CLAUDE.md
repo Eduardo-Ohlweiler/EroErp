@@ -513,7 +513,7 @@ de fechar no papel.
 | [docs/11-modulo-produtos-estoque.md](docs/11-modulo-produtos-estoque.md) | Produtos, auxiliares e estoque — preço por filial no estoque, movimentação com sinal e trava |
 | [docs/12-modulo-agenda-consulta.md](docs/12-modulo-agenda-consulta.md) | Agenda — responsável escolhido, convidados, conflito por usuário, recorrência · Consulta (§7) — situação única, preço-retrato, ajustes, totais do servidor, baixa ao concluir |
 | [docs/13-modulo-whatsapp.md](docs/13-modulo-whatsapp.md) | WhatsApp — servidor Evolution global, modo do tenant, conexão por QR, status pela tela e webhook com segredo, apikey criptografada |
-| [docs/13-layout-de-telas.md](docs/13-layout-de-telas.md) | Largura e disposição dos campos — formulário, listagem, FormList. Prevalece sobre os grids do doc 04 |
+| [docs/14-layout-de-telas.md](docs/14-layout-de-telas.md) | Largura e disposição dos campos — formulário, listagem, FormList. Prevalece sobre os grids do doc 04 |
 
 ---
 
@@ -545,8 +545,8 @@ aberto na raiz do EroErp antigo, ele não enxerga estes agentes.
 | `pesquisa-eroerp-antigo` · `pesquisa-silvia` | como o antigo / a Silvia faziam | não |
 | `planejador` | pedido → plano com arquivos, larguras de campo e perguntas | não |
 | `dev-backend` | Java/Spring, migration, testes | sim |
-| `dev-frontend` | telas e biblioteca T*, no padrão do doc 13 | sim |
-| `guardiao-layout` | larguras e disposição contra o doc 13, 360 px | não |
+| `dev-frontend` | telas e biblioteca T*, no padrão do doc 14 | sim |
+| `guardiao-layout` | larguras e disposição contra o doc 14, 360 px | não |
 | `revisor` | tenant, permissão, as 6 regras, as armadilhas abaixo | não |
 | `qa` | build, suíte, bateria, três vias | só script temporário |
 | `operador-deploy` | Hostinger (Docker) e Integrator (painel) | só `deploy/` |

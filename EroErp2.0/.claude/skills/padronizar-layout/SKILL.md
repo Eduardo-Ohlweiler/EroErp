@@ -1,6 +1,6 @@
 ---
 name: padronizar-layout
-description: Corrige larguras e disposição dos campos de telas do EroErp 2.0 para o padrão do docs/13-layout-de-telas.md, com o guardião de layout auditando antes e depois. Use quando o Eduardo pedir para padronizar uma tela, um módulo ou todas.
+description: Corrige larguras e disposição dos campos de telas do EroErp 2.0 para o padrão do docs/14-layout-de-telas.md, com o guardião de layout auditando antes e depois. Use quando o Eduardo pedir para padronizar uma tela, um módulo ou todas.
 argument-hint: "<tela ou módulo — ex.: agenda, CompromissoForm, todas>"
 disable-model-invocation: true
 ---
@@ -27,8 +27,8 @@ Alvo: **$ARGUMENTS**
 
 `dev-frontend` com o parecer do guardião e as telas. Na **primeira** execução
 deste comando, a prop `largura` e o `TLinha` ainda não existem: o dev cria os
-dois conforme o doc 13 §3, antes de mexer em qualquer tela, e atualiza o estado
-no doc 13 §3 e a tabela da biblioteca no doc 04 §4.
+dois conforme o doc 14 §3, antes de mexer em qualquer tela, e atualiza o estado
+no doc 14 §3 e a tabela da biblioteca no doc 04 §4.
 
 A correção é **só de layout**: larguras, ordem e agrupamento dos campos. Nada de
 regra, validação, texto ou comportamento — se o dev achar outra coisa errada,

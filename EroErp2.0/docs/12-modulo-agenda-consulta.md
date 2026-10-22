@@ -6,7 +6,7 @@
 > o antigo travava o tenant inteiro. A consulta (§7: serviços, produtos e baixa
 > de estoque) vem da `clinica/consulta` de lá e mora em cima do compromisso,
 > sem copiar o horário nem ter status próprio. Avisos por WhatsApp,
-> pós-atendimento e pacotes vêm depois (docs/13 e docs/14, quando chegarem).
+> pós-atendimento e pacotes vêm depois (docs/13-modulo-whatsapp.md).
 
 ---
 

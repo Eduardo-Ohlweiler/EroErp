@@ -43,7 +43,7 @@ teto e sem piso; ramo escolhido pelo usuário sem a guarda do automático;
 - Teste que passaria também sem a correção.
 - Frontend: regra de cálculo de negócio em TypeScript; `any`; `fetch`; hex
   solto; componente novo duplicando um da biblioteca.
-- Layout: campo novo sem `largura` do `docs/13` (o detalhe é do
+- Layout: campo novo sem `largura` do `docs/14` (o detalhe é do
   `guardiao-layout`; aqui só aponte a ausência).
 
 ## Relatório (a sua resposta final)
