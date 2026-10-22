@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  :root{
+    --primary:#1E4686; --bar:#E8F0FB; --g1:#d6e2f5; --g2:#eef3fb;
+    --tot:#1E4686; --line:#d6deeb; --ink:#1f2937; --muted:#64748b; --zebra:#f7f9fd;
+  }
+  html,body{ font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+    color:var(--ink); background:#e9edf2; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+  .pagina{ width:794px; min-height:1123px; background:#fff; margin:0 auto;
+    position:relative; padding:22px 30px 54px; break-after:page; }
+  .pagina:last-child{ break-after:auto; }
+
+  /* Cabeçalho — em toda página */
+  .cab{ display:flex; align-items:stretch; gap:14px; }
+  .logo{ color:var(--primary); --logo-acento:#2E5491; height:30px; width:auto;
+    align-self:center; flex:0 0 auto; }
+  .faixa{ flex:1; background:var(--bar); border-left:4px solid var(--primary);
+    border-radius:3px; padding:7px 14px; display:flex; flex-direction:column; justify-content:center; }
+  .faixa .emit{ font-size:14px; font-weight:700; color:var(--primary); line-height:1.2; }
+  .faixa .tit{ font-size:12.5px; font-weight:600; color:#374151; margin-top:2px; }
+  .cab-rule{ border:0; border-top:1.5px solid var(--primary); margin:10px 0 0; }
+
+  /* Filtros — só na 1ª página */
+  .filtros{ font-size:10.5px; color:var(--muted); margin:9px 0 2px; }
+  .filtros b{ color:#374151; }
+
+  h2.sec{ font-size:12.5px; color:var(--primary); margin:13px 0 7px; font-weight:700; }
+
+  table.rel{ width:100%; border-collapse:collapse; font-size:10.5px; }
+  table.rel thead th{ text-align:left; color:#fff; background:#334a6b;
+    padding:4px 8px; font-size:9.5px; font-weight:700; letter-spacing:.02em; }
+  table.rel thead th.num{ text-align:right; }
+  table.rel td{ padding:3px 8px; border-bottom:1px solid #edf1f6; }
+  table.rel td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  tr.det:nth-child(even) td{ background:var(--zebra); }
+  tr.g1 td{ background:var(--g1); font-weight:700; color:var(--primary);
+    padding:4px 8px; font-size:10.5px; border-bottom:1px solid #c3d2ea; }
+  tr.g2 td{ background:var(--g2); font-weight:600; color:#2b3b55; padding:3px 8px 3px 20px; }
+  tr.sub td{ background:#f1f5fb; font-weight:600; border-top:1px solid #d6deeb; }
+  tr.subf td{ background:var(--g1); font-weight:700; color:var(--primary); border-top:1px solid #b9cae6; }
+  tr.tot td{ background:var(--tot); color:#fff; font-weight:700; }
+
+  /* Rodapé — em toda página */
+  .rodape{ position:absolute; left:30px; right:30px; bottom:16px;
+    border-top:1px solid var(--line); padding-top:6px; display:flex;
+    justify-content:space-between; font-size:9px; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ========================== PÁGINA 1 ========================== -->
+<div class="pagina">
+  <div class="cab">
+    <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1215 240" fill="currentColor" aria-label="EroErp">
+      <g fill="var(--logo-acento, currentColor)">
+        <path d="M5 4H232Q247 4 241 18L236 30Q231 42 216 42H5Z"/>
+        <path d="M459 161L479 154V190H459Z"/><path d="M490 131L511 123V190H490Z"/>
+        <path d="M522 107L545 98V190H522Z"/>
+        <path d="M553.1 74.9A85 85 0 0 1 522.1 214.9" fill="none" stroke="var(--logo-acento, currentColor)" stroke-width="30"/>
+        <rect x="638" y="70" width="5" height="130" rx="2.5"/>
+      </g>
+      <path d="M5 105Q5 84 26 84H170Q190 84 190 104Q190 125 170 125H46V175H203Q215 175 215 187V203Q215 215 203 215H26Q5 215 5 194Z"/>
+      <path d="M235 215V102Q235 51 286 51H368Q388 51 388 71Q388 92 368 92H292Q278 92 278 106V215Z"/>
+      <path d="M532.9 60.0A85 85 0 1 0 522.1 214.9" fill="none" stroke="currentColor" stroke-width="30"/>
+      <text x="690" y="163" font-family="inherit" font-size="80" font-weight="500" textLength="520" lengthAdjust="spacing">SISTEMA</text>
+    </svg>
+    <div class="faixa">
+      <div class="emit">Clínica Vida Plena LTDA — Matriz</div>
+      <div class="tit">Atendimentos por filial e cliente</div>
+    </div>
+  </div>
+  <hr class="cab-rule">
+
+  <div class="filtros"><b>Filtros:</b> Período: 01/08/2026 a 31/08/2026 · Filial: TODAS · Cliente: TODOS · Situação: Concluída · Safra: 2027</div>
+
+  <h2 class="sec">Atendimentos agrupados por filial e cliente</h2>
+  <table class="rel">
+    <thead><tr><th>Data</th><th>Serviço / Produto</th><th class="num">Qtde</th><th class="num">Valor (R$)</th></tr></thead>
+    <tbody>
+      <tr class="g1"><td colspan="4">FILIAL: Matriz — Clínica Vida Plena</td></tr>
+
+      <tr class="g2"><td colspan="4">Cliente: 001 — João da Silva</td></tr>
+      <tr class="det"><td>03/08/2026</td><td>Consulta clínica</td><td class="num">1</td><td class="num">180,00</td></tr>
+      <tr class="det"><td>05/08/2026</td><td>Curativo simples</td><td class="num">2</td><td class="num">60,00</td></tr>
+      <tr class="sub"><td colspan="3">Total do cliente João da Silva</td><td class="num">240,00</td></tr>
+
+      <tr class="g2"><td colspan="4">Cliente: 002 — Maria Souza</td></tr>
+      <tr class="det"><td>07/08/2026</td><td>Consulta clínica</td><td class="num">1</td><td class="num">180,00</td></tr>
+      <tr class="det"><td>10/08/2026</td><td>Vacina antitetânica</td><td class="num">1</td><td class="num">90,00</td></tr>
+      <tr class="det"><td>12/08/2026</td><td>Retorno</td><td class="num">1</td><td class="num">0,00</td></tr>
+      <tr class="sub"><td colspan="3">Total do cliente Maria Souza</td><td class="num">270,00</td></tr>
+
+      <tr class="g2"><td colspan="4">Cliente: 004 — Ana Paula Ferreira</td></tr>
+      <tr class="det"><td>14/08/2026</td><td>Consulta clínica</td><td class="num">1</td><td class="num">180,00</td></tr>
+      <tr class="det"><td>14/08/2026</td><td>Exame laboratorial</td><td class="num">1</td><td class="num">120,00</td></tr>
+      <tr class="sub"><td colspan="3">Total do cliente Ana Paula Ferreira</td><td class="num">300,00</td></tr>
+
+      <tr class="subf"><td colspan="3">Total da filial Matriz</td><td class="num">810,00</td></tr>
+    </tbody>
+  </table>
+
+  <div class="rodape">
+    <span>EroErp · 22/10/2026 14:32 · gerado por eduardo@cta.com.br</span>
+    <span>Página 1 de 3</span>
+  </div>
+</div>
+
+<!-- ========================== PÁGINA 2 ========================== -->
+<div class="pagina">
+  <div class="cab">
+    <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1215 240" fill="currentColor" aria-label="EroErp">
+      <g fill="var(--logo-acento, currentColor)">
+        <path d="M5 4H232Q247 4 241 18L236 30Q231 42 216 42H5Z"/>
+        <path d="M459 161L479 154V190H459Z"/><path d="M490 131L511 123V190H490Z"/>
+        <path d="M522 107L545 98V190H522Z"/>
+        <path d="M553.1 74.9A85 85 0 0 1 522.1 214.9" fill="none" stroke="var(--logo-acento, currentColor)" stroke-width="30"/>
+        <rect x="638" y="70" width="5" height="130" rx="2.5"/>
+      </g>
+      <path d="M5 105Q5 84 26 84H170Q190 84 190 104Q190 125 170 125H46V175H203Q215 175 215 187V203Q215 215 203 215H26Q5 215 5 194Z"/>
+      <path d="M235 215V102Q235 51 286 51H368Q388 51 388 71Q388 92 368 92H292Q278 92 278 106V215Z"/>
+      <path d="M532.9 60.0A85 85 0 1 0 522.1 214.9" fill="none" stroke="currentColor" stroke-width="30"/>
+      <text x="690" y="163" font-family="inherit" font-size="80" font-weight="500" textLength="520" lengthAdjust="spacing">SISTEMA</text>
+    </svg>
+    <div class="faixa">
+      <div class="emit">Clínica Vida Plena LTDA — Matriz</div>
+      <div class="tit">Atendimentos por filial e cliente</div>
+    </div>
+  </div>
+  <hr class="cab-rule">
+
+  <table class="rel" style="margin-top:12px">
+    <thead><tr><th>Data</th><th>Serviço / Produto</th><th class="num">Qtde</th><th class="num">Valor (R$)</th></tr></thead>
+    <tbody>
+      <tr class="g1"><td colspan="4">FILIAL: Unidade Centro — Clínica Vida Plena</td></tr>
+
+      <tr class="g2"><td colspan="4">Cliente: 003 — Pedro Lima</td></tr>
+      <tr class="det"><td>06/08/2026</td><td>Consulta clínica</td><td class="num">1</td><td class="num">180,00</td></tr>
+      <tr class="det"><td>13/08/2026</td><td>Fisioterapia</td><td class="num">3</td><td class="num">210,00</td></tr>
+      <tr class="sub"><td colspan="3">Total do cliente Pedro Lima</td><td class="num">390,00</td></tr>
+
+      <tr class="g2"><td colspan="4">Cliente: 005 — Luiza Martins</td></tr>
+      <tr class="det"><td>08/08/2026</td><td>Consulta clínica</td><td class="num">1</td><td class="num">180,00</td></tr>
+      <tr class="det"><td>15/08/2026</td><td>Ultrassonografia</td><td class="num">1</td><td class="num">150,00</td></tr>
+      <tr class="sub"><td colspan="3">Total do cliente Luiza Martins</td><td class="num">330,00</td></tr>
+
+      <tr class="subf"><td colspan="3">Total da filial Unidade Centro</td><td class="num">720,00</td></tr>
+
+      <tr class="tot"><td colspan="3">TOTAL GERAL — 11 atendimentos</td><td class="num">1.530,00</td></tr>
+    </tbody>
+  </table>
+
+  <div class="rodape">
+    <span>EroErp · 22/10/2026 14:32 · gerado por eduardo@cta.com.br</span>
+    <span>Página 2 de 3</span>
+  </div>
+</div>
+
+<!-- ========================== PÁGINA 3 — lista simples ========================== -->
+<div class="pagina">
+  <div class="cab">
+    <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1215 240" fill="currentColor" aria-label="EroErp">
+      <g fill="var(--logo-acento, currentColor)">
+        <path d="M5 4H232Q247 4 241 18L236 30Q231 42 216 42H5Z"/>
+        <path d="M459 161L479 154V190H459Z"/><path d="M490 131L511 123V190H490Z"/>
+        <path d="M522 107L545 98V190H522Z"/>
+        <path d="M553.1 74.9A85 85 0 0 1 522.1 214.9" fill="none" stroke="var(--logo-acento, currentColor)" stroke-width="30"/>
+        <rect x="638" y="70" width="5" height="130" rx="2.5"/>
+      </g>
+      <path d="M5 105Q5 84 26 84H170Q190 84 190 104Q190 125 170 125H46V175H203Q215 175 215 187V203Q215 215 203 215H26Q5 215 5 194Z"/>
+      <path d="M235 215V102Q235 51 286 51H368Q388 51 388 71Q388 92 368 92H292Q278 92 278 106V215Z"/>
+      <path d="M532.9 60.0A85 85 0 1 0 522.1 214.9" fill="none" stroke="currentColor" stroke-width="30"/>
+      <text x="690" y="163" font-family="inherit" font-size="80" font-weight="500" textLength="520" lengthAdjust="spacing">SISTEMA</text>
+    </svg>
+    <div class="faixa">
+      <div class="emit">Clínica Vida Plena LTDA — Matriz</div>
+      <div class="tit">Pessoas</div>
+    </div>
+  </div>
+  <hr class="cab-rule">
+
+  <div class="filtros"><b>Filtros:</b> Nome: — · Tipo: TODOS · Cidade: TODAS · Situação: Ativos · 14 registros</div>
+
+  <h2 class="sec">Lista de pessoas</h2>
+  <table class="rel">
+    <thead><tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Cidade</th><th>Situação</th></tr></thead>
+    <tbody>
+      <tr class="det"><td>001</td><td>João da Silva</td><td>Física</td><td>Araranguá</td><td>Ativo</td></tr>
+      <tr class="det"><td>002</td><td>Maria Souza</td><td>Física</td><td>Criciúma</td><td>Ativo</td></tr>
+      <tr class="det"><td>003</td><td>Pedro Lima</td><td>Física</td><td>Tubarão</td><td>Ativo</td></tr>
+      <tr class="det"><td>004</td><td>Ana Paula Ferreira</td><td>Física</td><td>Araranguá</td><td>Ativo</td></tr>
+      <tr class="det"><td>005</td><td>Luiza Martins</td><td>Física</td><td>Içara</td><td>Ativo</td></tr>
+      <tr class="det"><td>006</td><td>Mercado Bom Preço LTDA</td><td>Jurídica</td><td>Criciúma</td><td>Ativo</td></tr>
+      <tr class="det"><td>007</td><td>Auto Center Rápido ME</td><td>Jurídica</td><td>Araranguá</td><td>Ativo</td></tr>
+      <tr class="det"><td>008</td><td>Carlos Eduardo Nunes</td><td>Física</td><td>Sombrio</td><td>Ativo</td></tr>
+      <tr class="det"><td>009</td><td>Fernanda Alves</td><td>Física</td><td>Tubarão</td><td>Ativo</td></tr>
+      <tr class="det"><td>010</td><td>Distribuidora Sul LTDA</td><td>Jurídica</td><td>Criciúma</td><td>Ativo</td></tr>
+      <tr class="det"><td>011</td><td>Roberto Krause</td><td>Física</td><td>Içara</td><td>Ativo</td></tr>
+      <tr class="det"><td>012</td><td>Juliana Teixeira</td><td>Física</td><td>Araranguá</td><td>Ativo</td></tr>
+      <tr class="det"><td>013</td><td>Marcos Klosowski</td><td>Física</td><td>Nova Veneza</td><td>Ativo</td></tr>
+      <tr class="det"><td>014</td><td>Supermercados União S/A</td><td>Jurídica</td><td>Criciúma</td><td>Ativo</td></tr>
+    </tbody>
+  </table>
+
+  <div class="rodape">
+    <span>EroErp · 22/10/2026 14:32 · gerado por eduardo@cta.com.br</span>
+    <span>Página 3 de 3</span>
+  </div>
+</div>
+
+</body>
+</html>

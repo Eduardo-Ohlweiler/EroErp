@@ -42,6 +42,9 @@ pare aqui e deixe o plano escrito para ele.
 - Depois `dev-frontend` com o plano, o resumo do que o backend entregou
   (endpoints, DTOs) e a branch. Em sequência, não em paralelo: o front tipa o
   que o back entregou. Fatia só de front ou só de back pula o outro.
+- Se a fatia tem **relatório/impressão**, o `relatorios` faz essa camada
+  (padrão do doc 15), depois do `dev-frontend` — e pede ao `dev-backend` o
+  endpoint de agrupamento/totais, se precisar.
 
 ## 4. Conferir
 
