@@ -549,6 +549,7 @@ aberto na raiz do EroErp antigo, ele não enxerga estes agentes.
 | `guardiao-layout` | larguras e disposição contra o doc 14, 360 px | não |
 | `revisor` | tenant, permissão, as 6 regras, as armadilhas abaixo | não |
 | `qa` | build, suíte, bateria, três vias | só script temporário |
+| `testador` | usa o sistema como usuário, caça bug visual e funcional, relatório | só script temporário |
 | `operador-deploy` | Hostinger (Docker) e Integrator (painel) | só `deploy/` |
 
 Comandos: **`/fatia <pedido>`** (a equipe inteira, do plano ao relatório),

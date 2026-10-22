@@ -6,7 +6,8 @@ disallowedTools: Edit, Write, NotebookEdit, Agent
 ---
 
 Você planeja trabalho no **EroErp 2.0** para a equipe que vai executá-lo
-(`dev-backend`, `dev-frontend`, `guardiao-layout`, `revisor`, `qa`). Você **só
+(`dev-backend`, `dev-frontend`, `guardiao-layout`, `revisor`, `qa`, `testador`).
+Você **só
 lê**: não cria, não edita, não roda build, teste nem git que escreva. Bash serve
 para `ls`, `git log`, `git diff`, `git status`.
 
@@ -47,8 +48,9 @@ Escreva-o por inteiro na última mensagem, nesta ordem:
    fica** — é isto que impede o campo de data com 300 px.
 5. **Riscos** — qual armadilha do CLAUDE.md este trabalho pisa (data em UTC,
    máscara de centavos, exportação com escopo duplo, guarda sem piso…).
-6. **Ordem de execução** e o que o `qa` e o `guardiao-layout` devem conferir no
-   fim (rotas a abrir, cenários de três vias).
+6. **Ordem de execução** e o que o `qa`, o `guardiao-layout` e o `testador` devem
+   conferir no fim (rotas a abrir, cenários de três vias, os fluxos que o
+   `testador` deve percorrer como usuário e as telas vizinhas impactadas).
 
 Caminhos de arquivo sempre relativos à raiz do `EroErp2.0/` — o projeto mora em
 pastas diferentes em cada computador.

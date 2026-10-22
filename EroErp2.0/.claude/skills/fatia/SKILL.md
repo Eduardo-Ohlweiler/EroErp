@@ -43,17 +43,23 @@ pare aqui e deixe o plano escrito para ele.
   (endpoints, DTOs) e a branch. Em sequência, não em paralelo: o front tipa o
   que o back entregou. Fatia só de front ou só de back pula o outro.
 
-## 4. Conferir — em paralelo, na mesma mensagem
+## 4. Conferir
 
-- `revisor` com a faixa do diff (`git diff main...HEAD`).
-- `guardiao-layout` com as rotas das telas criadas ou alteradas.
-- `qa` com o que a fatia tocou e os fluxos para a verificação de três vias.
+- `revisor` com a faixa do diff (`git diff main...HEAD`) — só lê, pode ir **em
+  paralelo** com qualquer um.
+- Os três que abrem o sistema no Chrome dividem o mesmo :8080/:5173 e o rate
+  limit (5 logins/min), então rode-os **em série**, um de cada vez, para não se
+  atropelarem nem provocar 429:
+  - `guardiao-layout` com as rotas das telas criadas ou alteradas.
+  - `qa` com o que a fatia tocou e os fluxos para a verificação de três vias.
+  - `testador` com os fluxos da fatia e as telas vizinhas que podem ter sido
+    impactadas, para a jornada como usuário.
 
 ## 5. Corrigir
 
 Achado que **bloqueia** ou **corrigir** (revisor), tela **reprovada**
-(guardião) e ❌ (qa) voltam para o `dev-backend` ou `dev-frontend`, com o achado
-literal. Depois, só o conferente que reprovou roda de novo. **No máximo duas
+(guardião) e ❌ (qa ou testador) voltam para o `dev-backend` ou `dev-frontend`,
+com o achado literal. Depois, só o conferente que reprovou roda de novo. **No máximo duas
 voltas**: se ainda reprovar, pare e leve ao Eduardo o que não fechou.
 Sugestões ficam para o relatório, não viram volta.
 
