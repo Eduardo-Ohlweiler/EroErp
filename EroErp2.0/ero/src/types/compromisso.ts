@@ -138,3 +138,17 @@ export interface Disponibilidade {
   /** Algum choque é do responsável: salvar dará 409. */
   bloqueia: boolean
 }
+
+/**
+ * Quem executa os botões de situação do `AcoesCompromisso`. A agenda passa os
+ * dela (`acoesDaAgenda`, tela AGENDA); a consulta passa os seus, que gravam o
+ * mesmo compromisso pela tela CONSULTAS. Ação ausente, botão ausente.
+ */
+export interface AcoesDeSituacao<R> {
+  confirmar?: (id: string) => Promise<R>
+  concluir?: (id: string) => Promise<R>
+  faltou: (id: string) => Promise<R>
+  cancelar: (id: string, motivo?: string) => Promise<R>
+  /** "Este e os seguintes" — só a agenda, dona da série. */
+  cancelarSeguintes?: (id: string, motivo?: string) => Promise<R>
+}

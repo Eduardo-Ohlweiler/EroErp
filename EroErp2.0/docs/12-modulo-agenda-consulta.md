@@ -82,7 +82,8 @@ antes de salvar.
 - concluir: de qualquer aberto — **menos o compromisso que é consulta**, que se
   conclui pela consulta (409 *"Este compromisso é uma consulta: conclua pela
   consulta"*), porque é lá que o estoque baixa;
-- faltou: só depois do horário de início;
+- faltou: só depois do horário de início, e nunca em atendimento (409 *"Em
+  atendimento: conclua ou cancele"* — a pessoa veio);
 - cancelar: com motivo opcional; numa série, "este e os seguintes ainda abertos";
 - alterar o horário de um confirmado o devolve a agendado — a confirmação era
   do horário anterior.
@@ -94,7 +95,10 @@ o horário como os outros abertos.
 ativos e no tenant. O que já estava gravado não é reconferido ao alterar: o
 compromisso de um responsável inativado ainda tem a descrição corrigida. O
 compromisso de uma consulta não perde o cliente (400 *"A consulta precisa de um
-cliente"*), nem pela agenda.
+cliente"*), nem pela agenda. E a agenda não troca a filial dele (409 *"Este
+compromisso é uma consulta: mude a filial pela consulta"*): os produtos precisam
+de estoque na filial nova, e quem confere isso é a consulta (§7.4). O resto do
+compromisso continua se alterando pela agenda.
 
 ---
 
@@ -162,7 +166,8 @@ qualquer outro.
 - **O bloco que é consulta** leva o ícone da ficha, em todas as visões. O
   resumo dele oferece **Abrir consulta**; o de um compromisso aberto com
   cliente, **Iniciar consulta** (a quem escreve em Consultas). Concluir não
-  aparece no compromisso que é consulta.
+  aparece no compromisso que é consulta, e no formulário da agenda a Filial dele
+  vem travada, com a dica de que se muda pela consulta.
 - **No celular** vale o mesmo no Mês (pontos no lugar dos títulos; tocar no
   dia abre o cadastro), e a semana vira uma faixa de dias tocáveis com a grade
   do dia escolhido.
@@ -247,8 +252,9 @@ o mesmo id duas vezes na lista é 400.
 
 **Produto** precisa de linha de estoque **ativa** na filial (409 *"X não tem
 estoque nesta filial"*) — o combo da tela já só traz esses
-(`GET /consultas/produtos`). Mudar a filial do compromisso reconfere os
-produtos que já estavam. A resposta publica `controlaEstoque` e, quando
+(`GET /consultas/produtos`). Mudar a filial do compromisso — só pela consulta —
+reconfere os produtos que já estavam, mandando a lista ou não; a prévia
+`/consultas/calculo` faz a mesma conferência. A resposta publica `controlaEstoque` e, quando
 controla, `saldoDisponivel`, para a tela avisar a falta antes de concluir; o
 aviso não bloqueia.
 
@@ -280,6 +286,13 @@ certo.
 | `PATCH /consultas/{id}/concluir` | qualquer aberto | concluído, **com a baixa** |
 | `PATCH /consultas/{id}/cancelar` · `/faltou` | delegam ao `CompromissoService` | |
 
+Itens, observação e ajustes ainda mudam em atendimento: o que se usou se acerta
+durante a consulta.
+
+**Cancelar pela consulta cancela só ela.** "Este e os seguintes" é da série, e a
+série é da agenda: `escopo=SEGUINTES` aqui é 400, e quem só escreve em Consultas
+não cancela as outras datas. **Falta não vale em atendimento** (409, §2).
+
 Confirmar segue pela agenda; cancelar e falta também podem ir por lá — com a
 situação única, não há o que sincronizar.
 
@@ -296,7 +309,8 @@ agenda uma consulta nova com a mesma filial e o mesmo cliente, o responsável
 original salvo outro indicado, e passa pelo conflito dele. Os itens vêm
 copiados **sem ajuste**, com o preço do catálogo de hoje — ou o retrato antigo,
 se o catálogo está vazio. Só se copia o que ainda se usa: serviço ativo,
-produto ativo com estoque ativo na filial.
+produto ativo com estoque ativo na filial. Vale de qualquer consulta, inclusive
+cancelada ou com falta — é como se remarca quem faltou.
 
 ### 7.7 API
 
@@ -330,7 +344,8 @@ produto ativo com estoque ativo na filial.
     a recusa aparece inline, também nas abas de itens, e não no toast).
 - **Botões por situação**: Iniciar atendimento; Concluir (confirma listando o
   que vai baixar e quanto há; com alteração não salva, pede para salvar antes);
-  Cancelar e Faltou (o `AcoesCompromisso` da agenda, com as ações da consulta);
+  Cancelar e Faltou (o `AcoesCompromisso` da agenda, com as ações da consulta —
+  sem a escolha "este e os seguintes", e sem Faltou em atendimento);
   Reconsulta (dia e horas); Na agenda.
 - **Imprimir** sai como "Resumo da consulta": situação e totais na tira,
   serviços e produtos (os que o usuário vê) e a observação.

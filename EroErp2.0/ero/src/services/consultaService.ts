@@ -1,6 +1,5 @@
 import { api } from './api'
 import type { Page } from '@/types/comum'
-import type { EscopoCancelamento } from '@/types/compromisso'
 import type {
   ConsultaCalculo,
   ConsultaCalculoRequest,
@@ -44,8 +43,9 @@ export const consultaService = {
   /** Baixa o estoque; sem saldo, 409 nomeando o produto e nada baixa. */
   concluir: (id: string) => api.patch<ConsultaResponse>(`/consultas/${id}/concluir`).then((r) => r.data),
 
-  cancelar: (id: string, motivo?: string, escopo?: EscopoCancelamento) =>
-    api.patch<ConsultaResponse>(`/consultas/${id}/cancelar`, { motivo, escopo }).then((r) => r.data),
+  /** Só esta consulta: a série se cancela pela agenda. */
+  cancelar: (id: string, motivo?: string) =>
+    api.patch<ConsultaResponse>(`/consultas/${id}/cancelar`, { motivo }).then((r) => r.data),
 
   faltou: (id: string) => api.patch<ConsultaResponse>(`/consultas/${id}/faltou`).then((r) => r.data),
 

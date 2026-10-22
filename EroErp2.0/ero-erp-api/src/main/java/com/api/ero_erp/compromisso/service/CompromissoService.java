@@ -196,9 +196,31 @@ public class CompromissoService {
         return salvo;
     }
 
+    /**
+     * Alteração pela agenda. A filial de um compromisso que é consulta não
+     * muda aqui: os produtos dela precisam de estoque na filial nova e o
+     * preço vem de lá, e quem confere isso é a consulta.
+     */
     @Transactional
     public CompromissoResponseDto update(UUID id, CompromissoUpdateDto dto) {
         Compromisso c = findById(id);
+        if (c.getConsultaId() != null && !c.getFilial().getId().equals(dto.filialId())) {
+            throw new ConflictException("Este compromisso é uma consulta: mude a filial pela consulta");
+        }
+        return alterar(c, dto);
+    }
+
+    /**
+     * Alteração pela consulta, que confere os itens contra a filial nova
+     * antes de gravar. Só o {@code ConsultaService} chama.
+     */
+    @Transactional
+    public CompromissoResponseDto updatePelaConsulta(UUID id, CompromissoUpdateDto dto) {
+        return alterar(findById(id), dto);
+    }
+
+    private CompromissoResponseDto alterar(Compromisso c, CompromissoUpdateDto dto) {
+        UUID id = c.getId();
         UUID tenantId = c.getTenant().getId();
         exigirAberto(c);
         validarPeriodo(dto.inicio(), dto.fim());
@@ -295,6 +317,10 @@ public class CompromissoService {
     public CompromissoResponseDto faltou(UUID id) {
         Compromisso c = findById(id);
         exigirAberto(c);
+        // Quem está sendo atendido veio: a consulta se conclui ou se cancela
+        if (c.getStatus() == StatusCompromisso.EM_ATENDIMENTO) {
+            throw new ConflictException("Em atendimento: conclua ou cancele");
+        }
         if (c.getInicio().isAfter(Instant.now())) {
             throw new ConflictException("Só se marca falta depois do horário de início");
         }

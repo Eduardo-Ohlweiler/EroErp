@@ -26,6 +26,8 @@ interface Props {
   disponibilidade: Disponibilidade | null
   /** A consulta: o cliente não tem a opção "Sem cliente". */
   clienteObrigatorio?: boolean
+  /** A dica da filial travada — o compromisso de uma consulta, na agenda. Ausente, a filial se escolhe. */
+  filialTravada?: string
   /** No topo do painel "Quando" — o aviso de série alterada. */
   avisoQuando?: ReactNode
   /** Depois das horas, antes dos choques — a recorrência. */
@@ -45,6 +47,7 @@ export function CamposCompromisso({
   editando,
   disponibilidade,
   clienteObrigatorio = false,
+  filialTravada,
   avisoQuando,
   recorrencia,
   previa,
@@ -137,10 +140,13 @@ export function CamposCompromisso({
                   filialService.select(termo).then((l) => l.map((f) => ({ id: f.id, nome: f.nome })))
                 }
                 error={errors.filialId?.message}
+                disabled={travado || !!filialTravada}
+                ajuda={filialTravada}
               />
             )}
           />
-          <div className="flex items-end gap-2">
+          {/* self-start: a dica embaixo da Filial não empurra o cliente para baixo */}
+          <div className="flex items-end gap-2 self-start">
             <Controller
               control={control}
               name="pessoaId"

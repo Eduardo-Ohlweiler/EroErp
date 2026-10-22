@@ -4,6 +4,7 @@ import com.api.ero_erp.baseentity.BaseEntity;
 import com.api.ero_erp.compromisso.dtos.CancelarCompromissoDto;
 import com.api.ero_erp.compromisso.dtos.CompromissoUpdateDto;
 import com.api.ero_erp.compromisso.entity.Compromisso;
+import com.api.ero_erp.compromisso.enums.EscopoCancelamento;
 import com.api.ero_erp.compromisso.enums.StatusCompromisso;
 import com.api.ero_erp.compromisso.service.CompromissoService;
 import com.api.ero_erp.config.PageableUtils;
@@ -137,14 +138,19 @@ public class ConsultaService {
             servicos = salva != null ? linhas(salva.getServicos()) : List.of();
         }
 
+        // A mesma conferência do salvar: com a filial trocada na tela, os
+        // produtos que já estavam precisam de estoque na nova
+        boolean filialMudou = salva != null
+                && !salva.getCompromisso().getFilial().getId().equals(dto.filialId());
         List<Linha> produtos;
         if (dto.produtos() != null) {
             produtos = resolverProdutos(dto.produtos(), dto.filialId(),
-                    salva != null ? salva.getProdutos() : List.of(), false).stream()
+                    salva != null ? salva.getProdutos() : List.of(), filialMudou).stream()
                     .map(r -> linha(r.descricao(), r.item().quantidade(), r.preco(),
                             r.item().tipoAjuste(), r.item().tipoCalculo(), r.item().valorAjuste()))
                     .toList();
         } else {
+            if (filialMudou) exigirProdutosNaFilial(salva.getProdutos(), dto.filialId());
             produtos = salva != null ? linhas(salva.getProdutos()) : List.of();
         }
 
@@ -251,7 +257,7 @@ public class ConsultaService {
         UUID filialAntes = compromisso.getFilial().getId();
         // As mesmas regras da agenda, inclusive o conflito do responsável e o
         // cliente obrigatório — o compromisso é um só
-        compromissoService.update(compromisso.getId(), dto.compromisso());
+        compromissoService.updatePelaConsulta(compromisso.getId(), dto.compromisso());
         UUID filialId = compromisso.getFilial().getId();
         boolean filialMudou = !filialAntes.equals(filialId);
 
@@ -264,11 +270,9 @@ public class ConsultaService {
         }
         if (dto.produtos() != null) {
             gravarProdutos(c, resolverProdutos(dto.produtos(), filialId, c.getProdutos(), filialMudou));
-        } else if (filialMudou && !c.getProdutos().isEmpty()) {
+        } else if (filialMudou) {
             // Quem não vê produtos não os manda, mas a filial nova tem de tê-los
-            Map<UUID, Estoque> linhas = estoqueService.linhasNaFilial(
-                    c.getProdutos().stream().map(p -> p.getProduto().getId()).collect(Collectors.toSet()), filialId);
-            c.getProdutos().forEach(p -> exigirEstoqueNaFilial(linhas, p.getProduto()));
+            exigirProdutosNaFilial(c.getProdutos(), filialId);
         }
         calcular(c);
         c.setUpdatedBy(securityUtils.getUsuarioLogado());
@@ -311,10 +315,18 @@ public class ConsultaService {
         return responder(c);
     }
 
+    /**
+     * Cancela só esta consulta. "Este e os seguintes" é da série, e a série é
+     * da agenda: quem só escreve em Consultas não cancela as outras datas.
+     */
     @Transactional
     public ConsultaResponseDto cancelar(UUID id, CancelarCompromissoDto dto) {
+        if (dto != null && dto.escopo() == EscopoCancelamento.SEGUINTES) {
+            throw new BadRequestException("Pela consulta cancela-se só ela: a série se cancela pela agenda");
+        }
         Consulta c = findById(id);
-        compromissoService.cancelar(c.getCompromisso().getId(), dto);
+        compromissoService.cancelar(c.getCompromisso().getId(),
+                new CancelarCompromissoDto(dto != null ? dto.motivo() : null, EscopoCancelamento.ESTE));
         return responder(c);
     }
 
@@ -537,6 +549,14 @@ public class ConsultaService {
         if (id != null && !vistos.add(id)) {
             throw new BadRequestException("O mesmo item aparece duas vezes na lista");
         }
+    }
+
+    /** Os produtos já gravados, contra a filial nova do compromisso. */
+    private void exigirProdutosNaFilial(List<ConsultaProduto> produtos, UUID filialId) {
+        if (produtos.isEmpty()) return;
+        Map<UUID, Estoque> linhas = estoqueService.linhasNaFilial(
+                produtos.stream().map(p -> p.getProduto().getId()).collect(Collectors.toSet()), filialId);
+        produtos.forEach(p -> exigirEstoqueNaFilial(linhas, p.getProduto()));
     }
 
     private static Estoque exigirEstoqueNaFilial(Map<UUID, Estoque> linhas, Produto produto) {

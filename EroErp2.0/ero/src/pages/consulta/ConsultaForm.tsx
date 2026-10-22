@@ -6,7 +6,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { IconAgenda, IconExcluir } from '@/assets/icons'
-import { AcoesCompromisso, type AcoesDeSituacao } from '@/components/agenda/AcoesCompromisso'
+import { AcoesCompromisso } from '@/components/agenda/AcoesCompromisso'
 import { CamposCompromisso } from '@/components/agenda/CamposCompromisso'
 import {
   TAviso,
@@ -32,7 +32,7 @@ import { handleApiError } from '@/services/api'
 import { compromissoService } from '@/services/compromissoService'
 import { consultaService } from '@/services/consultaService'
 import { servicoService } from '@/services/servicoService'
-import type { CompromissoResponse } from '@/types/compromisso'
+import type { AcoesDeSituacao, CompromissoResponse } from '@/types/compromisso'
 import type {
   Ajuste,
   ConsultaCalculo,
@@ -444,7 +444,8 @@ export function ConsultaForm() {
 
   const acoesDaConsulta: AcoesDeSituacao<ConsultaResponse> | undefined = salvo && {
     faltou: () => consultaService.faltou(salvo.id),
-    cancelar: (_compromissoId, motivo, escopo) => consultaService.cancelar(salvo.id, motivo, escopo),
+    // Só esta consulta: sem cancelarSeguintes, o escopo da série nem aparece
+    cancelar: (_compromissoId, motivo) => consultaService.cancelar(salvo.id, motivo),
   }
 
   if (carregando) {

@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useDisponibilidade } from '@/hooks/useDisponibilidade'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
 import { handleApiError } from '@/services/api'
-import { compromissoService } from '@/services/compromissoService'
+import { acoesDaAgenda, compromissoService } from '@/services/compromissoService'
 import type { CompromissoRequest, CompromissoResponse, Recorrencia, TipoRecorrencia } from '@/types/compromisso'
 import { chaveDoInstante, estaAberto, RECORRENCIA_OPCOES, STATUS_ROTULO, STATUS_TOM } from '@/utils/agenda'
 import {
@@ -219,7 +219,9 @@ export function CompromissoForm() {
                   Abrir consulta
                 </TButton>
               )}
-              {podeEscrever('AGENDA') && <AcoesCompromisso compromisso={salvo} onAlterado={carregar} />}
+              {podeEscrever('AGENDA') && (
+                <AcoesCompromisso compromisso={salvo} acoes={acoesDaAgenda} onAlterado={carregar} />
+              )}
             </div>
           </div>
         )}
@@ -231,6 +233,11 @@ export function CompromissoForm() {
               editando={editando}
               disponibilidade={disponibilidade}
               clienteObrigatorio={!!salvo?.consultaId}
+              filialTravada={
+                salvo?.consultaId
+                  ? 'É uma consulta: a filial se muda pela consulta, que confere estoque e preço.'
+                  : undefined
+              }
               avisoQuando={
                 personalizada && (
                   <TAviso className="mb-4">

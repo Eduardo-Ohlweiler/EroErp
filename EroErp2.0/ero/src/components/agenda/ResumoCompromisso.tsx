@@ -5,7 +5,7 @@ import { TBadge, TButton, TModal } from '@/components/common'
 import { AcoesCompromisso } from '@/components/agenda/AcoesCompromisso'
 import { useAuth } from '@/hooks/useAuth'
 import { handleApiError } from '@/services/api'
-import { compromissoService } from '@/services/compromissoService'
+import { acoesDaAgenda, compromissoService } from '@/services/compromissoService'
 import type { CompromissoResponse } from '@/types/compromisso'
 import { diaDe, diaPorExtenso, estaAberto, faixaDeHorario, STATUS_ROTULO, STATUS_TOM } from '@/utils/agenda'
 
@@ -111,6 +111,7 @@ export function ResumoCompromisso({ id, onFechar, onAlterado, podeEscrever }: Pr
           {podeEscrever && (
             <AcoesCompromisso
               compromisso={c}
+              acoes={acoesDaAgenda}
               onAlterado={(novo) => {
                 setC(novo)
                 onAlterado()

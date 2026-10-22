@@ -496,6 +496,119 @@ class ConsultaTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.compromisso.status").value("FALTOU"));
     }
 
+    @Test
+    @DisplayName("em atendimento não vira falta, nem pela consulta nem pela agenda: conclui-se ou cancela-se")
+    void emAtendimentoNaoFalta() throws Exception {
+        UUID id = idDe(criar(nova(compromissoJson("2020-01-10T13:00:00Z", "2020-01-10T14:00:00Z"),
+                null, null, "")).andExpect(status().isCreated()));
+        acao(id, "iniciar").andExpect(status().isOk());
+
+        acao(id, "faltou")
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value("Em atendimento: conclua ou cancele"));
+        mockMvc.perform(patch("/compromissos/{id}/faltou", compromissoDe(id)).header(AUTHORIZATION, token))
+                .andExpect(status().isConflict());
+        buscar(id).andExpect(jsonPath("$.compromisso.status").value("EM_ATENDIMENTO"));
+    }
+
+    @Test
+    @DisplayName("cancelar pela consulta cancela só ela: o escopo da série é da agenda (400), e as outras datas ficam")
+    void cancelarPelaConsultaNaoLevaASerie() throws Exception {
+        JsonNode serie = corpo(mockMvc.perform(post("/compromissos").header(AUTHORIZATION, token)
+                        .contentType("application/json")
+                        .content(compromissoJson(INICIO, FIM).replaceFirst("}$",
+                                ",\"recorrencia\":{\"tipo\":\"SEMANAL\",\"quantidade\":3}}")))
+                .andExpect(status().isCreated()));
+        UUID primeira = UUID.fromString(serie.get(0).get("id").asText());
+        UUID id = idDe(criar("{\"compromissoId\":\"%s\"}".formatted(primeira)).andExpect(status().isCreated()));
+
+        mockMvc.perform(patch("/consultas/{id}/cancelar", id).header(AUTHORIZATION, token)
+                        .contentType("application/json").content("{\"escopo\":\"SEGUINTES\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erro").value(
+                        "Pela consulta cancela-se só ela: a série se cancela pela agenda"));
+
+        mockMvc.perform(patch("/consultas/{id}/cancelar", id).header(AUTHORIZATION, token)
+                        .contentType("application/json").content("{\"motivo\":\"Desmarcou\",\"escopo\":\"ESTE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.compromisso.status").value("CANCELADO"));
+        assertThat(compromissoRepository.findAll().stream()
+                .filter(c -> c.getStatus() == StatusCompromisso.AGENDADO)).hasSize(2);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Filial e itens com a consulta andando
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("a agenda não troca a filial de uma consulta (409): o estoque e o preço se conferem pela consulta")
+    void filialNaoMudaPelaAgenda() throws Exception {
+        UUID outra = criarMatriz(token, salvarPessoa(tenantA, "Clínica Bairro").getId());
+        UUID id = idDe(criarNova(null, produto(luva, "1", null), "").andExpect(status().isCreated()));
+        UUID compromisso = compromissoDe(id);
+
+        mockMvc.perform(put("/compromissos/{id}", compromisso).header(AUTHORIZATION, token)
+                        .contentType("application/json")
+                        .content(compromissoJson(INICIO, FIM).replace(loja.toString(), outra.toString())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value("Este compromisso é uma consulta: mude a filial pela consulta"));
+        buscar(id).andExpect(jsonPath("$.compromisso.filialId").value(loja.toString()));
+
+        // O resto do compromisso continua se alterando pela agenda
+        mockMvc.perform(put("/compromissos/{id}", compromisso).header(AUTHORIZATION, token)
+                        .contentType("application/json")
+                        .content(compromissoJson(INICIO, "2027-03-10T14:30:00Z")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("trocar a filial pela consulta confere o estoque dos produtos na filial nova — mandando a lista ou não, e na prévia")
+    void filialNovaSemEstoque() throws Exception {
+        UUID outra = criarMatriz(token, salvarPessoa(tenantA, "Clínica Bairro").getId());
+        JsonNode criada = corpo(criarNova(null, produto(luva, "1", null), "").andExpect(status().isCreated()));
+        UUID id = UUID.fromString(criada.get("id").asText());
+        String itemId = criada.get("produtos").get(0).get("id").asText();
+        String naOutra = compromissoJson(INICIO, FIM).replace(loja.toString(), outra.toString());
+
+        alterar(id, """
+                {"compromisso":%s,"produtos":[{"id":"%s","produtoId":"%s","quantidade":1}]}
+                """.formatted(naOutra, itemId, luva))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value("Luva não tem estoque nesta filial"));
+        alterar(id, "{\"compromisso\":%s}".formatted(naOutra))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value("Luva não tem estoque nesta filial"));
+        buscar(id).andExpect(jsonPath("$.compromisso.filialId").value(loja.toString()));
+
+        // A prévia faz a mesma conferência que o salvar
+        mockMvc.perform(post("/consultas/calculo").header(AUTHORIZATION, token)
+                        .contentType("application/json")
+                        .content("""
+                                {"consultaId":"%s","filialId":"%s","produtos":[{"id":"%s","produtoId":"%s","quantidade":1}]}
+                                """.formatted(id, outra, itemId, luva)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value("Luva não tem estoque nesta filial"));
+        mockMvc.perform(post("/consultas/calculo").header(AUTHORIZATION, token)
+                        .contentType("application/json")
+                        .content("{\"consultaId\":\"%s\",\"filialId\":\"%s\"}".formatted(id, outra)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("em atendimento os itens ainda mudam: o que se usou se acerta durante a consulta")
+    void itensEmAtendimento() throws Exception {
+        UUID id = idDe(criarNova(servico(limpeza, 1, null), null, "").andExpect(status().isCreated()));
+        acao(id, "iniciar").andExpect(status().isOk());
+
+        alterar(id, atualizacao(INICIO, FIM, lista(servico(limpeza, 2, null) + "," + servico(avaliacao, 1, "40.00")),
+                lista(produto(gel, "1", null)), ""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.compromisso.status").value("EM_ATENDIMENTO"))
+                .andExpect(jsonPath("$.servicos", hasSize(2)))
+                .andExpect(jsonPath("$.produtos", hasSize(1)))
+                .andExpect(jsonPath("$.total").value(370.0));
+    }
+
     // ─────────────────────────────────────────────────────────────────
     //  Reconsulta
     // ─────────────────────────────────────────────────────────────────

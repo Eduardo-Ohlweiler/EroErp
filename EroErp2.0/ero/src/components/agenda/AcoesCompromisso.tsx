@@ -2,43 +2,28 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { TButton, TModal, TRadio, TTextArea } from '@/components/common'
 import { handleApiError } from '@/services/api'
-import { compromissoService } from '@/services/compromissoService'
-import type { CompromissoResponse, EscopoCancelamento } from '@/types/compromisso'
+import type { AcoesDeSituacao, CompromissoResponse, EscopoCancelamento } from '@/types/compromisso'
 import { estaAberto } from '@/utils/agenda'
-
-/**
- * Quem executa cada ação. O padrão é a agenda (`compromissoService`, tela
- * AGENDA); a consulta passa os dela, que gravam o mesmo compromisso pela
- * tela CONSULTAS. Ação ausente, botão ausente.
- */
-export interface AcoesDeSituacao<R> {
-  confirmar?: (id: string) => Promise<R>
-  concluir?: (id: string) => Promise<R>
-  faltou: (id: string) => Promise<R>
-  cancelar: (id: string, motivo?: string, escopo?: EscopoCancelamento) => Promise<R>
-}
 
 interface Props<R> {
   compromisso: Pick<CompromissoResponse, 'id' | 'status' | 'inicio' | 'serieId' | 'consultaId'>
+  /** Quem executa: `acoesDaAgenda`, ou as da consulta. */
+  acoes: AcoesDeSituacao<R>
   /** Depois de cada mudança, com o que a ação devolveu. */
   onAlterado: (r: R) => void
-  acoes?: AcoesDeSituacao<R>
   className?: string
 }
 
 /**
  * Os botões de situação — confirmar, concluir, falta, cancelar. Iguais no
- * resumo do calendário e no formulário, para a regra não morar em dois
- * lugares: só aparecem com o compromisso aberto, e "Faltou" só depois do
- * horário de início, como o servidor exige. Num compromisso que é consulta
- * não há Concluir: conclui-se pela consulta, que baixa o estoque.
+ * resumo do calendário, no formulário da agenda e na consulta, para a regra
+ * não morar em três lugares: só aparecem com o compromisso aberto, e "Faltou"
+ * só depois do horário de início e fora do atendimento, como o servidor
+ * exige. Num compromisso que é consulta não há Concluir: conclui-se pela
+ * consulta, que baixa o estoque. "Este e os seguintes" só com a ação da
+ * série, que é da agenda.
  */
-export function AcoesCompromisso<R = CompromissoResponse>({
-  compromisso,
-  onAlterado,
-  acoes = compromissoService as unknown as AcoesDeSituacao<R>,
-  className = '',
-}: Props<R>) {
+export function AcoesCompromisso<R>({ compromisso, acoes, onAlterado, className = '' }: Props<R>) {
   const [ocupado, setOcupado] = useState(false)
   const [cancelando, setCancelando] = useState(false)
   const [motivo, setMotivo] = useState('')
@@ -46,13 +31,14 @@ export function AcoesCompromisso<R = CompromissoResponse>({
 
   if (!estaAberto(compromisso.status)) return null
   const jaComecou = new Date(compromisso.inicio).getTime() <= Date.now()
+  const cancelaSerie = !!compromisso.serieId && !!acoes.cancelarSeguintes
 
   async function executar(acao: () => Promise<R>, mensagem: string) {
     setOcupado(true)
     try {
-      const c = await acao()
+      const r = await acao()
       toast.success(mensagem)
-      onAlterado(c)
+      onAlterado(r)
     } catch (erro) {
       handleApiError(erro)
     } finally {
@@ -61,8 +47,12 @@ export function AcoesCompromisso<R = CompromissoResponse>({
   }
 
   async function cancelar() {
+    const texto = motivo.trim() || undefined
     await executar(
-      () => acoes.cancelar(compromisso.id, motivo.trim() || undefined, escopo),
+      () =>
+        escopo === 'SEGUINTES' && acoes.cancelarSeguintes
+          ? acoes.cancelarSeguintes(compromisso.id, texto)
+          : acoes.cancelar(compromisso.id, texto),
       escopo === 'SEGUINTES' ? 'Compromisso e os seguintes cancelados' : 'Compromisso cancelado',
     )
     setCancelando(false)
@@ -92,7 +82,8 @@ export function AcoesCompromisso<R = CompromissoResponse>({
           Concluir
         </TButton>
       )}
-      {jaComecou && (
+      {/* Em atendimento a pessoa veio: conclui-se ou cancela-se, falta não */}
+      {jaComecou && compromisso.status !== 'EM_ATENDIMENTO' && (
         <TButton
           type="button"
           variant="secondary"
@@ -134,7 +125,7 @@ export function AcoesCompromisso<R = CompromissoResponse>({
         }
       >
         <div className="flex flex-col gap-4">
-          {compromisso.serieId && (
+          {cancelaSerie && (
             <TRadio
               label="Este compromisso se repete"
               vertical
@@ -145,6 +136,11 @@ export function AcoesCompromisso<R = CompromissoResponse>({
                 { valor: 'SEGUINTES', rotulo: 'Este e os seguintes ainda abertos' },
               ]}
             />
+          )}
+          {compromisso.serieId && !cancelaSerie && (
+            <p className="text-caption text-txt-secondary">
+              Cancela só esta data. As outras da série se cancelam pela agenda.
+            </p>
           )}
           <TTextArea
             label="Motivo (opcional)"

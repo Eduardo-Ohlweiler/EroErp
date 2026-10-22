@@ -1,5 +1,6 @@
 import { api } from './api'
 import type {
+  AcoesDeSituacao,
   CalendarioFiltros,
   CompromissoCalendario,
   CompromissoRequest,
@@ -42,4 +43,13 @@ export const compromissoService = {
     api
       .patch<CompromissoResponse>(`/compromissos/${id}/cancelar`, { motivo, escopo })
       .then((r) => r.data),
+}
+
+/** Os botões de situação da agenda, no formato do `AcoesCompromisso`. */
+export const acoesDaAgenda: AcoesDeSituacao<CompromissoResponse> = {
+  confirmar: compromissoService.confirmar,
+  concluir: compromissoService.concluir,
+  faltou: compromissoService.faltou,
+  cancelar: (id, motivo) => compromissoService.cancelar(id, motivo, 'ESTE'),
+  cancelarSeguintes: (id, motivo) => compromissoService.cancelar(id, motivo, 'SEGUINTES'),
 }
