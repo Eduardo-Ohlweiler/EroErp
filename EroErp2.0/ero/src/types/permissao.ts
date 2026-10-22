@@ -11,6 +11,7 @@ export type Tela =
   | 'ESTOQUE'
   | 'AGENDA'
   | 'CONSULTAS'
+  | 'WHATSAPP'
 
 /** Espelha `NivelAcesso`. "Sem acesso" não é valor: é a tela não aparecer. */
 export type NivelAcesso = 'LEITURA' | 'ESCRITA'

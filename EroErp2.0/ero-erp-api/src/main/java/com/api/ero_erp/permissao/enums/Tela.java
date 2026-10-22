@@ -25,7 +25,8 @@ public enum Tela {
     AUXILIARES_PRODUTO(Modulo.PRODUTOS, "Auxiliares de produto"),
     ESTOQUE(Modulo.ESTOQUE, "Estoque"),
     AGENDA(Modulo.ATENDIMENTO, "Agenda"),
-    CONSULTAS(Modulo.ATENDIMENTO, "Consultas");
+    CONSULTAS(Modulo.ATENDIMENTO, "Consultas"),
+    WHATSAPP(Modulo.WHATSAPP, "WhatsApp");
 
     private final Modulo modulo;
     private final String rotulo;

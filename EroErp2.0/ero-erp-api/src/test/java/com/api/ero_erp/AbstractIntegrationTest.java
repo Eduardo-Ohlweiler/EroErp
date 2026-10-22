@@ -28,6 +28,9 @@ import com.api.ero_erp.tenant.repository.TenantRepository;
 import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.enums.Role;
 import com.api.ero_erp.usuario.repository.UsuarioRepository;
+import com.api.ero_erp.whatsapp.repository.WhatsappConexaoRepository;
+import com.api.ero_erp.whatsapp.repository.WhatsappConfiguracaoRepository;
+import com.api.ero_erp.whatsapp.repository.WhatsappServidorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -79,6 +82,9 @@ public abstract class AbstractIntegrationTest {
     @Autowired protected MarcaProdutoRepository marcaProdutoRepository;
     @Autowired protected UnidadeMedidaRepository unidadeMedidaRepository;
     @Autowired protected UsuarioPermissaoRepository usuarioPermissaoRepository;
+    @Autowired protected WhatsappConexaoRepository whatsappConexaoRepository;
+    @Autowired protected WhatsappConfiguracaoRepository whatsappConfiguracaoRepository;
+    @Autowired protected WhatsappServidorRepository whatsappServidorRepository;
     @Autowired protected PasswordEncoder passwordEncoder;
 
     protected Tenant tenantA;
@@ -92,8 +98,10 @@ public abstract class AbstractIntegrationTest {
     void montarCenario() {
         // Ordem de dependência: refresh_token → login_log → movimentação →
         // consulta → compromisso → estoque → produto → subgrupo → grupo,
-        // categoria, marca → servico → filial → pessoa → usuario_permissao →
-        // usuario → tenant.
+        // categoria, marca → servico → whatsapp → filial → pessoa →
+        // usuario_permissao → usuario → tenant.
+        // A conexão de WhatsApp aponta para a filial: sai antes dela. O
+        // servidor é global e o modo é do tenant; saem junto, por limpeza.
         // A saída por consulta aponta para a consulta: a movimentação sai
         // antes dela. A consulta leva os itens (ON DELETE CASCADE) e a
         // reconsulta aponta para a própria tabela, o que um DELETE só resolve.
@@ -119,6 +127,9 @@ public abstract class AbstractIntegrationTest {
         categoriaProdutoRepository.deleteAllInBatch();
         marcaProdutoRepository.deleteAllInBatch();
         servicoRepository.deleteAllInBatch();
+        whatsappConexaoRepository.deleteAllInBatch();
+        whatsappConfiguracaoRepository.deleteAllInBatch();
+        whatsappServidorRepository.deleteAllInBatch();
         filialRepository.deleteAllInBatch();
         pessoaRepository.deleteAllInBatch();
         usuarioPermissaoRepository.deleteAllInBatch();

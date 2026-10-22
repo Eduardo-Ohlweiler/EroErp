@@ -40,6 +40,8 @@ cp .env.example .env      # ajuste os valores
 | `DB_USER` | sim | usuário do banco |
 | `DB_PASSWORD` | sim | senha do banco |
 | `JWT_SECRET` | sim | chave HMAC, **mínimo 32 caracteres** |
+| `APP_CRIPTO_CHAVE` | sim | 32 bytes em base64 (`openssl rand -base64 32`) que cifram a apikey da Evolution. Trocar torna ilegíveis as já gravadas |
+| `APP_PUBLIC_URL` | não | URL pública desta API, para o webhook do WhatsApp. Vazia, o status vem pela tela (docs/13) |
 | `SUPERADMIN_NAME` | sim | nome do superadmin criado na primeira subida |
 | `SUPERADMIN_EMAIL` | sim | e-mail do superadmin |
 | `SUPERADMIN_PASSWORD` | sim | senha do superadmin, **mínimo 10 caracteres** |

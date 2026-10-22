@@ -45,7 +45,7 @@ if [[ -z "${JAVA_HOME:-}" ]] || ! "${JAVA_HOME}/bin/javac" -version 2>&1 | grep 
   exit 1
 fi
 
-for var in DB_URL DB_USER DB_PASSWORD JWT_SECRET SUPERADMIN_EMAIL SUPERADMIN_PASSWORD SUPERADMIN_NAME; do
+for var in DB_URL DB_USER DB_PASSWORD JWT_SECRET APP_CRIPTO_CHAVE SUPERADMIN_EMAIL SUPERADMIN_PASSWORD SUPERADMIN_NAME; do
   if [[ -z "${!var:-}" ]]; then
     echo "ERRO: variável obrigatória não definida: $var" >&2
     exit 1

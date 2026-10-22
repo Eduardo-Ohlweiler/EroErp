@@ -80,10 +80,15 @@ app:
     max-tentativas-login: 5
     duracao-bloqueio: PT15M
     rate-limit-por-minuto: 1000        # desligado nos testes
+    rate-limit-webhook-por-minuto: 1000
   auditoria:
     retencao-meses: 12
   acesso:
     fuso-horario: America/Sao_Paulo
+  cripto:
+    # Fixa e só dos testes — nunca a de um ambiente de verdade.
+    chave: VM1sRvvK5tpiop8UuwudlyCSdJSwLIdOt9UzZGlPFo8=
+  public-url: ""
 
 logging:
   level:

@@ -375,6 +375,43 @@ class PermissaoTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("WhatsApp: sem permissão não lê; leitura lê e não conecta; escrita conecta; servidor e modo só do superadmin")
+    void whatsappLeituraEEscrita() throws Exception {
+        String conectar = "{}";
+        String token = autenticar(userA.getEmail());
+
+        mockMvc.perform(get("/integracoes/whatsapp").header(AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/integracoes/whatsapp/conexoes/conectar").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(conectar))
+                .andExpect(status().isForbidden());
+
+        conceder(userA, Tela.WHATSAPP, NivelAcesso.LEITURA);
+        mockMvc.perform(get("/integracoes/whatsapp").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/integracoes/whatsapp/conexoes/conectar").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(conectar))
+                .andExpect(status().isForbidden());
+        assertThat(whatsappConexaoRepository.findAll()).isEmpty();
+
+        usuarioPermissaoRepository.deleteAllInBatch();
+        conceder(userA, Tela.WHATSAPP, NivelAcesso.ESCRITA);
+        // Passa da autorização e para na regra: sem servidor cadastrado, 409 — e não 403
+        mockMvc.perform(post("/integracoes/whatsapp/conexoes/conectar").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(conectar))
+                .andExpect(status().isConflict());
+
+        // Escrita na tela não é o superadmin: servidor e modo continuam fechados
+        mockMvc.perform(get("/integracoes/whatsapp/servidor").header(AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/integracoes/whatsapp/modo").header(AUTHORIZATION, token)
+                        .contentType("application/json").content("{\"modo\":\"POR_FILIAL\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/integracoes/whatsapp/servidor").header(AUTHORIZATION, autenticar(adminA.getEmail())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("mudar a permissão vale na requisição seguinte, com o mesmo token")
     void mudancaValeSemNovoLogin() throws Exception {
         String token = autenticar(userA.getEmail());
@@ -449,7 +486,10 @@ class PermissaoTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[5].rotulo").value("Agenda e atendimento"))
                 .andExpect(jsonPath("$[5].telas[0].tela").value("AGENDA"))
                 .andExpect(jsonPath("$[5].telas[1].tela").value("CONSULTAS"))
-                .andExpect(jsonPath("$[5].telas[1].rotulo").value("Consultas"));
+                .andExpect(jsonPath("$[5].telas[1].rotulo").value("Consultas"))
+                .andExpect(jsonPath("$[6].modulo").value("WHATSAPP"))
+                .andExpect(jsonPath("$[6].telas", hasSize(1)))
+                .andExpect(jsonPath("$[6].telas[0].tela").value("WHATSAPP"));
 
         mockMvc.perform(get("/permissoes/catalogo").header(AUTHORIZATION, autenticar(adminA.getEmail())))
                 .andExpect(status().isForbidden());

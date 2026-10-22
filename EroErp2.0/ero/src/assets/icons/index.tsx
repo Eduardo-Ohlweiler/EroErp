@@ -290,3 +290,11 @@ export const IconConsulta = (p: IconProps) => (
     <path d="M12 11v6M9 14h6" />
   </Icon>
 )
+
+/** WhatsApp — o balão de conversa com o fone, sem a marca. Integrações › WhatsApp. */
+export const IconWhatsapp = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4.5 19.5 5.6 16A8 8 0 1 1 8.3 18.6Z" />
+    <path d="M9.2 8.6c.2-.4.6-.4.8 0l.6 1.3c.1.3 0 .5-.2.7l-.4.4c.5 1 1.3 1.8 2.3 2.3l.4-.4c.2-.2.5-.3.7-.2l1.3.6c.4.2.4.6 0 .8-.6.5-1.4.7-2.2.4a6 6 0 0 1-3.6-3.6c-.3-.8-.1-1.6.3-2.3Z" />
+  </Icon>
+)

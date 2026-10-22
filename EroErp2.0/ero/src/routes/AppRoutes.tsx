@@ -29,6 +29,7 @@ import { TenantNovo } from '@/pages/tenant/TenantNovo'
 import { TenantList } from '@/pages/tenant/TenantList'
 import { UsuarioForm } from '@/pages/usuario/UsuarioForm'
 import { UsuarioList } from '@/pages/usuario/UsuarioList'
+import { WhatsappConfig } from '@/pages/integracoes/WhatsappConfig'
 
 /**
  * Formulário de cadastro remonta quando o registro da rota muda.
@@ -126,6 +127,11 @@ export function AppRoutes() {
             </Route>
             <Route element={<TProtected tela="CONSULTAS" escrita />}>
               <Route path="consultas/nova" element={<PorRegistro><ConsultaForm /></PorRegistro>} />
+            </Route>
+
+            {/* Uma tela só: o que é do superadmin aparece dentro dela, pela role. */}
+            <Route element={<TProtected tela="WHATSAPP" />}>
+              <Route path="integracoes/whatsapp" element={<WhatsappConfig />} />
             </Route>
 
             {/*

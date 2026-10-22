@@ -43,6 +43,8 @@ public class SecurityConfig {
             "/error"
     };
 
+    private static final String ROTA_WEBHOOK_WHATSAPP = "/integracoes/whatsapp/webhook/*";
+
     private static final String[] ROTAS_DOCUMENTACAO = {
             "/v3/api-docs/**",
             "/swagger-ui/**",
@@ -85,6 +87,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     auth.requestMatchers(ROTAS_PUBLICAS).permitAll();
+                    // A Evolution não tem token: a credencial é o segredo do caminho (docs/13)
+                    auth.requestMatchers(HttpMethod.POST, ROTA_WEBHOOK_WHATSAPP).permitAll();
                     if (documentacaoHabilitada) {
                         auth.requestMatchers(ROTAS_DOCUMENTACAO).permitAll();
                     }

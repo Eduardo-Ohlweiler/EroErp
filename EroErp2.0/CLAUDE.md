@@ -38,14 +38,16 @@ EroErp2.0/
 │       ├── EroErpApplication.java
 │       ├── config/                # SecurityConfig, JwtUtil, JwtFilter, SecurityUtils,
 │       │                          # AuthDetails, RateLimitFilter, PageableUtils,
-│       │                          # TransacaoConfig, DataSeeder, SwaggerConfig
+│       │                          # TransacaoConfig, DataSeeder, SwaggerConfig,
+│       │                          # CriptoConverter (AES-GCM, APP_CRIPTO_CHAVE)
 │       ├── exceptions/            # GlobalExceptionHandler + hierarquia
 │       ├── baseentity/            # BaseEntity, TenantEntity
 │       ├── jobs/                  # ManutencaoJob
 │       └── {modulo}/              # tenant, usuario, auth, loginlog, refreshtoken,
 │           ├── controller/        # pessoa, contato, vinculo, catalogo, localidade,
 │           │                      # filial, servico, sequencia, produto,
-│           │                      # auxiliarproduto, estoque, compromisso, consulta
+│           │                      # auxiliarproduto, estoque, compromisso, consulta,
+│           │                      # whatsapp
 │           ├── dtos/
 │           ├── entity/
 │           ├── enums/
@@ -69,6 +71,9 @@ EroErp2.0/
 │                                  # consulta/ = o atendimento sobre o compromisso:
 │                                  #   itens com preço-retrato, CalculoConsulta
 │                                  #   (a conta única), baixa ao concluir (docs/12 §7)
+│                                  # whatsapp/ = servidor Evolution global, modo do
+│                                  #   tenant, conexão por QR, webhook com segredo;
+│                                  #   evolution/ = EvolutionApi + EvolutionHttp (docs/13)
 └── ero/                           # frontend
     ├── public/                    # favicon e ícones
     ├── scripts/validar-paletas.mjs  # npm run paletas — contraste e cascata
@@ -97,13 +102,14 @@ EroErp2.0/
         ├── components/pessoa/     # PessoaRapidaModal (cadastro rápido)
         ├── components/tenant/     # SeletorPaleta (as 20 paletas, com miniaturas)
         ├── components/usuario/    # RedefinirSenhaModal
+        ├── components/whatsapp/   # QrCodeModal (polling de 3 s, QR renovado, fecha ao conectar)
         ├── contexts/              # AuthContext · ThemeContext
         ├── hooks/                 # useAuth · useTheme · useDebounce · useMenuRecolhido
         │                          # useDisponibilidade (quem está ocupado, agenda e consulta)
         ├── services/              # api.ts (interceptor + refresh) + um por módulo
         ├── pages/                 # auth/Login · Inicio · usuario · tenant · pessoa · filial
         │                          # servico · produto · estoque · agenda · consulta
-        │                          # loginlog · perfil
+        │                          # loginlog · perfil · integracoes/WhatsappConfig
         ├── types/ utils/          # utils/format.ts (paraNumero, máscaras, datas)
         │                          # utils/planilha.ts (exportação CSV)
         │                          # utils/estoque.ts (máscara da quantidade pela unidade)
@@ -129,7 +135,8 @@ Testes contra o banco `ero_erp_test` — nada de H2 nem Testcontainers.
 | **Menu recolhível** | ✅ pronto · expandido ↔ só ícones em `lg+`, Ctrl+B, lembrado no navegador ([docs/04](docs/04-arquitetura-frontend.md), "O menu recolhe") |
 | **Agenda** | ✅ pronto · compromisso com responsável **escolhido** (usuário), convidados, cliente opcional, filial e cor herdada dela; conflito **por usuário** — o do responsável recusa, o do convidado só avisa; recorrência de 2 a 52 calculada a partir da primeira, no fuso do sistema; status único (agendado, confirmado, concluído, cancelado, faltou); calendário dia/semana/mês/lista feito à mão e responsivo (`compromisso/`, migration 025, [docs/12](docs/12-modulo-agenda-consulta.md)) |
 | **Consulta** | ✅ pronto · o atendimento sobre o compromisso, **sem status próprio**: a situação é a do compromisso, que ganha `EM_ATENDIMENTO`, e concluir é **só pela consulta**; nasce convertendo um compromisso da agenda ou criando-o junto (mesmas regras, conflito incluído); serviços e produtos com preço do catálogo da filial como sugestão, editável e gravado como **retrato**; ajuste por item e no total; totais publicados pelo servidor e prévia em `POST /consultas/calculo`; as listas somem para quem não lê Serviços/Produtos (nula não mexe, enviada é 403); concluir baixa o estoque (`SAIDA_CONSULTA`) com rollback total; reconsulta (`consulta/`, migrations 026–027, [docs/12 §7](docs/12-modulo-agenda-consulta.md)) |
-| Em andamento | plano aprovado, nesta ordem: **WhatsApp** (Evolution: servidor global do superadmin, conexão por tenant ou por filial, conectar/desconectar por QR) → avisos, lembrete e **pós-atendimento** → **pacotes**. Financeiro fica de fora |
+| **WhatsApp — conexão** | ✅ pronto · Evolution API v2: **servidor global** do superadmin (URL + apikey **criptografada**, AES-GCM com `APP_CRIPTO_CHAVE`, nunca devolvida — só `possuiApiKey`); o superadmin escolhe se o número é do **tenant** ou **um por filial**; conexão com instância gerada e sobrescrita opcional de URL/apikey; **Conectar (QR)** e **Desconectar** para quem escreve na tela, status e número para quem lê; o status é sempre perguntado à Evolution pela tela, e com `APP_PUBLIC_URL` também chega pelo webhook (`/integracoes/whatsapp/webhook/{segredo}`, segredo errado é 404); HTTP fora de transação, timeouts de 5/15 s (`whatsapp/`, migration 028, [docs/13](docs/13-modulo-whatsapp.md)) |
+| Em andamento | plano aprovado, nesta ordem: avisos, lembrete e **pós-atendimento** pela fila de envio (Fase 4, já com `EvolutionApi.enviarTexto` e `WhatsappService.conexaoPara` prontos e ainda sem quem os chame) → **pacotes**. Financeiro fica de fora |
 | Próximas | **migrar módulos do EroErp antigo**, um de cada vez, perguntando antes qual e como |
 | `audit_log` | pendente · especificação em [docs/06 §A09](docs/06-seguranca-owasp.md); molde estrutural é o `loginlog`, com o expurgo no `ManutencaoJob` |
 | Recuperação de senha por e-mail | pendente · depende de escolher o serviço de e-mail (não há `spring-boot-starter-mail` no `pom.xml`). Enquanto isso, o superadmin redefine em `PATCH /usuarios/{id}/senha` |
@@ -505,6 +512,7 @@ de fechar no papel.
 | [docs/10-modulo-servicos.md](docs/10-modulo-servicos.md) | Serviços — código por tenant, valor opcional por filial, sem estoque |
 | [docs/11-modulo-produtos-estoque.md](docs/11-modulo-produtos-estoque.md) | Produtos, auxiliares e estoque — preço por filial no estoque, movimentação com sinal e trava |
 | [docs/12-modulo-agenda-consulta.md](docs/12-modulo-agenda-consulta.md) | Agenda — responsável escolhido, convidados, conflito por usuário, recorrência · Consulta (§7) — situação única, preço-retrato, ajustes, totais do servidor, baixa ao concluir |
+| [docs/13-modulo-whatsapp.md](docs/13-modulo-whatsapp.md) | WhatsApp — servidor Evolution global, modo do tenant, conexão por QR, status pela tela e webhook com segredo, apikey criptografada |
 
 ---
 
@@ -555,7 +563,7 @@ erro de console. **Depois abra o arquivo** — gerar e não olhar não vale.
 
 ```bash
 cd ero-erp-api
-cp .env.example .env      # ajuste DB_PASSWORD e JWT_SECRET
+cp .env.example .env      # ajuste DB_PASSWORD, JWT_SECRET e APP_CRIPTO_CHAVE
 ./run-dev.sh              # sobe em :8080
 ./run-dev.sh test         # testes contra ero_erp_test
 ```

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        WhatsApp pela Evolution API — só a conexão. Ver docs/13.
+
+        Três tabelas:
+        - whatsapp_servidor: o servidor Evolution do sistema, cadastrado pelo
+          superadmin. Global, sem tenant, LINHA ÚNICA (índice sobre constante);
+        - whatsapp_configuracao: o modo do tenant — um número para o tenant
+          inteiro ou um por filial. Sem linha, o modo é TENANT;
+        - whatsapp_conexao: a instância na Evolution. filial_id NULL é a do
+          tenant inteiro; preenchido, a de uma filial.
+
+        Diferenças para o antigo (configuracao_crm, whatsapp_instancia), todas
+        correções:
+        - apikey CRIPTOGRAFADA (AES-GCM, CriptoConverter) e nunca devolvida
+          pela API — só "possui apikey";
+        - instância GERADA pelo sistema e ÚNICA no banco: o webhook do antigo
+          achava o tenant pelo nome digitado, que dois tenants podiam repetir;
+        - webhook com SEGREDO na URL, um por conexão — o antigo era público;
+        - o número vem da Evolution ao conectar, não é digitado;
+        - status gravado (o último visto) e quando mudou.
+    -->
+    <changeSet id="028-create-whatsapp" author="eduardo">
+
+        <!-- ══ Servidor Evolution (global) ═══════════════════════════════ -->
+
+        <createTable tableName="whatsapp_servidor">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_whatsapp_servidor"/>
+            </column>
+
+            <column name="url" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- "v1:" + base64(iv || cifra || tag) — cabe folgado em TEXT -->
+            <column name="api_key" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <!-- Uma linha só: o índice é sobre uma constante -->
+        <sql>
+            CREATE UNIQUE INDEX uk_whatsapp_servidor_unico ON whatsapp_servidor ((true));
+        </sql>
+
+        <!-- ══ Modo do tenant ════════════════════════════════════════════ -->
+
+        <createTable tableName="whatsapp_configuracao">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_whatsapp_configuracao"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false"
+                             unique="true"
+                             uniqueConstraintName="uk_whatsapp_configuracao_tenant"
+                             foreignKeyName="fk_whatsapp_configuracao_tenant"
+                             references="tenant(id)"
+                             deleteCascade="true"/>
+            </column>
+
+            <column name="modo" type="VARCHAR(20)" defaultValue="TENANT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <sql>
+            ALTER TABLE whatsapp_configuracao ADD CONSTRAINT ck_whatsapp_configuracao_modo
+            CHECK (modo IN ('TENANT', 'POR_FILIAL'));
+        </sql>
+
+        <!-- ══ Conexão (instância na Evolution) ══════════════════════════ -->
+
+        <createTable tableName="whatsapp_conexao">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_whatsapp_conexao"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false"
+                             foreignKeyName="fk_whatsapp_conexao_tenant"
+                             references="tenant(id)"
+                             deleteCascade="true"/>
+            </column>
+
+            <!-- NULL = a conexão do tenant inteiro (modo TENANT) -->
+            <column name="filial_id" type="UUID">
+                <constraints foreignKeyName="fk_whatsapp_conexao_filial"
+                             references="filial(id)"/>
+            </column>
+
+            <!-- Gerada pelo sistema; o nome da instância no servidor Evolution,
+                 que é compartilhado por todos os tenants -->
+            <column name="instancia" type="VARCHAR(60)">
+                <constraints nullable="false"
+                             unique="true"
+                             uniqueConstraintName="uk_whatsapp_conexao_instancia"/>
+            </column>
+
+            <!-- Sobrescrita do servidor global, só do superadmin. NULL = o global -->
+            <column name="url" type="VARCHAR(255)"/>
+            <column name="api_key" type="TEXT"/>
+
+            <!-- Só dígitos, com DDI, como a Evolution informa ao conectar -->
+            <column name="numero" type="VARCHAR(20)"/>
+
+            <column name="status" type="VARCHAR(20)" defaultValue="DESCONECTADO">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status_em" type="TIMESTAMP WITH TIME ZONE"/>
+
+            <!-- 32 bytes aleatórios em base64url: o caminho do webhook -->
+            <column name="webhook_segredo" type="VARCHAR(64)">
+                <constraints nullable="false"
+                             unique="true"
+                             uniqueConstraintName="uk_whatsapp_conexao_webhook_segredo"/>
+            </column>
+
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <sql>
+            ALTER TABLE whatsapp_conexao ADD CONSTRAINT ck_whatsapp_conexao_status
+            CHECK (status IN ('DESCONECTADO', 'AGUARDANDO_QR', 'CONECTADO'));
+        </sql>
+
+        <!-- Uma conexão do tenant inteiro e uma por filial. Parciais porque
+             NULL não colide com NULL numa constraint única comum. -->
+        <sql>
+            CREATE UNIQUE INDEX uk_whatsapp_conexao_tenant
+                ON whatsapp_conexao (tenant_id) WHERE filial_id IS NULL;
+            CREATE UNIQUE INDEX uk_whatsapp_conexao_tenant_filial
+                ON whatsapp_conexao (tenant_id, filial_id) WHERE filial_id IS NOT NULL;
+        </sql>
+
+        <createIndex tableName="whatsapp_conexao" indexName="idx_whatsapp_conexao_filial_id">
+            <column name="filial_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="whatsapp_conexao"/>
+            <dropTable tableName="whatsapp_configuracao"/>
+            <dropTable tableName="whatsapp_servidor"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -20,7 +20,8 @@ public enum Modulo {
     SERVICOS("Serviços"),
     PRODUTOS("Produtos"),
     ESTOQUE("Estoque"),
-    ATENDIMENTO("Agenda e atendimento");
+    ATENDIMENTO("Agenda e atendimento"),
+    WHATSAPP("WhatsApp");
 
     private final String rotulo;
 

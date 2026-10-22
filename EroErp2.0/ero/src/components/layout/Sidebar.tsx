@@ -18,6 +18,7 @@ import {
   IconServico,
   IconTenants,
   IconUsuarios,
+  IconWhatsapp,
 } from '@/assets/icons'
 import { MarcaEro } from '@/components/layout/MarcaEro'
 import { useAuth } from '@/hooks/useAuth'
@@ -75,6 +76,12 @@ const GRUPOS: Grupo[] = [
         Icone: IconMovimentacao,
         tela: 'ESTOQUE',
       },
+    ],
+  },
+  {
+    titulo: 'Integrações',
+    itens: [
+      { para: '/app/integracoes/whatsapp', rotulo: 'WhatsApp', Icone: IconWhatsapp, tela: 'WHATSAPP' },
     ],
   },
   {

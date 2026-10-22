@@ -71,11 +71,20 @@ app:
     max-tentativas-login: 5
     duracao-bloqueio: PT15M
     rate-limit-por-minuto: 5
+    # O webhook do WhatsApp: a Evolution chama de um IP só, com rajadas.
+    rate-limit-webhook-por-minuto: 120
   auditoria:
     retencao-meses: 12
   acesso:
     # Fuso em que o período de acesso vence — sempre no fim do dia local.
     fuso-horario: ${ACESSO_FUSO_HORARIO:America/Sao_Paulo}
+  cripto:
+    # 32 bytes em base64 (openssl rand -base64 32). Sem ela a API não sobe.
+    # Trocar a chave torna ilegíveis as apikeys já gravadas. Ver CriptoConverter.
+    chave: ${APP_CRIPTO_CHAVE:}
+  # URL pública desta API, para a Evolution chamar o webhook do WhatsApp.
+  # Vazia, o webhook não é configurado e o status vem só pela tela (docs/13).
+  public-url: ${APP_PUBLIC_URL:}
 
 logging:
   level:

@@ -54,4 +54,7 @@
     <include file="db/changelog/changes/026-create-consulta.xml"/>
     <include file="db/changelog/changes/027-estoque-saida-consulta.xml"/>
 
+    <!-- ══ WhatsApp ═════════════════════════════════════════════════ -->
+    <include file="db/changelog/changes/028-create-whatsapp.xml"/>
+
 </databaseChangeLog>

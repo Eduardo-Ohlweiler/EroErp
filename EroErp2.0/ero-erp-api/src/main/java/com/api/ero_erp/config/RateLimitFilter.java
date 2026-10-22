@@ -30,15 +30,26 @@ public class RateLimitFilter extends OncePerRequestFilter {
             "/auth/login",
             "/auth/refresh");
 
+    /**
+     * O webhook do WhatsApp é público, e a credencial é o segredo do caminho.
+     * Um balde por IP para todos os segredos — chutar segredos diferentes
+     * gasta do mesmo — e com teto próprio, porque a Evolution chama em rajada.
+     */
+    private static final String PREFIXO_WEBHOOK = "/integracoes/whatsapp/webhook/";
+
     private final ObjectMapper objectMapper;
     private final ConcurrentMap<String, Bucket> baldes = new ConcurrentHashMap<>();
 
     @Value("${app.seguranca.rate-limit-por-minuto:5}")
     private int limitePorMinuto;
 
+    @Value("${app.seguranca.rate-limit-webhook-por-minuto:120}")
+    private int limiteWebhookPorMinuto;
+
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-        return !ROTAS_PROTEGIDAS.contains(request.getRequestURI());
+        String uri = request.getRequestURI();
+        return !ROTAS_PROTEGIDAS.contains(uri) && !uri.startsWith(PREFIXO_WEBHOOK);
     }
 
     @Override
@@ -47,7 +58,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain chain)
             throws ServletException, IOException {
 
-        Bucket balde = baldes.computeIfAbsent(chaveDe(request), k -> novoBalde());
+        boolean webhook = request.getRequestURI().startsWith(PREFIXO_WEBHOOK);
+        Bucket balde = webhook
+                ? baldes.computeIfAbsent(ipDe(request) + "|" + PREFIXO_WEBHOOK, k -> novoBalde(limiteWebhookPorMinuto))
+                : baldes.computeIfAbsent(chaveDe(request), k -> novoBalde(limitePorMinuto));
 
         if (balde.tryConsume(1)) {
             chain.doFilter(request, response);
@@ -63,11 +77,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 request.getRequestURI()));
     }
 
-    private Bucket novoBalde() {
+    private static Bucket novoBalde(int limite) {
         return Bucket.builder()
                 .addLimit(Bandwidth.builder()
-                        .capacity(limitePorMinuto)
-                        .refillIntervally(limitePorMinuto, Duration.ofMinutes(1))
+                        .capacity(limite)
+                        .refillIntervally(limite, Duration.ofMinutes(1))
                         .build())
                 .build();
     }
