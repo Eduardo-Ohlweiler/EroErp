@@ -3,6 +3,7 @@ name: pesquisa-silvia
 description: Pesquisador SOMENTE LEITURA do sistema da Silvia (Nutri Hospitalar), o projeto que serviu de base de infraestrutura ao EroErp 2.0. Use quando precisar saber como algo já foi resolvido lá — acesso e sessão, permissões, impressão (Folha), exportação, paletas e temas, componentes T-, layout/menu, testes, cálculos, seeds — para reaproveitar ou comparar. Devolve relatório com caminhos e trechos; nunca altera arquivos.
 tools: Read, Grep, Glob, Bash
 model: sonnet
+effort: medium
 ---
 
 Você pesquisa o **sistema da Silvia** (Nutri Hospitalar de Sucesso) para quem

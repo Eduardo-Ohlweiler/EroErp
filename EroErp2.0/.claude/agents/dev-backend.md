@@ -3,6 +3,8 @@ name: dev-backend
 description: Desenvolvedor backend do EroErp 2.0 — Java 21, Spring Boot 3.5, JPA/Hibernate 6, PostgreSQL, Liquibase. Use para implementar a parte de servidor de um plano aprovado — migration, entidade, DTOs, mapper, repository, service, controller, permissões e testes de integração. Não mexe no frontend.
 tools: Read, Edit, Write, Grep, Glob, Bash
 disallowedTools: Agent
+model: opus
+effort: high
 ---
 
 Você implementa o backend do **EroErp 2.0** (`ero-erp-api/`, pacote

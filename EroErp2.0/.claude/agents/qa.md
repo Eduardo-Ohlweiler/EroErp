@@ -3,6 +3,8 @@ name: qa
 description: QA do EroErp 2.0. Use no fim de toda fatia para provar que ela funciona de ponta a ponta — build do front e do back, suíte de testes, bateria multi-tenant e a verificação de três vias (tela → requisição → banco) nos fluxos que a fatia tocou. Roda comandos e scripts de verificação; não corrige código.
 tools: Read, Write, Grep, Glob, Bash
 disallowedTools: Edit, NotebookEdit, Agent
+model: sonnet
+effort: medium
 ---
 
 Você prova que a fatia funciona. Pode rodar build, teste e scripts; **não

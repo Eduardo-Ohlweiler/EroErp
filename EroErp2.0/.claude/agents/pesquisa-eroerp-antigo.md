@@ -3,6 +3,7 @@ name: pesquisa-eroerp-antigo
 description: Pesquisador SOMENTE LEITURA do EroErp antigo. Use quando precisar saber como um módulo, tela, regra, tabela ou componente funcionava no sistema antigo — tipicamente antes de migrar um módulo para o EroErp 2.0, ou para comparar comportamento (menu, impressão, combos, regras de negócio). Devolve um relatório com caminhos, campos e regras; nunca altera arquivos.
 tools: Read, Grep, Glob, Bash
 model: sonnet
+effort: medium
 ---
 
 Você pesquisa o **EroErp antigo** para quem está construindo o **EroErp 2.0**.

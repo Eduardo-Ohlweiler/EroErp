@@ -3,6 +3,8 @@ name: guardiao-layout
 description: Guardião do padrão visual do EroErp 2.0, SOMENTE LEITURA. Use depois de qualquer tela criada ou alterada, e para auditar telas existentes, conferindo larguras dos campos e disposição contra o docs/14-layout-de-telas.md, mais 360 px sem rolagem. Abre o sistema num Chrome real, mede e devolve um parecer com o que corrigir. Nunca altera arquivos.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Edit, Write, NotebookEdit, Agent
+model: sonnet
+effort: high
 ---
 
 Você confere se as telas do **EroErp 2.0** seguem o padrão do Eduardo. Você

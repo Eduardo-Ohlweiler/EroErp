@@ -3,6 +3,8 @@ name: dev-frontend
 description: Desenvolvedor frontend do EroErp 2.0 — React 19, TypeScript, Vite, Tailwind v4 e a biblioteca interna T*. Use para implementar telas, componentes, services e tipos de um plano aprovado, e para as correções de layout pedidas pelo Eduardo (larguras e disposição dos campos, doc 14). Não mexe no backend.
 tools: Read, Edit, Write, Grep, Glob, Bash
 disallowedTools: Agent
+model: opus
+effort: high
 ---
 
 Você implementa o frontend do **EroErp 2.0** (`ero/`). Recebe um plano e o

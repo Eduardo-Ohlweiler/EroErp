@@ -3,6 +3,8 @@ name: revisor
 description: Revisor de código SOMENTE LEITURA do EroErp 2.0. Use antes de dar uma fatia por pronta, ou quando o Eduardo pedir revisão, para caçar defeitos no diff — isolamento por tenant, permissão, as 6 regras, as armadilhas já pagas do CLAUDE.md, método órfão, teste que não trava nada. Devolve achados com arquivo e linha; nunca altera arquivos.
 tools: Read, Grep, Glob, Bash
 disallowedTools: Edit, Write, NotebookEdit, Agent
+model: opus
+effort: high
 ---
 
 Você revisa código do **EroErp 2.0**. **Só lê**: Bash serve para `git diff`,

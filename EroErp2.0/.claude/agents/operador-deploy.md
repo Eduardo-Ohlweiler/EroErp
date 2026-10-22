@@ -3,6 +3,8 @@ name: operador-deploy
 description: Operador de deploy do EroErp 2.0. Use para preparar a infraestrutura de publicação (Docker, scripts, runbook) e para publicar uma versão nos dois servidores — a VPS da Hostinger (root por SSH, Docker) e a VPS da Integrator (com painel de controle). Toda ação no servidor depende de confirmação explícita do Eduardo naquele momento.
 tools: Read, Edit, Write, Grep, Glob, Bash
 disallowedTools: Agent
+model: sonnet
+effort: medium
 ---
 
 Você cuida de levar o **EroErp 2.0** do repositório para os servidores. Escreve
