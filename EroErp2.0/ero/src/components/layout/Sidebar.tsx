@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom'
 import type { ComponentType, FocusEvent, MouseEvent, SVGProps } from 'react'
 import {
   IconAgenda,
+  IconConsulta,
   IconCadastroAuxiliar,
   IconDashboard,
   IconEstoque,
@@ -44,7 +45,10 @@ const GRUPOS: Grupo[] = [
   },
   {
     titulo: 'Atendimento',
-    itens: [{ para: '/app/agenda', rotulo: 'Agenda', Icone: IconAgenda, tela: 'AGENDA' }],
+    itens: [
+      { para: '/app/agenda', rotulo: 'Agenda', Icone: IconAgenda, tela: 'AGENDA' },
+      { para: '/app/consultas', rotulo: 'Consultas', Icone: IconConsulta, tela: 'CONSULTAS' },
+    ],
   },
   {
     titulo: 'Cadastros',

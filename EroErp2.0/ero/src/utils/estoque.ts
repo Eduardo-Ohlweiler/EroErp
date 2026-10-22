@@ -41,6 +41,7 @@ export const ROTULO_MOVIMENTACAO: Record<TipoMovimentacao, string> = {
   AJUSTE: 'Ajuste',
   TRANSFERENCIA_SAIDA: 'Transferência (saída)',
   TRANSFERENCIA_ENTRADA: 'Transferência (entrada)',
+  SAIDA_CONSULTA: 'Saída por consulta',
 }
 
 /** Dia do calendário (`2026-10-17`) → instante da meia-noite LOCAL, em ISO. */

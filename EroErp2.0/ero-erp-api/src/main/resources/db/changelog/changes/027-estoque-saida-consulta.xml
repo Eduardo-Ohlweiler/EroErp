@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        A baixa de estoque da consulta. Ver docs/11 §3 e docs/12 §7.
+
+        Concluir a consulta grava um SAIDA_CONSULTA, negativo, por produto que
+        controla estoque, apontando para a consulta. Não há estorno: consulta
+        concluída não se cancela.
+
+        Refaz os CHECKs de tipo e de sinal da 024 em vez de editá-la (regra 4),
+        e amarra consulta_id ao tipo: só a saída por consulta o tem.
+    -->
+    <changeSet id="027-estoque-saida-consulta" author="eduardo">
+
+        <addColumn tableName="estoque_movimentacao">
+            <column name="consulta_id" type="UUID">
+                <constraints foreignKeyName="fk_estoque_movimentacao_consulta"
+                             references="consulta(id)"/>
+            </column>
+        </addColumn>
+
+        <sql>
+            ALTER TABLE estoque_movimentacao DROP CONSTRAINT ck_estoque_movimentacao_tipo;
+            ALTER TABLE estoque_movimentacao ADD CONSTRAINT ck_estoque_movimentacao_tipo
+                CHECK (tipo IN ('ENTRADA', 'AJUSTE', 'TRANSFERENCIA_SAIDA', 'TRANSFERENCIA_ENTRADA',
+                                'SAIDA_CONSULTA'));
+
+            ALTER TABLE estoque_movimentacao DROP CONSTRAINT ck_estoque_movimentacao_sinal;
+            ALTER TABLE estoque_movimentacao ADD CONSTRAINT ck_estoque_movimentacao_sinal
+                CHECK (quantidade &lt;&gt; 0
+                       AND (tipo NOT IN ('ENTRADA', 'TRANSFERENCIA_ENTRADA') OR quantidade &gt; 0)
+                       AND (tipo NOT IN ('TRANSFERENCIA_SAIDA', 'SAIDA_CONSULTA') OR quantidade &lt; 0));
+
+            ALTER TABLE estoque_movimentacao ADD CONSTRAINT ck_estoque_movimentacao_consulta
+                CHECK ((tipo = 'SAIDA_CONSULTA') = (consulta_id IS NOT NULL));
+        </sql>
+
+        <createIndex tableName="estoque_movimentacao" indexName="idx_estoque_movimentacao_consulta">
+            <column name="consulta_id"/>
+        </createIndex>
+
+        <rollback>
+            <sql>
+                ALTER TABLE estoque_movimentacao DROP CONSTRAINT ck_estoque_movimentacao_consulta;
+                ALTER TABLE estoque_movimentacao DROP CONSTRAINT ck_estoque_movimentacao_sinal;
+                ALTER TABLE estoque_movimentacao ADD CONSTRAINT ck_estoque_movimentacao_sinal
+                    CHECK (quantidade &lt;&gt; 0
+                           AND (tipo NOT IN ('ENTRADA', 'TRANSFERENCIA_ENTRADA') OR quantidade &gt; 0)
+                           AND (tipo &lt;&gt; 'TRANSFERENCIA_SAIDA' OR quantidade &lt; 0));
+                ALTER TABLE estoque_movimentacao DROP CONSTRAINT ck_estoque_movimentacao_tipo;
+                ALTER TABLE estoque_movimentacao ADD CONSTRAINT ck_estoque_movimentacao_tipo
+                    CHECK (tipo IN ('ENTRADA', 'AJUSTE', 'TRANSFERENCIA_SAIDA', 'TRANSFERENCIA_ENTRADA'));
+            </sql>
+            <dropColumn tableName="estoque_movimentacao" columnName="consulta_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -45,7 +45,7 @@ EroErp2.0/
 │       └── {modulo}/              # tenant, usuario, auth, loginlog, refreshtoken,
 │           ├── controller/        # pessoa, contato, vinculo, catalogo, localidade,
 │           │                      # filial, servico, sequencia, produto,
-│           │                      # auxiliarproduto, estoque, compromisso
+│           │                      # auxiliarproduto, estoque, compromisso, consulta
 │           ├── dtos/
 │           ├── entity/
 │           ├── enums/
@@ -66,6 +66,9 @@ EroErp2.0/
 │                                  #   tenant (PaletaSistema, docs/05 §11)
 │                                  # sequencia/ = código curto por tenant
 │                                  #   (serviço e produto 1, 2, 3… — docs/10 §2)
+│                                  # consulta/ = o atendimento sobre o compromisso:
+│                                  #   itens com preço-retrato, CalculoConsulta
+│                                  #   (a conta única), baixa ao concluir (docs/12 §7)
 └── ero/                           # frontend
     ├── public/                    # favicon e ícones
     ├── scripts/validar-paletas.mjs  # npm run paletas — contraste e cascata
@@ -86,6 +89,7 @@ EroErp2.0/
         │                          # (doc 04 §7)
         ├── components/agenda/     # GradeHoras · GradeMes · ListaAgenda
         │                          # ResumoCompromisso · AcoesCompromisso
+        │                          # CamposCompromisso (agenda e consulta)
         ├── components/impressao/  # Folha · TiraIndicadores · Secao · LinhasDeValor
         │                          # TabelaDoc · DocumentoLista (doc 05 §8)
         ├── components/layout/     # Layout · Sidebar · TenantSwitcher · TProtected
@@ -95,13 +99,16 @@ EroErp2.0/
         ├── components/usuario/    # RedefinirSenhaModal
         ├── contexts/              # AuthContext · ThemeContext
         ├── hooks/                 # useAuth · useTheme · useDebounce · useMenuRecolhido
+        │                          # useDisponibilidade (quem está ocupado, agenda e consulta)
         ├── services/              # api.ts (interceptor + refresh) + um por módulo
         ├── pages/                 # auth/Login · Inicio · usuario · tenant · pessoa · filial
-        │                          # servico · produto · estoque · agenda · loginlog · perfil
+        │                          # servico · produto · estoque · agenda · consulta
+        │                          # loginlog · perfil
         ├── types/ utils/          # utils/format.ts (paraNumero, máscaras, datas)
         │                          # utils/planilha.ts (exportação CSV)
         │                          # utils/estoque.ts (máscara da quantidade pela unidade)
         │                          # utils/agenda.ts (dia × instante, blocos na grade)
+        │                          # utils/compromissoForm.ts (schema e corpo do compromisso)
         └── routes/AppRoutes.tsx
 ```
 
@@ -121,7 +128,8 @@ Testes contra o banco `ero_erp_test` — nada de H2 nem Testcontainers.
 | **Produtos, auxiliares e estoque** | ✅ pronto · do antigo, sem a parte fiscal: produto com código por tenant, EAN com dígito verificador e custo opcional; unidade global; grupo/subgrupo, categoria e marca por tenant; estoque só de produto, por filial, com preço de venda opcional, "controla estoque" (sem ele, a linha só guarda o preço), entrada, ajuste e transferência com quantidade **com sinal** e a linha travada (`produto/`, `auxiliarproduto/`, `estoque/`, migrations 021–024, [docs/11](docs/11-modulo-produtos-estoque.md)). Mínimo só guardado: o alerta vem com o painel |
 | **Menu recolhível** | ✅ pronto · expandido ↔ só ícones em `lg+`, Ctrl+B, lembrado no navegador ([docs/04](docs/04-arquitetura-frontend.md), "O menu recolhe") |
 | **Agenda** | ✅ pronto · compromisso com responsável **escolhido** (usuário), convidados, cliente opcional, filial e cor herdada dela; conflito **por usuário** — o do responsável recusa, o do convidado só avisa; recorrência de 2 a 52 calculada a partir da primeira, no fuso do sistema; status único (agendado, confirmado, concluído, cancelado, faltou); calendário dia/semana/mês/lista feito à mão e responsivo (`compromisso/`, migration 025, [docs/12](docs/12-modulo-agenda-consulta.md)) |
-| Em andamento | plano aprovado, nesta ordem: **consulta** (serviços e produtos sobre o compromisso; o campo some sem a permissão de Serviços/Produtos; baixa de estoque) → **WhatsApp** (Evolution: servidor global do superadmin, conexão por tenant ou por filial, conectar/desconectar por QR) → avisos, lembrete e **pós-atendimento** → **pacotes**. Financeiro fica de fora |
+| **Consulta** | ✅ pronto · o atendimento sobre o compromisso, **sem status próprio**: a situação é a do compromisso, que ganha `EM_ATENDIMENTO`, e concluir é **só pela consulta**; nasce convertendo um compromisso da agenda ou criando-o junto (mesmas regras, conflito incluído); serviços e produtos com preço do catálogo da filial como sugestão, editável e gravado como **retrato**; ajuste por item e no total; totais publicados pelo servidor e prévia em `POST /consultas/calculo`; as listas somem para quem não lê Serviços/Produtos (nula não mexe, enviada é 403); concluir baixa o estoque (`SAIDA_CONSULTA`) com rollback total; reconsulta (`consulta/`, migrations 026–027, [docs/12 §7](docs/12-modulo-agenda-consulta.md)) |
+| Em andamento | plano aprovado, nesta ordem: **WhatsApp** (Evolution: servidor global do superadmin, conexão por tenant ou por filial, conectar/desconectar por QR) → avisos, lembrete e **pós-atendimento** → **pacotes**. Financeiro fica de fora |
 | Próximas | **migrar módulos do EroErp antigo**, um de cada vez, perguntando antes qual e como |
 | `audit_log` | pendente · especificação em [docs/06 §A09](docs/06-seguranca-owasp.md); molde estrutural é o `loginlog`, com o expurgo no `ManutencaoJob` |
 | Recuperação de senha por e-mail | pendente · depende de escolher o serviço de e-mail (não há `spring-boot-starter-mail` no `pom.xml`). Enquanto isso, o superadmin redefine em `PATCH /usuarios/{id}/senha` |
@@ -496,7 +504,7 @@ de fechar no papel.
 | [docs/09-modulo-filiais.md](docs/09-modulo-filiais.md) | Filiais — matriz e filiais (o emitente do antigo), várias matrizes por tenant |
 | [docs/10-modulo-servicos.md](docs/10-modulo-servicos.md) | Serviços — código por tenant, valor opcional por filial, sem estoque |
 | [docs/11-modulo-produtos-estoque.md](docs/11-modulo-produtos-estoque.md) | Produtos, auxiliares e estoque — preço por filial no estoque, movimentação com sinal e trava |
-| [docs/12-modulo-agenda-consulta.md](docs/12-modulo-agenda-consulta.md) | Agenda — responsável escolhido, convidados, conflito por usuário, recorrência; a consulta vem em seguida |
+| [docs/12-modulo-agenda-consulta.md](docs/12-modulo-agenda-consulta.md) | Agenda — responsável escolhido, convidados, conflito por usuário, recorrência · Consulta (§7) — situação única, preço-retrato, ajustes, totais do servidor, baixa ao concluir |
 
 ---
 

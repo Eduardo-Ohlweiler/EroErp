@@ -61,6 +61,13 @@ public class EstoqueMovimentacao extends TenantEntity {
     @JoinColumn(name = "filial_contraparte_id", updatable = false)
     private Filial filialContraparte;
 
+    /**
+     * Na saída por consulta, a consulta que baixou. Só o id: o estoque não
+     * depende do módulo de consulta, e a FK está no banco (migration 027).
+     */
+    @Column(name = "consulta_id", updatable = false)
+    private UUID consultaId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", updatable = false)
     private Usuario createdBy;

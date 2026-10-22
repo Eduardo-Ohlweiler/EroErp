@@ -47,6 +47,16 @@ public class SecurityUtils {
         return detalhes().impersonating();
     }
 
+    /**
+     * A requisição tem a authority — {@code SERVICOS_LER}, por exemplo. Para o
+     * service que decide o que mostra, além do {@code @PreAuthorize} do
+     * controller, que decide se entra.
+     */
+    public boolean temAuthority(String authority) {
+        return autenticacao().getAuthorities().stream()
+                .anyMatch(a -> authority.equals(a.getAuthority()));
+    }
+
     public Usuario getUsuarioLogado() {
         return usuarioRepository.findById(getUsuarioIdLogado())
                 .orElseThrow(() -> new UnauthorizedException("Sessão inválida"));

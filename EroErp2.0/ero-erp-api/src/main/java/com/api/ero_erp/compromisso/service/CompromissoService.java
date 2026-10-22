@@ -71,6 +71,8 @@ public class CompromissoService {
     private static final Duration DURACAO_MAXIMA = Duration.ofHours(24);
     private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
     private static final DateTimeFormatter DIA_HORA = DateTimeFormatter.ofPattern("dd/MM 'às' HH:mm");
+    /** A mesma frase na agenda e na consulta: o compromisso de uma consulta não perde o cliente. */
+    public static final String SEM_CLIENTE = "A consulta precisa de um cliente";
 
     private final CompromissoRepository compromissoRepository;
     private final UsuarioRepository usuarioRepository;
@@ -151,14 +153,11 @@ public class CompromissoService {
     public List<CompromissoResponseDto> create(CompromissoCreateDto dto) {
         UUID tenantId = securityUtils.getTenantIdLogado();
         validarPeriodo(dto.inicio(), dto.fim());
-
-        Filial filial = exigirFilialAtiva(dto.filialId());
-        Usuario responsavel = exigirUsuarioAtivo(dto.responsavelId(), tenantId, "Responsável");
-        Pessoa pessoa = dto.pessoaId() != null ? exigirPessoaAtiva(dto.pessoaId()) : null;
-        List<Usuario> convidados = resolverConvidados(dto.convidadoIds(), responsavel.getId(), Set.of(), tenantId);
+        Participantes quem = resolverParticipantes(dto.filialId(), dto.responsavelId(), dto.pessoaId(),
+                dto.convidadoIds(), tenantId);
 
         List<Periodo> periodos = gerarPeriodos(dto.inicio(), dto.fim(), dto.recorrencia(), dto.ocorrencias());
-        exigirResponsavelLivre(tenantId, responsavel, periodos, null);
+        exigirResponsavelLivre(tenantId, quem.responsavel(), periodos, null);
 
         // Série só com mais de uma data: tirando as outras na prévia, sobra um
         // compromisso avulso (o CHECK exige série e tipo juntos)
@@ -167,25 +166,34 @@ public class CompromissoService {
         Usuario criador = securityUtils.getUsuarioLogado();
         List<Compromisso> criados = new ArrayList<>();
         for (Periodo periodo : periodos) {
-            Compromisso c = new Compromisso();
-            c.setTenant(securityUtils.getTenantReference());
-            c.setFilial(filial);
-            c.setResponsavel(responsavel);
-            c.setPessoa(pessoa);
-            c.setTitulo(dto.titulo().trim());
-            c.setDescricao(textoOuNulo(dto.descricao()));
-            c.setCor(corOuNula(dto.cor()));
-            c.setInicio(periodo.inicio());
-            c.setFim(periodo.fim());
+            Compromisso c = novo(quem, dto.titulo(), dto.descricao(), dto.cor(), periodo, criador);
             c.setSerieId(serieId);
             c.setTipoRecorrencia(serie ? dto.recorrencia().tipo() : null);
-            c.setCreatedBy(criador);
-            convidados.forEach(u -> adicionarConvidado(c, u));
             criados.add(compromissoRepository.save(c));
         }
 
         log.info("Compromisso criado id={} ocorrencias={}", criados.getFirst().getId(), criados.size());
         return criados.stream().map(CompromissoMapper::toResponse).toList();
+    }
+
+    /**
+     * Um compromisso só, sem recorrência — o que a consulta cria quando nasce
+     * sem um compromisso antes. As mesmas validações e o mesmo conflito do
+     * responsável do {@link #create}; o corpo é o do PUT da agenda.
+     */
+    @Transactional
+    public Compromisso criarAvulso(CompromissoUpdateDto dto) {
+        UUID tenantId = securityUtils.getTenantIdLogado();
+        validarPeriodo(dto.inicio(), dto.fim());
+        Participantes quem = resolverParticipantes(dto.filialId(), dto.responsavelId(), dto.pessoaId(),
+                dto.convidadoIds(), tenantId);
+        Periodo periodo = new Periodo(dto.inicio(), dto.fim());
+        exigirResponsavelLivre(tenantId, quem.responsavel(), List.of(periodo), null);
+
+        Compromisso salvo = compromissoRepository.save(
+                novo(quem, dto.titulo(), dto.descricao(), dto.cor(), periodo, securityUtils.getUsuarioLogado()));
+        log.info("Compromisso criado id={} para consulta", salvo.getId());
+        return salvo;
     }
 
     @Transactional
@@ -194,6 +202,9 @@ public class CompromissoService {
         UUID tenantId = c.getTenant().getId();
         exigirAberto(c);
         validarPeriodo(dto.inicio(), dto.fim());
+        if (c.getConsultaId() != null && dto.pessoaId() == null) {
+            throw new BadRequestException(SEM_CLIENTE);
+        }
 
         // O que já estava não é reconferido: o compromisso de um responsável
         // que foi inativado ainda pode ter a descrição corrigida.
@@ -239,14 +250,45 @@ public class CompromissoService {
         if (c.getStatus() == StatusCompromisso.CONFIRMADO) {
             throw new ConflictException("Este compromisso já está confirmado");
         }
+        if (c.getStatus() == StatusCompromisso.EM_ATENDIMENTO) {
+            throw new ConflictException("Este compromisso já está em atendimento");
+        }
         return mudarStatus(c, StatusCompromisso.CONFIRMADO);
     }
 
+    /**
+     * A consulta se conclui pela consulta, que baixa o estoque dos produtos:
+     * concluir aqui encerraria o atendimento sem a baixa.
+     */
     @Transactional
     public CompromissoResponseDto concluir(UUID id) {
         Compromisso c = findById(id);
         exigirAberto(c);
+        if (c.getConsultaId() != null) {
+            throw new ConflictException("Este compromisso é uma consulta: conclua pela consulta");
+        }
         return mudarStatus(c, StatusCompromisso.CONCLUIDO);
+    }
+
+    /** O atendimento começa: agendado ou confirmado → em atendimento. Só a consulta chama. */
+    @Transactional
+    public void iniciarAtendimento(Compromisso c) {
+        exigirAberto(c);
+        if (c.getStatus() == StatusCompromisso.EM_ATENDIMENTO) {
+            throw new ConflictException("Esta consulta já está em atendimento");
+        }
+        mudarStatus(c, StatusCompromisso.EM_ATENDIMENTO);
+    }
+
+    /**
+     * Encerra o compromisso de uma consulta. Só o {@code ConsultaService}
+     * chama, depois da baixa de estoque — é a porta que o {@link #concluir}
+     * fecha para a agenda.
+     */
+    @Transactional
+    public void encerrarAtendimento(Compromisso c) {
+        exigirAberto(c);
+        mudarStatus(c, StatusCompromisso.CONCLUIDO);
     }
 
     @Transactional
@@ -300,7 +342,8 @@ public class CompromissoService {
         return CompromissoMapper.toResponse(compromissoRepository.save(c));
     }
 
-    private static void exigirAberto(Compromisso c) {
+    /** Uma frase por situação encerrada. Pública: a consulta recusa com as mesmas. */
+    public static void exigirAberto(Compromisso c) {
         switch (c.getStatus()) {
             case CONCLUIDO -> throw new ConflictException("Este compromisso já foi concluído");
             case CANCELADO -> throw new ConflictException("Este compromisso foi cancelado");
@@ -417,6 +460,33 @@ public class CompromissoService {
         return resultado;
     }
 
+    /** Quem participa de um compromisso novo, já conferido: tudo ativo e do tenant. */
+    private Participantes resolverParticipantes(UUID filialId, UUID responsavelId, UUID pessoaId,
+                                                List<UUID> convidadoIds, UUID tenantId) {
+        Filial filial = exigirFilialAtiva(filialId);
+        Usuario responsavel = exigirUsuarioAtivo(responsavelId, tenantId, "Responsável");
+        Pessoa pessoa = pessoaId != null ? exigirPessoaAtiva(pessoaId) : null;
+        List<Usuario> convidados = resolverConvidados(convidadoIds, responsavel.getId(), Set.of(), tenantId);
+        return new Participantes(filial, responsavel, pessoa, convidados);
+    }
+
+    private Compromisso novo(Participantes quem, String titulo, String descricao, String cor, Periodo periodo,
+                             Usuario criador) {
+        Compromisso c = new Compromisso();
+        c.setTenant(securityUtils.getTenantReference());
+        c.setFilial(quem.filial());
+        c.setResponsavel(quem.responsavel());
+        c.setPessoa(quem.pessoa());
+        c.setTitulo(titulo.trim());
+        c.setDescricao(textoOuNulo(descricao));
+        c.setCor(corOuNula(cor));
+        c.setInicio(periodo.inicio());
+        c.setFim(periodo.fim());
+        c.setCreatedBy(criador);
+        quem.convidados().forEach(u -> adicionarConvidado(c, u));
+        return c;
+    }
+
     private Filial exigirFilialAtiva(UUID filialId) {
         Filial filial = filialService.findById(filialId);
         if (!Boolean.TRUE.equals(filial.getAtivo())) {
@@ -501,6 +571,8 @@ public class CompromissoService {
     private static String textoOuNulo(String valor) {
         return valor != null && !valor.isBlank() ? valor.trim() : null;
     }
+
+    private record Participantes(Filial filial, Usuario responsavel, Pessoa pessoa, List<Usuario> convidados) {}
 
     /** Um intervalo [inicio, fim) — a ocorrência que se quer marcar. */
     private record Periodo(Instant inicio, Instant fim) {

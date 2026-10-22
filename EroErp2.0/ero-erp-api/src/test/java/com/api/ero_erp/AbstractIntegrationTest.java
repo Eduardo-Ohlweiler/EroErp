@@ -8,6 +8,7 @@ import com.api.ero_erp.auxiliarproduto.repository.SubgrupoProdutoRepository;
 import com.api.ero_erp.catalogo.entity.UnidadeMedida;
 import com.api.ero_erp.catalogo.repository.UnidadeMedidaRepository;
 import com.api.ero_erp.compromisso.repository.CompromissoRepository;
+import com.api.ero_erp.consulta.repository.ConsultaRepository;
 import com.api.ero_erp.estoque.repository.EstoqueMovimentacaoRepository;
 import com.api.ero_erp.estoque.repository.EstoqueRepository;
 import com.api.ero_erp.filial.repository.FilialRepository;
@@ -67,6 +68,7 @@ public abstract class AbstractIntegrationTest {
     @Autowired protected PessoaRepository pessoaRepository;
     @Autowired protected FilialRepository filialRepository;
     @Autowired protected CompromissoRepository compromissoRepository;
+    @Autowired protected ConsultaRepository consultaRepository;
     @Autowired protected ServicoRepository servicoRepository;
     @Autowired protected EstoqueMovimentacaoRepository estoqueMovimentacaoRepository;
     @Autowired protected EstoqueRepository estoqueRepository;
@@ -88,10 +90,13 @@ public abstract class AbstractIntegrationTest {
 
     @BeforeEach
     void montarCenario() {
-        // Ordem de dependência: refresh_token → login_log → compromisso →
-        // movimentação → estoque → produto → subgrupo → grupo, categoria,
-        // marca → servico → filial → pessoa → usuario_permissao → usuario →
-        // tenant.
+        // Ordem de dependência: refresh_token → login_log → movimentação →
+        // consulta → compromisso → estoque → produto → subgrupo → grupo,
+        // categoria, marca → servico → filial → pessoa → usuario_permissao →
+        // usuario → tenant.
+        // A saída por consulta aponta para a consulta: a movimentação sai
+        // antes dela. A consulta leva os itens (ON DELETE CASCADE) e a
+        // reconsulta aponta para a própria tabela, o que um DELETE só resolve.
         // O compromisso aponta para filial, pessoa e usuário: sai antes de
         // todos, e leva os convidados (ON DELETE CASCADE).
         // O produto aponta para a pessoa (fornecedor) e o estoque para a
@@ -104,8 +109,9 @@ public abstract class AbstractIntegrationTest {
         // sai antes, num DELETE só, que resolve a autorreferência de uma vez.
         refreshTokenRepository.deleteAllInBatch();
         loginLogRepository.deleteAllInBatch();
-        compromissoRepository.deleteAllInBatch();
         estoqueMovimentacaoRepository.deleteAllInBatch();
+        consultaRepository.deleteAllInBatch();
+        compromissoRepository.deleteAllInBatch();
         estoqueRepository.deleteAllInBatch();
         produtoRepository.deleteAllInBatch();
         subgrupoProdutoRepository.deleteAllInBatch();

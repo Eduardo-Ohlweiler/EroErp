@@ -37,6 +37,7 @@ public final class CompromissoMapper {
                 c.getMotivoCancelamento(),
                 c.getSerieId(),
                 c.getTipoRecorrencia(),
+                c.getConsultaId(),
                 convidados(c),
                 criador != null ? criador.getNome() : null,
                 c.getCreatedAt(),
@@ -57,7 +58,8 @@ public final class CompromissoMapper {
                 c.getResponsavel().getNome(),
                 c.getPessoa() != null ? c.getPessoa().getNome() : null,
                 c.getConvidados().stream().map(cv -> cv.getUsuario().getId()).toList(),
-                c.getSerieId() != null);
+                c.getSerieId() != null,
+                c.getConsultaId());
     }
 
     /** Em ordem de nome: o conjunto não tem ordem, e a tela não deve embaralhar. */

@@ -1,5 +1,11 @@
-/** Espelha `StatusCompromisso`. Agendado e confirmado estão abertos. */
-export type StatusCompromisso = 'AGENDADO' | 'CONFIRMADO' | 'CONCLUIDO' | 'CANCELADO' | 'FALTOU'
+/** Espelha `StatusCompromisso`. Agendado, confirmado e em atendimento estão abertos; em atendimento só na consulta. */
+export type StatusCompromisso =
+  | 'AGENDADO'
+  | 'CONFIRMADO'
+  | 'EM_ATENDIMENTO'
+  | 'CONCLUIDO'
+  | 'CANCELADO'
+  | 'FALTOU'
 
 /** Espelha `TipoRecorrencia`. */
 export type TipoRecorrencia =
@@ -39,6 +45,8 @@ export interface CompromissoResponse {
   motivoCancelamento: string | null
   serieId: string | null
   tipoRecorrencia: TipoRecorrencia | null
+  /** A consulta feita sobre ele; ausente quando não é consulta. */
+  consultaId?: string | null
   /** Em ordem de nome. */
   convidados: Convidado[]
   /** Quem digitou — não é necessariamente o responsável. */
@@ -62,6 +70,8 @@ export interface CompromissoCalendario {
   pessoaNome: string | null
   convidadoIds: string[]
   recorrente: boolean
+  /** A consulta feita sobre ele; ausente quando não é consulta. */
+  consultaId?: string | null
 }
 
 /** Uma data da série como ficou na prévia. */

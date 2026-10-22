@@ -1,5 +1,5 @@
 import { useEffect, useRef, type MouseEvent } from 'react'
-import { IconCheck, IconRepetir } from '@/assets/icons'
+import { IconCheck, IconConsulta, IconRepetir } from '@/assets/icons'
 import type { CompromissoCalendario } from '@/types/compromisso'
 import {
   diaDaSemana,
@@ -136,6 +136,7 @@ export function GradeHoras({ dias, itens, hoje, onAbrir, onNovo }: Props) {
                         }`}
                       >
                         {item.status === 'CONCLUIDO' && <IconCheck className="size-3 shrink-0" />}
+                        {item.consultaId && <IconConsulta className="size-3 shrink-0" aria-label="Consulta" />}
                         {item.recorrente && <IconRepetir className="size-3 shrink-0 text-txt-muted" />}
                         <span className="truncate">{item.titulo}</span>
                       </span>

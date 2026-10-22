@@ -10,6 +10,7 @@ import java.util.UUID;
 /**
  * @param cor          a gravada — vazia quando segue a filial
  * @param corExibicao  a que a tela pinta: a gravada ou, sem ela, a da filial
+ * @param consultaId   a consulta feita sobre ele; nulo quando não é consulta
  * @param criadoPorNome quem digitou, que não é necessariamente o responsável
  */
 public record CompromissoResponseDto(
@@ -30,6 +31,7 @@ public record CompromissoResponseDto(
         String motivoCancelamento,
         UUID serieId,
         TipoRecorrencia tipoRecorrencia,
+        UUID consultaId,
         List<ConvidadoDto> convidados,
         String criadoPorNome,
         Instant createdAt,

@@ -1,7 +1,12 @@
 import type { Paginacao } from './comum'
 
 /** Espelha `TipoMovimentacao`. */
-export type TipoMovimentacao = 'ENTRADA' | 'AJUSTE' | 'TRANSFERENCIA_SAIDA' | 'TRANSFERENCIA_ENTRADA'
+export type TipoMovimentacao =
+  | 'ENTRADA'
+  | 'AJUSTE'
+  | 'TRANSFERENCIA_SAIDA'
+  | 'TRANSFERENCIA_ENTRADA'
+  | 'SAIDA_CONSULTA'
 
 /** Espelha `EstoqueResponseDto`. Campo nulo vem ausente do JSON. */
 export interface EstoqueResponse {
@@ -48,6 +53,8 @@ export interface MovimentacaoResponse {
   quantidadePosterior: number
   motivo?: string | null
   transferenciaId?: string | null
+  /** Na saída por consulta, a consulta que baixou. */
+  consultaId?: string | null
   produtoId: string
   produtoCodigo: number
   produtoNome: string

@@ -67,6 +67,39 @@ public interface EstoqueRepository extends JpaRepository<Estoque, UUID> {
             """)
     List<Estoque> findAllCompletos(@Param("ids") Collection<UUID> ids, @Param("tenantId") UUID tenantId);
 
+    /** As linhas de vários produtos numa filial — o preço e o saldo que a consulta mostra. */
+    @Query("""
+            SELECT e FROM Estoque e
+            JOIN FETCH e.produto p
+            JOIN FETCH p.unidadeMedida
+            WHERE e.produto.id IN :produtoIds AND e.filial.id = :filialId AND e.tenant.id = :tenantId
+            """)
+    List<Estoque> findAllDosProdutosNaFilial(@Param("produtoIds") Collection<UUID> produtoIds,
+                                             @Param("filialId") UUID filialId,
+                                             @Param("tenantId") UUID tenantId);
+
+    /**
+     * O que a consulta pode usar numa filial: linha ativa de produto ativo,
+     * com controle de estoque ou sem — o sem controle vale pelo preço.
+     */
+    @Query(value = """
+            SELECT e.id FROM estoque e
+            JOIN produto pr ON pr.id = e.produto_id
+            WHERE e.tenant_id = CAST(:tenantId AS uuid)
+              AND e.filial_id = CAST(:filialId AS uuid)
+              AND e.ativo = true AND pr.ativo = true
+              AND (CAST(:termo AS text) IS NULL
+                   OR unaccent(lower(pr.nome)) LIKE unaccent(lower('%' || CAST(:termo AS text) || '%'))
+                   OR pr.codigo = CAST(:codigo AS bigint)
+                   OR pr.ean = CAST(:termo AS text))
+            ORDER BY pr.nome, pr.codigo
+            LIMIT 100
+            """, nativeQuery = true)
+    List<UUID> findIdsDaFilial(@Param("tenantId") UUID tenantId,
+                               @Param("filialId") UUID filialId,
+                               @Param("termo") String termo,
+                               @Param("codigo") Long codigo);
+
     /**
      * Listagem com filtros opcionais — só os ids, em ordem de produto e filial.
      *

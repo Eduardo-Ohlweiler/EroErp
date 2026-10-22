@@ -60,6 +60,7 @@ public final class EstoqueMapper {
                 m.getQuantidadePosterior(),
                 m.getMotivo(),
                 m.getTransferenciaId(),
+                m.getConsultaId(),
                 produto.getId(),
                 produto.getCodigo(),
                 produto.getNome(),

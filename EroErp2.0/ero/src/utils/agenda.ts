@@ -98,12 +98,13 @@ export function faixaDeHorario(inicio: string, fim: string): string {
 }
 
 export function estaAberto(status: StatusCompromisso): boolean {
-  return status === 'AGENDADO' || status === 'CONFIRMADO'
+  return status === 'AGENDADO' || status === 'CONFIRMADO' || status === 'EM_ATENDIMENTO'
 }
 
 export const STATUS_ROTULO: Record<StatusCompromisso, string> = {
   AGENDADO: 'Agendado',
   CONFIRMADO: 'Confirmado',
+  EM_ATENDIMENTO: 'Em atendimento',
   CONCLUIDO: 'Concluído',
   CANCELADO: 'Cancelado',
   FALTOU: 'Faltou',
@@ -112,6 +113,7 @@ export const STATUS_ROTULO: Record<StatusCompromisso, string> = {
 export const STATUS_TOM = {
   AGENDADO: 'neutro',
   CONFIRMADO: 'info',
+  EM_ATENDIMENTO: 'sage',
   CONCLUIDO: 'sucesso',
   CANCELADO: 'erro',
   FALTOU: 'alerta',

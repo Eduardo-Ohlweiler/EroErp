@@ -91,10 +91,13 @@ A linha **existe** e vale pelo preço e pela situação, mas:
 | `AJUSTE` | a diferença `nova − anterior`, com o sinal dela |
 | `TRANSFERENCIA_SAIDA` | negativa, na origem |
 | `TRANSFERENCIA_ENTRADA` | positiva, no destino |
+| `SAIDA_CONSULTA` | negativa, na filial do compromisso, ao concluir a consulta (docs/12 §7) |
 
 CHECKs na migration 024 amarram `posterior = anterior + quantidade`, o sinal ao
 tipo e o `transferencia_id` + `filial_contraparte_id` aos dois tipos de
-transferência. `SAIDA` entra quando houver venda ou consumo.
+transferência. A 027 refaz os de tipo e sinal para a saída por consulta e amarra
+`consulta_id` a ela. Sem estorno: consulta concluída não se cancela. A saída por
+venda entra quando houver venda.
 
 **Toda movimentação trava a linha** (`SELECT … FOR UPDATE`, `EstoqueRepository.travar`)
 antes de ler o saldo. A trava é só da linha do estoque, sem join — travar

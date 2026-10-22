@@ -26,11 +26,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -91,6 +93,18 @@ public class ServicoService {
         UUID tenantId = securityUtils.getTenantIdLogado();
         return servicoRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new NotFoundException("Serviço não encontrado"));
+    }
+
+    /**
+     * O valor do serviço numa filial — a sugestão de preço da consulta.
+     * Vazio quando a filial não tem linha ou a linha não tem valor: vazio não
+     * é zero.
+     */
+    @Transactional(readOnly = true)
+    public Optional<BigDecimal> valorNaFilial(UUID servicoId, UUID filialId) {
+        UUID tenantId = securityUtils.getTenantIdLogado();
+        return servicoFilialRepository.findByServicoIdAndFilialIdAndTenantId(servicoId, filialId, tenantId)
+                .map(ServicoFilial::getValor);
     }
 
     @Transactional

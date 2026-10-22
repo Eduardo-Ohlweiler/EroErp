@@ -50,4 +50,8 @@
     <!-- ══ Agenda ═══════════════════════════════════════════════════ -->
     <include file="db/changelog/changes/025-create-compromisso.xml"/>
 
+    <!-- ══ Consulta ═════════════════════════════════════════════════ -->
+    <include file="db/changelog/changes/026-create-consulta.xml"/>
+    <include file="db/changelog/changes/027-estoque-saida-consulta.xml"/>
+
 </databaseChangeLog>

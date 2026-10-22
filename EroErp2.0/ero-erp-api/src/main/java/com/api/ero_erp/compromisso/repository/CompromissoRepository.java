@@ -111,7 +111,8 @@ public interface CompromissoRepository extends JpaRepository<Compromisso, UUID> 
               AND c.serieId = :serieId
               AND c.inicio >= :aPartirDe
               AND c.status IN (com.api.ero_erp.compromisso.enums.StatusCompromisso.AGENDADO,
-                               com.api.ero_erp.compromisso.enums.StatusCompromisso.CONFIRMADO)
+                               com.api.ero_erp.compromisso.enums.StatusCompromisso.CONFIRMADO,
+                               com.api.ero_erp.compromisso.enums.StatusCompromisso.EM_ATENDIMENTO)
             ORDER BY c.inicio
             """)
     List<Compromisso> findAbertosDaSerieAPartirDe(@Param("tenantId") UUID tenantId,

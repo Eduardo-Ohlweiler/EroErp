@@ -33,9 +33,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -87,6 +89,15 @@ public class EstoqueService {
         return carregarNaOrdem(ids, tenantId).stream()
                 .map(EstoqueMapper::toMovimentavel)
                 .toList();
+    }
+
+    /** O combo de produtos da consulta: o que tem linha ativa na filial, controlando estoque ou não. */
+    @Transactional(readOnly = true)
+    public List<Estoque> daFilial(UUID filialId, String termo) {
+        UUID tenantId = securityUtils.getTenantIdLogado();
+        String texto = textoOuNulo(termo);
+        return carregarNaOrdem(estoqueRepository.findIdsDaFilial(tenantId, filialId, texto, codigoOuNulo(texto)),
+                tenantId);
     }
 
     @Transactional(readOnly = true)
@@ -149,7 +160,7 @@ public class EstoqueService {
         Estoque salvo = estoqueRepository.save(estoque);
 
         if (comSaldoInicial) {
-            movimentar(salvo, TipoMovimentacao.ENTRADA, inicial, SALDO_INICIAL, null, null);
+            movimentar(salvo, TipoMovimentacao.ENTRADA, inicial, SALDO_INICIAL, null, null, null);
         }
 
         log.info("Estoque criado id={}", salvo.getId());
@@ -187,7 +198,7 @@ public class EstoqueService {
         exigirMovimentavel(estoque);
 
         EstoqueMovimentacao movimento = movimentar(estoque, TipoMovimentacao.ENTRADA, dto.quantidade(),
-                textoOuNulo(dto.motivo()), null, null);
+                textoOuNulo(dto.motivo()), null, null, null);
         log.info("Entrada no estoque id={} movimento={}", id, movimento.getId());
         return EstoqueMapper.toResponse(movimento);
     }
@@ -203,7 +214,7 @@ public class EstoqueService {
             throw new BadRequestException("A quantidade nova é igual à atual: não há o que ajustar");
         }
         EstoqueMovimentacao movimento = movimentar(estoque, TipoMovimentacao.AJUSTE, diferenca,
-                dto.motivo().trim(), null, null);
+                dto.motivo().trim(), null, null, null);
         log.info("Ajuste no estoque id={} movimento={}", id, movimento.getId());
         return EstoqueMapper.toResponse(movimento);
     }
@@ -249,12 +260,60 @@ public class EstoqueService {
         UUID transferenciaId = UUID.randomUUID();
         String motivo = textoOuNulo(dto.motivo());
         EstoqueMovimentacao saida = movimentar(linhaOrigem, TipoMovimentacao.TRANSFERENCIA_SAIDA,
-                dto.quantidade().negate(), motivo, transferenciaId, destino);
+                dto.quantidade().negate(), motivo, transferenciaId, destino, null);
         EstoqueMovimentacao entrada = movimentar(linhaDestino, TipoMovimentacao.TRANSFERENCIA_ENTRADA,
-                dto.quantidade(), motivo, transferenciaId, origem);
+                dto.quantidade(), motivo, transferenciaId, origem, null);
 
         log.info("Transferência {} do estoque {} para {}", transferenciaId, idOrigem, idDestino);
         return List.of(EstoqueMapper.toResponse(saida), EstoqueMapper.toResponse(entrada));
+    }
+
+    /**
+     * A baixa da consulta concluída: um {@code SAIDA_CONSULTA} negativo na
+     * linha do produto na filial do compromisso. Sem controle de estoque a
+     * linha não se movimenta e não há o que baixar — devolve vazio.
+     *
+     * <p>O mesmo caminho das outras movimentações (achar o id → travar →
+     * conferir → movimentar). Quem chama baixa os produtos em ordem de id,
+     * para duas consultas concluídas juntas não travarem uma à outra, e roda
+     * tudo numa transação só: a recusa de um produto desfaz os anteriores.
+     */
+    @Transactional
+    public Optional<EstoqueMovimentacao> saidaPorConsulta(UUID produtoId, UUID filialId, BigDecimal quantidade,
+                                                          UUID consultaId) {
+        UUID tenantId = securityUtils.getTenantIdLogado();
+        Produto produto = produtoService.findById(produtoId);
+        Filial filial = filialService.findById(filialId);
+        UUID id = estoqueRepository.findIdByProdutoAndFilial(produto.getId(), filial.getId(), tenantId)
+                .orElseThrow(() -> new ConflictException(produto.getNome() + " não tem estoque nesta filial"));
+
+        Estoque estoque = travar(id);
+        if (!Boolean.TRUE.equals(estoque.getControlaEstoque())) {
+            return Optional.empty();
+        }
+        exigirMovimentavel(estoque);
+        if (estoque.getQuantidade().compareTo(quantidade) < 0) {
+            throw new ConflictException("Saldo insuficiente de " + produto.getNome() + " na filial " + nomeDe(filial)
+                    + ": há " + estoque.getQuantidade().stripTrailingZeros().toPlainString() + " "
+                    + produto.getUnidadeMedida().getSigla());
+        }
+
+        EstoqueMovimentacao movimento = movimentar(estoque, TipoMovimentacao.SAIDA_CONSULTA, quantidade.negate(),
+                "Consulta", null, null, consultaId);
+        log.info("Saída por consulta {} no estoque id={} movimento={}", consultaId, id, movimento.getId());
+        return Optional.of(movimento);
+    }
+
+    /**
+     * As linhas de estoque dos produtos numa filial, por produto — para a
+     * consulta sugerir o preço e mostrar o saldo. Só leitura: não trava.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, Estoque> linhasNaFilial(Collection<UUID> produtoIds, UUID filialId) {
+        if (produtoIds.isEmpty()) return Map.of();
+        UUID tenantId = securityUtils.getTenantIdLogado();
+        return estoqueRepository.findAllDosProdutosNaFilial(produtoIds, filialId, tenantId).stream()
+                .collect(Collectors.toMap(e -> e.getProduto().getId(), Function.identity()));
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -277,7 +336,8 @@ public class EstoqueService {
 
     /** O único lugar onde o saldo muda. */
     private EstoqueMovimentacao movimentar(Estoque estoque, TipoMovimentacao tipo, BigDecimal quantidade,
-                                           String motivo, UUID transferenciaId, Filial contraparte) {
+                                           String motivo, UUID transferenciaId, Filial contraparte,
+                                           UUID consultaId) {
         BigDecimal anterior = estoque.getQuantidade();
         BigDecimal posterior = anterior.add(quantidade);
         if (posterior.signum() < 0) {
@@ -298,6 +358,7 @@ public class EstoqueService {
         movimento.setMotivo(motivo);
         movimento.setTransferenciaId(transferenciaId);
         movimento.setFilialContraparte(contraparte);
+        movimento.setConsultaId(consultaId);
         movimento.setCreatedBy(securityUtils.getUsuarioLogado());
         return movimentacaoRepository.save(movimento);
     }

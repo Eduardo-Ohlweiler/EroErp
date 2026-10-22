@@ -76,7 +76,7 @@ const COLUNAS_IMPRESSAS: ColunaExportavel<CompromissoCalendario>[] = [
  */
 export function Agenda() {
   const navigate = useNavigate()
-  const { sessao, podeEscrever } = useAuth()
+  const { sessao, podeLer, podeEscrever } = useAuth()
   const escreve = podeEscrever('AGENDA')
   const celular = useCelular()
   const hoje = diaDe(new Date())
@@ -352,7 +352,10 @@ export function Agenda() {
                 hoje={hoje}
                 selecionado={dia}
                 compacto={celular}
-                onAbrir={(i) => navigate(`/app/agenda/${i.id}`)}
+                onAbrir={(i) =>
+                  // A consulta abre na tela dela, que tem os itens e o concluir
+                  navigate(i.consultaId && podeLer('CONSULTAS') ? `/app/consultas/${i.consultaId}` : `/app/agenda/${i.id}`)
+                }
                 onSelecionarDia={(d) => (escreve ? novoNoDia(d) : verDia(d))}
                 onVerDia={verDia}
               />

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <!--
+        Consulta — o atendimento sobre um compromisso, com serviços e produtos.
+        Ver docs/12 §7.
+
+        Do `clinica/consulta` do EroErp antigo, com estas diferenças, todas de
+        propósito:
+        - a consulta NÃO copia o horário, a filial, o cliente nem o status: tudo
+          isso mora no compromisso, e a consulta só aponta para ele
+          (compromisso_id UNIQUE). Lá os dois tinham horário próprio e
+          divergiam;
+        - a situação é UMA, a do compromisso, que ganha EM_ATENDIMENTO;
+        - o preço de cada item é sugerido pelo catálogo da filial e gravado
+          como RETRATO (preco_unitario e descricao) — lá vinha do cliente e não
+          se sabia de onde;
+        - ajuste por item e no total com CHECK: tipo, cálculo e valor andam
+          juntos, valor > 0, percentual até 100. Lá o desconto não tinha guarda;
+        - sem faturado, conta a receber nem parcelas: o financeiro fica fora;
+        - reconsulta aponta para a consulta de origem (consulta_origem_id).
+    -->
+    <changeSet id="026-compromisso-em-atendimento" author="eduardo">
+        <sql>
+            ALTER TABLE compromisso DROP CONSTRAINT ck_compromisso_status;
+            ALTER TABLE compromisso ADD CONSTRAINT ck_compromisso_status
+            CHECK (status IN ('AGENDADO', 'CONFIRMADO', 'EM_ATENDIMENTO', 'CONCLUIDO', 'CANCELADO', 'FALTOU'));
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE compromisso DROP CONSTRAINT ck_compromisso_status;
+                ALTER TABLE compromisso ADD CONSTRAINT ck_compromisso_status
+                CHECK (status IN ('AGENDADO', 'CONFIRMADO', 'CONCLUIDO', 'CANCELADO', 'FALTOU'));
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="026-create-consulta" author="eduardo">
+
+        <createTable tableName="consulta">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_consulta"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_consulta_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <!-- Horário, filial, cliente, responsável e situação moram aqui -->
+            <column name="compromisso_id" type="UUID">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_consulta_compromisso"
+                             foreignKeyName="fk_consulta_compromisso"
+                             references="compromisso(id)"/>
+            </column>
+
+            <column name="observacao" type="VARCHAR(2000)"/>
+
+            <!-- DESCONTO · ACRESCIMO / FIXO · PERCENTUAL — os três juntos ou nenhum -->
+            <column name="tipo_ajuste_geral" type="VARCHAR(20)"/>
+            <column name="tipo_calculo_geral" type="VARCHAR(20)"/>
+            <column name="valor_ajuste_geral" type="NUMERIC(15,2)"/>
+
+            <!-- Reconsulta: a consulta de onde esta saiu -->
+            <column name="consulta_origem_id" type="UUID">
+                <constraints foreignKeyName="fk_consulta_origem" references="consulta(id)"/>
+            </column>
+
+            <column name="created_by" type="UUID">
+                <constraints foreignKeyName="fk_consulta_created_by" references="usuario(id)"/>
+            </column>
+            <column name="updated_by" type="UUID">
+                <constraints foreignKeyName="fk_consulta_updated_by" references="usuario(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <sql>
+            ALTER TABLE consulta ADD CONSTRAINT ck_consulta_ajuste_geral
+            CHECK ((tipo_ajuste_geral IS NULL AND tipo_calculo_geral IS NULL AND valor_ajuste_geral IS NULL)
+                   OR (tipo_ajuste_geral IN ('DESCONTO', 'ACRESCIMO')
+                       AND tipo_calculo_geral IN ('FIXO', 'PERCENTUAL')
+                       AND valor_ajuste_geral &gt; 0
+                       AND (tipo_calculo_geral = 'FIXO' OR valor_ajuste_geral &lt;= 100)));
+        </sql>
+
+        <createIndex tableName="consulta" indexName="idx_consulta_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex tableName="consulta" indexName="idx_consulta_origem">
+            <column name="consulta_origem_id"/>
+        </createIndex>
+
+        <!-- ══ Serviços da consulta ══════════════════════════════════════ -->
+
+        <createTable tableName="consulta_servico">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_consulta_servico"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_consulta_servico_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <column name="consulta_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_consulta_servico_consulta"
+                             references="consulta(id)" deleteCascade="true"/>
+            </column>
+
+            <column name="servico_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_consulta_servico_servico"
+                             references="servico(id)"/>
+            </column>
+
+            <!-- Retrato do nome: renomear o serviço depois não muda a consulta -->
+            <column name="descricao" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="quantidade" type="INT">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Retrato do preço: o catálogo de hoje não reescreve a consulta de ontem -->
+            <column name="preco_unitario" type="NUMERIC(15,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="tipo_ajuste" type="VARCHAR(20)"/>
+            <column name="tipo_calculo" type="VARCHAR(20)"/>
+            <column name="valor_ajuste" type="NUMERIC(15,2)"/>
+
+            <column name="ordem" type="INT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <sql>
+            ALTER TABLE consulta_servico ADD CONSTRAINT ck_consulta_servico_quantidade CHECK (quantidade &gt; 0);
+            ALTER TABLE consulta_servico ADD CONSTRAINT ck_consulta_servico_preco CHECK (preco_unitario &gt;= 0);
+            ALTER TABLE consulta_servico ADD CONSTRAINT ck_consulta_servico_ajuste
+            CHECK ((tipo_ajuste IS NULL AND tipo_calculo IS NULL AND valor_ajuste IS NULL)
+                   OR (tipo_ajuste IN ('DESCONTO', 'ACRESCIMO')
+                       AND tipo_calculo IN ('FIXO', 'PERCENTUAL')
+                       AND valor_ajuste &gt; 0
+                       AND (tipo_calculo = 'FIXO' OR valor_ajuste &lt;= 100)));
+        </sql>
+
+        <createIndex tableName="consulta_servico" indexName="idx_consulta_servico_consulta">
+            <column name="consulta_id"/>
+        </createIndex>
+
+        <!-- ══ Produtos da consulta ══════════════════════════════════════ -->
+
+        <createTable tableName="consulta_produto">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" primaryKeyName="pk_consulta_produto"/>
+            </column>
+
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_consulta_produto_tenant"
+                             references="tenant(id)"/>
+            </column>
+
+            <column name="consulta_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_consulta_produto_consulta"
+                             references="consulta(id)" deleteCascade="true"/>
+            </column>
+
+            <column name="produto_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_consulta_produto_produto"
+                             references="produto(id)"/>
+            </column>
+
+            <column name="descricao" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- As casas que a tela mostra vêm da unidade, como no estoque -->
+            <column name="quantidade" type="NUMERIC(15,3)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="preco_unitario" type="NUMERIC(15,2)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="tipo_ajuste" type="VARCHAR(20)"/>
+            <column name="tipo_calculo" type="VARCHAR(20)"/>
+            <column name="valor_ajuste" type="NUMERIC(15,2)"/>
+
+            <column name="ordem" type="INT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+
+        <sql>
+            ALTER TABLE consulta_produto ADD CONSTRAINT ck_consulta_produto_quantidade CHECK (quantidade &gt; 0);
+            ALTER TABLE consulta_produto ADD CONSTRAINT ck_consulta_produto_preco CHECK (preco_unitario &gt;= 0);
+            ALTER TABLE consulta_produto ADD CONSTRAINT ck_consulta_produto_ajuste
+            CHECK ((tipo_ajuste IS NULL AND tipo_calculo IS NULL AND valor_ajuste IS NULL)
+                   OR (tipo_ajuste IN ('DESCONTO', 'ACRESCIMO')
+                       AND tipo_calculo IN ('FIXO', 'PERCENTUAL')
+                       AND valor_ajuste &gt; 0
+                       AND (tipo_calculo = 'FIXO' OR valor_ajuste &lt;= 100)));
+        </sql>
+
+        <createIndex tableName="consulta_produto" indexName="idx_consulta_produto_consulta">
+            <column name="consulta_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="consulta_produto"/>
+            <dropTable tableName="consulta_servico"/>
+            <dropTable tableName="consulta"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

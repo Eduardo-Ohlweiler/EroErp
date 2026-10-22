@@ -1,4 +1,4 @@
-import { IconRepetir } from '@/assets/icons'
+import { IconConsulta, IconRepetir } from '@/assets/icons'
 import { TBadge } from '@/components/common'
 import type { CompromissoCalendario } from '@/types/compromisso'
 import { diaPorExtenso, faixaDeHorario, STATUS_ROTULO, STATUS_TOM, tocaODia } from '@/utils/agenda'
@@ -55,6 +55,7 @@ export function ListaAgenda({ dias, itens, hoje, onAbrir }: Props) {
                       {item.status !== 'AGENDADO' && (
                         <TBadge tom={STATUS_TOM[item.status]}>{STATUS_ROTULO[item.status]}</TBadge>
                       )}
+                      {item.consultaId && <IconConsulta className="size-3.5 text-txt-secondary" aria-label="Consulta" />}
                       {item.recorrente && <IconRepetir className="size-3.5 text-txt-muted" aria-label="Recorrente" />}
                     </span>
                     <span

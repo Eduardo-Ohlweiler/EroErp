@@ -20,5 +20,7 @@ public record CompromissoCalendarioDto(
         String responsavelNome,
         String pessoaNome,
         List<UUID> convidadoIds,
-        boolean recorrente
+        boolean recorrente,
+        /** A consulta feita sobre ele; nulo quando não é consulta. */
+        UUID consultaId
 ) {}

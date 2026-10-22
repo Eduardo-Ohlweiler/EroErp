@@ -281,3 +281,12 @@ export const IconEditar = (p: IconProps) => (
     <path d="m13.5 6.5 4 4" />
   </Icon>
 )
+
+/** Consulta — a ficha do atendimento, com a cruz. Marca também o bloco da agenda que é consulta. */
+export const IconConsulta = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1Z" />
+    <path d="M8 6H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2" />
+    <path d="M12 11v6M9 14h6" />
+  </Icon>
+)

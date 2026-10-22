@@ -10,6 +10,7 @@ export type Tela =
   | 'AUXILIARES_PRODUTO'
   | 'ESTOQUE'
   | 'AGENDA'
+  | 'CONSULTAS'
 
 /** Espelha `NivelAcesso`. "Sem acesso" não é valor: é a tela não aparecer. */
 export type NivelAcesso = 'LEITURA' | 'ESCRITA'

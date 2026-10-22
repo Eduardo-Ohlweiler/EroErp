@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Bateria de ponta a ponta de Filiais, Serviços, Produtos e Estoque, em VÁRIOS
- * tenants — pela API HTTP, contra a aplicação em execução. Cria dados de
- * demonstração e confere, de fora, o que os testes de integração conferem de
- * dentro: cada tenant enxerga só as suas pessoas, filiais e serviços.
+ * Bateria de ponta a ponta de Filiais, Serviços, Produtos, Estoque, Agenda e
+ * Consulta, em VÁRIOS tenants — pela API HTTP, contra a aplicação em execução.
+ * Cria dados de demonstração e confere, de fora, o que os testes de integração
+ * conferem de dentro: cada tenant enxerga só o que é dele.
  *
  *   node ero-erp-api/scripts/bateria-filiais.mjs
  *   BATERIA_EMAIL=... BATERIA_SENHA=... node ero-erp-api/scripts/bateria-filiais.mjs
@@ -27,8 +27,16 @@
  *   - em cada tenant, grupos, subgrupos, categorias e marcas de produto,
  *     produtos (o mesmo EAN em tenants diferentes; custo vazio e custo zero)
  *     e o estoque deles por filial, com preço de venda e saldo inicial — uma
- *     linha sem controle de estoque, que guarda só o preço.
- *   As transferências da bateria vão e voltam: rodar de novo não muda saldo.
+ *     linha sem controle de estoque, que guarda só o preço;
+ *   - em cada tenant, a cada rodada, um atendimento: compromisso do ADMIN
+ *     convertido em consulta, com um serviço e um produto pelo preço da
+ *     filial, concluído (baixa o estoque); e um compromisso do USER no mesmo
+ *     horário, com o ADMIN convidado, que fica cancelado no fim. O horário é o
+ *     primeiro livre dos dois a partir de amanhã, em dia útil. No mercado, mais
+ *     uma consulta sem saldo, que não conclui e fica cancelada.
+ *   As transferências da bateria vão e voltam, e a baixa da consulta volta por
+ *   uma entrada: rodar de novo não muda saldo. Consulta concluída pela tela
+ *   num tenant demo baixa de verdade, e a conferência de saldo a desconta.
  * Os usuários criados entram com a senha de demonstração impressa no fim.
  *
  * Nada é apagado. Sai com código 1 se qualquer conferência falhar.
@@ -148,6 +156,10 @@ async function conferirStatus(grupo, descricao, promessa, esperado) {
   conferir(grupo, descricao, status === esperado, `esperado ${esperado}, veio ${status}${msg}`)
 }
 
+/** Dinheiro em centavos e quantidade em milésimos: comparar sem ruído de float. */
+const centavos = (v) => Math.round(Number((Number(v ?? 0) * 100).toFixed(6)))
+const milesimos = (v) => Math.round(Number((Number(v ?? 0) * 1000).toFixed(6)))
+
 // ─── Documentos válidos, gerados de uma semente ─────────────────────────────
 
 function digito(base, pesos) {
@@ -184,12 +196,14 @@ const TENANTS = [
       { nome: 'Mercado Bom Preço Ltda', fantasia: 'Bom Preço', cnpj: cnpj(31313131), cidade: 'Porto Alegre' },
       { nome: 'Mercado Bom Preço Centro Ltda', fantasia: 'Bom Preço Centro', cnpj: cnpj(31313132), cidade: 'Porto Alegre' },
       { nome: 'Mercado Bom Preço Canoas Ltda', fantasia: 'Bom Preço Canoas', cnpj: cnpj(31313133), cidade: 'Canoas' },
+      { nome: 'Mercado Bom Preço Gravataí Ltda', fantasia: 'Bom Preço Gravataí', cnpj: cnpj(31313134), cidade: 'Gravataí' },
       { nome: 'Ana Paula Souza', cpf: cpf(123123123), cidade: 'Porto Alegre', tipo: 'Cliente' },
     ],
     filiais: [
       { pessoa: 'Mercado Bom Preço Ltda', tipo: 'MATRIZ', cor: '#3B82F6' },
       { pessoa: 'Mercado Bom Preço Centro Ltda', tipo: 'FILIAL', matriz: 'Mercado Bom Preço Ltda', cor: '#10B981' },
       { pessoa: 'Mercado Bom Preço Canoas Ltda', tipo: 'FILIAL', matriz: 'Mercado Bom Preço Ltda', cor: '#F59E0B' },
+      { pessoa: 'Mercado Bom Preço Gravataí Ltda', tipo: 'FILIAL', matriz: 'Mercado Bom Preço Ltda', cor: '#EF4444' },
     ],
     servicos: [
       {
@@ -229,6 +243,12 @@ const TENANTS = [
         estoque: { 'Mercado Bom Preço Ltda': { preco: 2.5, controla: false } },
       },
     ],
+    // A consulta da bateria: preços do catálogo da filial, sem ajuste.
+    atendimento: {
+      filial: 'Mercado Bom Preço Ltda', cliente: 'Ana Paula Souza',
+      servico: 'Entrega em domicílio', produto: 'Arroz branco 5kg', quantidade: 2,
+      semControle: 'Sacola retornável',
+    },
   },
   {
     // Dois negócios separados no mesmo tenant: duas matrizes.
@@ -240,6 +260,7 @@ const TENANTS = [
       { nome: 'Clínica Vida Plena Bento Ltda', fantasia: 'Vida Plena Bento', cnpj: cnpj(42424242), cidade: 'Bento Gonçalves' },
       { nome: 'Farmácia Vida Plena Ltda', fantasia: 'Farmácia Vida Plena', cnpj: cnpj(42424243), cidade: 'Caxias do Sul' },
       { nome: 'Dra. Helena Martins', cpf: cpf(456456456), cidade: 'Caxias do Sul', tipo: 'Funcionário' },
+      { nome: 'Carlos Eduardo Lima', cpf: cpf(789789789), cidade: 'Caxias do Sul', tipo: 'Cliente' },
     ],
     filiais: [
       { pessoa: 'Clínica Vida Plena Ltda', tipo: 'MATRIZ', cor: '#8B5CF6' },
@@ -286,6 +307,12 @@ const TENANTS = [
         estoque: { 'Farmácia Vida Plena Ltda': { preco: 3.5, inicial: 36 } },
       },
     ],
+    // Na farmácia, com 10 % de desconto no total.
+    atendimento: {
+      filial: 'Farmácia Vida Plena Ltda', cliente: 'Carlos Eduardo Lima',
+      servico: 'Aplicação de injetável', produto: 'Dipirona 500mg (10 comprimidos)', quantidade: 1,
+      descontoGeralPercentual: 10,
+    },
   },
   {
     nome: 'Auto Center Rápido (demo)',
@@ -294,6 +321,7 @@ const TENANTS = [
     pessoas: [
       { nome: 'Auto Center Rápido Ltda', fantasia: 'Auto Rápido', cnpj: cnpj(53535351), cidade: 'Pelotas' },
       { nome: 'Auto Center Rápido Rio Grande Ltda', fantasia: 'Auto Rápido RG', cnpj: cnpj(53535352), cidade: 'Rio Grande' },
+      { nome: 'Roberto Dias Pereira', cpf: cpf(321321321), cidade: 'Pelotas', tipo: 'Cliente' },
     ],
     filiais: [
       { pessoa: 'Auto Center Rápido Ltda', tipo: 'MATRIZ', cor: '#EF4444' },
@@ -327,6 +355,11 @@ const TENANTS = [
         estoque: { 'Auto Center Rápido Ltda': { preco: 29.9, inicial: 8 } },
       },
     ],
+    // Litro: a baixa leva casas.
+    atendimento: {
+      filial: 'Auto Center Rápido Ltda', cliente: 'Roberto Dias Pereira',
+      servico: 'Troca de óleo (mão de obra)', produto: 'Óleo de motor 5W30', quantidade: 4.5,
+    },
   },
 ]
 
@@ -474,7 +507,7 @@ for (const t of TENANTS) {
   const tenantId = await garantirTenant(t)
   const adminEmail = `admin@${t.slug}.demo.local`
   const userEmail = `usuario@${t.slug}.demo.local`
-  await garantirUsuario(tenantId, adminEmail, `Admin ${t.nome.replace(' (demo)', '')}`, 'ADMIN')
+  const adminId = await garantirUsuario(tenantId, adminEmail, `Admin ${t.nome.replace(' (demo)', '')}`, 'ADMIN')
   const userId = await garantirUsuario(tenantId, userEmail, `Usuário ${t.nome.replace(' (demo)', '')}`, 'USER')
 
   const s = await entrarNoTenant(tenantId)
@@ -499,7 +532,7 @@ for (const t of TENANTS) {
       estoques[`${p.nome} @ ${pessoa}`] = (await garantirEstoque(s, produtos[p.nome], filiais[pessoa], e)).id
     }
   }
-  montados.push({ t, tenantId, adminEmail, userEmail, userId, pessoas, filiais, servicos, produtos, estoques })
+  montados.push({ t, tenantId, adminEmail, adminId, userEmail, userId, pessoas, filiais, servicos, produtos, estoques })
   console.log(`  ✓ ${t.nome}: ${Object.keys(pessoas).length} pessoas, ${t.filiais.length} filiais, `
     + `${t.servicos.length} serviços, ${t.produtos.length} produtos, ${Object.keys(estoques).length} linhas de estoque`)
 }
@@ -711,6 +744,35 @@ for (const m of montados) {
 
 // ─── 6. Produtos e estoque: cada tenant vê só o que é dele ─────────────────
 
+/** Todas as linhas de uma listagem paginada, 100 por vez (o teto do servidor). */
+async function todasAsPaginas(s, caminho, filtros) {
+  const itens = []
+  for (let page = 0; ; page++) {
+    const r = await s.get(caminho + q({ ...filtros, page, size: 100 }))
+    itens.push(...r.content)
+    if (r.last ?? page + 1 >= r.totalPages) return itens
+  }
+}
+
+/**
+ * O que as consultas mexeram em cada linha de estoque, em milésimos e com
+ * sinal: as baixas (SAIDA_CONSULTA) mais as entradas de "Reposição da
+ * consulta…". As da bateria se anulam — ela repõe o que baixou —, e quem
+ * concluir uma consulta pela tela num tenant demo não deixa a bateria
+ * vermelha. Uma bateria interrompida entre a baixa e a reposição também não:
+ * a baixa dela conta como a de qualquer consulta.
+ */
+async function porConsulta(s) {
+  const movs = [
+    ...await todasAsPaginas(s, '/estoques/movimentacoes', { tipo: 'SAIDA_CONSULTA' }),
+    ...(await todasAsPaginas(s, '/estoques/movimentacoes', { tipo: 'ENTRADA' }))
+      .filter((x) => x.motivo?.startsWith('Reposição da consulta')),
+  ]
+  const soma = new Map()
+  for (const x of movs) soma.set(x.estoqueId, (soma.get(x.estoqueId) ?? 0) + milesimos(x.quantidade))
+  return soma
+}
+
 for (const m of montados) {
   const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
   const g = `Produtos e estoque · ${m.t.nome}`
@@ -730,16 +792,21 @@ for (const m of montados) {
   conferir(g, '/produtos/select não vaza produto de outro tenant e não traz custo',
     combo.every((c) => Object.values(m.produtos).includes(c.id) && c.custo === undefined))
 
-  // As transferências da seção 7 vão e voltam: o saldo é sempre o inicial
+  // As transferências da seção 7 vão e voltam: o saldo é o inicial, mais o que
+  // as consultas baixaram e as reposições devolveram (veja `porConsulta`).
   const linhas = (await admin.get('/estoques' + q({ size: 100 }))).content
   const cadastradas = m.t.produtos.flatMap((p) => Object.entries(p.estoque).map(([pessoa, e]) => ({ p, pessoa, e })))
   conferir(g, `estoque traz exatamente as ${cadastradas.length} linhas do tenant`, linhas.length === cadastradas.length,
     `vieram ${linhas.length}`)
+  const consultas = await porConsulta(admin)
   for (const { p, pessoa, e } of cadastradas) {
-    const linha = linhas.find((l) => l.id === m.estoques[`${p.nome} @ ${pessoa}`])
-    const confere = !!linha && linha.quantidade === (e.inicial ?? 0)
+    const id = m.estoques[`${p.nome} @ ${pessoa}`]
+    const linha = linhas.find((l) => l.id === id)
+    const esperado = milesimos(e.inicial) + (consultas.get(id) ?? 0)
+    const confere = !!linha && milesimos(linha.quantidade) === esperado
       && (linha.precoVenda ?? null) === (e.preco ?? null) && linha.controlaEstoque === (e.controla ?? true)
-    conferir(g, `"${p.nome}" em ${pessoa}: saldo, preço e controle como cadastrados`, confere, JSON.stringify(linha))
+    conferir(g, `"${p.nome}" em ${pessoa}: saldo, preço e controle como cadastrados`, confere,
+      `saldo esperado ${esperado / 1000} (${(consultas.get(id) ?? 0) / 1000} de consultas fora da bateria) · ${JSON.stringify(linha)}`)
   }
 
   for (const outro of montados.filter((x) => x !== m)) {
@@ -840,6 +907,365 @@ for (const m of montados) {
   // Fica assim para você ver o menu e as telas só de leitura com este usuário.
 }
 
+// ─── 9. Agenda e consulta: conflito, preço da filial, totais, baixa ────────
+
+const somaTotais = (itens) => (itens ?? []).reduce((a, i) => a + centavos(i.total), 0)
+
+/** Os totais que o servidor publica fecham: por item, por lista e no total. */
+function totaisFecham(c) {
+  const itens = [...(c.servicos ?? []), ...(c.produtos ?? [])]
+  return itens.every((i) => centavos(i.subtotal) === centavos(i.quantidade * i.precoUnitario)
+      && centavos(i.total) === centavos(i.subtotal) + centavos(i.ajuste))
+    && centavos(c.subtotalServicos) === somaTotais(c.servicos)
+    && centavos(c.subtotalProdutos) === somaTotais(c.produtos)
+    && centavos(c.subtotal) === centavos(c.subtotalServicos) + centavos(c.subtotalProdutos)
+    && centavos(c.total) === centavos(c.subtotal) + centavos(c.ajusteGeral)
+}
+
+/** O corpo do PUT a partir do compromisso como veio. */
+const corpoCompromisso = (c) => ({
+  filialId: c.filialId, responsavelId: c.responsavelId, pessoaId: c.pessoaId, titulo: c.titulo,
+  descricao: c.descricao, cor: c.cor, inicio: c.inicio, fim: c.fim,
+  convidadoIds: (c.convidados ?? []).map((x) => x.usuarioId),
+})
+
+const UMA_HORA = 3_600_000
+/**
+ * O primeiro horário cheio livre para todos os usuários, de amanhã em diante,
+ * em dia útil das 8h às 18h de Brasília (sem horário de verão desde 2019). Cada
+ * rodada deixa uma consulta concluída, que ocupa o horário: a próxima pega o
+ * seguinte.
+ */
+async function horarioLivre(s, usuarioIds) {
+  const hojeBrasilia = new Date(Date.now() - 3 * UMA_HORA)
+  const [ano, mes, dia] = [hojeBrasilia.getUTCFullYear(), hojeBrasilia.getUTCMonth(), hojeBrasilia.getUTCDate()]
+  const inicio = new Date(Date.UTC(ano, mes, dia + 1, 3))
+  const fim = new Date(inicio.getTime() + 60 * 24 * UMA_HORA)
+  const ocupados = []
+  for (const usuarioId of usuarioIds) {
+    const janela = await s.get('/compromissos/calendario'
+      + q({ inicio: inicio.toISOString(), fim: fim.toISOString(), usuarioId }))
+    ocupados.push(...janela.filter((c) => c.status !== 'CANCELADO' && c.status !== 'FALTOU')
+      .map((c) => [Date.parse(c.inicio), Date.parse(c.fim)]))
+  }
+  for (let d = 1; d <= 60; d++) {
+    const diaSemana = new Date(Date.UTC(ano, mes, dia + d)).getUTCDay()
+    if (diaSemana === 0 || diaSemana === 6) continue
+    for (let h = 8; h < 18; h++) {
+      const ini = Date.UTC(ano, mes, dia + d, h + 3)
+      if (!ocupados.some(([i, f]) => i < ini + UMA_HORA && f > ini))
+        return { inicio: new Date(ini).toISOString(), fim: new Date(ini + UMA_HORA).toISOString() }
+    }
+  }
+  return falhar('nenhum horário livre nos próximos 60 dias úteis da agenda demo.')
+}
+
+async function permissoesDoUser(m, permissoes) {
+  const s = await entrarNoTenant(m.tenantId)
+  const atual = await s.get(`/usuarios/${m.userId}`)
+  await s.put(`/usuarios/${m.userId}`, {
+    nome: atual.nome, email: atual.email, telefone: atual.telefone, codigoPais: atual.codigoPais, role: 'USER', permissoes,
+  })
+}
+
+/**
+ * O USER com Consultas e sem Serviços nem Produtos: não vê as listas, não as
+ * apaga ao salvar, e não pode mandá-las. Agenda e Consultas se liberam à
+ * parte. Roda com a consulta ainda aberta.
+ */
+async function conferirUserSemItens(m, consulta) {
+  const g = `Permissão · consulta · ${m.t.nome}`
+  const u = sessao(await login(m.userEmail, SENHA_DEMO))
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const filialId = consulta.compromisso.filialId
+  const servicoId = consulta.servicos[0].servicoId
+  const produtoId = consulta.produtos[0].produtoId
+  await permissoesDoUser(m, [{ tela: 'CONSULTAS', nivel: 'ESCRITA' }])
+
+  const vista = await u.get(`/consultas/${consulta.id}`)
+  conferir(g, 'sem Serviços e Produtos, o GET omite as duas listas', vista.servicos == null && vista.produtos == null,
+    `servicos ${JSON.stringify(vista.servicos)}, produtos ${JSON.stringify(vista.produtos)}`)
+  conferir(g, 'mas publica os totais, que incluem o que ele não vê',
+    centavos(vista.total) === centavos(consulta.total) && centavos(vista.subtotalServicos) === centavos(consulta.subtotalServicos),
+    `total ${vista.total}, esperado ${consulta.total}`)
+
+  const corpo = { compromisso: corpoCompromisso(vista.compromisso), observacao: 'Revisada pelo USER (bateria).' }
+  await conferirStatus(g, 'PUT com as listas nulas → 200', u.chamar('PUT', `/consultas/${consulta.id}`, corpo), 200)
+  const depois = await admin.get(`/consultas/${consulta.id}`)
+  conferir(g, 'e os serviços e produtos continuam lá, com o mesmo total',
+    depois.servicos?.length === consulta.servicos.length && depois.produtos?.length === consulta.produtos.length
+      && centavos(depois.total) === centavos(consulta.total) && depois.observacao === corpo.observacao,
+    JSON.stringify({ s: depois.servicos?.length, p: depois.produtos?.length, t: depois.total }))
+  await conferirStatus(g, 'PUT mandando a lista de serviços → 403',
+    u.chamar('PUT', `/consultas/${consulta.id}`, { ...corpo, servicos: [] }), 403)
+  await conferirStatus(g, 'PUT mandando a lista de produtos → 403',
+    u.chamar('PUT', `/consultas/${consulta.id}`, { ...corpo, produtos: [] }), 403)
+  await conferirStatus(g, 'prévia mandando a lista de serviços → 403',
+    u.chamar('POST', '/consultas/calculo', { filialId, servicos: [] }), 403)
+  await conferirStatus(g, 'preço sugerido de serviço → 403',
+    u.chamar('GET', '/consultas/preco' + q({ filialId, servicoId })), 403)
+  await conferirStatus(g, 'preço sugerido de produto → 403',
+    u.chamar('GET', '/consultas/preco' + q({ filialId, produtoId })), 403)
+  await conferirStatus(g, 'combo de produtos da consulta → 403',
+    u.chamar('GET', '/consultas/produtos' + q({ filialId })), 403)
+  await conferirStatus(g, 'Consultas sem Agenda: não abre o compromisso pela agenda → 403',
+    u.chamar('GET', `/compromissos/${consulta.compromisso.id}`), 403)
+
+  await permissoesDoUser(m, [{ tela: 'AGENDA', nivel: 'ESCRITA' }])
+  await conferirStatus(g, 'Agenda sem Consultas: abre o compromisso → 200',
+    u.chamar('GET', `/compromissos/${consulta.compromisso.id}`), 200)
+  await conferirStatus(g, 'mas não abre a consulta → 403', u.chamar('GET', `/consultas/${consulta.id}`), 403)
+  await conferirStatus(g, 'nem converte compromisso em consulta → 403',
+    u.chamar('POST', '/consultas', { compromissoId: consulta.compromisso.id }), 403)
+
+  await permissoesDoUser(m, [{ tela: 'CONSULTAS', nivel: 'LEITURA' }])
+  await conferirStatus(g, 'Consultas em leitura abre → 200', u.chamar('GET', `/consultas/${consulta.id}`), 200)
+  await conferirStatus(g, 'Consultas em leitura não grava → 403', u.chamar('PUT', `/consultas/${consulta.id}`, corpo), 403)
+  await conferirStatus(g, 'nem inicia o atendimento → 403', u.chamar('PATCH', `/consultas/${consulta.id}/iniciar`), 403)
+
+  // Fica com tudo em leitura, para você ver as telas só de leitura com ele.
+  await permissoesDoUser(m, ['FILIAIS', 'SERVICOS', 'PRODUTOS', 'ESTOQUE', 'AGENDA', 'CONSULTAS']
+    .map((tela) => ({ tela, nivel: 'LEITURA' })))
+}
+
+const atendidos = []
+for (const m of montados) {
+  const at = m.t.atendimento
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const filialId = m.filiais[at.filial]
+  const corFilial = m.t.filiais.find((f) => f.pessoa === at.filial).cor
+  const horario = await horarioLivre(admin, [m.adminId, m.userId])
+
+  // ── Agenda: o choque do responsável recusa, o do convidado só avisa
+  const ga = `Agenda · ${m.t.nome}`
+  const [comp] = await admin.post('/compromissos', {
+    ...horario, filialId, responsavelId: m.adminId, pessoaId: m.pessoas[at.cliente],
+    titulo: `Atendimento de ${at.cliente} (bateria)`,
+  })
+  conferir(ga, 'compromisso nasce agendado, com a cor da filial',
+    comp.status === 'AGENDADO' && comp.corExibicao?.toUpperCase() === corFilial.toUpperCase(), `${comp.status} ${comp.corExibicao}`)
+  await conferirStatus(ga, 'outro compromisso do ADMIN como responsável no mesmo horário → 409',
+    admin.chamar('POST', '/compromissos', { ...horario, filialId, responsavelId: m.adminId, titulo: 'Choque (bateria)' }), 409)
+  const aviso = await admin.post('/compromissos/disponibilidade',
+    { ...horario, responsavelId: m.userId, convidadoIds: [m.adminId] })
+  const choques = aviso.ocorrencias.flatMap((o) => o.choques)
+  conferir(ga, 'disponibilidade: o ADMIN ocupado como convidado é aviso, não bloqueio',
+    !aviso.bloqueia && choques.some((c) => c.usuarioId === m.adminId && !c.responsavel && c.compromissoId === comp.id),
+    JSON.stringify(aviso))
+  const reuniao = await admin.chamar('POST', '/compromissos', {
+    ...horario, filialId, responsavelId: m.userId, convidadoIds: [m.adminId], titulo: 'Reunião de equipe (bateria)',
+  })
+  conferir(ga, 'e o compromisso do USER com o ADMIN convidado grava → 201', reuniao.status === 201,
+    `veio ${reuniao.status}${reuniao.json?.erro ? ` — "${reuniao.json.erro}"` : ''}`)
+  const bloqueio = await admin.post('/compromissos/disponibilidade', { ...horario, responsavelId: m.adminId })
+  conferir(ga, 'disponibilidade: o ADMIN ocupado como responsável bloqueia', bloqueio.bloqueia === true)
+  // A reunião não fica ocupando a agenda: cancelada não conta como choque.
+  if (reuniao.status === 201)
+    await admin.api('PATCH', `/compromissos/${reuniao.json[0].id}/cancelar`, { motivo: 'Fim da bateria' })
+
+  // ── Consulta: convertida do compromisso, preço da filial, totais do servidor
+  const gc = `Consulta · ${m.t.nome}`
+  const servicoId = m.servicos[at.servico]
+  const produtoId = m.produtos[at.produto]
+  const estoqueId = m.estoques[`${at.produto} @ ${at.filial}`]
+  const precoServico = m.t.servicos.find((sv) => sv.nome === at.servico).valores[at.filial]
+  const precoProduto = m.t.produtos.find((p) => p.nome === at.produto).estoque[at.filial].preco
+  // O produto sem controle de estoque entra na conta, mas não baixa.
+  const semControleId = at.semControle && m.produtos[at.semControle]
+  const precoSemControle = at.semControle ? m.t.produtos.find((p) => p.nome === at.semControle).estoque[at.filial].preco : 0
+  const corpoItens = {
+    servicos: [{ servicoId, quantidade: 1 }],
+    produtos: [{ produtoId, quantidade: at.quantidade }, ...(semControleId ? [{ produtoId: semControleId, quantidade: 1 }] : [])],
+    ...(at.descontoGeralPercentual
+      ? { tipoAjusteGeral: 'DESCONTO', tipoCalculoGeral: 'PERCENTUAL', valorAjusteGeral: at.descontoGeralPercentual }
+      : {}),
+  }
+  const previa = await admin.post('/consultas/calculo', { filialId, ...corpoItens })
+  const consulta = await admin.post('/consultas', { compromissoId: comp.id, observacao: 'Consulta da bateria.', ...corpoItens })
+  conferir(gc, 'nasce convertendo o compromisso da agenda, que passa a apontar para ela',
+    consulta.compromisso.id === comp.id && consulta.compromisso.consultaId === consulta.id
+      && consulta.compromisso.status === 'AGENDADO', JSON.stringify(consulta.compromisso))
+  conferir(gc, `preço do catálogo da filial: serviço ${precoServico}, produto ${precoProduto}`,
+    consulta.servicos?.[0]?.precoUnitario === precoServico && consulta.produtos?.[0]?.precoUnitario === precoProduto,
+    `serviço ${consulta.servicos?.[0]?.precoUnitario}, produto ${consulta.produtos?.[0]?.precoUnitario}`)
+  const bruto = centavos(precoServico) + centavos(at.quantidade * precoProduto) + centavos(precoSemControle)
+  const esperado = bruto - (at.descontoGeralPercentual ? Math.round(bruto * at.descontoGeralPercentual / 100) : 0)
+  conferir(gc, `totais publicados fecham (total ${(esperado / 100).toFixed(2)}${at.descontoGeralPercentual ? `, com ${at.descontoGeralPercentual} % de desconto` : ''})`,
+    totaisFecham(consulta) && centavos(consulta.total) === esperado,
+    JSON.stringify({ subtotal: consulta.subtotal, ajusteGeral: consulta.ajusteGeral, total: consulta.total }))
+  conferir(gc, 'a prévia (/consultas/calculo) dá o mesmo total e o mesmo preço, sem gravar',
+    centavos(previa.total) === centavos(consulta.total) && previa.servicos?.[0]?.precoUnitario === precoServico,
+    `prévia ${previa.total}, gravada ${consulta.total}`)
+  const saldoAntes = (await admin.get(`/estoques/${estoqueId}`)).quantidade
+  conferir(gc, 'o produto avisa o saldo que vai baixar',
+    consulta.produtos?.[0]?.controlaEstoque === true && milesimos(consulta.produtos[0].saldoDisponivel) === milesimos(saldoAntes))
+  if (semControleId)
+    conferir(gc, `"${at.semControle}" vem sem controle de estoque e sem saldo`,
+      consulta.produtos?.[1]?.controlaEstoque === false && consulta.produtos[1].saldoDisponivel == null
+        && consulta.produtos[1].precoUnitario === precoSemControle, JSON.stringify(consulta.produtos?.[1]))
+  const sugeridoServico = await admin.get('/consultas/preco' + q({ filialId, servicoId }))
+  const sugeridoProduto = await admin.get('/consultas/preco' + q({ filialId, produtoId }))
+  conferir(gc, 'preço sugerido (/consultas/preco): o do catálogo, e do produto também o saldo',
+    sugeridoServico.precoUnitario === precoServico && sugeridoProduto.precoUnitario === precoProduto
+      && sugeridoProduto.controlaEstoque === true && milesimos(sugeridoProduto.saldo) === milesimos(saldoAntes),
+    JSON.stringify({ sugeridoServico, sugeridoProduto }))
+  const comboProdutos = await admin.get('/consultas/produtos' + q({ filialId }))
+  const comEstoque = m.t.produtos.filter((p) => p.estoque[at.filial]).map((p) => m.produtos[p.nome]).sort()
+  conferir(gc, 'combo de produtos da consulta: só os com estoque na filial',
+    JSON.stringify(comboProdutos.map((p) => p.id).sort()) === JSON.stringify(comEstoque),
+    comboProdutos.map((p) => p.nome).join(', '))
+  await conferirStatus(gc, 'concluir o compromisso pela agenda → 409 (conclui-se pela consulta)',
+    admin.chamar('PATCH', `/compromissos/${comp.id}/concluir`), 409)
+
+  if (m === montados[0]) await conferirUserSemItens(m, consulta)
+
+  // ── Situação e baixa
+  const iniciada = await admin.patch(`/consultas/${consulta.id}/iniciar`)
+  conferir(gc, 'iniciar: o compromisso fica em atendimento', iniciada.compromisso.status === 'EM_ATENDIMENTO')
+  const concluida = await admin.patch(`/consultas/${consulta.id}/concluir`)
+  conferir(gc, 'concluir: o compromisso fica concluído', concluida.compromisso.status === 'CONCLUIDO')
+  const saldoDepois = (await admin.get(`/estoques/${estoqueId}`)).quantidade
+  conferir(gc, `concluir baixa ${at.quantidade} do estoque da filial`,
+    milesimos(saldoAntes) - milesimos(saldoDepois) === milesimos(at.quantidade), `de ${saldoAntes} para ${saldoDepois}`)
+  const movs = await admin.get('/estoques/movimentacoes' + q({ estoqueId, tipo: 'SAIDA_CONSULTA', size: 20 }))
+  const mov = movs.content.find((x) => x.consultaId === consulta.id)
+  conferir(gc, 'a movimentação SAIDA_CONSULTA aparece, negativa e ligada à consulta',
+    !!mov && milesimos(mov.quantidade) === -milesimos(at.quantidade) && milesimos(mov.quantidadePosterior) === milesimos(saldoDepois),
+    JSON.stringify(mov))
+  if (semControleId) {
+    const linhaSemControle = m.estoques[`${at.semControle} @ ${at.filial}`]
+    const baixasSemControle = await admin.get('/estoques/movimentacoes'
+      + q({ estoqueId: linhaSemControle, tipo: 'SAIDA_CONSULTA', size: 20 }))
+    conferir(gc, `"${at.semControle}", sem controle de estoque, não baixa`,
+      !baixasSemControle.content.some((x) => x.consultaId === consulta.id)
+        && milesimos((await admin.get(`/estoques/${linhaSemControle}`)).quantidade) === 0)
+  }
+  await conferirStatus(gc, 'concluir de novo → 409', admin.chamar('PATCH', `/consultas/${consulta.id}/concluir`), 409)
+  await conferirStatus(gc, 'alterar a concluída → 409',
+    admin.chamar('PUT', `/consultas/${consulta.id}`, { compromisso: corpoCompromisso(concluida.compromisso), observacao: 'Depois' }), 409)
+
+  // A reposição devolve o que a consulta baixou: rodar de novo não muda saldo.
+  await admin.post(`/estoques/${estoqueId}/entradas`, { quantidade: at.quantidade, motivo: 'Reposição da consulta (bateria)' })
+  conferir(gc, 'a entrada de reposição devolve o saldo de antes',
+    milesimos((await admin.get(`/estoques/${estoqueId}`)).quantidade) === milesimos(saldoAntes))
+
+  atendidos.push({ m, consultaId: consulta.id, compromissoId: comp.id, filialId, servicoId, produtoId, horario })
+}
+
+// Cada tenant vê só as suas consultas, os seus compromissos e os seus preços.
+for (const meu of atendidos) {
+  const { m } = meu
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const g = `Consulta · isolamento · ${m.t.nome}`
+  const minhas = (await admin.get('/consultas' + q({ size: 100 }))).content
+  for (const outro of atendidos.filter((x) => x.m !== m)) {
+    const nome = outro.m.t.nome
+    await conferirStatus(g, `abrir consulta de "${nome}" → 404`, admin.chamar('GET', `/consultas/${outro.consultaId}`), 404)
+    await conferirStatus(g, `abrir o compromisso dela → 404`, admin.chamar('GET', `/compromissos/${outro.compromissoId}`), 404)
+    await conferirStatus(g, `converter compromisso de "${nome}" → 404`,
+      admin.chamar('POST', '/consultas', { compromissoId: outro.compromissoId }), 404)
+    conferir(g, `lista de consultas não traz a de "${nome}"`, !minhas.some((c) => c.id === outro.consultaId))
+    // O antigo respondia o preço de outro cliente: aqui serviço e produto alheios não existem.
+    await conferirStatus(g, `preço sugerido de serviço de "${nome}" → 404`,
+      admin.chamar('GET', '/consultas/preco' + q({ filialId: meu.filialId, servicoId: outro.servicoId })), 404)
+    await conferirStatus(g, `preço sugerido de produto de "${nome}" → 404`,
+      admin.chamar('GET', '/consultas/preco' + q({ filialId: meu.filialId, produtoId: outro.produtoId })), 404)
+    const precoNaAlheia = await admin.get('/consultas/preco' + q({ filialId: outro.filialId, servicoId: meu.servicoId }))
+    conferir(g, `preço do meu serviço na filial de "${nome}" vem vazio`, precoNaAlheia.precoUnitario == null,
+      JSON.stringify(precoNaAlheia))
+    const comboAlheio = await admin.get('/consultas/produtos' + q({ filialId: outro.filialId }))
+    conferir(g, `combo de produtos na filial de "${nome}" vem vazio`, comboAlheio.length === 0,
+      comboAlheio.map((p) => p.nome).join(', '))
+  }
+}
+
+// ─── 9b. Consulta: regras que a conta e a baixa não podem esquecer ─────────
+
+/** Ordem do `TreeMap<UUID, …>` do Java: os 64 bits altos com sinal, depois os baixos. */
+function compararUuidJava(a, b) {
+  const metades = (u) => {
+    const h = u.replace(/-/g, '')
+    return [BigInt.asIntN(64, BigInt('0x' + h.slice(0, 16))), BigInt.asIntN(64, BigInt('0x' + h.slice(16)))]
+  }
+  const [a1, a2] = metades(a)
+  const [b1, b2] = metades(b)
+  return a1 !== b1 ? (a1 < b1 ? -1 : 1) : a2 === b2 ? 0 : a2 < b2 ? -1 : 1
+}
+
+{
+  // Saldo insuficiente desfaz tudo. O concluir baixa em ordem de produto: o que
+  // tem saldo vai primeiro, e a falta do segundo tem de desfazer a baixa dele.
+  const atendido = atendidos[0]
+  const { m } = atendido
+  const at = m.t.atendimento
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const g = `Consulta · regras · ${m.t.nome}`
+  const filialId = m.filiais[at.filial]
+  const controlados = m.t.produtos
+    .filter((p) => p.estoque[at.filial] && (p.estoque[at.filial].controla ?? true))
+    .map((p) => ({ nome: p.nome, id: m.produtos[p.nome], estoqueId: m.estoques[`${p.nome} @ ${at.filial}`] }))
+    .sort((a, b) => compararUuidJava(a.id, b.id))
+  const [comSaldo, semSaldo] = [controlados[0], controlados.at(-1)]
+  const saldos = async () => Promise.all([comSaldo, semSaldo].map(async (p) => (await admin.get(`/estoques/${p.estoqueId}`)).quantidade))
+  const [antesCom, antesSem] = await saldos()
+
+  // Criada junto com o compromisso, e o choque do responsável vale aqui também.
+  const compromissoNovo = (horario) => ({
+    ...horario, filialId, responsavelId: m.adminId, pessoaId: m.pessoas[at.cliente],
+    titulo: `Consulta sem saldo de ${at.cliente} (bateria)`,
+  })
+  await conferirStatus(g, 'consulta criada junto com o compromisso, no horário ocupado do ADMIN → 409',
+    admin.chamar('POST', '/consultas', { compromisso: compromissoNovo(atendido.horario) }), 409)
+  const horario = await horarioLivre(admin, [m.adminId])
+  await conferirStatus(g, 'consulta sem cliente → 400',
+    admin.chamar('POST', '/consultas', { compromisso: { ...compromissoNovo(horario), pessoaId: null } }), 400)
+  const consulta = await admin.post('/consultas', {
+    compromisso: compromissoNovo(horario), observacao: 'Consulta sem saldo da bateria.',
+    produtos: [{ produtoId: comSaldo.id, quantidade: 1 }, { produtoId: semSaldo.id, quantidade: antesSem + 1000 }],
+  })
+  conferir(g, 'criada junto: o compromisso nasce com ela, agendado',
+    consulta.compromisso.consultaId === consulta.id && consulta.compromisso.status === 'AGENDADO')
+  const recusa = await admin.chamar('PATCH', `/consultas/${consulta.id}/concluir`)
+  conferir(g, `concluir sem saldo de "${semSaldo.nome}" → 409 nomeando o produto`,
+    recusa.status === 409 && String(recusa.json?.erro).includes(semSaldo.nome), `veio ${recusa.status} — "${recusa.json?.erro}"`)
+  const [depoisCom, depoisSem] = await saldos()
+  conferir(g, `e nada baixa: nem "${comSaldo.nome}", que veio antes e tinha saldo`,
+    milesimos(depoisCom) === milesimos(antesCom) && milesimos(depoisSem) === milesimos(antesSem),
+    `${comSaldo.nome} ${antesCom} → ${depoisCom}, ${semSaldo.nome} ${antesSem} → ${depoisSem}`)
+  const baixas = await admin.get('/estoques/movimentacoes' + q({ tipo: 'SAIDA_CONSULTA', size: 20 }))
+  conferir(g, 'nenhuma movimentação ligada a ela', !baixas.content.some((x) => x.consultaId === consulta.id))
+  const cancelada = await admin.api('PATCH', `/consultas/${consulta.id}/cancelar`, { motivo: 'Sem saldo (bateria)' })
+  conferir(g, 'a consulta continua aberta, e cancelar pela consulta cancela o compromisso',
+    cancelada.compromisso.status === 'CANCELADO', cancelada.compromisso.status)
+}
+
+{
+  // Vazio não é zero: sem preço informado e sem preço no catálogo, a conta recusa.
+  const m = montados[1]
+  const admin = sessao(await login(m.adminEmail, SENHA_DEMO))
+  const g = `Consulta · regras · ${m.t.nome}`
+  const clinica = m.filiais['Clínica Vida Plena Ltda']
+  const seringa = 'Seringa descartável 5ml'
+  const semPreco = await admin.chamar('POST', '/consultas/calculo',
+    { filialId: clinica, produtos: [{ produtoId: m.produtos[seringa], quantidade: 2 }] })
+  conferir(g, `"${seringa}" sem preço na filial e sem preço informado → 400 nomeando o item`,
+    semPreco.status === 400 && String(semPreco.json?.erro).includes(seringa), `veio ${semPreco.status} — "${semPreco.json?.erro}"`)
+  const zero = await admin.post('/consultas/calculo',
+    { filialId: clinica, produtos: [{ produtoId: m.produtos[seringa], quantidade: 2, precoUnitario: 0 }] })
+  conferir(g, 'com preço zero informado, vale zero', zero.total === 0 && zero.produtos[0].precoUnitario === 0, JSON.stringify(zero))
+  const retorno = await admin.post('/consultas/calculo',
+    { filialId: clinica, servicos: [{ servicoId: m.servicos['Retorno de consulta'], quantidade: 1 }] })
+  conferir(g, 'serviço com valor zero no catálogo entra a zero, sem recusar', retorno.total === 0, JSON.stringify(retorno))
+  const m0 = montados[0]
+  const admin0 = sessao(await login(m0.adminEmail, SENHA_DEMO))
+  const cesta = await admin0.chamar('POST', '/consultas/calculo', {
+    filialId: m0.filiais['Mercado Bom Preço Centro Ltda'],
+    servicos: [{ servicoId: m0.servicos['Montagem de cesta básica'], quantidade: 1 }],
+  })
+  conferir(`Consulta · regras · ${m0.t.nome}`, 'serviço sem valor na filial e sem preço informado → 400 nomeando o item',
+    cesta.status === 400 && String(cesta.json?.erro).includes('Montagem de cesta básica'), `veio ${cesta.status} — "${cesta.json?.erro}"`)
+}
+
 // ─── Relatório ──────────────────────────────────────────────────────────────
 
 let grupoAtual = ''
@@ -849,7 +1275,27 @@ for (const r of resultados) {
 }
 const falhas = resultados.filter((r) => !r.ok).length
 console.log(`\n${resultados.length - falhas}/${resultados.length} conferências passaram.`)
+/**
+ * O acesso do USER como está no banco, não como a bateria o deixou: alguém
+ * pode tê-lo mudado pela tela de usuários depois.
+ */
+const ROTULO_TELA = {
+  PESSOAS: 'Pessoas', FILIAIS: 'Filiais', SERVICOS: 'Serviços', PRODUTOS: 'Produtos',
+  AUXILIARES_PRODUTO: 'Auxiliares de produto', ESTOQUE: 'Estoque', AGENDA: 'Agenda', CONSULTAS: 'Consultas',
+}
+async function descreverAcesso(m) {
+  const s = await entrarNoTenant(m.tenantId)
+  const permissoes = (await s.get(`/usuarios/${m.userId}`)).permissoes ?? []
+  if (!permissoes.length) return 'sem permissão'
+  const telas = (nivel) => permissoes.filter((p) => p.nivel === nivel).map((p) => ROTULO_TELA[p.tela] ?? p.tela)
+  return [['LEITURA', 'em leitura'], ['ESCRITA', 'em escrita']]
+    .filter(([nivel]) => telas(nivel).length)
+    .map(([nivel, rotulo]) => `${telas(nivel).join(', ')} ${rotulo}`)
+    .join(' · ')
+}
+
 console.log('\nUsuários de demonstração (senha ' + SENHA_DEMO + '):')
-montados.forEach((m, i) => console.log(
-  `  ${m.t.nome.padEnd(28)} ${m.adminEmail} (ADMIN) · ${m.userEmail} (USER, ${i === 0 ? 'Filiais, Serviços, Produtos e Estoque só leitura' : 'sem permissão'})`))
+for (const m of montados) {
+  console.log(`  ${m.t.nome.padEnd(28)} ${m.adminEmail} (ADMIN) · ${m.userEmail} (USER: ${await descreverAcesso(m)})`)
+}
 process.exit(falhas ? 1 : 0)

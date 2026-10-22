@@ -6,10 +6,23 @@ import { compromissoService } from '@/services/compromissoService'
 import type { CompromissoResponse, EscopoCancelamento } from '@/types/compromisso'
 import { estaAberto } from '@/utils/agenda'
 
-interface Props {
-  compromisso: Pick<CompromissoResponse, 'id' | 'status' | 'inicio' | 'serieId'>
-  /** Depois de cada mudança, com o compromisso como ficou. */
-  onAlterado: (c: CompromissoResponse) => void
+/**
+ * Quem executa cada ação. O padrão é a agenda (`compromissoService`, tela
+ * AGENDA); a consulta passa os dela, que gravam o mesmo compromisso pela
+ * tela CONSULTAS. Ação ausente, botão ausente.
+ */
+export interface AcoesDeSituacao<R> {
+  confirmar?: (id: string) => Promise<R>
+  concluir?: (id: string) => Promise<R>
+  faltou: (id: string) => Promise<R>
+  cancelar: (id: string, motivo?: string, escopo?: EscopoCancelamento) => Promise<R>
+}
+
+interface Props<R> {
+  compromisso: Pick<CompromissoResponse, 'id' | 'status' | 'inicio' | 'serieId' | 'consultaId'>
+  /** Depois de cada mudança, com o que a ação devolveu. */
+  onAlterado: (r: R) => void
+  acoes?: AcoesDeSituacao<R>
   className?: string
 }
 
@@ -17,9 +30,15 @@ interface Props {
  * Os botões de situação — confirmar, concluir, falta, cancelar. Iguais no
  * resumo do calendário e no formulário, para a regra não morar em dois
  * lugares: só aparecem com o compromisso aberto, e "Faltou" só depois do
- * horário de início, como o servidor exige.
+ * horário de início, como o servidor exige. Num compromisso que é consulta
+ * não há Concluir: conclui-se pela consulta, que baixa o estoque.
  */
-export function AcoesCompromisso({ compromisso, onAlterado, className = '' }: Props) {
+export function AcoesCompromisso<R = CompromissoResponse>({
+  compromisso,
+  onAlterado,
+  acoes = compromissoService as unknown as AcoesDeSituacao<R>,
+  className = '',
+}: Props<R>) {
   const [ocupado, setOcupado] = useState(false)
   const [cancelando, setCancelando] = useState(false)
   const [motivo, setMotivo] = useState('')
@@ -28,7 +47,7 @@ export function AcoesCompromisso({ compromisso, onAlterado, className = '' }: Pr
   if (!estaAberto(compromisso.status)) return null
   const jaComecou = new Date(compromisso.inicio).getTime() <= Date.now()
 
-  async function executar(acao: () => Promise<CompromissoResponse>, mensagem: string) {
+  async function executar(acao: () => Promise<R>, mensagem: string) {
     setOcupado(true)
     try {
       const c = await acao()
@@ -43,7 +62,7 @@ export function AcoesCompromisso({ compromisso, onAlterado, className = '' }: Pr
 
   async function cancelar() {
     await executar(
-      () => compromissoService.cancelar(compromisso.id, motivo.trim() || undefined, escopo),
+      () => acoes.cancelar(compromisso.id, motivo.trim() || undefined, escopo),
       escopo === 'SEGUINTES' ? 'Compromisso e os seguintes cancelados' : 'Compromisso cancelado',
     )
     setCancelando(false)
@@ -51,33 +70,35 @@ export function AcoesCompromisso({ compromisso, onAlterado, className = '' }: Pr
 
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
-      {compromisso.status === 'AGENDADO' && (
+      {compromisso.status === 'AGENDADO' && acoes.confirmar && (
         <TButton
           type="button"
           variant="secondary"
           size="sm"
           disabled={ocupado}
-          onClick={() => executar(() => compromissoService.confirmar(compromisso.id), 'Compromisso confirmado')}
+          onClick={() => executar(() => acoes.confirmar!(compromisso.id), 'Compromisso confirmado')}
         >
           Confirmar
         </TButton>
       )}
-      <TButton
-        type="button"
-        variant="secondary"
-        size="sm"
-        disabled={ocupado}
-        onClick={() => executar(() => compromissoService.concluir(compromisso.id), 'Compromisso concluído')}
-      >
-        Concluir
-      </TButton>
+      {!compromisso.consultaId && acoes.concluir && (
+        <TButton
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={ocupado}
+          onClick={() => executar(() => acoes.concluir!(compromisso.id), 'Compromisso concluído')}
+        >
+          Concluir
+        </TButton>
+      )}
       {jaComecou && (
         <TButton
           type="button"
           variant="secondary"
           size="sm"
           disabled={ocupado}
-          onClick={() => executar(() => compromissoService.faltou(compromisso.id), 'Falta registrada')}
+          onClick={() => executar(() => acoes.faltou(compromisso.id), 'Falta registrada')}
         >
           Faltou
         </TButton>

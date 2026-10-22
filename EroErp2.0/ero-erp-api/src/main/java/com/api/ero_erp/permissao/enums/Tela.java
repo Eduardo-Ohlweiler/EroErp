@@ -24,7 +24,8 @@ public enum Tela {
     PRODUTOS(Modulo.PRODUTOS, "Produtos"),
     AUXILIARES_PRODUTO(Modulo.PRODUTOS, "Auxiliares de produto"),
     ESTOQUE(Modulo.ESTOQUE, "Estoque"),
-    AGENDA(Modulo.ATENDIMENTO, "Agenda");
+    AGENDA(Modulo.ATENDIMENTO, "Agenda"),
+    CONSULTAS(Modulo.ATENDIMENTO, "Consultas");
 
     private final Modulo modulo;
     private final String rotulo;

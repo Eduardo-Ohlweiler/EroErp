@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { IconConsulta } from '@/assets/icons'
 import { TBadge, TButton, TModal } from '@/components/common'
 import { AcoesCompromisso } from '@/components/agenda/AcoesCompromisso'
+import { useAuth } from '@/hooks/useAuth'
 import { handleApiError } from '@/services/api'
 import { compromissoService } from '@/services/compromissoService'
 import type { CompromissoResponse } from '@/types/compromisso'
@@ -16,9 +18,14 @@ interface Props {
   podeEscrever: boolean
 }
 
-/** O que se vê ao tocar num compromisso do calendário, com as ações de situação. */
+/**
+ * O que se vê ao tocar num compromisso do calendário, com as ações de situação.
+ * O compromisso aberto com cliente vira consulta daqui ("Iniciar consulta"); o
+ * que já é consulta abre nela.
+ */
 export function ResumoCompromisso({ id, onFechar, onAlterado, podeEscrever }: Props) {
   const navigate = useNavigate()
+  const { podeLer, podeEscrever: escreveNa } = useAuth()
   const [c, setC] = useState<CompromissoResponse | null>(null)
 
   useEffect(() => {
@@ -63,6 +70,7 @@ export function ResumoCompromisso({ id, onFechar, onAlterado, podeEscrever }: Pr
           <div className="flex flex-wrap items-center gap-2">
             <TBadge tom={STATUS_TOM[c.status]}>{STATUS_ROTULO[c.status]}</TBadge>
             {c.serieId && <TBadge tom="neutro">Recorrente</TBadge>}
+            {c.consultaId && <TBadge tom="sage" icone={<IconConsulta className="size-3" />}>Consulta</TBadge>}
           </div>
 
           <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-3 gap-y-2 text-body">
@@ -85,6 +93,20 @@ export function ResumoCompromisso({ id, onFechar, onAlterado, podeEscrever }: Pr
             {c.descricao && <Linha rotulo="Descrição">{c.descricao}</Linha>}
             {c.motivoCancelamento && <Linha rotulo="Motivo">{c.motivoCancelamento}</Linha>}
           </dl>
+
+          {c.consultaId && podeLer('CONSULTAS') && (
+            <TButton type="button" variant="secondary" onClick={() => navigate(`/app/consultas/${c.consultaId}`)}>
+              <IconConsulta className="size-4" />
+              Abrir consulta
+            </TButton>
+          )}
+          {/* Converte: abre o formulário da consulta com este compromisso, e só grava ao salvar */}
+          {!c.consultaId && c.pessoaId && estaAberto(c.status) && escreveNa('CONSULTAS') && (
+            <TButton type="button" onClick={() => navigate(`/app/consultas/nova?compromissoId=${c.id}`)}>
+              <IconConsulta className="size-4" />
+              Iniciar consulta
+            </TButton>
+          )}
 
           {podeEscrever && (
             <AcoesCompromisso

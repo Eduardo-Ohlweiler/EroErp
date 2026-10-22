@@ -1,3 +1,4 @@
+import { IconConsulta } from '@/assets/icons'
 import type { CompromissoCalendario } from '@/types/compromisso'
 import { horaDe, tocaODia } from '@/utils/agenda'
 
@@ -96,6 +97,7 @@ export function GradeMes({
                     >
                       <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: item.cor }} />
                       <span className="shrink-0 text-txt-secondary">{horaDe(item.inicio)}</span>
+                      {item.consultaId && <IconConsulta className="size-3 shrink-0 text-txt-secondary" aria-label="Consulta" />}
                       <span className="truncate">{item.titulo}</span>
                     </button>
                   ))}

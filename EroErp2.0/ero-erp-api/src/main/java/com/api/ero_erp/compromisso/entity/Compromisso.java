@@ -19,6 +19,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Formula;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -83,6 +84,15 @@ public class Compromisso extends TenantEntity {
     /** O convidado não vive sem o compromisso: grava e sai junto com ele. */
     @OneToMany(mappedBy = "compromisso", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CompromissoConvidado> convidados = new HashSet<>();
+
+    /**
+     * A consulta feita sobre este compromisso, se houver. Só leitura, no
+     * mesmo SELECT: a agenda precisa saber disso em cada bloco, e um
+     * {@code @OneToOne} inverso seria uma ida ao banco por compromisso. Quem
+     * grava é o {@code ConsultaService}, do lado da consulta.
+     */
+    @Formula("(SELECT cs.id FROM consulta cs WHERE cs.compromisso_id = id)")
+    private UUID consultaId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")

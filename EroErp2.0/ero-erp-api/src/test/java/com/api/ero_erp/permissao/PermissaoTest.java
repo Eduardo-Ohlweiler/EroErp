@@ -330,6 +330,51 @@ class PermissaoTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Consultas: sem permissão não lê; leitura lê e calcula, sem gravar; escrita grava e inicia")
+    void consultasLeituraEEscrita() throws Exception {
+        UUID filial = criarFilial(autenticar(adminA.getEmail()), "Clínica");
+        UUID cliente = salvarPessoa(tenantA, "Maria Cliente").getId();
+        String consulta = """
+                {"compromisso":{"filialId":"%s","responsavelId":"%s","pessoaId":"%s","titulo":"Consulta",
+                 "inicio":"2027-03-10T13:00:00Z","fim":"2027-03-10T14:00:00Z"}}
+                """.formatted(filial, userA.getId(), cliente);
+        String calculo = """
+                {"filialId":"%s"}
+                """.formatted(filial);
+
+        String token = autenticar(userA.getEmail());
+        mockMvc.perform(get("/consultas").header(AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/consultas/calculo").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(calculo))
+                .andExpect(status().isForbidden());
+
+        conceder(userA, Tela.CONSULTAS, NivelAcesso.LEITURA);
+        mockMvc.perform(get("/consultas").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/consultas/calculo").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(calculo))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/consultas").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(consulta))
+                .andExpect(status().isForbidden());
+        assertThat(consultaRepository.findAll()).isEmpty();
+
+        usuarioPermissaoRepository.deleteAllInBatch();
+        conceder(userA, Tela.CONSULTAS, NivelAcesso.ESCRITA);
+        String id = objectMapper.readTree(mockMvc.perform(post("/consultas").header(AUTHORIZATION, token)
+                        .contentType("application/json").content(consulta))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString()).get("id").asText();
+        mockMvc.perform(patch("/consultas/{id}/iniciar", id).header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        // A agenda é outra tela: Consultas liberada não abre o calendário
+        mockMvc.perform(get("/compromissos/calendario").header(AUTHORIZATION, token)
+                        .param("inicio", "2027-03-01T03:00:00Z").param("fim", "2027-04-01T03:00:00Z"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("mudar a permissão vale na requisição seguinte, com o mesmo token")
     void mudancaValeSemNovoLogin() throws Exception {
         String token = autenticar(userA.getEmail());
@@ -402,7 +447,9 @@ class PermissaoTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[4].telas[0].tela").value("ESTOQUE"))
                 .andExpect(jsonPath("$[5].modulo").value("ATENDIMENTO"))
                 .andExpect(jsonPath("$[5].rotulo").value("Agenda e atendimento"))
-                .andExpect(jsonPath("$[5].telas[0].tela").value("AGENDA"));
+                .andExpect(jsonPath("$[5].telas[0].tela").value("AGENDA"))
+                .andExpect(jsonPath("$[5].telas[1].tela").value("CONSULTAS"))
+                .andExpect(jsonPath("$[5].telas[1].rotulo").value("Consultas"));
 
         mockMvc.perform(get("/permissoes/catalogo").header(AUTHORIZATION, autenticar(adminA.getEmail())))
                 .andExpect(status().isForbidden());

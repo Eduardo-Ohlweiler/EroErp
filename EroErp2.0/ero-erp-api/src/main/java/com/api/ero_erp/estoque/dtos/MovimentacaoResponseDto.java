@@ -8,6 +8,7 @@ import java.util.UUID;
 
 /**
  * @param quantidade com sinal: entrada positiva, saída negativa
+ * @param consultaId na saída por consulta, a consulta que baixou
  * @param filialContraparteNome na transferência, a filial do outro lado
  * @param usuarioNome quem lançou
  */
@@ -20,6 +21,7 @@ public record MovimentacaoResponseDto(
         BigDecimal quantidadePosterior,
         String motivo,
         UUID transferenciaId,
+        UUID consultaId,
         UUID produtoId,
         Long produtoCodigo,
         String produtoNome,

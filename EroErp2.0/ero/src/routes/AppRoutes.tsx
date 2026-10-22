@@ -4,6 +4,8 @@ import { Layout } from '@/components/layout/Layout'
 import { TProtected } from '@/components/layout/TProtected'
 import { Agenda } from '@/pages/agenda/Agenda'
 import { CompromissoForm } from '@/pages/agenda/CompromissoForm'
+import { ConsultaForm } from '@/pages/consulta/ConsultaForm'
+import { ConsultaList } from '@/pages/consulta/ConsultaList'
 import { FilialForm } from '@/pages/filial/FilialForm'
 import { FilialList } from '@/pages/filial/FilialList'
 import { Inicio } from '@/pages/Inicio'
@@ -116,6 +118,14 @@ export function AppRoutes() {
             </Route>
             <Route element={<TProtected tela="AGENDA" escrita />}>
               <Route path="agenda/novo" element={<PorRegistro><CompromissoForm /></PorRegistro>} />
+            </Route>
+
+            <Route element={<TProtected tela="CONSULTAS" />}>
+              <Route path="consultas" element={<ConsultaList />} />
+              <Route path="consultas/:id" element={<PorRegistro><ConsultaForm /></PorRegistro>} />
+            </Route>
+            <Route element={<TProtected tela="CONSULTAS" escrita />}>
+              <Route path="consultas/nova" element={<PorRegistro><ConsultaForm /></PorRegistro>} />
             </Route>
 
             {/*
