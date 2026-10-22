@@ -5,8 +5,11 @@ para **não perguntar de novo**. Versionado no git, vale nas duas máquinas.
 
 **Sem segredo aqui.** Senhas e chaves (`JWT_SECRET`, senha do banco,
 `APP_CRIPTO_CHAVE`, senha do superadmin) moram no `.env` **dentro do servidor**.
-O IP da VPS mora só no `~/.ssh/config` de cada máquina (alias abaixo), nunca
-neste arquivo.
+O IP da VPS mora só no `~/.ssh/config` da máquina de casa (alias abaixo),
+nunca neste arquivo.
+
+**O deploy roda só da máquina de casa.** Na empresa não há deploy: lá o alias
+`ero-hostinger` não existe, e o `operador-deploy` para se não o encontrar.
 
 ---
 
@@ -14,7 +17,8 @@ neste arquivo.
 
 | Item | Valor |
 |---|---|
-| Acesso | SSH como **root**. Hoje por senha; o deploy usa **chave SSH** pelo alias `ero-hostinger` (`~/.ssh/config` nas duas máquinas) |
+| Acesso | SSH como **root**. Hoje por senha; o deploy usa **chave SSH** pelo alias `ero-hostinger` (`~/.ssh/config` da máquina de casa) |
+| De onde publicar | **só da máquina de casa** — na empresa, não |
 | Forma | Docker (escolha do Eduardo) |
 | PostgreSQL | instalado **direto no servidor** (não em container), configuração padrão: porta 5432, usuário `postgres`. Senha definida na instalação — vai no `.env` do servidor |
 | Banco do sistema | a criar: `ero_erp`, com usuário próprio da aplicação (não o `postgres`) |
@@ -28,7 +32,7 @@ neste arquivo.
 
 ### Pendências da primeira vez
 
-- [ ] Chave SSH criada nas **duas** máquinas e cadastrada em
+- [ ] Chave SSH criada na **máquina de casa** e cadastrada em
       `/root/.ssh/authorized_keys`; `ssh ero-hostinger` entra sem senha.
 - [ ] Confirmar SO, Docker/Compose, `listen_addresses` e o que já roda.
 - [ ] Domínio e HTTPS.

@@ -40,8 +40,9 @@ O que se sabe hoje — confirme o resto na primeira vez e escreva em
 Perguntas da primeira vez, para cada alvo: domínio e subdomínios (front e API
 no mesmo domínio?); HTTPS (o painel emite? Caddy/certbot?); PostgreSQL no próprio
 servidor, em container ou gerenciado; usuário SSH e se a chave já está
-configurada nas **duas** máquinas do Eduardo; se já existe dado em produção (o
-EroErp antigo roda lá?); portas livres.
+configurada na **máquina de casa** (a única que publica); se já existe dado em
+produção (o EroErp antigo roda lá?); portas livres. **Leia o `deploy/README.md`
+antes e pergunte só o que estiver marcado "a confirmar" ou "a definir".**
 
 ## A arquitetura de publicação (proposta — confirme antes de criar)
 
@@ -58,17 +59,19 @@ EroErp antigo roda lá?); portas livres.
   `deploy/nginx.conf`, `deploy/docker-compose.yml`, `deploy/.env.example`,
   `deploy/publicar-hostinger.sh`, e o equivalente da Integrator quando a forma
   dela estiver decidida.
-- **Duas máquinas:** o Eduardo publica tanto do trabalho quanto de casa. Os
-  scripts não podem depender de caminho local nem de ferramenta que só uma
-  delas tem — Git Bash e `ssh`, que as duas têm. Se ele quiser, o passo seguinte
-  é um GitHub Actions disparado por tag, que tira a publicação das máquinas;
-  proponha, não crie sem o OK.
+- **Só de casa:** o Eduardo publica **apenas da máquina de casa**; na empresa
+  não há deploy. Lá o alias `ero-hostinger` do `~/.ssh/config` não existe — se
+  `grep -q "^Host ero-hostinger" ~/.ssh/config` falhar, **pare** e diga que o
+  deploy é só de casa. Os scripts usam Git Bash e `ssh` pelo alias, sem caminho local nem IP
+  escrito. Se ele quiser, o passo seguinte é um GitHub Actions disparado por
+  tag, que tira a publicação da máquina; proponha, não crie sem o OK.
 
 ## Publicar uma versão
 
-1. **Pré-condições:** working tree limpo, na `main` atualizada, e o relatório do
-   `qa` desta versão com build e testes verdes (peça à sessão principal se não
-   tiver). Sem isso, pare.
+1. **Pré-condições:** na **máquina de casa** (o alias `ero-hostinger` existe),
+   working tree limpo, na `main` atualizada, e o relatório do `qa` desta versão
+   com build e testes verdes (peça à sessão principal se não tiver). Sem isso,
+   pare.
 2. **O que vai:** `git log --oneline <última tag>..HEAD` e as migrations novas
    desde a última tag. Migration nova = deploy sem volta só de código.
 3. **Peça o OK** mostrando alvo, versão, commits, migrations e os comandos.

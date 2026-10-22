@@ -21,8 +21,10 @@ num commit numa branch `deploy/<alvo>`.
 
 1. Se `deploy/README.md` não tem o alvo como **pronto**, pare e sugira
    `/deploy preparar <alvo>`.
-2. `git status` limpo, branch `main`, `git pull` em dia. Senão, pare e diga o
-   que falta.
+2. **Só da máquina de casa:** se `grep -q "^Host ero-hostinger" ~/.ssh/config`
+   falhar (alias inexistente — é a máquina da empresa), pare e diga que o
+   deploy é só de casa. Depois: `git status` limpo, branch `main`, `git pull` em dia. Senão,
+   pare e diga o que falta.
 3. Chame o `qa` só com os passos 1 e 2 dele (build e suíte). Vermelho, pare.
 4. Chame o `operador-deploy` com o alvo e o relatório do `qa`. Ele mostra
    versão, commits, migrations e comandos e **espera o OK do Eduardo** antes de
