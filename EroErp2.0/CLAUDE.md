@@ -551,10 +551,12 @@ aberto na raiz do EroErp antigo, ele não enxerga estes agentes.
 | `qa` | build, suíte, bateria, três vias | só script temporário |
 | `testador` | usa o sistema como usuário, caça bug visual e funcional, relatório | só script temporário |
 | `operador-deploy` | Hostinger (Docker) e Integrator (painel) | só `deploy/` |
+| `comercial` | **sob demanda** · divulgação: screenshots reais + copy + arte, para você revisar e postar | só `divulgacao/` |
 
 Comandos: **`/fatia <pedido>`** (a equipe inteira, do plano ao relatório),
 **`/revisar`**, **`/padronizar-layout <tela|módulo|todas>`**,
-**`/deploy <hostinger|integrator|preparar …>`**, **`/build-check [test]`**.
+**`/deploy <hostinger|integrator|preparar …>`**, **`/build-check [test]`**,
+**`/divulgar <canal · o que divulgar>`** (sob demanda).
 
 Regra de ouro: os agentes trabalham e commitam numa branch de trabalho; **push,
 merge na `main` e qualquer coisa num servidor só com o OK do Eduardo**. O
