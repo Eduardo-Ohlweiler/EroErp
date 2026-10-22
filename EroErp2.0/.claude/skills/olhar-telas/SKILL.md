@@ -1,6 +1,6 @@
 ---
 name: olhar-telas
-description: Abrir o sistema num Chrome real e OLHAR as telas — screenshot, PDF da impressão, checagem de 360 px e erros de console. Use sempre que for validar visual, conferir uma folha impressa, testar responsividade, ou dar uma tela por pronta. Build e teste verdes NÃO substituem isto.
+description: Abrir o sistema num Chrome real e OLHAR as telas — screenshot, PDF da impressão, checagem de 360 px, largura dos campos contra o docs/13 e erros de console. Use sempre que for validar visual, conferir uma folha impressa, testar responsividade, ou dar uma tela por pronta. Build e teste verdes NÃO substituem isto.
 ---
 
 # Olhar as telas de verdade
@@ -195,6 +195,29 @@ const m = await pg.evaluate(() => {
   return { rolagem: d.scrollWidth - d.clientWidth, culpado }
 })
 ```
+
+## 5.1 Larguras dos campos — docs/13
+
+Campo curto esticado (data, hora, valor, CPF com 300 px) não quebra nada e
+passa por build, lint e 360 px — só se vê medindo. `medir-campos.mjs`, ao lado
+deste arquivo, mede cada campo visível do conteúdo (fora do header e do menu) a
+1440 px e compara com a escala do
+[doc 13 §2](../../../docs/13-layout-de-telas.md):
+
+```bash
+MSYS_NO_PATHCONV=1 node .claude/skills/olhar-telas/medir-campos.mjs /app/agenda/novo
+MSYS_NO_PATHCONV=1 node .claude/skills/olhar-telas/medir-campos.mjs /app/pessoas/nova --aba "Endereços"
+```
+
+`✗` é campo acima do limite, `✓` dentro, `·` é campo longo — esse a régua não
+julga. Sai com código 1 se houver `✗`, e grava o detalhe em
+`<tmp do SO>/olhar/campos-<rota>.json`. O tipo do campo vem do `type` (date,
+time), do rótulo (CPF, CEP, UF, Código…), do `inputmode` da máscara e, no
+select, de ter poucas opções curtas. Rótulo novo que a régua não reconhece cai
+em `·` — acrescente-o no `classificar`.
+
+A régua mede **tamanho**. **Disposição** — ordem, agrupamento, um campo longo
+por linha — se confere abrindo o screenshot do `olhar.mjs`.
 
 ## 6. A verificação de três vias — quando "abriu sem erro" não basta
 
