@@ -371,6 +371,108 @@ class ConsultaTest extends AbstractIntegrationTest {
         buscar(id).andExpect(jsonPath("$.produtos", hasSize(1)));
     }
 
+    /**
+     * A prévia de uma consulta gravada lê as listas gravadas para o total; sem
+     * esta guarda, devolvia item por item — preço e ajuste de cada serviço e
+     * produto — a quem a tela da consulta esconde as listas.
+     */
+    @Test
+    @DisplayName("o /calculo da gravada omite as listas para quem não lê Serviços/Produtos, e o total segue certo")
+    void calculoDaGravadaOmiteAsListasSemLeitura() throws Exception {
+        UUID id = idDe(criarNova(servico(limpeza, 1, null), produto(luva, "2", null), "")
+                .andExpect(status().isCreated()));
+
+        conceder(userA, Tela.CONSULTAS, NivelAcesso.ESCRITA);
+        String user = autenticar(userA.getEmail());
+        String corpo = "{\"consultaId\":\"%s\",\"filialId\":\"%s\"}".formatted(id, loja);
+
+        mockMvc.perform(post("/consultas/calculo").header(AUTHORIZATION, user)
+                        .contentType("application/json").content(corpo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.servicos").doesNotExist())
+                .andExpect(jsonPath("$.produtos").doesNotExist())
+                .andExpect(jsonPath("$.subtotalServicos").value(150.0))
+                .andExpect(jsonPath("$.subtotalProdutos").value(5.0))
+                .andExpect(jsonPath("$.total").value(155.0));
+
+        // Uma liberada, a outra não: cada lista pela sua tela
+        conceder(userA, Tela.SERVICOS, NivelAcesso.LEITURA);
+        mockMvc.perform(post("/consultas/calculo").header(AUTHORIZATION, user)
+                        .contentType("application/json").content(corpo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.servicos", hasSize(1)))
+                .andExpect(jsonPath("$.produtos").doesNotExist())
+                .andExpect(jsonPath("$.total").value(155.0));
+    }
+
+    /**
+     * Trocar a filial confere o estoque dos produtos gravados — mas a recusa
+     * não pode dizer o nome do produto a quem não lê Produtos.
+     */
+    @Test
+    @DisplayName("filial nova sem estoque: quem não lê Produtos recebe a recusa sem o nome do produto")
+    void filialNovaSemEstoqueNaoNomeiaOProdutoSemLeitura() throws Exception {
+        UUID outra = criarMatriz(token, salvarPessoa(tenantA, "Clínica Bairro").getId());
+        UUID id = idDe(criarNova(null, produto(luva, "1", null), "").andExpect(status().isCreated()));
+        String naOutra = compromissoJson(INICIO, FIM).replace(loja.toString(), outra.toString());
+
+        conceder(userA, Tela.CONSULTAS, NivelAcesso.ESCRITA);
+        String user = autenticar(userA.getEmail());
+        String generica = "Um dos produtos desta consulta não tem estoque nesta filial";
+
+        mockMvc.perform(post("/consultas/calculo").header(AUTHORIZATION, user)
+                        .contentType("application/json")
+                        .content("{\"consultaId\":\"%s\",\"filialId\":\"%s\"}".formatted(id, outra)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value(generica));
+        mockMvc.perform(put("/consultas/{id}", id).header(AUTHORIZATION, user)
+                        .contentType("application/json")
+                        .content("{\"compromisso\":%s}".formatted(naOutra)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value(generica));
+        buscar(id).andExpect(jsonPath("$.compromisso.filialId").value(loja.toString()));
+    }
+
+    /**
+     * Concluir baixa o estoque, e a recusa da baixa nomeava o produto e dizia
+     * o saldo — a quem a tela esconde os produtos. Para ele a recusa é
+     * genérica; o rollback continua total.
+     */
+    @Test
+    @DisplayName("concluir sem saldo: quem não lê Produtos recebe a recusa sem o nome nem o saldo, e nada baixa")
+    void concluirSemSaldoNaoNomeiaOProdutoSemLeitura() throws Exception {
+        UUID id = idDe(criarNova(null, produto(luva, "11", null), "").andExpect(status().isCreated()));
+
+        conceder(userA, Tela.CONSULTAS, NivelAcesso.ESCRITA);
+        String user = autenticar(userA.getEmail());
+
+        mockMvc.perform(patch("/consultas/{id}/concluir", id).header(AUTHORIZATION, user))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value("Um dos produtos desta consulta não tem saldo nesta filial"));
+        assertThat(estoqueRepository.findById(luvaEstoque).orElseThrow().getQuantidade()).isEqualByComparingTo("10");
+        assertThat(saidasPorConsulta()).isEmpty();
+        buscar(id).andExpect(jsonPath("$.compromisso.status").value("AGENDADO"));
+
+        // As outras recusas da baixa também nomeavam: estoque inativo na filial
+        mockMvc.perform(patch("/estoques/{id}/ativo", luvaEstoque).header(AUTHORIZATION, token)
+                        .param("ativo", "false"))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/consultas/{id}/concluir", id).header(AUTHORIZATION, user))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value("Um dos produtos desta consulta não tem estoque nesta filial"));
+        buscar(id).andExpect(jsonPath("$.compromisso.status").value("AGENDADO"));
+    }
+
+    @Test
+    @DisplayName("concluir sem saldo: quem lê Produtos continua recebendo o nome e o saldo")
+    void concluirSemSaldoNomeiaOProdutoComLeitura() throws Exception {
+        UUID id = idDe(criarNova(null, produto(luva, "11", null), "").andExpect(status().isCreated()));
+
+        acao(id, "concluir")
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value("Saldo insuficiente de Luva na filial Clínica Centro: há 10 UN"));
+    }
+
     // ─────────────────────────────────────────────────────────────────
     //  Situação
     // ─────────────────────────────────────────────────────────────────

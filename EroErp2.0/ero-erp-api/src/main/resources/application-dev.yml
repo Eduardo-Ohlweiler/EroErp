@@ -13,6 +13,11 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 30000
       leak-detection-threshold: 60000
+      # Regra 5: sem o Detail do Postgres na mensagem da exceção — ele traz o
+      # valor que colidiu (Key (email)=(...) already exists), e o Hibernate
+      # loga a mensagem do driver. O nome da constraint segue disponível.
+      data-source-properties:
+        logServerErrorDetail: false
 
   jpa:
     hibernate:

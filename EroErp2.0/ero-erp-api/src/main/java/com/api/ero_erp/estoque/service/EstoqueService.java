@@ -19,6 +19,7 @@ import com.api.ero_erp.estoque.repository.EstoqueRepository;
 import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.exceptions.SaldoInsuficienteException;
 import com.api.ero_erp.filial.entity.Filial;
 import com.api.ero_erp.filial.service.FilialService;
 import com.api.ero_erp.produto.entity.Produto;
@@ -252,7 +253,7 @@ public class EstoqueService {
         exigirMovimentavel(linhaOrigem);
         exigirMovimentavel(linhaDestino);
         if (linhaOrigem.getQuantidade().compareTo(dto.quantidade()) < 0) {
-            throw new ConflictException("Saldo insuficiente na filial " + nomeDe(origem) + ": há "
+            throw new SaldoInsuficienteException("Saldo insuficiente na filial " + nomeDe(origem) + ": há "
                     + linhaOrigem.getQuantidade().stripTrailingZeros().toPlainString() + " "
                     + produto.getUnidadeMedida().getSigla());
         }
@@ -293,8 +294,8 @@ public class EstoqueService {
         }
         exigirMovimentavel(estoque);
         if (estoque.getQuantidade().compareTo(quantidade) < 0) {
-            throw new ConflictException("Saldo insuficiente de " + produto.getNome() + " na filial " + nomeDe(filial)
-                    + ": há " + estoque.getQuantidade().stripTrailingZeros().toPlainString() + " "
+            throw new SaldoInsuficienteException("Saldo insuficiente de " + produto.getNome() + " na filial "
+                    + nomeDe(filial) + ": há " + estoque.getQuantidade().stripTrailingZeros().toPlainString() + " "
                     + produto.getUnidadeMedida().getSigla());
         }
 

@@ -25,4 +25,10 @@ export interface ErroResponse {
   codigo: number
   timestamp: string
   path: string
+  /**
+   * Marca para a máquina decidir, quando a frase não basta. Ausente em quase
+   * todo erro; hoje só `SESSAO_RENOVADA_EM_OUTRA_ABA`, no `/auth/refresh`.
+   * Decida sempre por ela, nunca pela frase.
+   */
+  motivo?: string
 }

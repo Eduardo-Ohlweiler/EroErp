@@ -12,6 +12,8 @@ import com.api.ero_erp.tenant.enums.PaletaSistema;
 import com.api.ero_erp.tenant.enums.PeriodoAcesso;
 import com.api.ero_erp.tenant.mapper.TenantMapper;
 import com.api.ero_erp.tenant.repository.TenantRepository;
+import com.api.ero_erp.usuario.enums.Role;
+import com.api.ero_erp.usuario.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +34,7 @@ import java.util.UUID;
 public class TenantService {
 
     private final TenantRepository tenantRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @Value("${app.acesso.fuso-horario:America/Sao_Paulo}")
     private String fusoHorario;
@@ -77,6 +80,12 @@ public class TenantService {
         // o superadmin acharia que resolveu e o cliente perderia o acesso outra vez.
         if (ativo && tenant.acessoExpirado())
             throw new ConflictException("Renove o período de acesso para reativar este cliente");
+
+        // O superadmin só existe no tenant do sistema, e tenant inativo barra
+        // o login e derruba os tokens: desligá-lo não teria volta pela API.
+        if (!ativo && usuarioRepository.existsByTenantIdAndRole(id, Role.SUPERADMIN))
+            throw new ConflictException(
+                    "Este é o tenant do sistema: desativá-lo trancaria todos os superadmins para fora");
 
         tenant.setAtivo(ativo);
         log.info("Tenant {} alterado para ativo={}", id, ativo);

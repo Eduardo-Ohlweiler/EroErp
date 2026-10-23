@@ -130,6 +130,49 @@ class RedefinicaoSenhaTest extends AbstractIntegrationTest {
         login(superadmin.getEmail(), SENHA_PADRAO).andExpect(status().isOk());
     }
 
+    /**
+     * Trocar a própria senha é a outra resposta a uma conta tomada — e a
+     * sessão aberta pode ser a do intruso. Todas caem, a atual inclusive: o
+     * front pede para entrar de novo com a senha nova.
+     */
+    @Test
+    @DisplayName("trocar a própria senha derruba todas as sessões, inclusive a atual")
+    void trocarAPropriaSenhaDerrubaAsSessoes() throws Exception {
+        JsonNode sessao1 = objectMapper.readTree(login(adminA.getEmail(), SENHA_PADRAO)
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+        JsonNode sessao2 = objectMapper.readTree(login(adminA.getEmail(), SENHA_PADRAO)
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+        String access1 = "Bearer " + sessao1.get("accessToken").asText();
+        String access2 = "Bearer " + sessao2.get("accessToken").asText();
+        String refresh2 = sessao2.get("refreshToken").asText();
+
+        mockMvc.perform(patch("/usuarios/perfil/senha")
+                        .header(AUTHORIZATION, access1)
+                        .contentType("application/json")
+                        .content("""
+                                {"senhaAtual":"%s","senhaNova":"%s"}
+                                """.formatted(SENHA_PADRAO, SENHA_NOVA)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/usuarios/perfil").header(AUTHORIZATION, access2))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/auth/refresh")
+                        .contentType("application/json")
+                        .content("""
+                                {"refreshToken":"%s"}
+                                """.formatted(refresh2)))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/usuarios/perfil").header(AUTHORIZATION, access1))
+                .andExpect(status().isUnauthorized());
+
+        login(adminA.getEmail(), SENHA_PADRAO).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/usuarios/perfil")
+                        .header(AUTHORIZATION, autenticar(adminA.getEmail(), SENHA_NOVA)))
+                .andExpect(status().isOk());
+    }
+
     private String tokenDoSuperadminNo(UUID tenantId) throws Exception {
         String corpo = mockMvc.perform(post("/auth/switch-tenant/{id}", tenantId)
                         .header(AUTHORIZATION, autenticar(superadmin.getEmail())))

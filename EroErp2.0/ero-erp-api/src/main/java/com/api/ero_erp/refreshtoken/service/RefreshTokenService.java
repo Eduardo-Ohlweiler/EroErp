@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
@@ -26,6 +27,22 @@ import java.util.UUID;
 public class RefreshTokenService {
 
     private static final int BYTES_DO_TOKEN = 48;
+
+    /**
+     * Quanto tempo um refresh recém-revogado pode ser reapresentado sem
+     * derrubar a cadeia. Duas abas renovam em fila (navigator.locks), mas o
+     * Chrome às vezes entrega à segunda o localStorage de 1 ms antes: ela
+     * apresenta o token que a primeira acabou de girar, e o reuso derrubava as
+     * duas. Dentro da janela, 401 com a marca e nada emitido nem revogado; fora
+     * dela, o reuso de sempre. Logout e troca de senha gravam o mesmo
+     * revogado_em: reapresentar logo depois também recebe a marca, mas a cadeia
+     * já está toda revogada e nenhum token sai — a sessão não volta.
+     */
+    static final Duration TOLERANCIA_REUSO = Duration.ofSeconds(10);
+
+    /** A frase e a marca ({@code ErroResponseDto.motivo}) da reapresentação dentro da janela. */
+    public static final String SESSAO_RENOVADA_EM_OUTRA_ABA = "Sessão renovada em outra aba";
+    public static final String MOTIVO_RENOVADA_EM_OUTRA_ABA = "SESSAO_RENOVADA_EM_OUTRA_ABA";
 
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtProperties jwtProperties;
@@ -56,6 +73,14 @@ public class RefreshTokenService {
         if (token.getRevogadoEm() != null) {
 
             UUID usuarioId = token.getUsuario().getId();
+
+            // Revogado agora há pouco: é a outra aba, não roubo. Nada se emite
+            // e nada se revoga — a aba que perdeu a corrida relê o token novo.
+            if (token.getRevogadoEm().isAfter(Instant.now().minus(TOLERANCIA_REUSO))) {
+                log.info("Refresh token reapresentado dentro da tolerância entre abas, usuário {}", usuarioId);
+                throw new UnauthorizedException(SESSAO_RENOVADA_EM_OUTRA_ABA, MOTIVO_RENOVADA_EM_OUTRA_ABA);
+            }
+
             transacaoIndependente.executeWithoutResult(status ->
                     refreshTokenRepository.revogarTodosDoUsuario(usuarioId, Instant.now()));
 

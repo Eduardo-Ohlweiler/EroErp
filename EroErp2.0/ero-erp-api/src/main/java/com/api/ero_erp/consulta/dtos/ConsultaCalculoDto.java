@@ -7,6 +7,10 @@ import java.util.List;
  * Os totais de um corpo de consulta, sem gravar. Os itens vêm na ordem em
  * que foram mandados; uma lista que não veio (e não estava gravada) volta
  * vazia.
+ *
+ * <p>Para quem não lê Serviços (ou Produtos), a lista correspondente sai
+ * ausente, como no {@code ConsultaResponseDto}; os subtotais e o total saem
+ * sempre, contados com os itens gravados.
  */
 public record ConsultaCalculoDto(
         List<Valores> servicos,

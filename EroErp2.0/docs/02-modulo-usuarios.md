@@ -67,7 +67,7 @@ O prazo é escolhido ao criar o tenant — na tela "Novo tenant" ou no formulár
 de usuário, quando a opção "Cliente novo" cria o tenant junto (§3.1). Informado ao entrar num tenant existente, é ignorado, como já
 acontece com a `role` no caminho inverso.
 
-**Quatro regras que sustentam o desenho:**
+**Cinco regras que sustentam o desenho:**
 
 1. **A data expira no fim do dia**, no fuso de `app.acesso.fuso-horario`
    (padrão `America/Sao_Paulo`). "1 mês" contratado dia 13 vale o dia 13 inteiro
@@ -80,8 +80,14 @@ acontece com a `role` no caminho inverso.
 3. **Reativar sem renovar é recusado com 409.** Sem isso, a rotina desfaria a
    reativação na madrugada seguinte e o superadmin acharia que resolveu.
 4. **O login não espera a rotina.** `AuthService` barra o prazo vencido no login
-   e no refresh, registrando `ACESSO_EXPIRADO`. Cobre a janela entre a virada do
-   dia e o job, e cobre o servidor ter ficado fora do ar na hora dele.
+   e no refresh, registrando `ACESSO_EXPIRADO`, e o `JwtFilter` derruba o token
+   em uso (401) assim que o prazo passa. Cobre a janela entre a virada do dia e
+   o job, e cobre o servidor ter ficado fora do ar na hora dele. O superadmin é
+   poupado nas três portas.
+5. **O tenant do sistema não se desativa.** `PATCH /tenants/{id}/ativo?ativo=false`
+   no tenant que abriga um superadmin é 409 — "Este é o tenant do sistema:
+   desativá-lo trancaria todos os superadmins para fora". Tenant inativo barra o
+   login e derruba os tokens, e não haveria quem o reativasse pela API.
 
 O tenant que abriga um `SUPERADMIN` nunca é desligado por prazo — nem pela
 rotina, nem no login. É a trava que impede ficar trancado para fora do próprio
@@ -246,14 +252,33 @@ O e-mail é único no sistema inteiro — ver §2.
 
 `POST /auth/login` — público, rate limit.
 
-Ordem de verificação: usuário existe → não está bloqueado → está ativo → tenant
-está ativo → senha confere.
+Ordem de verificação: usuário existe → não está bloqueado → **senha confere** →
+está ativo → tenant está ativo → prazo do tenant não venceu.
 
-**Toda falha devolve a mesma mensagem** — "E-mail ou senha inválidos" — para
-usuário inexistente e senha errada. Revelar quais e-mails existem entrega
-informação a quem está sondando. O motivo real vai só para o `login_log`, no enum
-`MotivoFalha`: `SENHA_INVALIDA`, `USUARIO_INEXISTENTE`, `USUARIO_INATIVO`,
-`TENANT_INATIVO`, `BLOQUEADO`.
+**Só quem prova a senha ouve por que não entra.** Antes dela, toda falha
+devolve a mesma mensagem — "E-mail ou senha inválidos" — para usuário
+inexistente, senha errada, e também para usuário inativo, tenant inativo ou
+prazo vencido **com a senha errada**. Revelar quais e-mails existem (ou quais
+estão desligados) entrega informação a quem está sondando. Com a senha certa, a
+frase é a específica: "Usuário inativo. Contate o administrador.", "Acesso
+bloqueado. Contate o administrador." ou "Período de acesso encerrado. Contate o
+administrador.".
+
+- **O bloqueio fica antes da senha**, de propósito: depois dela, a senha certa
+  daria outra frase durante o bloqueio, e ele viraria um oráculo de senha. Com a
+  conta bloqueada, certa e errada recebem "Conta temporariamente bloqueada…".
+- **E-mail inexistente custa o mesmo BCrypt.** O `AuthService` compara a senha
+  contra um hash fictício, gerado no construtor pelo mesmo encoder (mesma versão
+  e custo): sem isso, o tempo de resposta dizia quais e-mails têm conta.
+- **Senha acima de 72 bytes é 400** (`@SenhaBcrypt`, ver §3.6), antes de chegar
+  ao login — e não conta tentativa.
+
+O motivo real vai só para o `login_log`, no enum `MotivoFalha`:
+`SENHA_INVALIDA`, `USUARIO_INEXISTENTE`, `USUARIO_INATIVO`, `TENANT_INATIVO`,
+`BLOQUEADO`, `ACESSO_EXPIRADO`. O IP gravado é o da conexão
+(`IpUtils.ipDe` = `remoteAddr`), nunca o `X-Forwarded-For` que o cliente
+mandou — em produção o Tomcat o acerta a partir do proxy interno
+([06, A07](06-seguranca-owasp.md)).
 
 ### 3.3 Bloqueio por tentativas
 
@@ -296,6 +321,25 @@ emite um par novo, carregando o mesmo `sessionId`.
 clássico de token roubado. A revogação também roda em transação independente,
 pelo mesmo motivo do contador de tentativas.
 
+**Tolerância de 10 s entre abas** (`RefreshTokenService.TOLERANCIA_REUSO`). Duas
+abas renovam em fila (`navigator.locks`), mas o Chrome às vezes entrega à
+segunda o `localStorage` de 1 ms antes: ela apresenta o refresh que a primeira
+acabou de girar, e o reuso derrubava as duas no login. Reapresentar um token
+revogado há **menos de 10 s** responde **401** com `erro` "Sessão renovada em
+outra aba" e **`motivo: "SESSAO_RENOVADA_EM_OUTRA_ABA"`** (campo opcional do
+`ErroResponseDto`, ausente nos outros erros), **sem emitir e sem revogar** nada:
+o sucessor continua valendo, e o front relê o token novo e tenta de novo. Fora
+da janela, é o reuso de sempre (cadeia revogada, log "reutilizado").
+
+Logout, troca de senha e redefinição gravam o mesmo `revogado_em`, então
+reapresentar logo depois deles também recebe a marca — mas a cadeia inteira já
+está revogada e nenhum token sai: o front, sem refresh novo no armazenamento,
+cai no login. A janela não reabre sessão. O que ela custa: um token roubado
+usado nos 10 s seguintes à rotação legítima (ou o legítimo reapresentado nos
+10 s seguintes à rotação do ladrão) deixa de derrubar a cadeia naquele
+instante; ninguém ganha token com isso, e a reapresentação depois da janela
+volta a derrubar.
+
 A resposta de login, refresh, `switch-tenant` e `exit-tenant` (`AuthResponseDto`)
 carrega também a **`paleta` do tenant efetivo** — é por ela que o front pinta o
 sistema na cor do cliente, sem consulta à parte ([05 §11](05-identidade-visual.md)).
@@ -305,7 +349,20 @@ sistema na cor do cliente, sem consulta à parte ([05 §11](05-identidade-visual
 Não há recuperação de senha por e-mail — ela continua pendente, e depende de
 escolher o serviço de envio. Até lá, quem perdeu a senha pede ao superadmin, que
 define uma nova em `PATCH /usuarios/{id}/senha` com `{ "senhaNova": "..." }`
-(`SenhaRedefinicaoDto`, 10 a 72 caracteres). Resposta 204.
+(`SenhaRedefinicaoDto`, no mínimo 10 caracteres e no máximo **72 bytes**).
+Resposta 204.
+
+**O teto é de bytes, não de caracteres.** O BCrypt só lê os primeiros 72 bytes,
+e o Spring Security recusa com exceção o que passa disso — que caía no
+catch-all e virava 500. Em UTF-8 uma letra acentuada ocupa 2 bytes: 40 "é"
+cabiam no antigo `@Size(max = 72)` e estouravam o encoder. A anotação
+`@SenhaBcrypt` (`config/validacao/`) mede os bytes e responde 400 com "A senha
+passa de 72 bytes: letras acentuadas e símbolos ocupam 2 ou mais; use menos
+caracteres". Vale em todo DTO que recebe senha: `UsuarioCreateDto.senha`,
+`SenhaRedefinicaoDto.senhaNova`, `SenhaUpdateDto.senhaAtual` e `senhaNova`, e
+`LoginDto.senha`. O `DataSeeder` faz a mesma conta
+(`SenhaBcryptValidator.cabe`) e para o boot com frase clara se a
+`SUPERADMIN_PASSWORD` não couber.
 
 - **Só no tenant efetivo**, como toda escrita (§6.1): usuário de outro cliente é
   404. O front entra no tenant dele antes de abrir o formulário — o mesmo que a
@@ -328,6 +385,13 @@ comparação, para mais ou para menos. A versão é um inteiro que só sobe.
 Na tela, o `UsuarioForm` em edição — e nunca para o próprio usuário — tem o
 painel **Senha**, com o botão *Redefinir senha*, que abre
 `components/usuario/RedefinirSenhaModal.tsx` (senha nova e confirmação).
+
+**Trocar a própria senha também derruba as sessões — todas, a atual
+inclusive.** `PATCH /usuarios/perfil/senha` sobe `versao_sessao` e revoga os
+refresh tokens, como a redefinição: a troca é a outra resposta a uma conta
+tomada, e a sessão aberta pode ser a do intruso. Continua 204; o access token
+que fez a troca cai junto, e o front pede para entrar de novo com a senha nova
+(sem chamar `/auth/logout`, que tentaria um refresh já revogado).
 
 ---
 
@@ -358,7 +422,10 @@ Consequências desejadas:
   tenant**, com `impersonado_por` preenchido
 - Não é possível entrar em tenant inativo (409)
 - O refresh token não é reemitido no switch: o token atual continua apontando
-  para o tenant de origem
+  para o tenant de origem. Renovar no meio da troca devolve a sessão **à
+  origem**, sem impersonação (`AuthTest.refreshDuranteTrocaDevolveOTenantDeOrigem`):
+  o front compara o `tenantId` da resposta com o de antes e não repete a
+  requisição em outro cliente
 
 ---
 
@@ -390,7 +457,10 @@ A cada requisição:
 3. **recarrega o usuário** e rejeita se inativo
 4. rejeita se o claim `versaoSessao` difere de `usuario.versao_sessao` — a senha
    foi redefinida depois da emissão (§3.6)
-5. **recarrega o tenant efetivo** e rejeita se inativo
+5. **recarrega o tenant efetivo** e rejeita se inativo — ou se o prazo de
+   acesso venceu, salvo para o `SUPERADMIN`: o prazo vence no meio do dia, a
+   rotina só desliga de madrugada, e sem esta conferência o token em uso
+   seguiria valendo até expirar
 6. recusa token cujo tenant não é o do usuário, salvo se for `SUPERADMIN`
 7. monta o `Authentication`: principal = `UUID`, authority = `ROLE_<role>`,
    details = `AuthDetails(tenantId, sessionId, role, impersonating)`
@@ -424,7 +494,7 @@ Padrão ([05 §11](05-identidade-visual.md)).
 |---|---|
 | `POST` | `/auth/logout` |
 | `GET` `PUT` | `/usuarios/perfil` |
-| `PATCH` | `/usuarios/perfil/senha` — exige a senha atual |
+| `PATCH` | `/usuarios/perfil/senha` — exige a senha atual e derruba todas as sessões, a atual inclusive (§3.6) |
 | `GET` | `/usuarios/perfil/acesso` — telas e nível do logado, o mesmo mapa da autenticação (§1.2) |
 
 ### Somente `SUPERADMIN`
@@ -433,7 +503,7 @@ Padrão ([05 §11](05-identidade-visual.md)).
 |---|---|---|
 | `GET` | `/tenants`, `/tenants/{id}`, `/tenants/select` | `expirandoEmDias` restringe a quem vence na janela |
 | `POST` | `/tenants` | cria o tenant sem usuário; período e paleta opcionais · 201 |
-| `PUT` `PATCH` | `/tenants/{id}`, `/tenants/{id}/ativo` | tenant inativo derruba os tokens em uso; reativar com prazo vencido é 409 |
+| `PUT` `PATCH` | `/tenants/{id}`, `/tenants/{id}/ativo` | tenant inativo derruba os tokens em uso; reativar com prazo vencido é 409; desativar o tenant do sistema é 409 |
 | `PATCH` | `/tenants/{id}/acesso` | define ou renova o período — §1.1 |
 | `PATCH` | `/tenants/{id}/paleta` | `{ "paleta": "JADE" }`; chega aos usuários do tenant na próxima sessão — [05 §11](05-identidade-visual.md) |
 | `GET` | `/usuarios`, `/usuarios/{id}`, `/usuarios/select` | escopo do tenant **efetivo** |
@@ -607,19 +677,23 @@ Sem essa faixa é fácil o superadmin agir no tenant errado achando que está no
 
 ## 9. O que está coberto por teste
 
-76 testes neste módulo, de 111 no projeto, contra o PostgreSQL local
+106 testes neste módulo, de 338 no projeto, contra o PostgreSQL local
 `ero_erp_test`. Rodar com `./run-dev.sh test`.
 
 | Classe | Testes | O que prova |
 |---|---|---|
 | `TenantIsolationTest` | 5 | tenant A não lê, altera nem desativa nada do tenant B (404, não 403); listagem e log de acesso não vazam |
-| `PeriodoAcessoTest` | 14 | o prazo nasce com o cliente e é ignorado em tenant existente; a rotina desliga só os vencidos e nunca o tenant do superadmin; login e refresh barram o vencido antes da rotina; reativar sem renovar é 409; renovar reconta a data, reativa e devolve o acesso na prática; o filtro *Expirando* respeita a janela |
-| `AuthTest` | 15 | a rota de registro não existe e nenhum tenant nasce por ela; rota inexistente é 404 e método errado 405, nunca 500; mensagem de falha idêntica para e-mail inexistente e senha errada; usuário e tenant inativos barrados; bloqueio após 5 tentativas fazendo a senha certa deixar de valer; rotação de refresh; reuso derrubando a cadeia inteira; logout revogando; switch/exit-tenant e a recusa para ADMIN e USER |
+| `PeriodoAcessoTest` | 17 | o prazo nasce com o cliente e é ignorado em tenant existente; a rotina desliga só os vencidos e nunca o tenant do superadmin; login e refresh barram o vencido antes da rotina, e o token em uso cai quando o prazo vence (o do superadmin num tenant vencido, não); vencido com a senha errada recebe a frase genérica; reativar sem renovar é 409; renovar reconta a data, reativa e devolve o acesso na prática; o filtro *Expirando* respeita a janela |
+| `AuthTest` | 23 | a rota de registro não existe e nenhum tenant nasce por ela; rota inexistente é 404 e método errado 405, nunca 500; mensagem de falha idêntica para e-mail inexistente e senha errada; usuário e tenant inativos barrados; bloqueio após 5 tentativas fazendo a senha certa deixar de valer; rotação de refresh; reuso (fora da janela de 10 s) derrubando a cadeia inteira; logout revogando; switch/exit-tenant e a recusa para ADMIN e USER; inativo e tenant inativo com a senha errada recebem a frase genérica, e com a certa a específica; conta bloqueada dá o mesmo erro com a senha certa e a errada; o IP do log vem da conexão, não do X-Forwarded-For; refresh no meio da troca devolve o tenant de origem; reuso dentro de 10 s dá 401 com a marca da outra aba, sem emitir e sem derrubar o sucessor, e fora da janela derruba a cadeia; reuso logo após o logout não emite nada |
 | `CriacaoDeClienteTest` | 12 | usuário sem tenant abre um cliente novo com ele como ADMIN, ignorando a role pedida; com `tenantId` ou dentro de um tenant, entra no existente; e-mail duplicado em outro tenant é recusado; a listagem global acha quem a do tenant não acha, filtra por tenant quando pedido, e recusa ADMIN e USER |
 | `AutorizacaoTest` | 9 | área administrativa restrita ao superadmin; perfil próprio para todos; senha nunca no response; token adulterado; desativação de usuário ou de tenant derrubando token em uso; provisionamento no tenant efetivo; e-mail duplicado |
-| `RedefinicaoSenhaTest` | 7 | a senha antiga deixa de entrar e a nova passa a entrar; a conta bloqueada volta a entrar; access token e refresh emitidos antes caem na hora; ADMIN e USER não redefinem; senha curta é 400; usuário de outro tenant é 404; a própria senha é 400 |
-| `CadastroTenantTest` | 6 | só com o nome nasce ativo, sem prazo, na Padrão e sem usuário; com período e paleta; entrada inválida é 400; ADMIN e USER recebem 403 ao criar tenant e ao criar usuário nele; tenant depois usuário, e o usuário entra no tenant certo |
+| `RedefinicaoSenhaTest` | 8 | a senha antiga deixa de entrar e a nova passa a entrar; a conta bloqueada volta a entrar; access token e refresh emitidos antes caem na hora; ADMIN e USER não redefinem; senha curta é 400; usuário de outro tenant é 404; a própria senha é 400; trocar a própria senha derruba todas as sessões, a atual inclusive |
+| `CadastroTenantTest` | 7 | só com o nome nasce ativo, sem prazo, na Padrão e sem usuário; com período e paleta; entrada inválida é 400; ADMIN e USER recebem 403 ao criar tenant e ao criar usuário nele; tenant depois usuário, e o usuário entra no tenant certo; o tenant do sistema não se desativa (409) |
 | `PaletaTenantTest` | 8 | tenant novo nasce na Padrão e o login a entrega; a paleta é do tenant e só os usuários dele a recebem; a troca de tenant leva a do destino e a volta a da origem; ADMIN e USER não escolhem, nem a do próprio tenant; sem token é 401; paleta ausente ou inexistente é 400; não há rota pública de aparência; o banco aceita todo valor do enum |
+| `SenhaLimiteBytesTest` | 9 | senha de 80 bytes (40 "é") é 400 com a frase dos bytes, e não 500, ao criar usuário, redefinir e trocar a própria (a atual também); 72 bytes exatos gravam e entram; login com 100 bytes é 400 e não conta tentativa |
+| `SenhaBcryptTest` | 3 | unitário: 72 bytes cabem e 73 não, em ASCII, em acentuado e em símbolo de 3 bytes; nulo cabe |
+| `LoginTempoConstanteTest` | 2 | e-mail inexistente compara a senha uma vez, contra um hash do mesmo custo; e-mail existente com senha errada também uma vez |
+| `RateLimitTest` | 3 | trocar o X-Forwarded-For não dá balde novo (a 4ª tentativa com limite 3 é 429); baldes ociosos saem do mapa; balde em uso fica |
 
 O isolamento aqui é manual — garantido por `findByIdAndTenantId` e disciplina,
 não por Hibernate `@Filter` nem Row-Level Security. **Estes testes são a única

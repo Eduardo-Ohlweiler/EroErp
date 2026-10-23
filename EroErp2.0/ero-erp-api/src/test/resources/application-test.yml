@@ -37,6 +37,10 @@ spring:
     password: ${TEST_DB_PASSWORD:${DB_PASSWORD:postgres}}
     hikari:
       maximum-pool-size: 5
+      # Como em dev e prod: sem o Detail do Postgres na mensagem da exceção
+      # (LogSemDadoPessoalTest confere).
+      data-source-properties:
+        logServerErrorDetail: false
 
   jpa:
     hibernate:

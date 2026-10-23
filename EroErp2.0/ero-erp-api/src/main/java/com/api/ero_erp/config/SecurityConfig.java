@@ -99,7 +99,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint((req, res, ex) ->
                                 escrever(res, HttpStatus.UNAUTHORIZED, "Não autenticado", req.getRequestURI()))
                         .accessDeniedHandler((req, res, ex) -> {
-                            log.warn("Acesso negado em {} {}", req.getMethod(), req.getRequestURI());
+                            log.warn("Acesso negado em {} {}", req.getMethod(), LogSeguro.caminho(req));
                             escrever(res, HttpStatus.FORBIDDEN,
                                     "Você não tem permissão para esta ação", req.getRequestURI());
                         }))

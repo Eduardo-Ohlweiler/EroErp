@@ -81,8 +81,15 @@ if (!passwordEncoder.matches(dto.senha(), usuario.getSenha()))
   e com rotação.
 - `JWT_SECRET` com **≥ 32 caracteres** aleatórios, sempre por variável de ambiente.
   Nunca no `application.yml`, nunca no código, nunca no repositório.
-- HTTPS obrigatório em produção. `server.forward-headers-strategy: framework`
-  atrás de proxy, e HSTS ligado.
+- HTTPS obrigatório em produção, e HSTS ligado. Atrás de proxy,
+  `server.forward-headers-strategy: native` com
+  `server.tomcat.remoteip.internal-proxies` restrito a loopback e às faixas
+  privadas (10/8, 172.16/12, 192.168/16 — a rede do Docker): o `RemoteIpValve`
+  só aceita o `X-Forwarded-For` vindo de proxy interno. A API não tem porta
+  pública; o servidor que entrega o front repassa `/api` a ela e **sobrescreve**
+  o cabeçalho (`proxy_set_header X-Forwarded-For $remote_addr`). Com
+  `framework`, o primeiro IP do cabeçalho valia de qualquer origem, e o cliente
+  o forjava. Ver A07, "IP do cliente".
 - Refresh token guardado **hasheado** (SHA-256) na tabela — token em claro no banco
   é senha em claro.
 - Erro de senha e usuário inexistente devolvem a **mesma mensagem**. O motivo real
@@ -291,7 +298,7 @@ public ResponseEntity<ErroResponseDto> erro(Exception e) {
 @ExceptionHandler(Exception.class)
 public ResponseEntity<ErroResponseDto> erro(Exception e, HttpServletRequest req) {
     String ref = UUID.randomUUID().toString();
-    log.error("Erro inesperado [{}] em {}", ref, req.getRequestURI(), e);
+    log.error("Erro inesperado [{}] em {}", ref, LogSeguro.caminho(req), e);
     return ResponseEntity.status(500)
             .body(new ErroResponseDto("Erro interno. Referência: " + ref, 500, Instant.now(), req.getRequestURI()));
 }
@@ -350,15 +357,36 @@ throw new UnauthorizedException("E-mail ou senha inválidos");
 
 **Regras adicionais:**
 
-- Senha com mínimo de **10 caracteres** (`@Size(min = 10, max = 72)` — 72 é o teto
-  do BCrypt) e validada contra uma lista de senhas comuns.
-- Troca da **própria** senha exige a senha atual. A de outro usuário só o
+- Senha com mínimo de **10 caracteres** (`@Size(min = 10)`) e no máximo **72
+  bytes** em UTF-8 (`@SenhaBcrypt`) — o teto do BCrypt é de bytes, e 40 letras
+  acentuadas cabem em 72 caracteres e estouram o encoder (era 500). A anotação
+  vale em todo DTO que recebe senha, o de login inclusive; o `DataSeeder` usa a
+  mesma regra (`SenhaBcryptValidator.cabe`). Validação contra lista de senhas
+  comuns ainda não existe.
+- **Login sem oráculo de conta.** Ordem: e-mail → bloqueio → senha → inativo /
+  tenant inativo / prazo vencido. Só quem acerta a senha ouve a frase
+  específica; antes dela, toda falha é "E-mail ou senha inválidos". O bloqueio
+  fica antes da senha para que certa e errada recebam a mesma frase durante ele.
+  E-mail inexistente compara a senha contra um hash fictício do mesmo encoder,
+  para custar o mesmo tempo ([02 §3.2](02-modulo-usuarios.md)).
+- **IP do cliente** é `request.getRemoteAddr()` (`IpUtils.ipDe`), no balde do
+  rate limit e no `login_log`. O `X-Forwarded-For` cru é do cliente: tomado
+  direto, cada chute de senha com um cabeçalho diferente ganhava balde novo. Em
+  produção o Tomcat promove o IP real a `remoteAddr` a partir do proxy interno
+  (A02). O mapa de baldes expurga a cada 5 minutos o que está parado há mais de
+  2 (o balde se enche em 1), e expurga na hora se passar de 100 mil chaves.
+- Troca da **própria** senha exige a senha atual e **derruba todas as sessões,
+  a atual inclusive** (sobe `versao_sessao` e revoga os refresh). A de outro usuário só o
   `SUPERADMIN` redefine, em `PATCH /usuarios/{id}/senha` — no tenant efetivo
   (404 fora dele) e nunca a própria (400) —, e a redefinição desbloqueia a conta
   e **encerra toda sessão aberta**, porque ela também é a resposta a uma conta
   tomada ([02 §3.6](02-modulo-usuarios.md)).
-- `JwtFilter` revalida `usuario.ativo` e `tenant.ativo` **a cada requisição** — sem
-  isso, um token válido continua funcionando depois de o usuário ser desativado.
+- `JwtFilter` revalida `usuario.ativo`, `tenant.ativo` e o **prazo de acesso do
+  tenant** (salvo para o superadmin) **a cada requisição** — sem isso, um token
+  válido continua funcionando depois de o usuário ser desativado ou de o prazo
+  vencer no meio do dia.
+- O tenant que abriga um superadmin não se desativa (409): desligá-lo trancaria
+  todos os superadmins para fora, sem volta pela API.
 - **Corte de sessão na hora.** Revogar o refresh token não derruba o access token,
   que vale 8 horas. Por isso o usuário tem `versao_sessao` (inteiro, começa em 0),
   o access token leva o claim `versaoSessao` da emissão, e o `JwtFilter` — que já
@@ -370,6 +398,12 @@ throw new UnauthorizedException("E-mail ou senha inválidos");
 - Logout fecha a sessão em `login_log` e revoga os refresh tokens.
 - Refresh token de uso único, com rotação. Reapresentar um token já revogado
   revoga toda a cadeia do usuário e gera evento de auditoria — é sinal de roubo.
+  **Exceção de 10 s** (`TOLERANCIA_REUSO`): revogado há menos que isso é a outra
+  aba que leu o `localStorage` atrasado, não roubo — 401 com
+  `motivo: "SESSAO_RENOVADA_EM_OUTRA_ABA"`, nada emitido, nada revogado.
+  Depois de logout ou troca de senha a cadeia já está toda revogada, então a
+  marca não devolve sessão. Custo aceito: dentro da janela, um reuso não
+  dispara a revogação da cadeia ([02 §3.5](02-modulo-usuarios.md)).
 - Nada de `HttpSession` ou sessão em memória. A API é stateless.
 - Recuperação de senha por e-mail — **ainda não implementada**, depende de definir
   o serviço de e-mail; até lá, o caminho é a redefinição manual pelo superadmin,
@@ -450,6 +484,26 @@ nome de pessoa, CPF/CNPJ, RG, endereço, telefone, e-mail, dado bancário.
 
 Por isso as entidades usam `@Getter @Setter`, nunca `@Data` — o `toString` gerado
 pelo `@Data` derrama a entidade inteira no primeiro log descuidado.
+
+**A mensagem de exceção também é conteúdo.** Numa violação de unicidade o
+Postgres põe no Detail o valor que colidiu (`Key (email)=(...) already exists`),
+e o driver o leva na mensagem. Duas defesas, as duas travadas por
+`LogSemDadoPessoalTest`:
+
+- o `GlobalExceptionHandler.integridade` loga a referência, o **nome da
+  constraint** e o SQLState — nunca a exceção. O nome vem do
+  `ConstraintViolationException` do Hibernate ou, na reserva, do
+  `PSQLException.getServerErrorMessage().getConstraint()` — e é a reserva que
+  vale aqui: o banco responde em português, e o extrator do Hibernate procura o
+  nome no texto em inglês (por isso o driver é dependência de compilação);
+- `spring.datasource.hikari.data-source-properties.logServerErrorDetail: false`
+  em dev, prod e teste tira o Detail da mensagem na origem — o próprio Hibernate
+  (`SqlExceptionHelper`) loga a mensagem do driver.
+
+**Segredo no caminho.** O webhook do WhatsApp autentica pelo segredo da URL
+(`/integracoes/whatsapp/webhook/{segredo}`, [13](13-modulo-whatsapp.md)). Todo
+log que escreve a URI passa por `LogSeguro.caminho(req)`, que o troca por
+`***` — handler de exceção e `accessDeniedHandler` do `SecurityConfig`.
 
 **Retenção:** `login_log` e `audit_log` por 12 meses, com job mensal de expurgo
 (`app.auditoria.retencao-meses`). Guardar dado pessoal indefinidamente sem

@@ -282,9 +282,15 @@ public class UsuarioService {
         if (passwordEncoder.matches(dto.senhaNova(), usuario.getSenha()))
             throw new BadRequestException("A nova senha deve ser diferente da atual");
 
+        // Trocar a senha é também a resposta a uma conta tomada, e a sessão
+        // aberta pode ser a do intruso: todas caem, a atual inclusive — o
+        // access pela versão da sessão, o refresh pela revogação.
         usuario.setSenha(passwordEncoder.encode(dto.senhaNova()));
+        usuario.encerrarSessoes();
         usuarioRepository.save(usuario);
-        log.info("Senha alterada para o usuário {}", usuario.getId());
+
+        refreshTokenService.revogarTodosDoUsuario(usuario.getId());
+        log.info("Senha alterada pelo próprio usuário {}; sessões encerradas", usuario.getId());
     }
 
     private UsuarioResponseDto comPermissoes(Usuario usuario) {

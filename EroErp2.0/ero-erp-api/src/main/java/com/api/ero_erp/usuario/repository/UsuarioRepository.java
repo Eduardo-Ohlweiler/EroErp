@@ -24,6 +24,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
     boolean existsByRole(Role role);
 
+    /** O tenant que abriga um superadmin é o do sistema (TenantService.alterarAtivo). */
+    boolean existsByTenantIdAndRole(UUID tenantId, Role role);
+
     // ─── Escopo do tenant ───────────────────────────────────────────────
     Optional<Usuario> findByIdAndTenantId(UUID id, UUID tenantId);
 

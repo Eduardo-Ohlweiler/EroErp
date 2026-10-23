@@ -146,6 +146,23 @@ class PeriodoAcessoTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("vencido com senha errada recebe a frase genérica, não a do prazo")
+    void vencidoComSenhaErradaRecebeFraseGenerica() throws Exception {
+        vencerAcesso(tenantA);
+
+        String corpo = mockMvc.perform(post("/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"%s","senha":"senhaErrada123"}
+                                """.formatted(adminA.getEmail())))
+                .andExpect(status().isUnauthorized())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(objectMapper.readTree(corpo).get("erro").asText())
+                .isEqualTo("E-mail ou senha inválidos");
+    }
+
+    @Test
     @DisplayName("refresh de cliente vencido também cai — é a mesma porta")
     void refreshBarraVencido() throws Exception {
         String corpo = mockMvc.perform(post("/auth/login")
@@ -177,6 +194,38 @@ class PeriodoAcessoTest extends AbstractIntegrationTest {
                         .content("""
                                 {"email":"%s","senha":"%s"}
                                 """.formatted(superadmin.getEmail(), SENHA_PADRAO)))
+                .andExpect(status().isOk());
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  O token em uso não espera a rotina
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("token em uso cai quando o prazo vence, antes de a rotina desligar o tenant")
+    void tokenEmUsoCaiQuandoOPrazoVence() throws Exception {
+        String token = autenticar(adminA.getEmail());
+        mockMvc.perform(get("/pessoas").header(AUTHORIZATION, token))
+                .andExpect(status().isOk());
+
+        vencerAcesso(tenantA);      // continua ativo: a rotina ainda não passou
+
+        mockMvc.perform(get("/pessoas").header(AUTHORIZATION, token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("o superadmin dentro de um tenant vencido continua operando")
+    void superadminDentroDeTenantVencidoSegue() throws Exception {
+        String corpo = mockMvc.perform(post("/auth/switch-tenant/{id}", tenantA.getId())
+                        .header(AUTHORIZATION, autenticar(superadmin.getEmail())))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String noTenantA = "Bearer " + objectMapper.readTree(corpo).get("accessToken").asText();
+
+        vencerAcesso(tenantA);
+
+        mockMvc.perform(get("/pessoas").header(AUTHORIZATION, noTenantA))
                 .andExpect(status().isOk());
     }
 

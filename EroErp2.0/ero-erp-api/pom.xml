@@ -54,10 +54,12 @@
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
         </dependency>
+        <!-- Escopo de compilação, não runtime: o GlobalExceptionHandler lê o
+             nome da constraint do PSQLException (o Postgres responde em
+             português e o extrator do Hibernate não o reconhece). -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
         </dependency>
 
         <!-- ─── JWT ─────────────────────────────────────────────────── -->

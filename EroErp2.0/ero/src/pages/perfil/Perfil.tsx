@@ -9,6 +9,7 @@ import { handleApiError } from '@/services/api'
 import { usuarioService } from '@/services/usuarioService'
 import { ROLE_LABEL } from '@/types/auth'
 import { mascararTelefone, somenteDigitos } from '@/utils/format'
+import { SENHA_PASSA_DE_72_BYTES, senhaCabeNoBcrypt } from '@/utils/senha'
 
 const perfilSchema = z.object({
   nome: z.string().min(1, 'Informe o nome').max(255),
@@ -17,8 +18,16 @@ const perfilSchema = z.object({
 
 const senhaSchema = z
   .object({
-    senhaAtual: z.string().min(1, 'Informe a senha atual'),
-    senhaNova: z.string().min(10, 'A nova senha deve ter no mínimo 10 caracteres'),
+    // A atual também: nenhuma senha gravada passa de 72 bytes, e o servidor
+    // recusaria com 400 antes de conferir.
+    senhaAtual: z
+      .string()
+      .min(1, 'Informe a senha atual')
+      .refine(senhaCabeNoBcrypt, SENHA_PASSA_DE_72_BYTES),
+    senhaNova: z
+      .string()
+      .min(10, 'A nova senha deve ter no mínimo 10 caracteres')
+      .refine(senhaCabeNoBcrypt, SENHA_PASSA_DE_72_BYTES),
     confirmacao: z.string().min(1, 'Repita a nova senha'),
   })
   .refine((d) => d.senhaNova === d.confirmacao, {
@@ -30,7 +39,7 @@ type PerfilData = z.infer<typeof perfilSchema>
 type SenhaData = z.infer<typeof senhaSchema>
 
 export function Perfil() {
-  const { sessao } = useAuth()
+  const { sessao, encerrarLocal } = useAuth()
   const [carregando, setCarregando] = useState(true)
 
   const perfilForm = useForm<PerfilData>({ resolver: zodResolver(perfilSchema) })
@@ -57,14 +66,20 @@ export function Perfil() {
     }
   }
 
+  /**
+   * Trocar a própria senha derruba todas as sessões, inclusive esta: o access
+   * token cai e o refresh é revogado. Então sai já, só no navegador — sem
+   * `/auth/logout` e antes de qualquer outra chamada, que tomaria 401 e
+   * renovaria com o refresh revogado (falso alarme de reuso no log).
+   */
   async function trocarSenha(dados: SenhaData) {
     try {
       await usuarioService.alterarSenha({
         senhaAtual: dados.senhaAtual,
         senhaNova: dados.senhaNova,
       })
-      toast.success('Senha alterada')
-      senhaForm.reset()
+      encerrarLocal()
+      toast.success('Senha alterada. Entre de novo com a nova senha.')
     } catch (erro) {
       handleApiError(erro)
     }

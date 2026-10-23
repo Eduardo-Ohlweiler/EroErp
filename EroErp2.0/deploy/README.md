@@ -42,6 +42,41 @@ nunca neste arquivo.
       `localhost`. Por padrão o Postgres só escuta `localhost`, e um container
       **não** o alcança sem esse ajuste.
 
+### Requisito: a API não tem porta pública (decidido em 2026-10-22)
+
+Front e API ficam na **mesma VPS**. Só o servidor que entrega o front (nginx ou
+Caddy, ou o container dele) alcança a API, repassando `/api` para a API local —
+o mesmo papel do proxy do Vite em dev.
+
+**Por quê.** A API enxerga o IP do proxy para todo mundo. O IP real do cliente
+(rate limit de login e log de acesso) vem do `X-Forwarded-For`, e a API só
+confia nele vindo de proxy interno. Sem isto, ou o rate limit vira um balde só
+para todos os usuários (todos com o IP do proxy), ou volta a ser driblado
+trocando o cabeçalho.
+
+**Na API** (`application-prod.yml`, mudança do `dev-backend`):
+`server.forward-headers-strategy: native` e
+`server.tomcat.remoteip.internal-proxies` com loopback e faixas privadas,
+incluindo a rede do Docker.
+
+**Obrigatório no proxy: sobrescrever o cabeçalho, nunca acrescentar.**
+
+- nginx: `proxy_set_header X-Forwarded-For $remote_addr;` (**não**
+  `$proxy_add_x_forwarded_for`) e `proxy_set_header X-Forwarded-Proto $scheme;`
+- Caddy: `header_up X-Forwarded-For {remote_host}`
+
+**Obrigatório no Docker e no host:**
+
+- não publicar a 8080 da API: `ports:` ausente no compose (o proxy a alcança
+  pela rede interna) ou, no máximo, `127.0.0.1:8080:8080`;
+- firewall sem a 8080 aberta.
+
+**Conferência pós-deploy (entra no passo 7 de toda publicação):**
+
+- [ ] login com `X-Forwarded-For: 203.0.113.77` forjado pelo cliente aparece no
+      log de acesso com o **IP real**, não com `203.0.113.77`;
+- [ ] `curl http://<ip-publico>:8080` de fora **recusa a conexão**.
+
 ---
 
 ## Integrator — status: **não iniciado**

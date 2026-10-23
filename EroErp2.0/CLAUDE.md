@@ -39,8 +39,15 @@ EroErp2.0/
 │       ├── config/                # SecurityConfig, JwtUtil, JwtFilter, SecurityUtils,
 │       │                          # AuthDetails, RateLimitFilter, PageableUtils,
 │       │                          # TransacaoConfig, DataSeeder, SwaggerConfig,
-│       │                          # CriptoConverter (AES-GCM, APP_CRIPTO_CHAVE)
+│       │                          # CriptoConverter (AES-GCM, APP_CRIPTO_CHAVE),
+│       │                          # IpUtils (IP do cliente: só getRemoteAddr — nunca
+│       │                          #   ler X-Forwarded-For à mão), LogSeguro (caminho
+│       │                          #   logado sem o segredo do webhook),
+│       │                          # validacao/ (@SenhaBcrypt: senha ≤ 72 bytes UTF-8,
+│       │                          #   em todo DTO que recebe senha)
 │       ├── exceptions/            # GlobalExceptionHandler + hierarquia
+│       │                          # (ErroResponseDto.motivo: marca para o front decidir
+│       │                          #   por máquina, nunca pela frase)
 │       ├── baseentity/            # BaseEntity, TenantEntity
 │       ├── jobs/                  # ManutencaoJob
 │       └── {modulo}/              # tenant, usuario, auth, loginlog, refreshtoken,
@@ -115,6 +122,8 @@ EroErp2.0/
         │                          # utils/estoque.ts (máscara da quantidade pela unidade)
         │                          # utils/agenda.ts (dia × instante, blocos na grade)
         │                          # utils/compromissoForm.ts (schema e corpo do compromisso)
+        │                          # utils/senha.ts (72 bytes, mesma frase do servidor —
+        │                          #   todo schema zod de senha usa)
         └── routes/AppRoutes.tsx
 ```
 
@@ -327,7 +336,17 @@ desatualizada — reinicie.
 SUCCESS** com o projeto quebrado: uma assinatura mudou, o chamador em outro
 pacote não foi recompilado, e os testes rodam contra o `.class` velho. O sintoma
 é 500 com `NoSuchMethodError` escondido atrás de *"Erro inesperado"*. Mudou
-assinatura pública, rode `./run-dev.sh clean compile`.
+assinatura pública, rode `./run-dev.sh clean compile`. Para um teste só, o
+argumento vem **antes** de `test` (`./run-dev.sh -Dtest='Classe#metodo' test`):
+depois dele, o `run-dev.sh` o ignora e roda a suíte inteira.
+
+**Com o Postgres em português, o Hibernate não acha o nome da constraint.**
+O extrator de `ConstraintViolationException.getConstraintName()` procura o
+texto da mensagem em inglês e devolve `null`. Quem precisa do nome lê de
+`PSQLException.getServerErrorMessage().getConstraint()` na cadeia de causas —
+por isso o driver do Postgres está em escopo `compile` no `pom.xml`. E nunca
+logar a exceção de integridade inteira: o *Detail* traz o valor duplicado (CPF,
+e-mail); o `logServerErrorDetail: false` dos yml é a segunda defesa.
 
 **Guarda com teto e sem piso deixa passar exatamente o erro mais provável.**
 Com a máscara de centavos, o erro provável é o número **pequeno** — quem digita
@@ -612,6 +631,25 @@ no máximo 5 logins por minuto. Os testes usam outro banco e outros usuários
 (`root@teste.local`, `admin.a@teste.local`… senha `SenhaDeTeste123`, do
 `AbstractIntegrationTest`).
 
+**Ambiente de desenvolvimento do Eduardo — só dev, nunca produção.** Os valores
+que estão no `.env` e na run configuration da IDE, para os agentes não
+precisarem adivinhar:
+
+| Variável | Valor em dev |
+|---|---|
+| `DB_URL` | `jdbc:postgresql://localhost:5432/ero_erp` |
+| `DB_USER` / `DB_PASSWORD` | `postgres` / `admin` |
+| `TEST_DB_URL` | `jdbc:postgresql://localhost:5432/ero_erp_test` |
+| `SUPERADMIN_EMAIL` | `ohlweilereduardo@gmail.com` |
+| `SUPERADMIN_PASSWORD` | `Admin123456789@` |
+| `SUPERADMIN_NAME` / `SUPERADMIN_TENANT_NOME` | `Eduardo` / `EroErp` |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:4173` |
+| `SPRING_PROFILES_ACTIVE` | `dev` |
+
+`JWT_SECRET` e `APP_CRIPTO_CHAVE` ficam fora desta tabela: nenhum agente precisa
+deles. O `operador-deploy` **nunca** reaproveita estes valores num servidor —
+produção tem senha, segredo e chave próprios.
+
 Antes da primeira subida, crie os dois bancos:
 
 ```bash
@@ -642,3 +680,17 @@ node ero-erp-api/scripts/bateria-filiais.mjs
 Exige **JDK 21**. O `run-dev.sh` localiza o JDK certo mesmo que o `JAVA_HOME` da
 máquina aponte para outra versão. Detalhes no
 [README da API](ero-erp-api/README.md).
+
+**Subir pela IDE (IntelliJ) em vez do `run-dev.sh`.** A run configuration
+recebe as variáveis do `.env` na lista de ambiente (`CHAVE=valor;CHAVE=valor`),
+e duas coisas que o `run-dev.sh` faz sozinho precisam ir à mão:
+
+- **`APP_CRIPTO_CHAVE`** na lista — sem ela a API não sobe. A **mesma** do
+  `.env`: outra chave deixa ilegíveis as apikeys da Evolution já gravadas.
+- **VM option `-Djdk.net.unixdomain.tmpdir=<pasta do projeto>\ero-erp-api\.tmp`**
+  no Windows — sem ela, *"Unable to establish loopback connection"* (armadilha
+  "Teste verde não prova que o Tomcat sobe").
+
+Na IDE, valor com espaço vai sem aspas; no `.env`, com aspas (o `run-dev.sh` faz
+`source`). `JWT_SECRET` e `APP_CRIPTO_CHAVE` ficam só no `.env` e na IDE; os
+valores de dev que os agentes usam estão na tabela acima.

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Outlet, useLocation, useNavigationType } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Outlet, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 import { IconAlerta, IconMenu, IconSair } from '@/assets/icons'
 import { useAuth } from '@/hooks/useAuth'
 import { useMenuRecolhido } from '@/hooks/useMenuRecolhido'
@@ -11,7 +11,7 @@ import { TenantSwitcher } from './TenantSwitcher'
 import { TThemeToggle } from '../common/TThemeToggle'
 
 export function Layout() {
-  const { sessao, logout } = useAuth()
+  const { sessao, logout, saidaForcada } = useAuth()
   const [menuAberto, setMenuAberto] = useState(false)
   const { recolhido, alternar, desktop } = useMenuRecolhido()
   const { paleta } = useTheme()
@@ -33,6 +33,19 @@ export function Layout() {
   useEffect(() => {
     if (tipoDeNavegacao !== 'POP') window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   }, [pathname, tipoDeNavegacao])
+
+  // A sessão renovou e devolveu o superadmin ao tenant de origem: a tela
+  // aberta (e o registro nela) era do outro cliente, então volta ao início.
+  // Navegação comum, nunca recarga — o access token vive em memória. Compara
+  // com o valor visto ao montar: o contador sobrevive a um novo login, e o
+  // Layout que nasce depois dele não deve tirar ninguém de onde ia.
+  const navigate = useNavigate()
+  const saidaVista = useRef(saidaForcada)
+  useEffect(() => {
+    if (saidaForcada === saidaVista.current) return
+    saidaVista.current = saidaForcada
+    navigate('/app', { replace: true })
+  }, [saidaForcada, navigate])
 
   // Esc fecha o drawer.
   useEffect(() => {

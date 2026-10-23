@@ -14,6 +14,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -147,6 +148,22 @@ class CadastroTenantTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.tenantId").value(tenantNovo.toString()))
                 .andExpect(jsonPath("$.tenantNome").value("Empresa Passo a Passo"))
                 .andExpect(jsonPath("$.paleta").value("CAFE"));
+    }
+
+    @Test
+    @DisplayName("o tenant do sistema não se desativa: 409, segue ativo e o superadmin continua entrando")
+    void naoDesativaOTenantDoSistema() throws Exception {
+        UUID raiz = superadmin.getTenant().getId();
+
+        mockMvc.perform(patch("/tenants/{id}/ativo", raiz)
+                        .header(AUTHORIZATION, autenticar(superadmin.getEmail()))
+                        .param("ativo", "false"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value(
+                        "Este é o tenant do sistema: desativá-lo trancaria todos os superadmins para fora"));
+
+        assertThat(tenantRepository.findById(raiz).orElseThrow().getAtivo()).isTrue();
+        autenticar(superadmin.getEmail());
     }
 
     private ResultActions criar(String token, String corpo) throws Exception {

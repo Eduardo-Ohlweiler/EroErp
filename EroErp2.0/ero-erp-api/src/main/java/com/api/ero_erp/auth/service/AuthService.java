@@ -20,7 +20,6 @@ import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.repository.UsuarioRepository;
 import com.api.ero_erp.usuario.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class AuthService {
 
@@ -47,6 +45,41 @@ public class AuthService {
     private final SecurityUtils securityUtils;
     private final PermissaoService permissaoService;
 
+    /**
+     * Hash de uma senha que ninguém tem, gerado uma vez pelo mesmo encoder —
+     * mesma versão e mesmo custo dos hashes de verdade. O e-mail inexistente
+     * é comparado contra ele, para custar o mesmo tempo que a senha errada.
+     */
+    private final String hashFicticio;
+
+    public AuthService(UsuarioRepository usuarioRepository,
+                       TenantRepository tenantRepository,
+                       UsuarioService usuarioService,
+                       LoginLogService loginLogService,
+                       RefreshTokenService refreshTokenService,
+                       PasswordEncoder passwordEncoder,
+                       JwtUtil jwtUtil,
+                       SecurityUtils securityUtils,
+                       PermissaoService permissaoService) {
+        this.usuarioRepository = usuarioRepository;
+        this.tenantRepository = tenantRepository;
+        this.usuarioService = usuarioService;
+        this.loginLogService = loginLogService;
+        this.refreshTokenService = refreshTokenService;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.securityUtils = securityUtils;
+        this.permissaoService = permissaoService;
+        this.hashFicticio = passwordEncoder.encode(UUID.randomUUID().toString());
+    }
+
+    /**
+     * A ordem é a defesa contra oráculo de conta. Só quem prova a senha ouve
+     * por que não entra (inativo, tenant inativo, prazo vencido); antes dela,
+     * toda falha tem a mesma frase e o mesmo custo de BCrypt. O bloqueio fica
+     * antes da senha de propósito: depois, a senha certa daria outra frase
+     * durante o bloqueio, e ele viraria um oráculo de senha.
+     */
     @Transactional
     public AuthResponseDto login(LoginDto dto, HttpServletRequest request) {
         String email = dto.email().trim().toLowerCase();
@@ -54,6 +87,7 @@ public class AuthService {
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email).orElse(null);
 
         if (usuario == null) {
+            passwordEncoder.matches(dto.senha(), hashFicticio);   // só pelo tempo
             loginLogService.registrarFalha(null, email, MotivoFalha.USUARIO_INEXISTENTE, request);
             throw new UnauthorizedException(CREDENCIAIS_INVALIDAS);
         }
@@ -62,6 +96,12 @@ public class AuthService {
             loginLogService.registrarFalha(usuario, email, MotivoFalha.BLOQUEADO, request);
             throw new UnauthorizedException(
                     "Conta temporariamente bloqueada por tentativas inválidas. Tente mais tarde.");
+        }
+
+        if (!passwordEncoder.matches(dto.senha(), usuario.getSenha())) {
+            usuarioService.registrarTentativaInvalida(usuario.getId());   // REQUIRES_NEW
+            loginLogService.registrarFalha(usuario, email, MotivoFalha.SENHA_INVALIDA, request);
+            throw new UnauthorizedException(CREDENCIAIS_INVALIDAS);
         }
 
         if (!Boolean.TRUE.equals(usuario.getAtivo())) {
@@ -80,12 +120,6 @@ public class AuthService {
         if (acessoVencido(usuario, tenant)) {
             loginLogService.registrarFalha(usuario, email, MotivoFalha.ACESSO_EXPIRADO, request);
             throw new UnauthorizedException(ACESSO_ENCERRADO);
-        }
-
-        if (!passwordEncoder.matches(dto.senha(), usuario.getSenha())) {
-            usuarioService.registrarTentativaInvalida(usuario.getId());   // REQUIRES_NEW
-            loginLogService.registrarFalha(usuario, email, MotivoFalha.SENHA_INVALIDA, request);
-            throw new UnauthorizedException(CREDENCIAIS_INVALIDAS);
         }
 
         usuario.registrarLoginValido();

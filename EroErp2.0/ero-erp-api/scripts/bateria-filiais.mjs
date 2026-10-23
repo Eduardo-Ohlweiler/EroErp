@@ -39,6 +39,11 @@
  *   num tenant demo baixa de verdade, e a conferência de saldo a desconta.
  * Os usuários criados entram com a senha de demonstração impressa no fim.
  *
+ * No fim, segurança e sessão: o X-Forwarded-For forjado não vai para o log de
+ * acesso e senha acima de 72 bytes é 400. O tenant do sistema não se desativar
+ * fica só no teste de integração: tentado aqui ao vivo, uma regressão
+ * trancaria o tenant do sistema.
+ *
  * Nada é apagado. Sai com código 1 se qualquer conferência falhar.
  */
 
@@ -1002,6 +1007,12 @@ async function conferirUserSemItens(m, consulta) {
     u.chamar('PUT', `/consultas/${consulta.id}`, { ...corpo, produtos: [] }), 403)
   await conferirStatus(g, 'prévia mandando a lista de serviços → 403',
     u.chamar('POST', '/consultas/calculo', { filialId, servicos: [] }), 403)
+  // A prévia da gravada lê as listas dela para o total, e não as devolve a quem não as vê
+  const previa = await u.chamar('POST', '/consultas/calculo', { consultaId: consulta.id, filialId })
+  conferir(g, 'prévia da consulta gravada → 200 sem as listas, com o total certo',
+    previa.status === 200 && previa.json?.servicos == null && previa.json?.produtos == null
+      && centavos(previa.json?.total) === centavos(consulta.total),
+    `veio ${previa.status}: servicos ${JSON.stringify(previa.json?.servicos)}, produtos ${JSON.stringify(previa.json?.produtos)}, total ${previa.json?.total}`)
   await conferirStatus(g, 'preço sugerido de serviço → 403',
     u.chamar('GET', '/consultas/preco' + q({ filialId, servicoId })), 403)
   await conferirStatus(g, 'preço sugerido de produto → 403',
@@ -1264,6 +1275,45 @@ function compararUuidJava(a, b) {
   })
   conferir(`Consulta · regras · ${m0.t.nome}`, 'serviço sem valor na filial e sem preço informado → 400 nomeando o item',
     cesta.status === 400 && String(cesta.json?.erro).includes('Montagem de cesta básica'), `veio ${cesta.status} — "${cesta.json?.erro}"`)
+}
+
+// ─── 10. Segurança e sessão ─────────────────────────────────────────────────
+
+{
+  const g = 'Segurança e sessão'
+
+  /** POST /auth/login sem o cache do login(): cada chamada gasta do balde, e o 429 espera. */
+  async function loginCru(corpo, cabecalhos = {}) {
+    const tentar = () => fetch(BASE + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...cabecalhos },
+      body: JSON.stringify(corpo),
+    })
+    let r = await tentar()
+    if (r.status === 429) {
+      console.log('  … limite de login por minuto atingido; esperando o balde recarregar (65 s)')
+      await new Promise((ok) => setTimeout(ok, 65_000))
+      r = await tentar()
+    }
+    return r
+  }
+
+  // O IP do log vem da conexão: o X-Forwarded-For que o cliente manda não vale.
+  const antes = new Date(Date.now() - 5_000).toISOString()
+  const forjado = await loginCru({ email: EMAIL, senha: SENHA }, { 'X-Forwarded-For': '203.0.113.77' })
+  if (!forjado.ok) falhar(`login com X-Forwarded-For recusado (${forjado.status}).`)
+  const comIpForjado = await root.get('/login-logs/global' + q({ ip: '203.0.113.77', de: antes, size: 5 }))
+  conferir(g, 'login com X-Forwarded-For forjado não grava o IP forjado no log de acesso',
+    comIpForjado.totalElements === 0, `vieram ${comIpForjado.totalElements}`)
+
+  // Senha acima de 72 bytes é 400 antes de chegar ao login: não conta tentativa.
+  const longa = await loginCru({ email: 'sonda.bateria@nao-existe.local', senha: 'é'.repeat(40) })
+  conferir(g, 'senha de 80 bytes (40 "é") no login → 400, não 401 nem 500', longa.status === 400, `veio ${longa.status}`)
+
+  // O tenant do sistema não se desativar (409) NÃO é conferido aqui, de
+  // propósito: se a regra regredir, a tentativa ao vivo trancaria o tenant do
+  // sistema, e só se voltaria por SQL. Quem trava a regra é
+  // CadastroTenantTest.naoDesativaOTenantDoSistema.
 }
 
 // ─── Relatório ──────────────────────────────────────────────────────────────

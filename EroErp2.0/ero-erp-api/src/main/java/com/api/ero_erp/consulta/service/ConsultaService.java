@@ -36,6 +36,7 @@ import com.api.ero_erp.exceptions.BadRequestException;
 import com.api.ero_erp.exceptions.ConflictException;
 import com.api.ero_erp.exceptions.ForbiddenException;
 import com.api.ero_erp.exceptions.NotFoundException;
+import com.api.ero_erp.exceptions.SaldoInsuficienteException;
 import com.api.ero_erp.permissao.enums.Tela;
 import com.api.ero_erp.produto.dtos.ProdutoSelectDto;
 import com.api.ero_erp.produto.entity.Produto;
@@ -82,6 +83,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class ConsultaService {
+
+    /** A recusa de estoque para quem não lê Produtos: sem o nome que a tela esconde. */
+    private static final String PRODUTO_SEM_ESTOQUE_GENERICO =
+            "Um dos produtos desta consulta não tem estoque nesta filial";
 
     private final ConsultaRepository consultaRepository;
     private final CompromissoService compromissoService;
@@ -154,8 +159,16 @@ public class ConsultaService {
             produtos = salva != null ? linhas(salva.getProdutos()) : List.of();
         }
 
+        // Como no responder: as listas lidas da gravada entram na conta, mas só
+        // saem item por item para quem lê a tela delas. Subtotais e total saem
+        // sempre — é o que a tela da consulta mostra a quem não vê os itens.
+        boolean veServicos = securityUtils.temAuthority(Tela.SERVICOS.authorityLer());
+        boolean veProdutos = securityUtils.temAuthority(Tela.PRODUTOS.authorityLer());
+
         Resultado r = CalculoConsulta.calcular(servicos, produtos, geral);
-        return new ConsultaCalculoDto(valores(servicos, r.servicos()), valores(produtos, r.produtos()),
+        return new ConsultaCalculoDto(
+                veServicos ? valores(servicos, r.servicos()) : null,
+                veProdutos ? valores(produtos, r.produtos()) : null,
                 r.subtotalServicos(), r.subtotalProdutos(), r.subtotal(), r.ajusteGeral(), r.total());
     }
 
@@ -307,8 +320,20 @@ public class ConsultaService {
         Map<UUID, BigDecimal> porProduto = new TreeMap<>();
         c.getProdutos().forEach(p -> porProduto.merge(p.getProduto().getId(), p.getQuantidade(), BigDecimal::add));
         UUID filialId = compromisso.getFilial().getId();
-        porProduto.forEach((produtoId, quantidade) ->
-                estoqueService.saidaPorConsulta(produtoId, filialId, quantidade, c.getId()));
+        // As recusas da baixa nomeiam o produto (e dizem o saldo): quem não lê
+        // Produtos recebe a frase genérica. A exceção segue subindo, então o
+        // rollback continua total.
+        boolean veProdutos = securityUtils.temAuthority(Tela.PRODUTOS.authorityLer());
+        porProduto.forEach((produtoId, quantidade) -> {
+            try {
+                estoqueService.saidaPorConsulta(produtoId, filialId, quantidade, c.getId());
+            } catch (ConflictException e) {
+                if (veProdutos) throw e;
+                throw new ConflictException(e instanceof SaldoInsuficienteException
+                        ? "Um dos produtos desta consulta não tem saldo nesta filial"
+                        : PRODUTO_SEM_ESTOQUE_GENERICO);
+            }
+        });
 
         compromissoService.encerrarAtendimento(compromisso);
         log.info("Consulta concluida id={} produtos={}", id, porProduto.size());
@@ -551,20 +576,36 @@ public class ConsultaService {
         }
     }
 
-    /** Os produtos já gravados, contra a filial nova do compromisso. */
+    /**
+     * Os produtos já gravados, contra a filial nova do compromisso. Quem não
+     * lê Produtos chega aqui sem ter mandado a lista, e a recusa não lhe diz
+     * o nome do produto que a tela esconde.
+     */
     private void exigirProdutosNaFilial(List<ConsultaProduto> produtos, UUID filialId) {
         if (produtos.isEmpty()) return;
         Map<UUID, Estoque> linhas = estoqueService.linhasNaFilial(
                 produtos.stream().map(p -> p.getProduto().getId()).collect(Collectors.toSet()), filialId);
-        produtos.forEach(p -> exigirEstoqueNaFilial(linhas, p.getProduto()));
+        boolean veProdutos = securityUtils.temAuthority(Tela.PRODUTOS.authorityLer());
+        for (ConsultaProduto p : produtos) {
+            if (veProdutos) {
+                exigirEstoqueNaFilial(linhas, p.getProduto());
+            } else if (estoqueAtivo(linhas, p.getProduto()) == null) {
+                throw new ConflictException(PRODUTO_SEM_ESTOQUE_GENERICO);
+            }
+        }
     }
 
     private static Estoque exigirEstoqueNaFilial(Map<UUID, Estoque> linhas, Produto produto) {
-        Estoque linha = linhas.get(produto.getId());
-        if (linha == null || !Boolean.TRUE.equals(linha.getAtivo())) {
+        Estoque linha = estoqueAtivo(linhas, produto);
+        if (linha == null) {
             throw new ConflictException(produto.getNome() + " não tem estoque nesta filial");
         }
         return linha;
+    }
+
+    private static Estoque estoqueAtivo(Map<UUID, Estoque> linhas, Produto produto) {
+        Estoque linha = linhas.get(produto.getId());
+        return linha != null && Boolean.TRUE.equals(linha.getAtivo()) ? linha : null;
     }
 
     // ─────────────────────────────────────────────────────────────────────

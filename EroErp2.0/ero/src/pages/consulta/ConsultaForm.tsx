@@ -471,8 +471,9 @@ export function ConsultaForm() {
     ...(veProdutos ? [{ id: 'produtos', rotulo: produtos.length ? `Produtos (${produtos.length})` : 'Produtos' }] : []),
     { id: 'resumo', rotulo: 'Resumo', alerta: !!erroCalculo },
   ]
-  const valoresServico = (i: number) => (erroCalculo ? undefined : calculo?.servicos[i])
-  const valoresProduto = (i: number) => (erroCalculo ? undefined : calculo?.produtos[i])
+  // A lista some do cálculo para quem não lê o catálogo (o subtotal fica)
+  const valoresServico = (i: number) => (erroCalculo ? undefined : calculo?.servicos?.[i])
+  const valoresProduto = (i: number) => (erroCalculo ? undefined : calculo?.produtos?.[i])
   const aBaixar = (salvo?.produtos ?? []).filter((p) => p.controlaEstoque)
 
   return (

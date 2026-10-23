@@ -5,14 +5,15 @@ import { z } from 'zod'
 import { TButton, TEntry, TModal } from '@/components/common'
 import { handleApiError } from '@/services/api'
 import { usuarioService } from '@/services/usuarioService'
+import { SENHA_PASSA_DE_72_BYTES, senhaCabeNoBcrypt } from '@/utils/senha'
 
-/** Mesma régua do perfil e do backend: 10 a 72 caracteres. */
+/** Mesma régua do perfil e do backend: no mínimo 10 caracteres, no máximo 72 bytes. */
 const schema = z
   .object({
     senhaNova: z
       .string()
       .min(10, 'A nova senha deve ter no mínimo 10 caracteres')
-      .max(72, 'A senha deve ter no máximo 72 caracteres'),
+      .refine(senhaCabeNoBcrypt, SENHA_PASSA_DE_72_BYTES),
     confirmacao: z.string().min(1, 'Repita a nova senha'),
   })
   .refine((d) => d.senhaNova === d.confirmacao, {

@@ -12,6 +12,11 @@ spring:
       idle-timeout: 30000
       max-lifetime: 1800000
       connection-timeout: 30000
+      # Regra 5: sem o Detail do Postgres na mensagem da exceção — ele traz o
+      # valor que colidiu (Key (email)=(...) already exists), e o Hibernate
+      # loga a mensagem do driver. O nome da constraint segue disponível.
+      data-source-properties:
+        logServerErrorDetail: false
 
   jpa:
     hibernate:
@@ -52,7 +57,18 @@ server:
     include-binding-errors: never
   compression:
     enabled: true
-  forward-headers-strategy: framework
+  # O IP real chega pelo X-Forwarded-For, e só do proxy (docs/06, A07).
+  # A API não tem porta pública: front e API ficam na mesma VPS, e o servidor
+  # que entrega o front repassa /api à API local, SOBRESCREVENDO o cabeçalho
+  # (proxy_set_header X-Forwarded-For $remote_addr — nunca acrescentando).
+  # `native` põe o RemoteIpValve do Tomcat, que só aceita o cabeçalho vindo
+  # de um proxy interno: loopback e as faixas privadas (rede do Docker). Com
+  # `framework`, o primeiro IP do cabeçalho valia de qualquer origem, e o
+  # cliente o forjava. IpUtils.ipDe lê o remoteAddr que o valve acertou.
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      internal-proxies: '127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1|::1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.1[6-9]\.\d{1,3}\.\d{1,3}|172\.2[0-9]\.\d{1,3}\.\d{1,3}|172\.3[0-1]\.\d{1,3}\.\d{1,3}'
 
 jwt:
   secret: ${JWT_SECRET}

@@ -17,11 +17,13 @@ import { ROLE_LABEL, type Role } from '@/types/auth'
 import type { CatalogoModulo, Permissao } from '@/types/permissao'
 import { OPCOES_PERIODO_ACESSO, type PeriodoAcesso } from '@/types/tenant'
 import { mascararTelefone, somenteDigitos } from '@/utils/format'
+import { SENHA_PASSA_DE_72_BYTES, senhaCabeNoBcrypt } from '@/utils/senha'
 
 const schema = z.object({
   nome: z.string().min(1, 'Informe o nome').max(255),
   email: z.string().min(1, 'Informe o e-mail').email('E-mail inválido'),
-  senha: z.string().optional(),
+  // Só no cadastro; o piso de 10 é conferido no envio, que sabe se é cadastro
+  senha: z.string().refine(senhaCabeNoBcrypt, SENHA_PASSA_DE_72_BYTES).optional(),
   telefone: z.string().optional(),
   role: z.string().optional(),
   tenantId: z.string().optional(),

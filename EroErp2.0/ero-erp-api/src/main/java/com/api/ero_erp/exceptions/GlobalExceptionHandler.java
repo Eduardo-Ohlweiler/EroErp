@@ -1,7 +1,10 @@
 package com.api.ero_erp.exceptions;
 
+import com.api.ero_erp.config.LogSeguro;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
+import org.postgresql.util.PSQLException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -19,6 +22,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.sql.SQLException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -28,7 +32,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<ErroResponseDto> negocio(ApplicationException e, HttpServletRequest req) {
-        return build(e.getStatus(), e.getMessage(), req);
+        return ResponseEntity.status(e.getStatus()).body(ErroResponseDto.de(
+                e.getMessage(), e.getStatus().value(), req.getRequestURI(), e.getMotivo()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -78,7 +83,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErroResponseDto> acessoNegado(AccessDeniedException e, HttpServletRequest req) {
-        log.warn("Acesso negado em {} {}", req.getMethod(), req.getRequestURI());
+        log.warn("Acesso negado em {} {}", req.getMethod(), LogSeguro.caminho(req));
         return build(HttpStatus.FORBIDDEN, "Você não tem permissão para esta ação", req);
     }
 
@@ -95,17 +100,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OptimisticLockingFailureException.class)
     public ResponseEntity<ErroResponseDto> concorrencia(OptimisticLockingFailureException e,
                                                         HttpServletRequest req) {
-        log.info("Gravação recusada pela versão em {}", req.getRequestURI());
+        log.info("Gravação recusada pela versão em {}", LogSeguro.caminho(req));
         return build(HttpStatus.CONFLICT,
                 "Este registro foi alterado por outra operação enquanto você o editava. Recarregue e tente de novo",
                 req);
     }
 
+    /**
+     * Loga a referência, a constraint e o SQLState — nunca a exceção: o
+     * Postgres põe no Detail o valor que colidiu ({@code Key (email)=(...)}),
+     * e o driver o leva na mensagem. A constraint basta para achar a regra.
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErroResponseDto> integridade(DataIntegrityViolationException e,
                                                        HttpServletRequest req) {
         String ref = UUID.randomUUID().toString();
-        log.warn("Violação de integridade [{}] em {}", ref, req.getRequestURI(), e);
+        log.warn("Violação de integridade [{}] em {}: constraint={} sqlState={}",
+                ref, LogSeguro.caminho(req), constraintDe(e), sqlStateDe(e));
         return build(HttpStatus.CONFLICT,
                 "A operação viola uma regra de integridade dos dados. Referência: " + ref, req);
     }
@@ -113,9 +124,33 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResponseDto> inesperado(Exception e, HttpServletRequest req) {
         String ref = UUID.randomUUID().toString();
-        log.error("Erro inesperado [{}] em {} {}", ref, req.getMethod(), req.getRequestURI(), e);
+        log.error("Erro inesperado [{}] em {} {}", ref, req.getMethod(), LogSeguro.caminho(req), e);
         return build(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Erro interno. Referência: " + ref, req);
+    }
+
+    /**
+     * Da cadeia de causas: o nome que o Hibernate extraiu ou, na reserva, o
+     * campo {@code constraint} que o Postgres manda à parte. A reserva é a que
+     * vale aqui: o banco responde em português, e o extrator do Hibernate
+     * procura o nome no texto em inglês.
+     */
+    private static String constraintDe(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof ConstraintViolationException cv && cv.getConstraintName() != null)
+                return cv.getConstraintName();
+            if (t instanceof PSQLException psql && psql.getServerErrorMessage() != null
+                    && psql.getServerErrorMessage().getConstraint() != null)
+                return psql.getServerErrorMessage().getConstraint();
+        }
+        return "?";
+    }
+
+    private static String sqlStateDe(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof SQLException sql && sql.getSQLState() != null) return sql.getSQLState();
+        }
+        return "?";
     }
 
     private ResponseEntity<ErroResponseDto> build(HttpStatus status, String mensagem,

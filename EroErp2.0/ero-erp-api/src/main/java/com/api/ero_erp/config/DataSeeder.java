@@ -1,5 +1,6 @@
 package com.api.ero_erp.config;
 
+import com.api.ero_erp.config.validacao.SenhaBcryptValidator;
 import com.api.ero_erp.tenant.entity.Tenant;
 import com.api.ero_erp.tenant.repository.TenantRepository;
 import com.api.ero_erp.usuario.entity.Usuario;
@@ -65,6 +66,12 @@ public class DataSeeder implements ApplicationRunner {
 
         if (senha.length() < 10)
             throw new IllegalStateException("SUPERADMIN_PASSWORD precisa de no mínimo 10 caracteres");
+
+        // O encoder recusaria com "password cannot be more than 72 bytes" no
+        // meio do boot; aqui a frase diz qual variável e por quê.
+        if (!SenhaBcryptValidator.cabe(senha))
+            throw new IllegalStateException("SUPERADMIN_PASSWORD passa de 72 bytes em UTF-8 "
+                    + "(letras acentuadas e símbolos ocupam 2 ou mais): use menos caracteres");
     }
 
     private void exigir(String valor, String variavel) {

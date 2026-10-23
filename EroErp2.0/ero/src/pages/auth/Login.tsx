@@ -8,11 +8,13 @@ import { MarcaEro } from '@/components/layout/MarcaEro'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
 import { handleApiError } from '@/services/api'
+import { SENHA_PASSA_DE_72_BYTES, senhaCabeNoBcrypt } from '@/utils/senha'
 import axios from 'axios'
 
 const schema = z.object({
   email: z.string().min(1, 'Informe o e-mail').email('E-mail inválido'),
-  senha: z.string().min(1, 'Informe a senha'),
+  // Nenhuma senha gravada passa de 72 bytes; o servidor recusaria com 400
+  senha: z.string().min(1, 'Informe a senha').refine(senhaCabeNoBcrypt, SENHA_PASSA_DE_72_BYTES),
 })
 
 type FormData = z.infer<typeof schema>

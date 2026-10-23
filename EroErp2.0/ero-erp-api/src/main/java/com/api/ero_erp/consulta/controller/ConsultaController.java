@@ -129,7 +129,9 @@ public class ConsultaController {
     @PatchMapping("/{id}/concluir")
     @PreAuthorize("hasAuthority('CONSULTAS_ESCREVER')")
     @Operation(summary = "Conclui a consulta e baixa o estoque dos produtos",
-            description = "Saldo insuficiente recusa com 409 nomeando o produto, e nada baixa.")
+            description = """
+                    Saldo insuficiente recusa com 409 e nada baixa. A frase nomeia o
+                    produto só para quem lê Produtos; para os outros, é genérica.""")
     public ResponseEntity<ConsultaResponseDto> concluir(@PathVariable UUID id) {
         return ResponseEntity.ok(consultaService.concluir(id));
     }

@@ -232,7 +232,9 @@ a pessoa e os contatos. Cada lista é o **estado completo**, e:
 - lista **nula não mexe**: quem não vê serviços não apaga os que existem;
 - lista **enviada** sem `SERVICOS_LER` (ou `PRODUTOS_LER`) é **403** — também no
   `/calculo` e no `/preco`;
-- a resposta **omite** a lista que o usuário não lê. Os totais vêm sempre, e a
+- a resposta **omite** a lista que o usuário não lê — também a do `/calculo`,
+  que, com `consultaId`, lê as listas gravadas para a conta e antes as
+  devolvia item por item. Os totais (e os subtotais) vêm sempre, e a
   tela diz que incluem o que ele não vê;
 - itens só mudam com o compromisso aberto.
 
@@ -254,7 +256,9 @@ o mesmo id duas vezes na lista é 400.
 estoque nesta filial"*) — o combo da tela já só traz esses
 (`GET /consultas/produtos`). Mudar a filial do compromisso — só pela consulta —
 reconfere os produtos que já estavam, mandando a lista ou não; a prévia
-`/consultas/calculo` faz a mesma conferência. A resposta publica `controlaEstoque` e, quando
+`/consultas/calculo` faz a mesma conferência. Para quem não lê Produtos, a
+recusa não diz o nome que a tela esconde: *"Um dos produtos desta consulta não
+tem estoque nesta filial"*. A resposta publica `controlaEstoque` e, quando
 controla, `saldoDisponivel`, para a tela avisar a falta antes de concluir; o
 aviso não bloqueia.
 
@@ -276,7 +280,8 @@ teste trava a invariante somando o que veio publicado.
 **`POST /consultas/calculo`** faz a mesma conta, com as mesmas guardas, **sem
 gravar**, e devolve também o preço que entrou em cada item. Com `consultaId`, a
 lista que não veio vale a gravada: o total de quem não vê serviços continua
-certo.
+certo, e a lista dele sai ausente na resposta (§7.3). Os campos `servicos` e
+`produtos` da prévia são, portanto, **opcionais** para o front.
 
 ### 7.6 Situação — a do compromisso
 
@@ -302,7 +307,10 @@ chama `EstoqueService.saidaPorConsulta`: o mesmo caminho das outras
 movimentações (achar a linha → travar → conferir → movimentar). Produto sem
 controle de estoque não baixa. Saldo insuficiente é 409 *"Saldo insuficiente de
 X na filial Y: há N UN"*, e a transação inteira volta — inclusive a baixa de um
-produto anterior que já tinha passado. Concluída não volta nem se altera.
+produto anterior que já tinha passado. Para quem não lê Produtos, as recusas
+da baixa não nomeiam o produto nem dizem o saldo: *"Um dos produtos desta
+consulta não tem saldo nesta filial"* (ou *"… não tem estoque nesta filial"*,
+para linha inativa ou ausente). Concluída não volta nem se altera.
 
 **Reconsulta** (`POST /consultas/{id}/reconsulta {inicio, fim, responsavelId?}`)
 agenda uma consulta nova com a mesma filial e o mesmo cliente, o responsável

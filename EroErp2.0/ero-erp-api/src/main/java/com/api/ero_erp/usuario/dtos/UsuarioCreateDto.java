@@ -1,5 +1,6 @@
 package com.api.ero_erp.usuario.dtos;
 
+import com.api.ero_erp.config.validacao.SenhaBcrypt;
 import com.api.ero_erp.permissao.dtos.PermissaoDto;
 import com.api.ero_erp.tenant.enums.PeriodoAcesso;
 import com.api.ero_erp.usuario.enums.Role;
@@ -24,7 +25,8 @@ public record UsuarioCreateDto(
         String email,
 
         @NotBlank(message = "Informe a senha")
-        @Size(min = 10, max = 72, message = "A senha deve ter entre 10 e 72 caracteres")
+        @Size(min = 10, message = "A senha deve ter no mínimo 10 caracteres")
+        @SenhaBcrypt
         String senha,
 
         @Size(max = 20, message = "No máximo 20 caracteres")

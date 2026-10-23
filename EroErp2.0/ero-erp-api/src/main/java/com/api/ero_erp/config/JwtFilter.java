@@ -79,6 +79,12 @@ public class JwtFilter extends OncePerRequestFilter {
             if (!Boolean.TRUE.equals(tenantEfetivo.getAtivo()))
                 throw new JwtException("Tenant inativo");
 
+            // O prazo vence no meio do dia e a rotina só desliga de madrugada:
+            // sem esta linha, o token em uso seguiria valendo até expirar. O
+            // superadmin é poupado como no login (AuthService.acessoVencido).
+            if (!usuario.isSuperadmin() && tenantEfetivo.acessoExpirado())
+                throw new JwtException("Acesso expirado");
+
             boolean tenantDeOutrem = !tenantId.equals(usuario.getTenant().getId());
             if (tenantDeOutrem && !usuario.isSuperadmin())
                 throw new JwtException("Token fora do tenant do usuário");

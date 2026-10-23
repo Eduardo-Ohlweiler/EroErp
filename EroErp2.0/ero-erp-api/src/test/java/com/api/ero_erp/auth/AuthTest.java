@@ -5,6 +5,10 @@ import com.api.ero_erp.usuario.entity.Usuario;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -111,6 +115,91 @@ class AuthTest extends AbstractIntegrationTest {
     }
 
     // ─────────────────────────────────────────────────────────────────
+    //  A ordem do login — nada de oráculo de conta (OWASP A07)
+    // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * A frase "usuário inativo" só sai para quem acertou a senha: antes dela,
+     * dizia a quem chutava que o e-mail existe e está desligado.
+     */
+    @Test
+    @DisplayName("inativo com senha errada recebe a frase genérica")
+    void inativoComSenhaErradaRecebeFraseGenerica() throws Exception {
+        adminA.setAtivo(false);
+        usuarioRepository.save(adminA);
+
+        assertThat(erroDoLogin(adminA.getEmail(), "senhaErrada123"))
+                .isEqualTo(erroDoLogin("nao.existe@teste.local", "senhaErrada123"))
+                .isEqualTo("E-mail ou senha inválidos");
+    }
+
+    @Test
+    @DisplayName("tenant inativo com senha errada recebe a frase genérica")
+    void tenantInativoComSenhaErradaRecebeFraseGenerica() throws Exception {
+        tenantA.setAtivo(false);
+        tenantRepository.save(tenantA);
+
+        assertThat(erroDoLogin(adminA.getEmail(), "senhaErrada123"))
+                .isEqualTo("E-mail ou senha inválidos");
+    }
+
+    @Test
+    @DisplayName("inativo com a senha certa recebe a frase específica")
+    void inativoComSenhaCertaRecebeFraseEspecifica() throws Exception {
+        adminA.setAtivo(false);
+        usuarioRepository.save(adminA);
+
+        assertThat(erroDoLogin(adminA.getEmail(), SENHA_PADRAO))
+                .isEqualTo("Usuário inativo. Contate o administrador.");
+
+        tenantB.setAtivo(false);
+        tenantRepository.save(tenantB);
+
+        assertThat(erroDoLogin(adminB.getEmail(), SENHA_PADRAO))
+                .isEqualTo("Acesso bloqueado. Contate o administrador.");
+    }
+
+    /**
+     * O bloqueio fica ANTES da senha: se ficasse depois, a senha certa daria
+     * outra frase durante o bloqueio — e o bloqueio viraria um oráculo.
+     */
+    @Test
+    @DisplayName("conta bloqueada dá o mesmo erro com a senha certa e com a errada")
+    void bloqueadoNaoViraOraculoDeSenha() throws Exception {
+        Usuario bloqueado = usuarioRepository.findById(adminA.getId()).orElseThrow();
+        bloqueado.setTentativasFalhas(5);
+        bloqueado.setBloqueadoAte(Instant.now().plus(15, ChronoUnit.MINUTES));
+        usuarioRepository.save(bloqueado);
+
+        assertThat(erroDoLogin(adminA.getEmail(), SENHA_PADRAO))
+                .isEqualTo(erroDoLogin(adminA.getEmail(), "senhaErrada123"))
+                .startsWith("Conta temporariamente bloqueada");
+    }
+
+    /**
+     * O X-Forwarded-For é do cliente, e o cliente escreve o que quiser nele:
+     * o IP do log vem da conexão. Em produção o proxy da mesma máquina põe o
+     * IP real, e o Tomcat (forward-headers-strategy: native, só de proxy
+     * interno) o promove a remoteAddr antes de chegar aqui.
+     */
+    @Test
+    @DisplayName("o IP do log de acesso vem da conexão, não do X-Forwarded-For")
+    void ipDoLogVemDaConexao() throws Exception {
+        mockMvc.perform(post("/auth/login")
+                        .header("X-Forwarded-For", "203.0.113.7")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"%s","senha":"%s"}
+                                """.formatted(adminA.getEmail(), SENHA_PADRAO)))
+                .andExpect(status().isOk());
+
+        assertThat(loginLogRepository.findAll())
+                .singleElement()
+                .extracting(l -> l.getEnderecoIp())
+                .isEqualTo("127.0.0.1");
+    }
+
+    // ─────────────────────────────────────────────────────────────────
     //  Bloqueio por tentativas — OWASP A07
     // ─────────────────────────────────────────────────────────────────
 
@@ -176,17 +265,71 @@ class AuthTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("reapresentar token já usado derruba a cadeia inteira")
+    @DisplayName("reapresentar token usado há mais de 10 s derruba a cadeia inteira")
     void reusoDerrubaACadeia() throws Exception {
         String primeiro = refreshTokenDeLogin(adminA.getEmail());
         String segundo = objectMapper.readTree(chamarRefresh(primeiro, 200))
                 .get("refreshToken").asText();
+        envelhecerRevogados(Duration.ofSeconds(11));    // fora da tolerância entre abas
 
-        chamarRefresh(primeiro, 401);       // reuso detectado
+        String corpo = chamarRefresh(primeiro, 401);       // reuso detectado
+        assertThat(objectMapper.readTree(corpo).has("motivo"))
+                .as("fora da janela é o reuso de sempre, sem a marca da outra aba")
+                .isFalse();
 
         // O token novo também precisa cair — a revogação não pode ser desfeita
         // pelo rollback da exceção lançada acima.
         chamarRefresh(segundo, 401);
+    }
+
+    /**
+     * Duas abas renovando juntas: a trava do navegador serializa, mas a
+     * segunda às vezes lê o localStorage de antes e apresenta o refresh que a
+     * primeira acabou de girar. Dentro de 10 s isso é a outra aba, não roubo:
+     * 401 com a marca, nada emitido, e a cadeia — o sucessor — segue valendo.
+     */
+    @Test
+    @DisplayName("reuso logo após a rotação: 401 com a marca, nada emitido, e o sucessor continua valendo")
+    void reusoImediatoNaoDerrubaACadeia() throws Exception {
+        String primeiro = refreshTokenDeLogin(adminA.getEmail());
+        String segundo = objectMapper.readTree(chamarRefresh(primeiro, 200))
+                .get("refreshToken").asText();
+        long tokensAntes = refreshTokenRepository.count();
+
+        String corpo = chamarRefresh(primeiro, 401);
+        assertThat(objectMapper.readTree(corpo).path("motivo").asText()).isEqualTo("SESSAO_RENOVADA_EM_OUTRA_ABA");
+        assertThat(objectMapper.readTree(corpo).path("erro").asText()).isEqualTo("Sessão renovada em outra aba");
+        assertThat(refreshTokenRepository.count()).as("nenhum token emitido").isEqualTo(tokensAntes);
+
+        chamarRefresh(segundo, 200);
+    }
+
+    /**
+     * O logout grava o mesmo revogado_em: reapresentar logo depois cai na
+     * janela e recebe a marca — mas nada é emitido e a cadeia já está toda
+     * revogada, então a sessão não volta.
+     */
+    @Test
+    @DisplayName("reuso logo após o logout: 401, nada emitido, e todos os tokens continuam revogados")
+    void reusoAposLogoutNaoReabreASessao() throws Exception {
+        String corpo = mockMvc.perform(post("/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"%s","senha":"%s"}
+                                """.formatted(adminA.getEmail(), SENHA_PADRAO)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String access = "Bearer " + objectMapper.readTree(corpo).get("accessToken").asText();
+        String refresh = objectMapper.readTree(corpo).get("refreshToken").asText();
+        mockMvc.perform(post("/auth/logout").header(AUTHORIZATION, access))
+                .andExpect(status().isNoContent());
+        long tokensAntes = refreshTokenRepository.count();
+
+        chamarRefresh(refresh, 401);
+        chamarRefresh(refresh, 401);
+
+        assertThat(refreshTokenRepository.count()).isEqualTo(tokensAntes);
+        assertThat(refreshTokenRepository.findAll()).allMatch(t -> t.getRevogadoEm() != null);
     }
 
     @Test
@@ -249,6 +392,40 @@ class AuthTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.impersonating").value(false));
     }
 
+    /**
+     * Contrato com o front (api.ts): o refresh pertence ao tenant de ORIGEM.
+     * Renovar a sessão no meio de uma troca devolve o superadmin ao tenant
+     * dele, sem impersonação — o front compara o tenantId da resposta com o de
+     * antes e não repete a requisição em outro cliente.
+     */
+    @Test
+    @DisplayName("refresh durante a troca de tenant devolve o tenant de origem")
+    void refreshDuranteTrocaDevolveOTenantDeOrigem() throws Exception {
+        String corpo = mockMvc.perform(post("/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"%s","senha":"%s"}
+                                """.formatted(superadmin.getEmail(), SENHA_PADRAO)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String access = "Bearer " + objectMapper.readTree(corpo).get("accessToken").asText();
+        String refresh = objectMapper.readTree(corpo).get("refreshToken").asText();
+
+        mockMvc.perform(post("/auth/switch-tenant/{id}", tenantB.getId()).header(AUTHORIZATION, access))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tenantId").value(tenantB.getId().toString()))
+                .andExpect(jsonPath("$.refreshToken").doesNotExist());
+
+        mockMvc.perform(post("/auth/refresh")
+                        .contentType("application/json")
+                        .content("""
+                                {"refreshToken":"%s"}
+                                """.formatted(refresh)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tenantId").value(superadmin.getTenant().getId().toString()))
+                .andExpect(jsonPath("$.impersonating").value(false));
+    }
+
     @Test
     @DisplayName("não é possível entrar em tenant inativo")
     void naoEntraEmTenantInativo() throws Exception {
@@ -261,6 +438,28 @@ class AuthTest extends AbstractIntegrationTest {
     }
 
     // ─────────────────────────────────────────────────────────────────
+
+    /** A frase do 401 de um login que falha. */
+    private String erroDoLogin(String email, String senha) throws Exception {
+        String corpo = mockMvc.perform(post("/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"%s","senha":"%s"}
+                                """.formatted(email, senha)))
+                .andExpect(status().isUnauthorized())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(corpo).get("erro").asText();
+    }
+
+    /** Recua o revogado_em dos tokens já revogados — simula o tempo passando. */
+    private void envelhecerRevogados(Duration quanto) {
+        refreshTokenRepository.findAll().stream()
+                .filter(t -> t.getRevogadoEm() != null)
+                .forEach(t -> {
+                    t.setRevogadoEm(t.getRevogadoEm().minus(quanto));
+                    refreshTokenRepository.save(t);
+                });
+    }
 
     private String refreshTokenDeLogin(String email) throws Exception {
         String corpo = mockMvc.perform(post("/auth/login")

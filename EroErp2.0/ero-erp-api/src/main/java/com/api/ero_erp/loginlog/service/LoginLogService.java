@@ -1,5 +1,6 @@
 package com.api.ero_erp.loginlog.service;
 
+import com.api.ero_erp.config.IpUtils;
 import com.api.ero_erp.config.PageableUtils;
 import com.api.ero_erp.config.SecurityUtils;
 import com.api.ero_erp.loginlog.dtos.LoginLogResponseDto;
@@ -114,17 +115,9 @@ public class LoginLogService {
     private LoginLog base(HttpServletRequest request) {
         LoginLog registro = new LoginLog();
         registro.setDataLogin(Instant.now());
-        registro.setEnderecoIp(ipDe(request));
+        registro.setEnderecoIp(IpUtils.ipDe(request));
         registro.setUserAgent(truncar(request != null ? request.getHeader("User-Agent") : null));
         return registro;
-    }
-
-    private String ipDe(HttpServletRequest request) {
-        if (request == null) return null;
-        String encaminhado = request.getHeader("X-Forwarded-For");
-        if (encaminhado != null && !encaminhado.isBlank())
-            return encaminhado.split(",")[0].trim();
-        return request.getRemoteAddr();
     }
 
     private String truncar(String valor) {

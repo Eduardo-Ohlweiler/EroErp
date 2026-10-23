@@ -123,10 +123,13 @@ export interface ConsultaResponse extends TotaisConsulta, AjusteGeral {
   updatedAt?: string | null
 }
 
-/** Espelha `ConsultaCalculoDto`. */
+/**
+ * Espelha `ConsultaCalculoDto`. As listas vêm ausentes para quem não lê
+ * Serviços ou Produtos — como na consulta gravada; subtotais e total, sempre.
+ */
 export interface ConsultaCalculo extends TotaisConsulta {
-  servicos: (ValoresDoItem & { precoUnitario: number })[]
-  produtos: (ValoresDoItem & { precoUnitario: number })[]
+  servicos?: (ValoresDoItem & { precoUnitario: number })[] | null
+  produtos?: (ValoresDoItem & { precoUnitario: number })[] | null
 }
 
 /** Espelha `ConsultaListaDto`. */
