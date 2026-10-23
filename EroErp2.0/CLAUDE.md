@@ -141,6 +141,7 @@ Testes contra o banco `ero_erp_test` — nada de H2 nem Testcontainers.
 | **Filiais** | ✅ pronto · o "emitente" do antigo: matriz e filiais apontando para uma pessoa, várias matrizes por tenant (`filial/`, migration 018, [docs/09](docs/09-modulo-filiais.md)) |
 | **Serviços** | ✅ pronto · cadastro próprio, separado de produto e sem estoque: código curto por tenant (`tenant_sequencia`), nome único no tenant, valor **opcional por filial** — vazio não é zero (`servico/`, migrations 019–020, [docs/10](docs/10-modulo-servicos.md)) |
 | **Produtos, auxiliares e estoque** | ✅ pronto · do antigo, sem a parte fiscal: produto com código por tenant, EAN com dígito verificador e custo opcional; unidade global; grupo/subgrupo, categoria e marca por tenant; estoque só de produto, por filial, com preço de venda opcional, "controla estoque" (sem ele, a linha só guarda o preço), entrada, ajuste e transferência com quantidade **com sinal** e a linha travada (`produto/`, `auxiliarproduto/`, `estoque/`, migrations 021–024, [docs/11](docs/11-modulo-produtos-estoque.md)). Mínimo só guardado: o alerta vem com o painel |
+| **Kit de telas** | 📐 especificado, ainda não construído · o jeito do EroErp antigo de montar tela: `TForm`, `TRow`/`TCol`, `TEntry` com máscaras, `TDate`, `TDateTime`, `TCombo` (fixo) × `TDBCombo` (banco), `TCheckBox`/`TDBCheckBox`, `TAuditoria`, `useMessage`; largura padrão por componente e `width` por token; campos um abaixo do outro, label em cima; toda tela copiada de um modelo (List, Form, FormList) e lista com Filtrar · Limpar · Novo ([docs/14](docs/14-layout-de-telas.md)). Nasce na fase 0 do `/padronizar-layout`; até lá, tela nova é pergunta ao Eduardo |
 | **Menu recolhível** | ✅ pronto · expandido ↔ só ícones em `lg+`, Ctrl+B, lembrado no navegador ([docs/04](docs/04-arquitetura-frontend.md), "O menu recolhe") |
 | **Agenda** | ✅ pronto · compromisso com responsável **escolhido** (usuário), convidados, cliente opcional, filial e cor herdada dela; conflito **por usuário** — o do responsável recusa, o do convidado só avisa; recorrência de 2 a 52 calculada a partir da primeira, no fuso do sistema; status único (agendado, confirmado, concluído, cancelado, faltou); calendário dia/semana/mês/lista feito à mão e responsivo (`compromisso/`, migration 025, [docs/12](docs/12-modulo-agenda-consulta.md)) |
 | **Consulta** | ✅ pronto · o atendimento sobre o compromisso, **sem status próprio**: a situação é a do compromisso, que ganha `EM_ATENDIMENTO`, e concluir é **só pela consulta**; nasce convertendo um compromisso da agenda ou criando-o junto (mesmas regras, conflito incluído); serviços e produtos com preço do catálogo da filial como sugestão, editável e gravado como **retrato**; ajuste por item e no total; totais publicados pelo servidor e prévia em `POST /consultas/calculo`; as listas somem para quem não lê Serviços/Produtos (nula não mexe, enviada é 403); concluir baixa o estoque (`SAIDA_CONSULTA`) com rollback total; reconsulta (`consulta/`, migrations 026–027, [docs/12 §7](docs/12-modulo-agenda-consulta.md)) |
@@ -173,7 +174,8 @@ como já foi resolvido lá). Ao trazer um módulo:
    - `BIGSERIAL`/`Long` vira **UUID**;
    - JPQL com filtro opcional vira **native query com `CAST`** (regra 2);
    - entidade nunca sai do controller: DTO `record` + mapper estático (regra 3);
-   - toda tela nasce responsiva (regra 6).
+   - toda tela nasce responsiva (regra 6) e copiada de um modelo do kit
+     ([docs/14 §4](docs/14-layout-de-telas.md)) — como o antigo fazia.
 4. Migration nova em `db/changelog/changes/NNN-descricao.xml`, continuando a
    numeração.
 5. Permissão: cada tela nova vira constante em `Tela` (e no `Modulo`, se for
@@ -532,7 +534,7 @@ de fechar no papel.
 | [docs/11-modulo-produtos-estoque.md](docs/11-modulo-produtos-estoque.md) | Produtos, auxiliares e estoque — preço por filial no estoque, movimentação com sinal e trava |
 | [docs/12-modulo-agenda-consulta.md](docs/12-modulo-agenda-consulta.md) | Agenda — responsável escolhido, convidados, conflito por usuário, recorrência · Consulta (§7) — situação única, preço-retrato, ajustes, totais do servidor, baixa ao concluir |
 | [docs/13-modulo-whatsapp.md](docs/13-modulo-whatsapp.md) | WhatsApp — servidor Evolution global, modo do tenant, conexão por QR, status pela tela e webhook com segredo, apikey criptografada |
-| [docs/14-layout-de-telas.md](docs/14-layout-de-telas.md) | Largura e disposição dos campos — formulário, listagem, FormList. Prevalece sobre os grids do doc 04 |
+| [docs/14-layout-de-telas.md](docs/14-layout-de-telas.md) | Kit de telas — componentes, larguras, disposição e as telas-modelo List, Form e FormList. Prevalece sobre o doc 04 em forma de tela |
 | [docs/15-relatorios.md](docs/15-relatorios.md) | Padrão de relatórios — cabeçalho (logo + cor do tenant), filtros na 1ª página, rodapé de auditoria, modelos (lista, agrupado com subtotais) |
 
 ---
@@ -565,9 +567,9 @@ aberto na raiz do EroErp antigo, ele não enxerga estes agentes.
 | `pesquisa-eroerp-antigo` · `pesquisa-silvia` | como o antigo / a Silvia faziam | não |
 | `planejador` | pedido → plano com arquivos, larguras de campo e perguntas | não |
 | `dev-backend` | Java/Spring, migration, testes | sim |
-| `dev-frontend` | telas e biblioteca T*, no padrão do doc 14 | sim |
+| `dev-frontend` | telas copiadas dos modelos e o kit T* do doc 14 | sim |
 | `relatorios` | relatórios no padrão do doc 15 (camada de impressão) | sim |
-| `guardiao-layout` | larguras e disposição contra o doc 14, 360 px | não |
+| `guardiao-layout` | tela contra o kit e o modelo do doc 14, 1440/768/360 px | não |
 | `revisor` | tenant, permissão, as 6 regras, as armadilhas abaixo | não |
 | `qa` | build, suíte, bateria, três vias | só script temporário |
 | `testador` | usa o sistema como usuário, caça bug visual e funcional, relatório | só script temporário |

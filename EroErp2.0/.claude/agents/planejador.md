@@ -20,7 +20,8 @@ para `ls`, `git log`, `git diff`, `git status`.
 2. O doc do assunto em `docs/` (índice no CLAUDE.md) e, se houver tela,
    `docs/04-arquitetura-frontend.md` **e** `docs/14-layout-de-telas.md`.
 3. O módulo de referência: `usuario` para CRUD administrativo, `pessoa` para
-   módulo de negócio com listas filhas, `AuxiliaresProduto` para FormList.
+   módulo de negócio com listas filhas. Para a **forma** da tela, os modelos do
+   doc 14 §4 (List, Form, FormList) — e o §0 dele, que diz se o kit já existe.
 4. O que já existe parecido: `Grep` pelo assunto no backend, migrations, front e
    menu. A migration mais recente em
    `ero-erp-api/src/main/resources/db/changelog/changes/` dá o próximo número.
@@ -44,11 +45,25 @@ Escreva-o por inteiro na última mensagem, nesta ordem:
    e `Modulo` novos; testes (`AbstractIntegrationTest`, isolamento entre
    tenants, par leitura/escrita do `PermissaoTest`); o que acrescentar na
    `bateria-filiais.mjs`.
-4. **Frontend** — `types/`, `services/`, páginas (Form/List ou FormList), rota
-   com `PorRegistro` e `TProtected tela`, item de menu com `tela:`,
-   `useSomenteLeitura`, `types/permissao.ts`. Para cada formulário e filtro,
-   **a lista de campos com a `largura` do doc 14 e a `TLinha` em que cada um
-   fica** — é isto que impede o campo de data com 300 px.
+4. **Frontend** — `types/`, `services/`, rota com `PorRegistro` e
+   `TProtected tela`, item de menu com `tela:`, `useSomenteLeitura`,
+   `types/permissao.ts`. Para **cada tela**, o que o `dev-frontend` precisa para
+   só copiar e trocar (doc 14):
+   - **o modelo** (List, Form ou FormList) e a tela pronta que serve de molde;
+   - **os campos na ordem**, um por linha, cada um com o componente do kit e a
+     máscara — `TEntry` (Nome), `TEntry mascara="cpf"`, `TDate`, `TDateTime`,
+     `TCombo` com as opções, `TDBCombo` com o `/select` de onde vem,
+     `TCheckBox`/`TDBCheckBox`, `TTextArea`;
+   - `width` **só** onde o padrão do componente (doc 14 §2.3) não serve, e por
+     quê;
+   - as linhas que juntam campos lado a lado — só grupos do doc 14 §1, ou a
+     linha que você decidir dividir por haver muitos campos (cada um numa
+     `TCol`, `longo`), dizendo por quê;
+   - painéis (`TPanel`) e a ordem deles; colunas da grade e filtros, na List;
+   - label em cima — ao lado só se o Eduardo pediu.
+   Se o kit ainda não existe (doc 14 §0) e a fatia tem tela nova, isso é
+   **pergunta ao Eduardo**: construir o kit antes (`/padronizar-layout`, fase 0)
+   ou não.
 5. **Riscos** — qual armadilha do CLAUDE.md este trabalho pisa (data em UTC,
    máscara de centavos, exportação com escopo duplo, guarda sem piso…).
 6. **Ordem de execução** e o que o `qa`, o `guardiao-layout` e o `testador` devem

@@ -176,8 +176,10 @@ consulta sem paginação) — espere ~2,5 s antes do `pdf()`.
 
 ## 5. Responsividade — regra 6 do projeto
 
-Nenhuma tela é dada por pronta sem 360 px. O que se mede é a rolagem
-horizontal, e vale identificar **o elemento culpado**, não só o sintoma:
+Nenhuma tela é dada por pronta sem 360 px — e, com o kit do doc 14, também a
+768 px (`olhar.mjs … --768`): é no tablet que a linha dividida em `TCol`s tem de
+quebrar sem espremer campo. O que se mede é a rolagem horizontal, e vale
+identificar **o elemento culpado**, não só o sintoma:
 
 ```js
 await pg.setViewportSize({ width: 360, height: 900 })

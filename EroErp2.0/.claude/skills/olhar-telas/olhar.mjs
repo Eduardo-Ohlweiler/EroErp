@@ -5,6 +5,7 @@
  *   node .claude/skills/olhar-telas/olhar.mjs /app tela
  *   node .claude/skills/olhar-telas/olhar.mjs /app/pessoas lista --pdf
  *   node .claude/skills/olhar-telas/olhar.mjs /app/usuarios usuarios --360
+ *   node .claude/skills/olhar-telas/olhar.mjs /app/produtos/novo produto --768   (tablet)
  *
  * Sai em <tmp do SO>/olhar/<nome>.png (e .pdf). Depois ABRA o arquivo — gerar
  * e não olhar não vale de nada.
@@ -47,7 +48,7 @@ const SENHA = process.env.OLHAR_SENHA ?? dotEnv.SUPERADMIN_PASSWORD ?? 'Admin123
 
 const [, , rota = '/app', nome = 'tela', ...flags] = process.argv
 const pdf = flags.includes('--pdf')
-const largura = flags.includes('--360') ? 360 : 1440
+const largura = flags.includes('--360') ? 360 : flags.includes('--768') ? 768 : 1440
 const SAIDA = join(tmpdir(), 'olhar')
 mkdirSync(SAIDA, { recursive: true })
 
