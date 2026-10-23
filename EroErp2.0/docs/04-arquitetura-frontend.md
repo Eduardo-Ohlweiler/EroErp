@@ -5,8 +5,9 @@
 >
 > Cores, fontes, espaçamentos e componentes visuais: [05-identidade-visual.md](05-identidade-visual.md).
 >
-> **Largura e disposição dos campos: [14-layout-de-telas.md](14-layout-de-telas.md).**
-> Ele prevalece sobre os `grid sm:grid-cols-N` dos exemplos deste documento.
+> **Kit de telas, larguras, disposição e telas-modelo: [14-layout-de-telas.md](14-layout-de-telas.md).**
+> Ele prevalece sobre este documento em tudo que é forma de tela, e sobre os
+> `grid sm:grid-cols-N` que ainda sobram nos exemplos daqui.
 
 ---
 
@@ -78,10 +79,11 @@ Ordem obrigatória:
 A implementação nova deve parecer ter sido escrita junto com o resto do sistema.
 Não inventar arquitetura alternativa quando já existe uma equivalente.
 
-Tela de referência: **`UsuarioList`/`UsuarioForm`** — é o Form/List completo, com
-filtros, `TCombo` de busca no servidor, coluna condicional, paginação, ação de
-linha e formulário com `react-hook-form` + `zod`. Copiar dela. Para módulo de
-negócio com listas filhas, a referência é **`PessoaList`/`PessoaForm`**.
+Tela de referência: **os modelos do [doc 14 §4](14-layout-de-telas.md)** (List,
+Form, FormList). Para dados, permissão e serviço, `UsuarioList`/`UsuarioForm`
+(filtros, combo do banco, coluna condicional, paginação, ação de linha) e, para
+módulo de negócio com listas filhas, `PessoaList`/`PessoaForm` — mas a **forma**
+delas é a de antes do kit e não se copia.
 
 ---
 
@@ -107,6 +109,12 @@ import { IconBusca } from '@/assets/icons'
 
 Componentes em `components/common/`. **Nunca** criar input, select, checkbox,
 radio, grid, modal ou container de página novos quando já existe equivalente.
+
+> **O kit de telas é o [doc 14 §3](14-layout-de-telas.md)** — `TForm`, `TRow`,
+> `TCol`, `TDate`, `TDateTime`, `TCombo` (fixo), `TDBCombo` (banco), `TCheckBox`,
+> `TDBCheckBox`, `TAuditoria`, `useMessage`, `useQuestion`, com nomes do EroErp
+> antigo. Ele nasce na fase 0 do `/padronizar-layout`; até lá, a tabela abaixo
+> descreve o **código de hoje**, e quem construir o kit a reescreve.
 
 ### Existe hoje
 
@@ -153,20 +161,22 @@ alterna o menu entre expandido (248 px, `--spacing-sidebar`) e só ícones
   os dois prenderiam uma caixa posicionada dentro deles;
 - o scrim do drawer entra e sai com fade; `prefers-reduced-motion` desliga tudo.
 
-### A criar quando a fatia pedir
+### O que muda com o kit
 
-Não adiantar: componente sem uso real nasce errado. `TDate`/`TDateTime`,
-`TFieldList` (lista de linhas editáveis), `TDropdown`.
+A primeira versão deste doc descartou `TRow`/`TForm` em favor de
+`grid gap-4 sm:grid-cols-N` escrito em cada tela. Deu errado: cada tela
+inventou o seu grid, campo curto esticou e nenhuma tela ficou igual à outra.
+Decisão do Eduardo (2026-10-23): volta o kit do antigo — **[doc 14](14-layout-de-telas.md)**.
+`TFieldList` (lista filha) faz parte do kit; `TDropdown` continua para quando a
+fatia pedir.
 
-`TRow`/`TSpace`/`TForm` foram descartados: `grid gap-4 sm:grid-cols-2` do Tailwind
-e o `<form>` nativo com `handleSubmit` resolvem sem camada intermediária.
+### Escolha entre `TCombo` e `TDBCombo`
 
-### Escolha entre `TSelect` e `TCombo`
-
-**`TSelect` para lista fixa e curta** (nível de acesso, situação, enum);
-**`TCombo` quando a lista cresce** (cliente, pessoa, produto). Um `<select>` com
-dezenas de clientes obriga a rolar procurando; o `TCombo` busca no servidor com
-debounce, sem carregar tudo para filtrar no navegador.
+**`TCombo` para lista fixa e curta** (nível de acesso, situação, enum);
+**`TDBCombo` quando a lista vem do banco** (cliente, pessoa, produto). Um
+`<select>` com dezenas de clientes obriga a rolar procurando; o `TDBCombo` busca
+no servidor com debounce, sem carregar tudo para filtrar no navegador. (Até a
+fase 0, os nomes no código são `TSelect` e `TCombo`, nessa ordem.)
 
 Todos com props tipadas, `forwardRef` quando o react-hook-form precisa, e estilo
 só por tokens.
@@ -183,187 +193,63 @@ só por tokens.
 
 ## 5. Padrões de tela
 
-Existem **dois**. Toda tela é um dos dois.
+Existem **três**, e toda tela é um deles: **List com filtros**, **Form** e
+**FormList**. O esqueleto de cada um — componentes, ordem dos campos, botões,
+auditoria — está no **[doc 14 §4](14-layout-de-telas.md)**, pronto para copiar.
+Tela nova = copiar o modelo e trocar nomes, rota, service, campos, máscaras e
+colunas.
 
-### Form/List — entidades principais
+- **List** (`/app/pessoas`) e **Form** (`/app/pessoas/nova`, `/app/pessoas/:id`)
+  para as entidades principais: muitos registros, filtros, paginação.
+- **FormList** para tabelas de apoio (grupos, categorias, marcas, tipos) — e só
+  nelas.
 
-Duas telas separadas: listagem (`/app/pessoas`) e formulário
-(`/app/pessoas/nova`, `/app/pessoas/:id`). Muitos registros, busca, filtros, paginação.
+O que faz a tela funcionar, além da forma:
 
-Usar em: Pessoa, Usuario, Tenant — e nos cadastros principais que vierem do
-EroErp antigo (Produto, Pedido…).
-
-Nomenclatura em português, como no resto do código. As props do `TDataGrid` são as
-reais — conferir em `UsuarioList` antes de copiar:
-
-```tsx
-export function PessoaList() {
-  const navigate = useNavigate()
-  const [nome, setNome] = useState('')
-  const [ativo, setAtivo] = useState('')
-  const [pagina, setPagina] = useState(0)
-  const [dados, setDados] = useState<Page<PessoaResponse>>()
-  const [carregando, setCarregando] = useState(true)
-
-  const nomeBusca = useDebounce(nome)
-
-  const carregar = useCallback(() => {
-    setCarregando(true)
-    pessoaService
-      .getAll({
-        nome: nomeBusca || undefined,
-        ativo: ativo === '' ? undefined : ativo === 'true',
-        page: pagina,
-        size: 20,
-      })
-      .then(setDados)
-      .catch(handleApiError)
-      .finally(() => setCarregando(false))
-  }, [nomeBusca, ativo, pagina])
-
-  useEffect(carregar, [carregar])
-
-  const colunas: Coluna<PessoaResponse>[] = [
-    { chave: 'nome', cabecalho: 'Nome', render: (p) => p.nome },
-    { chave: 'nascimento', cabecalho: 'Nascimento', secundaria: true,
-      render: (p) => formatarData(p.dataNascimento) },
-    { chave: 'situacao', cabecalho: 'Situação',
-      render: (p) => <TBadge tom={p.ativo ? 'sucesso' : 'neutro'}>
-        {p.ativo ? 'Ativo' : 'Inativo'}
-      </TBadge> },
-  ]
-
-  return (
-    <TPage
-      title="Pessoas"
-      actions={<TButton onClick={() => navigate('/app/pessoas/nova')}>
-        <IconAdicionar className="size-4" />
-        Nova pessoa
-      </TButton>}
-    >
-      <TPanel>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <TEntry
-            label="Nome"
-            value={nome}
-            suffix={<IconBusca className="size-4" />}
-            onChange={(e) => { setNome(e.target.value); setPagina(0) }}
-          />
-          <TSelect
-            label="Situação"
-            vazio="Todas"
-            opcoes={SITUACAO_OPCOES}
-            value={ativo}
-            onChange={(e) => { setAtivo(e.target.value); setPagina(0) }}
-          />
-        </div>
-      </TPanel>
-
-      <TDataGrid
-        colunas={colunas}
-        linhas={dados?.content ?? []}
-        chaveDe={(p) => p.id}
-        carregando={carregando}
-        onLinhaClick={(p) => navigate(`/app/pessoas/${p.id}`)}
-        tituloCartao={(p) => p.nome}
-        vazioTitulo="Nenhuma pessoa encontrada"
-        vazioDescricao="Ajuste os filtros ou cadastre a primeira."
-      />
-
-      <TDataGridFooter pagina={dados} onPaginaChange={setPagina} />
-    </TPage>
-  )
-}
-```
-
-Três detalhes que não são estilo, são o que faz a tela funcionar:
-
-- **`useCallback` + `useEffect(carregar, [carregar])`.** Mantém uma função só de
-  recarga, reaproveitada depois de uma ação de linha.
-- **`setPagina(0)` a cada mudança de filtro.** Sem isso, filtrar na página 3 devolve
-  uma página vazia e parece que não há resultado.
+- **`useCallback` + `useEffect(carregar, [carregar])`.** Uma função só de recarga,
+  reaproveitada depois de uma ação de linha.
+- **Filtro aplicado é estado próprio.** A lista consulta pelos filtros
+  *aplicados* (Filtrar/Enter), não pelos digitados; filtrar e limpar fazem
+  `setPagina(0)` — sem isso, filtrar na página 3 devolve página vazia.
 - **`secundaria: true`** nas colunas que podem sumir primeiro no mobile.
-
-Toda rota de formulário (`/nova` e `/:id`) entra embrulhada em `PorRegistro`
-(`routes/AppRoutes.tsx`), que chaveia o componente pelo `id` da rota. Sem isso o
-React reaproveita a instância entre as duas rotas irmãs, e a tela "Nova pessoa"
-abre com os dados do registro aberto antes.
-
-### FormList — entidades auxiliares
-
-Formulário e grid na mesma tela, sem navegação. Poucos registros, CRUD simples.
-
-Usar em: tabelas de apoio (tipos, unidades) — e só nelas.
+- Toda rota de formulário (`/nova` e `/:id`) entra embrulhada em `PorRegistro`
+  (`routes/AppRoutes.tsx`), que chaveia o componente pelo `id` da rota. Sem isso o
+  React reaproveita a instância entre as duas rotas irmãs, e a tela "Nova pessoa"
+  abre com os dados do registro aberto antes.
 
 ---
 
 ## 6. Formulários
 
-Sempre **react-hook-form + zod**. Nunca um `useState` por campo.
+Sempre **react-hook-form + zod**, por baixo do `TForm`. Nunca um `useState` por
+campo.
 
 ```tsx
 const pessoaSchema = z.object({
   nome:           z.string().min(1, 'Informe o nome').max(255),
-  dataNascimento: z.coerce.date().max(new Date(), 'Data futura').optional(),
-  sexo:           z.nativeEnum(Sexo, { required_error: 'Informe o sexo' }),
+  dataNascimento: z.string().optional(),
   cpf:            z.string().refine(isCpfValido, 'CPF inválido').optional().or(z.literal('')),
   limiteCredito:  z.coerce.number().min(0).max(1_000_000).optional(),
 })
+type Dados = z.infer<typeof pessoaSchema>
 
-type PessoaFormData = z.infer<typeof pessoaSchema>
+const form = useForm<Dados>({ resolver: zodResolver(pessoaSchema), defaultValues: VAZIO })
 
-export function PessoaForm() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-
-  const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } =
-    useForm<PessoaFormData>({ resolver: zodResolver(pessoaSchema) })
-
-  useEffect(() => {
-    if (id) pessoaService.findById(id).then(p => reset(toFormData(p))).catch(handleApiError)
-  }, [id])
-
-  const onSubmit = async (data: PessoaFormData) => {
-    try {
-      id ? await pessoaService.update(id, data) : await pessoaService.create(data)
-      toast.success('Pessoa salva')
-      navigate('/app/pessoas')
-    } catch (e) {
-      handleApiError(e)
-    }
-  }
-
-  return (
-    <TPage title={id ? 'Editar pessoa' : 'Nova pessoa'}>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
-        <TPanel title="Dados pessoais">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TEntry label="Nome" autoFocus error={errors.nome?.message} {...register('nome')} />
-            <TEntry label="Nascimento" type="date" error={errors.dataNascimento?.message}
-                    {...register('dataNascimento')} />
-            <TSelect label="Sexo" opcoes={SEXO_OPCOES} {...register('sexo')} />
-          </div>
-        </TPanel>
-
-        {/* Em mobile o botão principal fica embaixo: column-reverse resolve
-            sem duplicar markup */}
-        <div className="flex flex-col-reverse gap-2 sm:flex-row">
-          <TButton type="button" variant="secondary" onClick={() => navigate('/app/pessoas')}
-                   className="sm:w-auto">
-            Cancelar
-          </TButton>
-          <TButton type="submit" loading={isSubmitting}>Salvar</TButton>
-        </div>
-      </form>
-    </TPage>
-  )
-}
+<TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
+  <TRow><TEntry name="nome" label="Nome" required autoFocus /></TRow>
+  <TRow><TDate name="dataNascimento" label="Data de nascimento" /></TRow>
+  <TRow><TEntry name="cpf" label="CPF" mascara="cpf" /></TRow>
+  <TRow><TEntry name="limiteCredito" label="Limite de crédito" mascara="moeda" /></TRow>
+  …
+</TForm>
 ```
 
-`<form>` nativo com `noValidate` — a validação é do zod, e a do navegador só
-atrapalharia com mensagens fora do padrão visual. Para campo que não é um `input`
-simples (`TCombo`, por exemplo), usar o `Controller` do react-hook-form, como em
-`UsuarioForm`.
+O `TForm` entrega o `form` aos campos por `FormProvider`: cada campo pega
+`register`, valor e erro **pelo `name`**, e os que não são `input` simples
+(`TDBCombo`, `TDate`) usam `Controller` por dentro — a tela não escreve
+`{...register('x')}` nem `error={errors.x?.message}`. O `<form>` é `noValidate`:
+a validação é do zod, e a do navegador só atrapalharia com mensagens fora do
+padrão visual.
 
 A validação zod do front **espelha** a Bean Validation do backend, não a substitui.
 O backend valida de novo, sempre — o front só evita ida e volta desnecessária.
@@ -388,6 +274,10 @@ tela longa em que o usuário digita em cima e procura o resultado lá embaixo.
 
 O formato adotado é **em abas**, cada aba autocontida: poucas entradas e os
 resultados **daquelas** entradas logo abaixo, no mesmo lugar em que se digitou.
+
+> Dentro de cada aba, as entradas seguem o kit do doc 14 (`TRow`, `TCol`,
+> larguras padrão). Os `grid sm:grid-cols-N` do exemplo abaixo são de antes do
+> kit: valem a ideia das abas, não a forma das linhas.
 
 ```tsx
 <TPage title="Formação de preço">
@@ -570,7 +460,10 @@ export function handleApiError(error: unknown): void {
 }
 ```
 
-**Nunca `alert()`.** Sempre `toast.success` / `toast.error` / `toast.warning`.
+**Nunca `alert()`.** Com o kit, a tela fala por `useMessage()` (`sucesso`,
+`erro`, `aviso`, `info`, `erroApi`) — doc 14 §3.3 —, e o `toast` e o
+`handleApiError` ficam por baixo dele. Antes do kit, `toast.success` /
+`toast.error` / `toast.warning` direto.
 
 ---
 
@@ -768,7 +661,8 @@ componente da biblioteca — não um quarto `className` copiado.
 - Implementar autenticação dentro de página
 - **Reimplementar regra de cálculo de negócio em TypeScript**
 - Hex de cor solto no JSX ou no CSS de componente
-- Tela fora dos padrões Form/List ou FormList
+- Tela fora dos modelos List, Form ou FormList (doc 14 §4)
+- `grid`, `col-span` ou classe de largura na página — largura é do kit (doc 14 §2)
 - Ignorar tratamento de erro da API
 - Estado de formulário grande em `useState` por campo
 - Confiar em role do front para proteger dado
@@ -778,11 +672,11 @@ componente da biblioteca — não um quarto `className` copiado.
 
 ## 15. Checklist de tela
 
-- [ ] Padrão Form/List ou FormList
-- [ ] Componentes da biblioteca interna
-- [ ] react-hook-form + zod
+- [ ] Copiada de um modelo do doc 14 §4 (List, Form ou FormList)
+- [ ] Só componentes do kit; checklist do doc 14 §8
+- [ ] react-hook-form + zod, por baixo do `TForm`
 - [ ] Chamadas via `services/`, erro tratado com `handleApiError`
-- [ ] Feedback por `toast`
+- [ ] Feedback por `useMessage` (antes do kit: `toast`)
 - [ ] Tipagem completa, zero `any`
 - [ ] Tokens de cor e tipografia respeitados, tema claro e escuro
 - [ ] Foco de teclado visível, campos rotulados

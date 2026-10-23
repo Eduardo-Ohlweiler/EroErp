@@ -45,8 +45,10 @@ teto e sem piso; ramo escolhido pelo usuário sem a guarda do automático;
 - Teste que passaria também sem a correção.
 - Frontend: regra de cálculo de negócio em TypeScript; `any`; `fetch`; hex
   solto; componente novo duplicando um da biblioteca.
-- Layout: campo novo sem `largura` do `docs/14` (o detalhe é do
-  `guardiao-layout`; aqui só aponte a ausência).
+- Layout (o detalhe é do `guardiao-layout`; aqui só aponte): tela fora do kit
+  do `docs/14` — `<input>`/`<select>` cru, `grid`, `col-span` ou classe de
+  largura na página, `width` fora da escala, máscara chamada à mão, `toast`
+  direto, tela que não segue o seu modelo (List, Form, FormList).
 
 ## Relatório (a sua resposta final)
 

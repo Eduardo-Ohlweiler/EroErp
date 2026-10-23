@@ -27,7 +27,9 @@ Não toca em `ero/` — isso é do `dev-frontend`.
 2. Listagem com filtro opcional = **native query com `CAST`**, `countQuery`, e
    `PageableUtils.semOrdenacao(pageable)`.
 3. Controller só com DTO `record` + Bean Validation; conversão só no mapper
-   estático.
+   estático. `ResponseDto` de cadastro cuja entidade tem `createdBy`/`updatedBy`
+   publica `criadoPorNome`, `createdAt`, `alteradoPorNome` e `updatedAt` — é
+   o que o `TAuditoria` da tela lê (docs/14 §3.2).
 4. Estrutura só por Liquibase, `db/changelog/changes/NNN-descricao.xml`,
    continuando a numeração. **Nunca** editar changeSet já executado.
 5. Nada de dado pessoal, senha ou token em log — id e operação.

@@ -1,213 +1,523 @@
-# Layout de telas — larguras e disposição dos campos
+# Kit de telas — componentes, larguras e telas-modelo
 
-> Leia antes de criar ou mexer em qualquer formulário, filtro de listagem ou
-> FormList. **Este documento prevalece sobre os exemplos de grid do
-> [doc 04](04-arquitetura-frontend.md)**: lá a forma de buscar dados, validar e
-> salvar; aqui onde cada campo fica e de que tamanho ele é.
+> Leia antes de criar ou mexer em qualquer tela: formulário, listagem com
+> filtros, FormList ou modal. **Este documento prevalece sobre o
+> [doc 04](04-arquitetura-frontend.md) em tudo que é forma de tela**: lá a forma
+> de buscar dados, validar e salvar; aqui quais componentes montam a tela, onde
+> cada campo fica e de que tamanho ele é.
 >
-> Quem decide o padrão é o Eduardo. Os números abaixo vieram do EroErp antigo
-> (`.claude/agents/eroerp-dev.md`, "Regras de largura de campos") e são o ponto
-> de partida: ajuste **aqui**, nunca tela por tela.
+> Quem decide o padrão é o Eduardo (decisões de 2026-10-23). O molde é o EroErp
+> antigo (`C:\Users\Eduardo\Documents\GitHub\EroErp\ero\src\components`), que
+> montava toda tela com o mesmo kit — ajuste **aqui**, nunca tela por tela.
 
 ---
 
-## 1. O problema que este documento resolve
+## 0. Estado
 
-No EroErp antigo cada campo tinha largura semântica — data com 160 px, CPF com
-180 px, CEP com 160 px — e a tela tinha cara de sistema. O 2.0 trocou isso por
-`grid sm:grid-cols-N` com o `TEntry` em `w-full`: **toda coluna tem a mesma
-largura**, então o campo ocupa a fatia que sobrou, e não o que o dado precisa.
-
-Exemplos reais, de antes deste documento:
-
-| Tela | O que acontece |
-|---|---|
-| `CompromissoForm` | Dia, Das e Às dividem o painel em três terços — uma hora com 300 px |
-| `MovimentacaoList` | cinco filtros iguais, a data do mesmo tamanho que a busca de produto |
-| `ProdutoForm` | `grid-cols-[8rem_minmax(0,1fr)]` improvisado — certo no tamanho, mas inventado na tela |
-
-A regra é: **campo curto tem largura fixa do tamanho do dado; campo longo
-cresce; a sobra da linha fica vazia.** Campo curto nunca estica para preencher
-linha.
+> **O kit da §3 ainda não existe no código.** Ele nasce na fase 0 do
+> `/padronizar-layout` (`.claude/skills/padronizar-layout/SKILL.md`), antes da
+> primeira tela corrigida. Até lá, as telas do 2.0 usam `TSelect`/`TCombo` com os
+> nomes de hoje e `grid sm:grid-cols-N` — e **tela nova não nasce antes do kit**
+> sem o Eduardo decidir: o `dev-frontend` para e pergunta, para a tela não ser
+> feita duas vezes.
+>
+> Quem constrói o kit atualiza esta seção para "existe" e a lista de
+> `components/common/` no `CLAUDE.md`.
 
 ---
 
-## 2. Escala de larguras
+## 1. A ideia
 
-Vale a partir de `sm` (≥ 640 px). Abaixo disso **todo campo é 100 %** — a regra
-6 do CLAUDE.md continua mandando no celular.
+No antigo, fazer uma tela era **copiar uma tela existente e trocar nomes,
+rotas, máscaras e tipos**. Não tinha segredo: o campo já vinha com o tamanho
+certo, a linha já sabia se dividir, o rodapé de botões, a auditoria e as
+mensagens eram iguais em todas. O 2.0 perdeu isso — cada tela monta o seu
+`grid`, escolhe as suas classes de largura e repete à mão spinner, faixa de
+"só leitura" e rodapé.
 
-| `largura` | Para | Classe (sm+) | px |
+O kit devolve o antigo, com o que o 2.0 tem de melhor por baixo
+(react-hook-form + zod, tokens de tema, responsividade, permissão por tela).
+
+**A regra de disposição:**
+
+- **Campos um abaixo do outro**, um por `TRow`.
+- **Lado a lado só** nos grupos naturais abaixo, ou quando a tela tem muitos
+  campos e o plano manda dividir a linha (cada campo na sua `TCol`, com
+  `width="longo"`):
+  - CNH · Categoria · Validade
+  - De · Até
+  - Dia · Das · Às
+  - CEP · Número · Complemento
+  - Bairro · Cidade · UF
+  - Valor · Unidade
+  - Criado por · Criado em — Alterado por · Alterado em (o `TAuditoria` faz)
+  - Cada linha de uma lista filha (`TFieldList`): Filial · Valor, Tipo ·
+    Telefone, Tipo · E-mail — e o botão de remover no fim
+- **Label em cima**, dentro do componente. Label ao lado (estilo do sistema PHP
+  do Eduardo) só quando o plano pedir — §5.
+- **Campo curto nunca estica.** CPF tem tamanho de CPF em qualquer linha.
+- **Tudo responsivo** (regra 6): abaixo de `sm` (640 px) toda `TRow` empilha e
+  todo campo ocupa 100 %; acima, a linha quebra sozinha quando as colunas não
+  cabem no mínimo delas.
+
+---
+
+## 2. Larguras
+
+Cada componente tem **largura padrão** (§2.3) e quase nunca precisa de `width`.
+Quando precisa, passa-se **um nome da escala** — nunca `"50%"`, `"200px"` nem
+classe Tailwind solta na tela.
+
+### 2.1 Tokens fixos — o tamanho do dado
+
+Valem a partir de `sm`. Levam `max-w-full` (nunca vazam da `TCol`) e o campo
+fica encostado à esquerda da coluna.
+
+| `width` | Para | Classe (sm+) | px |
 |---|---|---|---|
 | `uf` | UF, sigla de 2–3 letras | `sm:w-20` | 80 |
 | `codigo` | código curto por tenant (serviço, produto), número do registro | `sm:w-32` | 128 |
-| `hora` | `type="time"` | `sm:w-32` | 128 |
-| `quantidade` | quantidade, percentual, inteiro pequeno (`mascara="inteiro"`, `%`) | `sm:w-32` | 128 |
-| `data` | `type="date"` | `sm:w-40` | 160 |
+| `hora` | hora | `sm:w-32` | 128 |
+| `quantidade` | quantidade, percentual, inteiro pequeno | `sm:w-32` | 128 |
+| `data` | data | `sm:w-40` | 160 |
 | `cep` | CEP | `sm:w-40` | 160 |
-| `valor` | dinheiro e decimal com sufixo (`mascara="decimal"`, `R$`) | `sm:w-40` | 160 |
+| `valor` | dinheiro e decimal com sufixo | `sm:w-40` | 160 |
 | `cpf` | CPF, telefone, celular | `sm:w-44` | 176 |
-| `situacao` | `TSelect` curto: situação, sim/não, tipo com 2–5 opções | `sm:w-48` | 192 |
-| `cnpj` | CNPJ, e o campo CPF/CNPJ que alterna | `sm:w-52` | 208 |
-| `dataHora` | `type="datetime-local"` | `sm:w-56` | 224 |
+| `situacao` | `TCombo` curto: situação, sim/não, tipo com 2–5 opções | `sm:w-48` | 192 |
+| `cnpj` | CNPJ, e o CPF/CNPJ que alterna | `sm:w-52` | 208 |
+| `dataHora` | data e hora | `sm:w-56` | 224 |
 | `curto` | texto curto livre: número do endereço, complemento, bairro, EAN | `sm:w-56` | 224 |
-| `medio` | `TSelect` de enum com rótulos longos, cidade, e-mail secundário | `sm:w-80` | 320 |
-| `longo` | nome, razão social, descrição, logradouro, e-mail, `TCombo` de pessoa/produto | `sm:flex-1 sm:min-w-64` | cresce, mínimo 256 |
-| `total` | `TTextArea`, observação, endereço completo numa linha só | `sm:basis-full` | linha inteira |
+| `medio` | `TCombo` de enum com rótulos longos, cidade | `sm:w-80` | 320 |
 
-Na dúvida entre duas, a menor — campo que "parece apertado" no olho costuma
-caber o dado; campo largo demais é o que destoa.
+### 2.2 Tokens proporcionais — como o percentual do antigo
 
----
+São **relativos à `TCol` que contém o campo**, não à tela — exatamente como o
+`width="50%"` do antigo.
 
-## 3. Como se escreve (o alvo da biblioteca)
+| `width` | Ocupa | Classe (sm+) |
+|---|---|---|
+| `metade` | 50 % da coluna, mínimo 256 px | `sm:w-1/2 sm:min-w-64` |
+| `longo` | 100 % da coluna, mínimo 256 px | `sm:w-full sm:min-w-64` |
 
-> **Estado:** a prop `largura` e o `TLinha` **ainda não existem** no código. Eles
-> nascem na primeira tarefa de correção (`/padronizar-layout`), junto com a
-> primeira tela corrigida. Até lá, tela nova usa as classes da tabela acima
-> direto no `className` do campo, dentro de uma linha `flex` — e é trocada pela
-> prop quando ela existir.
+- `metade` é o **padrão de texto livre sozinho na linha** (Nome, Descrição) — o
+  `width="50%" minWidth="200px"` que o antigo usava 147 vezes.
+- `longo` é para **dividir a linha**: dois ou três campos, cada um na sua `TCol`,
+  cada um `longo` — a linha se divide ao meio ou em terços e os campos se
+  ajustam sozinhos. Também para o campo que deve ocupar a linha inteira
+  (observação, endereço completo).
+- No tablet, quando as colunas não cabem no mínimo, a de sobra desce para a
+  linha de baixo; no celular, tudo empilha.
 
-### 3.1 `largura` nos campos
+Na dúvida entre duas, a menor — campo largo demais é o que destoa.
 
-`TEntry`, `TSelect`, `TCombo`, `TComboMulti` e `TTextArea` recebem
-`largura?: Largura`. O mapa mora num arquivo só,
+### 2.3 Largura padrão de cada componente
+
+| Componente | Padrão |
+|---|---|
+| `TEntry` sem máscara | `metade` |
+| `TEntry mascara="cpf"` · `"telefone"` · `"celular"` | `cpf` |
+| `TEntry mascara="cnpj"` · `"cpfCnpj"` | `cnpj` |
+| `TEntry mascara="cep"` | `cep` |
+| `TEntry mascara="hora"` | `hora` |
+| `TEntry mascara="moeda"` · `"decimal"` · `"decimalComSinal"` | `valor` |
+| `TEntry mascara="inteiro"` | `quantidade` |
+| `TDate` | `data` |
+| `TDateTime` | `dataHora` |
+| `TCombo` | `situacao` |
+| `TDBCombo` · `TDBComboMulti` | `metade` |
+| `TTextArea` | `longo` |
+| `TCheckBox` · `TDBCheckBox` · `TRadio` · `TDBRadio` | o conteúdo |
+
+`width` só aparece na tela quando o padrão não serve — e o plano diz por quê.
+
+### 2.4 O mapa, num arquivo só
+
 `components/common/larguras.ts`:
 
 ```ts
 export type Largura =
   | 'uf' | 'codigo' | 'hora' | 'quantidade' | 'data' | 'cep' | 'valor' | 'cpf'
-  | 'situacao' | 'cnpj' | 'dataHora' | 'curto' | 'medio' | 'longo' | 'total'
+  | 'situacao' | 'cnpj' | 'dataHora' | 'curto' | 'medio' | 'metade' | 'longo'
 
 /** Abaixo de `sm` todo campo é 100 %; daqui para cima, o tamanho do dado. */
 export const CLASSE_LARGURA: Record<Largura, string> = {
-  uf:         'sm:w-20 sm:flex-none',
-  codigo:     'sm:w-32 sm:flex-none',
-  hora:       'sm:w-32 sm:flex-none',
-  quantidade: 'sm:w-32 sm:flex-none',
-  data:       'sm:w-40 sm:flex-none',
-  cep:        'sm:w-40 sm:flex-none',
-  valor:      'sm:w-40 sm:flex-none',
-  cpf:        'sm:w-44 sm:flex-none',
-  situacao:   'sm:w-48 sm:flex-none',
-  cnpj:       'sm:w-52 sm:flex-none',
-  dataHora:   'sm:w-56 sm:flex-none',
-  curto:      'sm:w-56 sm:flex-none',
-  medio:      'sm:w-80 sm:flex-none',
-  longo:      'sm:min-w-64 sm:flex-1',
-  total:      'sm:basis-full',
+  uf:         'sm:w-20 max-w-full',
+  codigo:     'sm:w-32 max-w-full',
+  hora:       'sm:w-32 max-w-full',
+  quantidade: 'sm:w-32 max-w-full',
+  data:       'sm:w-40 max-w-full',
+  cep:        'sm:w-40 max-w-full',
+  valor:      'sm:w-40 max-w-full',
+  cpf:        'sm:w-44 max-w-full',
+  situacao:   'sm:w-48 max-w-full',
+  cnpj:       'sm:w-52 max-w-full',
+  dataHora:   'sm:w-56 max-w-full',
+  curto:      'sm:w-56 max-w-full',
+  medio:      'sm:w-80 max-w-full',
+  metade:     'sm:w-1/2 sm:min-w-64',
+  longo:      'sm:w-full sm:min-w-64',
 }
 ```
 
-O componente aplica `w-full ${CLASSE_LARGURA[largura]}` no `div` de fora (o que
-já recebe `className`). Sem `largura`, nada muda — as telas antigas continuam
-como estão até serem corrigidas.
+O componente aplica `w-full ${CLASSE_LARGURA[width ?? padrao]}` no `div` de
+fora. A tabela da §2.1–§2.2 e este mapa mudam juntos.
 
-### 3.2 `TLinha`
+---
 
-Uma linha de campos. Empilha no celular, quebra sozinha no desktop:
+## 3. O kit
+
+Em `components/common/`, exportado por `index.ts`. **A tela só usa o kit**: nada
+de `<input>`, `<select>`, `grid`, `col-span` ou classe de largura na página.
+
+Nomes do EroErp antigo. Props em português, como o resto do 2.0.
+
+### 3.1 Estrutura
+
+| Componente | Props | O que faz |
+|---|---|---|
+| `TPage` | `title`, `breadcrumb?: string[]`, `subtitle?`, `actions?`, `documento?`, `carregando?` | Container de tela. `breadcrumb` em texto acima do título (`Cadastros › Produtos`). `carregando` mostra o spinner — a tela não monta spinner. |
+| `TForm` | `form` (o retorno do `useForm`), `onSubmit`, `somenteLeitura?`, `children` | `FormProvider` + `<form noValidate>` + cartão. Com `somenteLeitura`, faz o `fieldset disabled`, mostra a faixa "acesso só de leitura" e esconde os botões de escrita (§3.4). |
+| `TFormFooter` · `TFormActionsLeft` · `TFormActionsRight` | `children` | Rodapé do cartão, com borda no topo. Empilha no celular com o botão principal embaixo. |
+| `TRow` | `children` | Uma linha: `flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start`. |
+| `TCol` | `width?: 'auto' \| 'rotulo' \| Largura`, `align?: 'left' \| 'right'` | Coluna da linha. **Sem `width`, divide a linha em partes iguais** (`sm:flex-1 sm:min-w-0 sm:basis-64`) — como no antigo, CNH · Categoria · Validade ficam um em cada terço. `auto` encolhe até o campo, para curtos ficarem colados. `rotulo` (`sm:w-48`, 192 px) é a coluna de labels do estilo PHP (§5). |
+| `TPanel` | `title?`, `recolhido?`, `actions?` | Seção por assunto (Pessoa física, Endereços…), recolhível pelo título. |
+| `TModal` | `aberto`, `titulo`, `onFechar`, `acoes?`, `largura?` | Janela; nunca passa de `calc(100vw - 2rem)`. |
+| `TTabs` · `TTabPanel` | como hoje | Abas, quando o formulário é grande demais para painéis. |
+
+Campo **sem `TCol`** vai direto na `TRow` quando está sozinho na linha. Campo
+proporcional (`metade`, `longo`) que **divide** a linha vai sempre numa `TCol` —
+é ela que dá a proporção.
+
+### 3.2 Campos
+
+Todos têm `name` e `label`; dentro de `TForm` pegam `register`, valor e erro
+**só pelo `name`** (`useFormContext`), e o `required` põe o `*` no rótulo. Fora
+de `TForm` (modal simples, filtro de cabeçalho) aceitam `value`/`onChange`.
+Todos têm `width?`, `ajuda?`, `disabled?`, `rotuloOculto?`.
+
+| Componente | Props próprias | O que faz |
+|---|---|---|
+| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?` | Texto. Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado, grava cru** (CPF só dígitos, moeda número) — reaproveitando `utils/format.ts` (`mascararCpf`, `mascararCnpj`, `mascararCep`, `mascararTelefone`, `paraNumero`, `textoDaMascara`). A tela nunca chama máscara no `onChange`. |
+| `TDate` | — | Data com calendário em pt-BR e botão de limpar. Grava `AAAA-MM-DD`; monta com `T00:00:00` para exibir; valor inicial `hojeIso()` quando o form pede hoje. |
+| `TDateTime` | `passoMinutos?` (padrão 5) | Data e hora; grava `AAAA-MM-DDTHH:mm`. |
+| `TTextArea` | `linhas?`, `maxLength?` | Texto longo; mostra "máx. N caracteres". |
+| `TCombo` | `opcoes: {valor, rotulo}[]`, `vazio?` | **Opções fixas** — situação, tipo, enum. `vazio` é a opção "Todos"/"Selecione…". (Hoje se chama `TSelect`.) |
+| `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?` | **Opções do banco**, com busca no servidor (`/select?nome=`, debounce 300 ms) e o rótulo do valor salvo. (Hoje se chama `TCombo`.) |
+| `TDBComboMulti` | `buscar`, `excluir?`, `maximo?` | Vários do banco. (Hoje `TComboMulti`.) |
+| `TCheckBox` | `opcoes?` | Sem `opcoes`, um booleano com o rótulo ao lado; com `opcoes`, um grupo fixo que grava a lista dos marcados. |
+| `TDBCheckBox` | `buscar()`, `vertical?`, `altura?` | Grupo vindo do banco (tipos de cadastro, módulos). |
+| `TRadio` | `opcoes`, `vertical?` | Escolha única fixa. |
+| `TDBRadio` | `buscar()`, `vertical?` | Escolha única vinda do banco. |
+| `TFieldList` | `name`, `colunas: {name, componente, width?}[]`, `novaLinha`, `minimo?`, `rotuloAdicionar?` | **Lista filha editável** dentro do formulário, como no antigo (e-mails, telefones, valores por filial): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão e o remover no fim, botão Acrescentar no rodapé. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
+| `TRotulo` | `htmlFor`, `required?` | Só o rótulo, para a coluna de labels do estilo PHP (§5). |
+| `TAuditoria` | `registro` | Só na edição, no fim do formulário: Criado por · Criado em, Alterado por · Alterado em, só leitura. Lê `criadoPorNome`, `createdAt`, `alteradoPorNome`, `updatedAt` do `ResponseDto`. Linha sem dado não aparece. |
+
+### 3.3 Mensagens e confirmação
+
+| Hook | Uso |
+|---|---|
+| `useMessage()` | `sucesso(texto)`, `erro(texto)`, `aviso(texto)`, `info(texto)`, e `erroApi(e)` (que é o `handleApiError`). O `react-toastify` fica por baixo; **a tela não importa `toast`**. Sucesso some sozinho; erro fica até fechar. |
+| `useQuestion()` | `await confirmar({ mensagem, confirmar: 'Inativar', variante: 'inativar' })` → `true`/`false`. Para inativar, reativar, excluir. |
+
+Exceção que continua valendo: numa superfície que recalcula sozinha, 400 é
+estado inline, não mensagem (CLAUDE.md, "Nesta tela um 400 pode ser estado").
+
+### 3.4 Botões e grade
+
+| Componente | Props | O que faz |
+|---|---|---|
+| `TButton` | `variant`, `label`, `loading?`, `size?`, `type?` | Variantes de ação **com ícone e cor prontos**: `salvar`, `novo`, `filtrar`, `limpar`, `voltar`, `editar`, `inativar`, `reativar`; e as genéricas `primary`, `secondary`, `ghost`, `danger`. Cores por token de tema, nunca hex. Dentro de `TForm somenteLeitura`, `salvar`, `novo`, `inativar` e `reativar` **não aparecem**. `label=""` deixa só o ícone (grade). |
+| `TDataGrid` | como hoje, com `acoes(linha)` | Ações na **primeira coluna**, como no antigo. Vira cartões abaixo de `md`. |
+| `TDataGridFooter` | `pagina`, `onPaginaChange` | "Exibindo X–Y de N registros" e a paginação. |
+| `TAcoesDeExportacao` · `TBotaoImprimir` | como hoje | Vão no `actions` da `TPage`. |
+
+### 3.5 Renomeação (fase 0)
+
+| Hoje | No kit |
+|---|---|
+| `TSelect` | `TCombo` |
+| `TCombo` | `TDBCombo` |
+| `TComboMulti` | `TDBComboMulti` |
+| `TEntry type="date"` | `TDate` |
+| `TEntry type="datetime-local"` | `TDateTime` |
+| `mascararCpf(...)` etc. no `onChange` | `TEntry mascara="cpf"` |
+| `toast.*` + `handleApiError` | `useMessage()` |
+| spinner, faixa de só leitura, `fieldset`, rodapé à mão | `TPage carregando`, `TForm somenteLeitura`, `TFormFooter` |
+
+A renomeação dos componentes é mecânica, num commit próprio, com build e lint
+verdes antes de mexer em qualquer tela.
+
+---
+
+## 4. Telas-modelo
+
+Três modelos. **Toda tela é um dos três.** Tela nova = copiar o modelo (ou a
+tela pronta mais parecida que já o segue) e trocar o que está marcado
+`// troca`. Se a tela não cabe em nenhum, **pare e pergunte** ao Eduardo.
+
+### 4.1 List com filtros (`/app/produtos`)
+
+Filtros num `TForm` com **botões, como no antigo**: Filtrar (ou Enter), Limpar,
+Novo. A consulta só roda ao filtrar, ao trocar de página ou ao limpar — menos
+requisições, o que importa quando a tabela cresce.
 
 ```tsx
-export function TLinha({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start">{children}</div>
+const FILTROS_VAZIOS: Filtros = { codigo: '', nome: '', grupoId: '', ativo: 'true' } // troca
+
+export function ProdutoList() {                                        // troca
+  const navigate = useNavigate()
+  const somenteLeitura = useSomenteLeitura(Tela.PRODUTOS)              // troca
+  const msg = useMessage()
+  const { confirmar } = useQuestion()
+  const form = useForm<Filtros>({ defaultValues: FILTROS_VAZIOS })
+  const [aplicados, setAplicados] = useState(FILTROS_VAZIOS)
+  const [pagina, setPagina] = useState(0)
+  const [dados, setDados] = useState<Page<ProdutoResponse>>()          // troca
+  const [carregando, setCarregando] = useState(true)
+
+  const carregar = useCallback(() => {
+    setCarregando(true)
+    produtoService.getAll({ ...paraConsulta(aplicados), page: pagina }) // troca
+      .then(setDados).catch(msg.erroApi).finally(() => setCarregando(false))
+  }, [aplicados, pagina])
+  useEffect(carregar, [carregar])
+
+  const filtrar = (f: Filtros) => { setAplicados(f); setPagina(0) }
+  const limpar = () => { form.reset(FILTROS_VAZIOS); filtrar(FILTROS_VAZIOS) }
+
+  const alternar = async (p: ProdutoResponse) => {                     // troca
+    if (!(await confirmar({ mensagem: `${p.ativo ? 'Inativar' : 'Reativar'} ${p.nome}?`,
+      variante: p.ativo ? 'inativar' : 'reativar' }))) return
+    await produtoService.alterarAtivo(p.id, !p.ativo).catch(msg.erroApi)
+    carregar()
+  }
+
+  const colunas: Coluna<ProdutoResponse>[] = [ /* código · nome · … · situação */ ] // troca
+
+  return (
+    <TPage title="Produtos" breadcrumb={['Cadastros', 'Produtos']}    // troca
+           actions={<TAcoesDeExportacao … />} documento={…}>
+      <TForm form={form} onSubmit={filtrar}>
+        <TRow><TEntry name="codigo" label="Código" width="codigo" /></TRow>
+        <TRow><TEntry name="nome" label="Nome" /></TRow>
+        <TRow><TDBCombo name="grupoId" label="Grupo" buscar={grupoService.select} vazio="Todos" /></TRow>
+        <TRow><TCombo name="ativo" label="Situação" opcoes={SITUACAO_OPCOES} vazio="Todas" /></TRow>
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="filtrar" type="submit" />
+            <TButton variant="limpar" onClick={limpar} />
+            {!somenteLeitura && <TButton variant="novo" onClick={() => navigate('/app/produtos/novo')} />}
+          </TFormActionsLeft>
+        </TFormFooter>
+      </TForm>
+
+      <TDataGrid colunas={colunas} linhas={dados?.content ?? []} chaveDe={(p) => p.id}
+        carregando={carregando} onLinhaClick={(p) => navigate(`/app/produtos/${p.id}`)}
+        acoes={somenteLeitura ? undefined : (p) => (<>
+          <TButton variant="editar" label="" onClick={() => navigate(`/app/produtos/${p.id}`)} />
+          <TButton variant={p.ativo ? 'inativar' : 'reativar'} label="" onClick={() => alternar(p)} />
+        </>)}
+        vazioTitulo="Nenhum produto encontrado" vazioDescricao="Ajuste os filtros ou cadastre o primeiro." />
+      <TDataGridFooter pagina={dados} onPaginaChange={setPagina} />
+    </TPage>
+  )
 }
 ```
 
-`items-start` porque um campo com erro ou ajuda fica mais alto que o vizinho, e
-o vizinho não deve esticar.
+- Ordem dos filtros: código → nome (principal) → combos → período De · Até (uma
+  `TRow`, cada um na sua `TCol width="auto"`).
+- Ordem das colunas: código · principal · demais textos · datas · valores
+  (`numerica`) · situação (`TBadge`) por último. Código, data, valor e situação
+  com `className: 'w-px whitespace-nowrap'`; a principal leva a sobra;
+  `secundaria: true` nas que podem sumir em tela média, nunca na principal.
+- A exportação repete os **filtros aplicados**, não os digitados e não filtrados.
 
-### 3.3 Exemplo
+### 4.2 Form (`/app/produtos/novo`, `/app/produtos/:id`)
 
 ```tsx
-<TPanel title="Identificação">
-  <div className="flex flex-col gap-4">
-    <TLinha>
-      <TEntry label="Código" largura="codigo" readOnly {...register('codigo')} />
-      <TEntry label="Nome" largura="longo" autoFocus {...register('nome')} />
-      <TSelect label="Situação" largura="situacao" opcoes={SITUACAO_OPCOES} {...register('ativo')} />
-    </TLinha>
-    <TLinha>
-      <TEntry label="CPF" largura="cpf" {...register('cpf')} />
-      <TEntry label="Nascimento" type="date" largura="data" {...register('dataNascimento')} />
-      <TEntry label="Limite de crédito" largura="valor" mascara="decimal" suffix="R$" {...register('limite')} />
-    </TLinha>
-  </div>
-</TPanel>
+export function ProdutoForm() {                                        // troca
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const somenteLeitura = useSomenteLeitura(Tela.PRODUTOS)              // troca
+  const msg = useMessage()
+  const form = useForm<Dados>({ resolver: zodResolver(schema), defaultValues: VAZIO }) // troca
+  const [salvo, setSalvo] = useState<ProdutoResponse>()                // troca
+  const [carregando, setCarregando] = useState(!!id)
+
+  useEffect(() => {
+    if (!id) return
+    produtoService.findById(id)                                        // troca
+      .then((p) => { setSalvo(p); form.reset(paraForm(p)) })
+      .catch(msg.erroApi).finally(() => setCarregando(false))
+  }, [id])
+
+  const salvar = async (d: Dados) => {
+    try {
+      const p = id ? await produtoService.update(id, paraCorpo(d)) : await produtoService.create(paraCorpo(d))
+      msg.sucesso('Produto salvo')                                     // troca
+      navigate(`/app/produtos/${p.id}`)
+    } catch (e) { msg.erroApi(e) }
+  }
+
+  return (
+    <TPage title={id ? 'Editar produto' : 'Novo produto'}              // troca
+           breadcrumb={['Cadastros', 'Produtos', id ? 'Editar' : 'Novo']} carregando={carregando}>
+      <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
+        <TRow><TEntry name="codigo" label="Código" width="codigo" disabled /></TRow>
+        <TRow><TEntry name="nome" label="Nome" required autoFocus /></TRow>
+        <TRow><TEntry name="ean" label="EAN" width="curto" /></TRow>
+        <TRow><TDBCombo name="grupoId" label="Grupo" buscar={grupoService.select} /></TRow>
+        <TRow><TEntry name="custo" label="Custo" mascara="moeda" /></TRow>
+
+        <TPanel title="Observações">
+          <TRow><TTextArea name="observacao" label="Observação" /></TRow>
+        </TPanel>
+
+        <TRow><TCombo name="ativo" label="Situação" opcoes={SITUACAO_OPCOES} /></TRow>
+        <TAuditoria registro={salvo} />
+
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="voltar" onClick={() => navigate('/app/produtos')} />
+            <TButton variant="novo" onClick={() => navigate('/app/produtos/novo')} />
+          </TFormActionsLeft>
+          <TFormActionsRight>
+            <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+          </TFormActionsRight>
+        </TFormFooter>
+      </TForm>
+    </TPage>
+  )
+}
 ```
+
+Ordem fixa:
+
+1. Código (só leitura), quando a entidade tem.
+2. Campo principal (nome, descrição), depois os demais — **um por linha**.
+3. `TPanel` por assunto, na ordem em que se preenche (Pessoa física, Pessoa
+   jurídica, Contatos, Endereços, Observações). Painel de um campo só se junta
+   ao vizinho.
+4. Situação.
+5. `TAuditoria`.
+6. Rodapé: Voltar · Novo à esquerda, Salvar à direita. Ação que não é salvar
+   (Redefinir senha, Conectar) vai num `TPanel` próprio, abaixo do formulário.
+
+A rota passa por `PorRegistro` (CLAUDE.md, "Rota `/nova` e rota `/:id`").
+Formulário grande demais para painéis usa `TTabs`; dentro de cada aba, as
+mesmas regras.
+
+### 4.3 FormList (tabelas de apoio)
+
+Formulário em cima, grade embaixo, na mesma tela — grupos, subgrupos,
+categorias, marcas, tipos. É o modelo que mais se copia: entre duas telas
+FormList só mudam o nome, o service e os campos.
+
+```tsx
+export function CategoriaFormList() {                                  // troca
+  const somenteLeitura = useSomenteLeitura(Tela.AUXILIARES_PRODUTO)    // troca
+  const msg = useMessage()
+  const { confirmar } = useQuestion()
+  const form = useForm<Dados>({ resolver: zodResolver(schema), defaultValues: VAZIO }) // troca
+  const [editando, setEditando] = useState<string>()
+  const [pagina, setPagina] = useState(0)
+  const [dados, setDados] = useState<Page<AuxiliarResponse>>()         // troca
+  const [carregando, setCarregando] = useState(true)
+
+  const carregar = useCallback(() => { /* categoriaService.getAll({ page: pagina }) */ }, [pagina]) // troca
+  useEffect(carregar, [carregar])
+
+  const limpar = () => { setEditando(undefined); form.reset(VAZIO) }
+  const editar = (c: AuxiliarResponse) => {
+    setEditando(c.id); form.reset(paraForm(c)); window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const salvar = async (d: Dados) => { /* create ou update → msg.sucesso → limpar → setPagina(0) → carregar */ }
+
+  return (
+    <TPage title="Categorias de produto" breadcrumb={['Cadastros', 'Auxiliar produto', 'Categorias']}> {/* troca */}
+      <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
+        <TRow><TEntry name="nome" label="Nome" required /></TRow>      {/* troca */}
+        {editando && <TRow><TCombo name="ativo" label="Situação" opcoes={SITUACAO_OPCOES} /></TRow>}
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="limpar" onClick={limpar} />
+            <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+          </TFormActionsLeft>
+        </TFormFooter>
+      </TForm>
+
+      <TDataGrid … acoes={somenteLeitura ? undefined : (c) => (<>
+        <TButton variant="editar" label="" onClick={() => editar(c)} />
+        <TButton variant={c.ativo ? 'inativar' : 'reativar'} label="" onClick={() => alternar(c)} />
+      </>)} />
+      <TDataGridFooter pagina={dados} onPaginaChange={setPagina} />
+    </TPage>
+  )
+}
+```
+
+Sem filtro e sem auditoria. Situação só aparece na edição. Várias tabelas de
+apoio do mesmo assunto podem dividir uma tela por `TTabs` (como
+`AuxiliaresProduto`), cada aba um FormList.
 
 ---
 
-## 4. Disposição — formulário (Form/List, tela de cadastro)
+## 5. Label ao lado (estilo PHP)
 
-1. **Painéis por assunto, na ordem em que se preenche:** Identificação → dados
-   próprios do cadastro → Contato e Endereço → Observações. Painel com um campo
-   só se junta ao vizinho.
-2. **Primeira linha da Identificação:** Código (se houver, só leitura) · o campo
-   principal (`longo`: nome, descrição) · Situação no **fim** da linha.
-3. **O que forma uma coisa só fica junto, na ordem natural:**
-   CEP → Logradouro → Número → Complemento; Bairro → Cidade → UF;
-   Dia → Das → Às; De → Até; Valor → Unidade.
-4. **Um `longo` por linha, acompanhado dos curtos que pertencem a ele** —
-   Nome + CPF + Nascimento, e não Nome + E-mail lado a lado dividindo a tela ao
-   meio.
-5. **Curto não estica.** Linha só de curtos termina onde eles terminam; a sobra
-   à direita fica vazia.
-6. **`TTextArea` e observação: última linha do painel, `total`.**
-7. **Botões no rodapé do `<form>`**, Cancelar (`secondary`) e Salvar
-   (`primary`), em `flex flex-col-reverse gap-2 sm:flex-row` — como no
-   `UsuarioForm`. Ação que não é salvar (Redefinir senha, Inativar) vai num
-   painel próprio, **abaixo** do formulário.
-8. **Tela de cálculo** segue o doc 04 §7 (abas autocontidas); as larguras daqui
-   valem dentro de cada aba.
+Quando o plano pedir, a tela monta o label ao lado com o mesmo kit: em cada
+`TRow`, uma `TCol width="rotulo" align="right"` com o texto, e uma `TCol` com o
+campo `rotuloOculto` (o rótulo continua no DOM para leitor de tela).
 
-## 5. Disposição — listagem (List com filtros)
+```tsx
+<TRow>
+  <TCol width="rotulo" align="right"><TRotulo htmlFor="nome" required>Nome</TRotulo></TCol>
+  <TCol><TEntry name="nome" label="Nome" rotuloOculto required /></TCol>
+</TRow>
+```
 
-1. **Ações no topo, pelo `actions` da `TPage`:** Novo (`primary`) e
-   exportação/impressão.
-2. **Um `TPanel` de filtros, sem título**, na ordem: busca principal (`longo`)
-   → selects (`situacao`, `medio`) → período De/Até (`data` + `data`, juntos).
-   Sem botão Filtrar: a busca é por `useDebounce`, e todo filtro faz
-   `setPagina(0)`.
-3. **Colunas do `TDataGrid` nesta ordem:** código · principal (nome) · demais
-   textos · datas · valores (`numerica`) · situação (`TBadge`) por último.
-4. **Coluna de código, data, valor e situação ocupa só o necessário:**
-   `className: 'w-px whitespace-nowrap'`. A principal fica sem largura e leva a
-   sobra.
-5. `secundaria: true` nas colunas que podem sumir em telas médias — nunca na
-   principal.
-
-## 6. Disposição — FormList (tabelas de apoio)
-
-Referência: `AuxiliaresProduto`. Formulário compacto em cima (uma ou duas
-`TLinha`, com larguras), grade embaixo, na mesma tela. Botão de salvar ao lado
-dos campos quando couber numa linha só.
-
-## 7. Modal
-
-`TModal` com formulário segue as mesmas larguras. O modal nunca passa de
-`calc(100vw - 2rem)`; dentro dele, `longo` ocupa o que sobra.
+- Todas as linhas da tela usam a mesma largura de rótulo (`rotulo` = 192 px; se
+  o maior label não cabe, o plano define outra e diz por quê).
+- No celular a coluna de rótulo empilha em cima do campo, alinhada à esquerda.
+- Não misturar os dois estilos na mesma tela.
 
 ---
 
-## 8. Como se confere
+## 6. Modal
 
-O agente `guardiao-layout` reprova a tela que fugir deste documento. A medida
-automática é o `medir-campos.mjs` da skill `olhar-telas`:
+`TModal` com formulário segue as mesmas regras: `TForm`, `TRow`, larguras
+padrão, rodapé de botões. Dentro dele, `metade` e `longo` são relativos à
+coluna do modal.
 
-```bash
-MSYS_NO_PATHCONV=1 node .claude/skills/olhar-telas/medir-campos.mjs /app/agenda/novo
-```
+---
 
-Ele mede cada campo visível a 1440 px e aponta data, hora, valor, CPF, CEP, UF e
-select curto mais largos que o limite. A régua cobre o **tamanho**; a
-**disposição** (§4–§6) se confere olhando o screenshot.
+## 7. Como se confere
 
-## 9. Checklist
+O `guardiao-layout` reprova a tela que fugir deste documento. Três passos:
 
-- [ ] Todo campo novo tem `largura` (ou a classe equivalente, enquanto a prop não existe)
-- [ ] Nenhum curto esticado para preencher linha
-- [ ] Um `longo` por linha, com os curtos que pertencem a ele
-- [ ] Grupos naturais juntos e na ordem (endereço, período, dia e hora)
-- [ ] Situação no fim da primeira linha; observação na última, `total`
+1. **Código** — a tela é um dos três modelos e difere dele só no que é
+   `// troca`; só componentes do kit; nenhum `grid`, `col-span`, `w-*` ou
+   `sm:w-*` na página; `width` só com token e só onde o padrão não serve;
+   proporcional que divide a linha está em `TCol`; um campo por `TRow`, fora os
+   grupos da §1.
+2. **Medida** — o `medir-campos.mjs` mede cada campo a 1440 px e aponta data,
+   hora, valor, CPF, CEP, UF e combo curto mais largos que o limite:
+
+   ```bash
+   MSYS_NO_PATHCONV=1 node .claude/skills/olhar-telas/medir-campos.mjs /app/produtos/novo
+   ```
+3. **Olho** — screenshots a 1440, 768 e 360 px: disposição, linha dividida
+   quebrando no tablet, nada espremido, sem rolagem horizontal.
+
+## 8. Checklist
+
+- [ ] A tela é List, Form ou FormList e foi copiada do modelo
+- [ ] Só componentes do kit; nenhum `grid`, `col-span` ou classe de largura na página
+- [ ] `width` só com token da escala, e só onde o padrão do componente não serve
+- [ ] Um campo por `TRow`; lado a lado só nos grupos da §1 ou onde o plano mandou
+- [ ] Linha dividida: cada campo na sua `TCol`, com `longo`
+- [ ] Label em cima (ou ao lado em toda a tela, se o plano pediu)
+- [ ] Form: Situação, `TAuditoria` e rodapé Voltar · Novo | Salvar
+- [ ] List: filtros com Filtrar · Limpar · Novo; colunas na ordem da §4.1
+- [ ] Mensagens por `useMessage`, confirmação por `useQuestion`
 - [ ] `medir-campos.mjs` sem violação a 1440 px
-- [ ] 360 px sem rolagem horizontal (`olhar.mjs … --360`)
+- [ ] 768 px e 360 px sem rolagem horizontal e sem campo espremido
