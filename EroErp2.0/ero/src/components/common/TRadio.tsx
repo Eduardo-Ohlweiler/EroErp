@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import type { OpcaoSelect } from './TSelect'
+import type { OpcaoSelect } from './TCombo'
 
 interface TRadioProps {
   label: string
@@ -28,7 +28,7 @@ interface TRadioProps {
  *
  * <p>Serve ao sim/não de três estados e à pergunta de opção única.
  *
- * <p>Não substitui o {@code TSelect}: rádio serve quando as opções são poucas e
+ * <p>Não substitui o {@code TCombo}: rádio serve quando as opções são poucas e
  * ver todas de uma vez é a informação — "Sim / Não / Não informado" dentro de um
  * {@code <select>} esconderia justamente o terceiro estado.
  */

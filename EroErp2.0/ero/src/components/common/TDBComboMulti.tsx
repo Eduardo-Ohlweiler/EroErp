@@ -4,7 +4,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { handleApiError } from '@/services/api'
 import type { SelectOption } from '@/types/comum'
 
-interface TComboMultiProps {
+interface TDBComboMultiProps {
   label: string
   /** Os escolhidos, com o nome — o chip precisa dele sem nova busca. */
   value: SelectOption[]
@@ -23,11 +23,11 @@ interface TComboMultiProps {
 }
 
 /**
- * O {@link TCombo} para vários: cada escolhido vira um chip removível, e a
+ * O {@link TDBCombo} para vários: cada escolhido vira um chip removível, e a
  * busca continua embaixo. Mesma busca no servidor com debounce, mesmo
  * teclado (↓/↑, Enter, Esc); Backspace com a busca vazia tira o último chip.
  */
-export function TComboMulti({
+export function TDBComboMulti({
   label,
   value,
   onChange,
@@ -39,7 +39,7 @@ export function TComboMulti({
   ajuda,
   className = '',
   disabled = false,
-}: TComboMultiProps) {
+}: TDBComboMultiProps) {
   const idBase = useId()
   const idInput = `${idBase}-input`
   const idLista = `${idBase}-lista`

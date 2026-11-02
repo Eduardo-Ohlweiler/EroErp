@@ -5,7 +5,7 @@ import { GradeHoras } from '@/components/agenda/GradeHoras'
 import { GradeMes } from '@/components/agenda/GradeMes'
 import { ListaAgenda } from '@/components/agenda/ListaAgenda'
 import { ResumoCompromisso } from '@/components/agenda/ResumoCompromisso'
-import { TBotaoImprimir, TButton, TCheckBox, TCombo, TPage, TPanel } from '@/components/common'
+import { TBotaoImprimir, TButton, TCheckBox, TDBCombo, TPage, TPanel } from '@/components/common'
 import { DocumentoLista } from '@/components/impressao/DocumentoLista'
 import { useAuth } from '@/hooks/useAuth'
 import { handleApiError } from '@/services/api'
@@ -208,7 +208,7 @@ export function Agenda() {
         <div className="flex flex-col gap-4">
           {/* Filtros */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
-            <TCombo
+            <TDBCombo
               label="Filial"
               value={filialId}
               rotuloInicial={filialNome}
@@ -223,7 +223,7 @@ export function Agenda() {
               }
             />
             <div className="flex items-end gap-2">
-              <TCombo
+              <TDBCombo
                 label="Responsável ou convidado"
                 className="min-w-0 flex-1"
                 value={usuarioId}

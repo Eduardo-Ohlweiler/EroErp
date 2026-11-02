@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
-import { TButton, TEntry, TPage, TPanel, TSelect } from '@/components/common'
+import { TButton, TEntry, TPage, TPanel, TCombo } from '@/components/common'
 import { SeletorPaleta } from '@/components/tenant/SeletorPaleta'
 import { handleApiError } from '@/services/api'
 import { tenantService } from '@/services/tenantService'
@@ -58,7 +58,7 @@ export function TenantNovo() {
         <TPanel title="Dados do cliente">
           <div className="grid gap-4 sm:grid-cols-2">
             <TEntry label="Nome" autoFocus error={errors.nome?.message} {...register('nome')} />
-            <TSelect
+            <TCombo
               label="Período de acesso"
               opcoes={OPCOES_PERIODO_ACESSO}
               ajuda="Contado a partir de hoje. Ao fim do prazo o cliente é desativado."

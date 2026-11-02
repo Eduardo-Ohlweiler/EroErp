@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'react-toastify'
-import { TCombo } from '@/components/common'
+import { TDBCombo } from '@/components/common'
 import { useAuth } from '@/hooks/useAuth'
 import { handleApiError } from '@/services/api'
 import { tenantService } from '@/services/tenantService'
@@ -64,7 +64,7 @@ export function TenantSwitcher() {
 
   return (
     <div className="flex items-center gap-2">
-      <TCombo
+      <TDBCombo
         label="Tenant"
         rotuloOculto
         tamanho="sm"

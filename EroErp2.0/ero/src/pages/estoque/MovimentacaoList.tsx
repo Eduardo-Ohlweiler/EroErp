@@ -5,13 +5,13 @@ import {
   TAcoesDeExportacao,
   TBadge,
   TButton,
-  TCombo,
+  TDBCombo,
   TDataGrid,
   TDataGridFooter,
   TEntry,
   TPage,
   TPanel,
-  TSelect,
+  TCombo,
   type Coluna,
   type PaginaDaCarga,
   type ResultadoDaCarga,
@@ -257,7 +257,7 @@ export function MovimentacaoList() {
     >
       <TPanel>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <TCombo
+          <TDBCombo
             label="Filial"
             vazio="Todas"
             placeholder="Todas"
@@ -276,7 +276,7 @@ export function MovimentacaoList() {
               )
             }
           />
-          <TCombo
+          <TDBCombo
             label="Produto"
             vazio="Todos"
             placeholder="Todos"
@@ -295,7 +295,7 @@ export function MovimentacaoList() {
               )
             }
           />
-          <TSelect
+          <TCombo
             label="Tipo"
             vazio="Todos"
             opcoes={Object.entries(ROTULO_MOVIMENTACAO).map(([valor, rotulo]) => ({ valor, rotulo }))}

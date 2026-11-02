@@ -5,7 +5,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { IconTenants } from '@/assets/icons'
-import { TButton, TCombo, TEntry, TPage, TPanel, TSelect } from '@/components/common'
+import { TButton, TDBCombo, TEntry, TPage, TPanel, TCombo } from '@/components/common'
 import { PermissoesUsuario } from '@/components/usuario/PermissoesUsuario'
 import { RedefinirSenhaModal } from '@/components/usuario/RedefinirSenhaModal'
 import { useAuth } from '@/hooks/useAuth'
@@ -236,7 +236,7 @@ export function UsuarioForm() {
               />
               {destino === 'novo-cliente' && (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <TSelect
+                  <TCombo
                     label="Período de acesso"
                     opcoes={OPCOES_PERIODO_ACESSO}
                     ajuda="Ao fim do prazo o cliente é desativado automaticamente"
@@ -258,7 +258,7 @@ export function UsuarioForm() {
                   control={control}
                   name="tenantId"
                   render={({ field }) => (
-                    <TCombo
+                    <TDBCombo
                       label="Cliente"
                       placeholder="Busque pelo nome"
                       value={field.value ?? ''}
@@ -268,7 +268,7 @@ export function UsuarioForm() {
                     />
                   )}
                 />
-                <TSelect label="Nível de acesso" opcoes={opcoesRole} {...register('role')} />
+                <TCombo label="Nível de acesso" opcoes={opcoesRole} {...register('role')} />
               </div>
             )}
           </TPanel>
@@ -330,7 +330,7 @@ export function UsuarioForm() {
             )}
 
             {(editando || dentroDeTenant || tenantDoAtalho) && (
-              <TSelect label="Nível de acesso" opcoes={opcoesRole} {...register('role')} />
+              <TCombo label="Nível de acesso" opcoes={opcoesRole} {...register('role')} />
             )}
           </div>
 

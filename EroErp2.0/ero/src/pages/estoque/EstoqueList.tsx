@@ -6,13 +6,13 @@ import {
   TAcoesDeExportacao,
   TBadge,
   TButton,
-  TCombo,
+  TDBCombo,
   TDataGrid,
   TDataGridFooter,
   TEntry,
   TPage,
   TPanel,
-  TSelect,
+  TCombo,
   type Coluna,
   type PaginaDaCarga,
   type ResultadoDaCarga,
@@ -234,7 +234,7 @@ export function EstoqueList() {
               setPagina(0)
             }}
           />
-          <TCombo
+          <TDBCombo
             label="Filial"
             vazio="Todas"
             placeholder="Todas"
@@ -252,7 +252,7 @@ export function EstoqueList() {
               )
             }
           />
-          <TSelect
+          <TCombo
             label="Controle"
             vazio="Todos"
             opcoes={[
@@ -265,7 +265,7 @@ export function EstoqueList() {
               setPagina(0)
             }}
           />
-          <TSelect
+          <TCombo
             label="Situação"
             vazio="Todas"
             opcoes={[

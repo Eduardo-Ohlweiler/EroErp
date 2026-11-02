@@ -8,7 +8,7 @@ import { IconConsulta } from '@/assets/icons'
 import { AcoesCompromisso } from '@/components/agenda/AcoesCompromisso'
 import { CamposCompromisso } from '@/components/agenda/CamposCompromisso'
 import { PreviaSerie, type ItemSerie } from '@/components/agenda/PreviaSerie'
-import { TAviso, TBadge, TButton, TCheckBox, TEntry, TPage, TSelect } from '@/components/common'
+import { TAviso, TBadge, TButton, TCheckBox, TEntry, TPage, TCombo } from '@/components/common'
 import { useAuth } from '@/hooks/useAuth'
 import { useDisponibilidade } from '@/hooks/useDisponibilidade'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
@@ -253,7 +253,7 @@ export function CompromissoForm() {
                       <TCheckBox label="Este compromisso se repete" {...register('repete')} />
                       {v.repete && (
                         <div className="grid gap-4 sm:grid-cols-2">
-                          <TSelect
+                          <TCombo
                             label="Repete"
                             opcoes={RECORRENCIA_OPCOES.map((o) => ({ valor: o.valor, rotulo: o.rotulo }))}
                             {...register('tipoRecorrencia')}

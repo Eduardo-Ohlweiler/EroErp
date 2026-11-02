@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { toast } from 'react-toastify'
-import { TButton, TCombo, TEntry, TModal } from '@/components/common'
+import { TButton, TDBCombo, TEntry, TModal } from '@/components/common'
 import { handleApiError } from '@/services/api'
 import { estoqueService } from '@/services/estoqueService'
 import { filialService } from '@/services/filialService'
@@ -113,7 +113,7 @@ export function MovimentoModal({ tipo, onFechar, onGravado }: Props) {
       }
     >
       <form id="form-movimento" onSubmit={salvar} noValidate className="flex flex-col gap-4">
-        <TCombo
+        <TDBCombo
           label={transferencia ? 'Filial de origem' : 'Filial'}
           placeholder="Busque a filial"
           value={filialId}
@@ -129,7 +129,7 @@ export function MovimentoModal({ tipo, onFechar, onGravado }: Props) {
         />
 
         {/* A chave refaz o combo quando a filial muda: a lista é da filial */}
-        <TCombo
+        <TDBCombo
           key={filialId || 'sem-filial'}
           label="Produto"
           placeholder={filialId ? 'Nome, código ou EAN' : 'Escolha a filial antes'}
@@ -154,7 +154,7 @@ export function MovimentoModal({ tipo, onFechar, onGravado }: Props) {
         />
 
         {transferencia && (
-          <TCombo
+          <TDBCombo
             key={`destino-${filialId}`}
             label="Filial de destino"
             placeholder="Busque a filial"

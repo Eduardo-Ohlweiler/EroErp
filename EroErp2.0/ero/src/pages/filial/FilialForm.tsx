@@ -5,7 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { IconAdicionar } from '@/assets/icons'
-import { TButton, TCombo, TPage, TPanel, TSelect } from '@/components/common'
+import { TButton, TDBCombo, TPage, TPanel, TCombo } from '@/components/common'
 import { PessoaRapidaModal } from '@/components/pessoa/PessoaRapidaModal'
 import { useAuth } from '@/hooks/useAuth'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
@@ -179,7 +179,7 @@ export function FilialForm() {
                   control={control}
                   name="pessoaId"
                   render={({ field }) => (
-                    <TCombo
+                    <TDBCombo
                       label="Pessoa"
                       className="flex-1"
                       placeholder="Busque por nome ou documento"
@@ -212,7 +212,7 @@ export function FilialForm() {
                 )}
               </div>
 
-              <TSelect
+              <TCombo
                 label="Tipo"
                 opcoes={OPCOES_TIPO_FILIAL}
                 ajuda={
@@ -235,7 +235,7 @@ export function FilialForm() {
                   control={control}
                   name="matrizId"
                   render={({ field }) => (
-                    <TCombo
+                    <TDBCombo
                       label="Matriz"
                       placeholder="Busque a matriz"
                       value={field.value ?? ''}

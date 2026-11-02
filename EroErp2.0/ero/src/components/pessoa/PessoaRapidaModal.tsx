@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import { TButton, TEntry, TModal, TSelect, type OpcaoSelect } from '@/components/common'
+import { TButton, TEntry, TModal, TCombo, type OpcaoSelect } from '@/components/common'
 import { handleApiError } from '@/services/api'
 import { catalogoService } from '@/services/catalogoService'
 import { pessoaService } from '@/services/pessoaService'
@@ -141,7 +141,7 @@ export function PessoaRapidaModal({
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <TSelect
+          <TCombo
             label="Tipo de pessoa"
             opcoes={OPCOES_TIPO_PESSOA}
             value={tipoPessoa}
@@ -170,7 +170,7 @@ export function PessoaRapidaModal({
               value={dataNascimento}
               onChange={(e) => setDataNascimento(e.target.value)}
             />
-            <TSelect
+            <TCombo
               label="Sexo"
               vazio="Não informado"
               opcoes={OPCOES_SEXO}
@@ -181,7 +181,7 @@ export function PessoaRapidaModal({
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <TSelect
+          <TCombo
             label="Tipo de cadastro"
             opcoes={tiposCadastro}
             value={tipoCadastroId}

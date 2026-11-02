@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { IconAdicionar } from '@/assets/icons'
-import { TAviso, TButton, TCheckBox, TCombo, TComboMulti, TEntry, TPanel, TTextArea } from '@/components/common'
+import { TAviso, TButton, TCheckBox, TDBCombo, TDBComboMulti, TEntry, TPanel, TTextArea } from '@/components/common'
 import { PessoaRapidaModal } from '@/components/pessoa/PessoaRapidaModal'
 import { useAuth } from '@/hooks/useAuth'
 import { filialService } from '@/services/filialService'
@@ -76,7 +76,7 @@ export function CamposCompromisso({
             control={control}
             name="responsavelId"
             render={({ field }) => (
-              <TCombo
+              <TDBCombo
                 label="Responsável"
                 value={field.value}
                 rotuloInicial={v.responsavelRotulo || undefined}
@@ -101,7 +101,7 @@ export function CamposCompromisso({
             control={control}
             name="convidados"
             render={({ field }) => (
-              <TComboMulti
+              <TDBComboMulti
                 label="Convidados"
                 value={field.value}
                 onChange={field.onChange}
@@ -131,7 +131,7 @@ export function CamposCompromisso({
             control={control}
             name="filialId"
             render={({ field }) => (
-              <TCombo
+              <TDBCombo
                 label="Filial"
                 value={field.value}
                 rotuloInicial={v.filialRotulo || undefined}
@@ -151,7 +151,7 @@ export function CamposCompromisso({
               control={control}
               name="pessoaId"
               render={({ field }) => (
-                <TCombo
+                <TDBCombo
                   label="Cliente"
                   className="min-w-0 flex-1"
                   value={field.value}

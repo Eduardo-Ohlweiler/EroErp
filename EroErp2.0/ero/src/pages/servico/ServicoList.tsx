@@ -6,13 +6,13 @@ import {
   TAcoesDeExportacao,
   TBadge,
   TButton,
-  TCombo,
+  TDBCombo,
   TDataGrid,
   TDataGridFooter,
   TEntry,
   TPage,
   TPanel,
-  TSelect,
+  TCombo,
   type Coluna,
   type PaginaDaCarga,
   type ResultadoDaCarga,
@@ -234,7 +234,7 @@ export function ServicoList() {
               setPagina(0)
             }}
           />
-          <TCombo
+          <TDBCombo
             label="Filial"
             vazio="Todas"
             placeholder="Todas"
@@ -254,7 +254,7 @@ export function ServicoList() {
               )
             }
           />
-          <TSelect
+          <TCombo
             label="Situação"
             vazio="Todas"
             opcoes={[

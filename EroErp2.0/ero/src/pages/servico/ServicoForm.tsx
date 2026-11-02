@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { IconAdicionar, IconFechar } from '@/assets/icons'
-import { TBadge, TButton, TCombo, TEntry, TPage, TPanel, TTextArea } from '@/components/common'
+import { TBadge, TButton, TDBCombo, TEntry, TPage, TPanel, TTextArea } from '@/components/common'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
 import { handleApiError } from '@/services/api'
 import { filialService } from '@/services/filialService'
@@ -209,7 +209,7 @@ export function ServicoForm() {
                       control={control}
                       name={`filiais.${i}.filialId`}
                       render={({ field }) => (
-                        <TCombo
+                        <TDBCombo
                           label="Filial"
                           className="col-span-2 sm:col-span-1"
                           placeholder="Busque a filial"

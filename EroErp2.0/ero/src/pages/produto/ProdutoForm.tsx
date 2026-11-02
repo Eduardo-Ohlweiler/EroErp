@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
-import { TButton, TCombo, TEntry, TPage, TPanel, TSelect, TTextArea } from '@/components/common'
+import { TButton, TDBCombo, TEntry, TPage, TPanel, TCombo, TTextArea } from '@/components/common'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
 import { handleApiError } from '@/services/api'
 import { auxiliarService, subgrupoService } from '@/services/auxiliarProdutoService'
@@ -191,7 +191,7 @@ export function ProdutoForm() {
               <TEntry label="Nome" maxLength={150} error={errors.nome?.message} {...register('nome')} />
               {/* Linha própria: na coluna de 8rem do código a unidade sairia cortada */}
               <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
-                <TSelect
+                <TCombo
                   label="Unidade"
                   vazio="Escolha"
                   opcoes={unidades}
@@ -224,7 +224,7 @@ export function ProdutoForm() {
                 control={control}
                 name="subgrupoId"
                 render={({ field }) => (
-                  <TCombo
+                  <TDBCombo
                     label="Grupo › Subgrupo"
                     vazio="Nenhum"
                     placeholder="Busque o subgrupo"
@@ -243,7 +243,7 @@ export function ProdutoForm() {
                 control={control}
                 name="categoriaId"
                 render={({ field }) => (
-                  <TCombo
+                  <TDBCombo
                     label="Categoria"
                     vazio="Nenhuma"
                     placeholder="Busque a categoria"
@@ -258,7 +258,7 @@ export function ProdutoForm() {
                 control={control}
                 name="marcaId"
                 render={({ field }) => (
-                  <TCombo
+                  <TDBCombo
                     label="Marca"
                     vazio="Nenhuma"
                     placeholder="Busque a marca"
@@ -278,7 +278,7 @@ export function ProdutoForm() {
                 control={control}
                 name="fornecedorId"
                 render={({ field }) => (
-                  <TCombo
+                  <TDBCombo
                     label="Fornecedor"
                     vazio="Nenhum"
                     placeholder="Busque o fornecedor"

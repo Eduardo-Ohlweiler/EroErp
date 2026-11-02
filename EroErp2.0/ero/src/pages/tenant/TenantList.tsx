@@ -11,7 +11,7 @@ import {
   TEntry,
   TPage,
   TPanel,
-  TSelect,
+  TCombo,
   type Coluna,
   type PaginaDaCarga,
   type ResultadoDaCarga,
@@ -251,7 +251,7 @@ export function TenantList() {
               setPagina(0)
             }}
           />
-          <TSelect
+          <TCombo
             label="Situação"
             vazio="Todas"
             opcoes={[

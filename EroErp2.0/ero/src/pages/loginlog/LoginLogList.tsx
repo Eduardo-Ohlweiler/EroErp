@@ -7,7 +7,7 @@ import {
   TEntry,
   TPage,
   TPanel,
-  TSelect,
+  TCombo,
   type Coluna,
   type PaginaDaCarga,
   type ResultadoDaCarga,
@@ -249,7 +249,7 @@ export function LoginLogList() {
     >
       <TPanel>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <TSelect
+          <TCombo
             label="Escopo"
             opcoes={[
               { valor: 'tenant', rotulo: 'Tenant atual' },
@@ -261,7 +261,7 @@ export function LoginLogList() {
               setPagina(0)
             }}
           />
-          <TSelect
+          <TCombo
             label="Resultado"
             vazio="Todos"
             opcoes={[

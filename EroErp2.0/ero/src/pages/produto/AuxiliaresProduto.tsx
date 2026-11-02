@@ -5,13 +5,13 @@ import { IconAdicionar, IconBusca } from '@/assets/icons'
 import {
   TBadge,
   TButton,
-  TCombo,
+  TDBCombo,
   TDataGrid,
   TDataGridFooter,
   TEntry,
   TPage,
   TPanel,
-  TSelect,
+  TCombo,
   TTabPanel,
   TTabs,
   type Aba,
@@ -104,7 +104,7 @@ function Filtros({
         suffix={<IconBusca className="size-4" />}
         onChange={(e) => aoMudarTermo(e.target.value)}
       />
-      <TSelect
+      <TCombo
         label="Situação"
         vazio="Todas"
         opcoes={[
@@ -389,7 +389,7 @@ function PainelSubgrupos() {
             noValidate
             className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-start"
           >
-            <TCombo
+            <TDBCombo
               label="Grupo"
               placeholder="Busque o grupo"
               value={grupoId}
@@ -440,7 +440,7 @@ function PainelSubgrupos() {
               f.setPagina(0)
             }}
           />
-          <TCombo
+          <TDBCombo
             label="Grupo"
             vazio="Todos"
             placeholder="Todos"
