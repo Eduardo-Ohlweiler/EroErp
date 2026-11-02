@@ -196,8 +196,10 @@ function PainelSimples({ tipo }: { tipo: AuxiliarSimples }) {
         msg.sucesso(`${maiuscula(singular)} ${feminino ? 'cadastrada' : 'cadastrado'}`)
       }
       limpar()
-      setPagina(0)
-      carregar()
+      // Na página 0, recarrega; noutra, a troca de página já recarrega — as
+      // duas juntas disparavam duas consultas, e a da página velha podia chegar depois.
+      if (pagina === 0) carregar()
+      else setPagina(0)
     } catch (e) {
       msg.erroApi(e)
     }

@@ -469,7 +469,7 @@ export function CategoriaFormList() {                                  // troca
   const editar = (c: AuxiliarResponse) => {
     setEditando(c.id); form.reset(paraForm(c)); window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-  const salvar = async (d: Dados) => { /* create ou update → msg.sucesso → limpar → setPagina(0) → carregar */ }
+  const salvar = async (d: Dados) => { /* create ou update → msg.sucesso → limpar → pagina === 0 ? carregar() : setPagina(0) */ }
 
   return (
     <TPage title="Categorias de produto" breadcrumb={['Cadastros', 'Auxiliar produto', 'Categorias']}> {/* troca */}
