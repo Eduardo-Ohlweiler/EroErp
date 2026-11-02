@@ -1,37 +1,38 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState, type ReactNode } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useCallback, useEffect, useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { toast } from 'react-toastify'
 import { z } from 'zod'
-import { IconAdicionar } from '@/assets/icons'
-import { TButton, TDBCombo, TPage, TPanel, TCombo } from '@/components/common'
+import {
+  CORES_SUGERIDAS,
+  TAuditoria,
+  TButton,
+  TCombo,
+  TCor,
+  TDBCombo,
+  TEntry,
+  TForm,
+  TFormActionsLeft,
+  TFormFooter,
+  TPage,
+  TPanel,
+  TRow,
+  useMessage,
+} from '@/components/common'
 import { PessoaRapidaModal } from '@/components/pessoa/PessoaRapidaModal'
 import { useAuth } from '@/hooks/useAuth'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
-import { handleApiError } from '@/services/api'
 import { filialService } from '@/services/filialService'
 import { pessoaService } from '@/services/pessoaService'
-import { OPCOES_TIPO_FILIAL, type TipoFilial } from '@/types/filial'
+import { OPCOES_TIPO_FILIAL, type FilialResponse, type TipoFilial } from '@/types/filial'
 import type { PessoaResponse } from '@/types/pessoa'
-import { AUSENTE, formatarDocumento } from '@/utils/format'
-
-/**
- * Cores sugeridas: tons médios, que leem como bolinha tanto no claro quanto
- * no escuro. A cor é dado da filial, não token de tema — por isso hex aqui.
- */
-const CORES_SUGERIDAS = [
-  '#3B82F6', '#10B981', '#F59E0B', '#EF4444',
-  '#8B5CF6', '#EC4899', '#14B8A6', '#64748B',
-]
+import { AUSENTE, formatarDocumento, mascararCep } from '@/utils/format'
 
 const schema = z
   .object({
     pessoaId: z.string().min(1, 'Escolha a pessoa'),
-    pessoaRotulo: z.string().optional(),
     tipo: z.enum(['MATRIZ', 'FILIAL']),
     matrizId: z.string().optional(),
-    matrizRotulo: z.string().optional(),
     cor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Escolha uma cor'),
   })
   .refine((d) => d.tipo === 'MATRIZ' || !!d.matrizId, {
@@ -43,16 +44,34 @@ type FormData = z.infer<typeof schema>
 
 const VAZIO: FormData = {
   pessoaId: '',
-  pessoaRotulo: '',
   tipo: 'MATRIZ',
   matrizId: '',
-  matrizRotulo: '',
   cor: CORES_SUGERIDAS[0],
+}
+
+/** Rótulos dos combos, para não abrirem com o id cru. */
+interface Rotulos {
+  pessoa?: string
+  matriz?: string
 }
 
 /** "Nome (documento)" — homônimo é comum, o documento desempata. */
 function rotuloComDocumento(nome: string, documento?: string | null) {
   return documento ? `${nome} (${formatarDocumento(documento)})` : nome
+}
+
+function paraForm(f: FilialResponse): FormData {
+  return { pessoaId: f.pessoaId, tipo: f.tipo, matrizId: f.matrizId ?? '', cor: f.cor }
+}
+
+function paraCorpo(d: FormData) {
+  return {
+    pessoaId: d.pessoaId,
+    tipo: d.tipo as TipoFilial,
+    // Matriz não responde a ninguém: o backend recusa o campo na MATRIZ.
+    matrizId: d.tipo === 'FILIAL' ? d.matrizId || undefined : undefined,
+    cor: d.cor,
+  }
 }
 
 /**
@@ -65,46 +84,45 @@ function rotuloComDocumento(nome: string, documento?: string | null) {
 export function FilialForm() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const editando = !!id
   const somenteLeitura = useSomenteLeitura('FILIAIS')
   const { podeLer } = useAuth()
   const leDadosDaPessoa = podeLer('PESSOAS')
-
-  const [carregando, setCarregando] = useState(editando)
+  const msg = useMessage()
+  const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: VAZIO })
+  const [salvo, setSalvo] = useState<FilialResponse>()
+  const [rotulos, setRotulos] = useState<Rotulos>({})
+  const [carregando, setCarregando] = useState(!!id)
   const [modalAberto, setModalAberto] = useState(false)
   const [pessoa, setPessoa] = useState<PessoaResponse>()
 
-  const {
-    handleSubmit,
-    control,
-    reset,
-    watch,
-    setValue,
-    register,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: VAZIO })
+  const tipo = useWatch({ control: form.control, name: 'tipo' })
+  const pessoaId = useWatch({ control: form.control, name: 'pessoaId' })
 
-  const tipo = watch('tipo')
-  const pessoaId = watch('pessoaId')
-  const cor = watch('cor')
-
-  useEffect(() => {
+  const carregar = useCallback(() => {
     if (!id) return
     filialService
       .findById(id)
-      .then((f) =>
-        reset({
-          pessoaId: f.pessoaId,
-          pessoaRotulo: rotuloComDocumento(f.pessoaNome, f.documento),
-          tipo: f.tipo,
-          matrizId: f.matrizId ?? '',
-          matrizRotulo: f.matrizNome ?? '',
-          cor: f.cor,
-        }),
-      )
-      .catch(handleApiError)
+      .then((f) => {
+        setSalvo(f)
+        setRotulos({
+          pessoa: rotuloComDocumento(f.pessoaNome, f.documento),
+          matriz: f.matrizNome ?? undefined,
+        })
+        form.reset(paraForm(f))
+      })
+      .catch(msg.erroApi)
       .finally(() => setCarregando(false))
-  }, [id, reset])
+  }, [id, form, msg])
+
+  useEffect(carregar, [carregar])
+
+  // Matriz não responde a ninguém: voltar para Matriz esquece a escolhida.
+  useEffect(() => {
+    if (tipo === 'MATRIZ' && form.getValues('matrizId')) {
+      form.setValue('matrizId', '')
+      setRotulos((r) => ({ ...r, matriz: undefined }))
+    }
+  }, [tipo, form])
 
   // Os dados cadastrais da pessoa escolhida, só para leitura. Quem não lê
   // Pessoas não os busca — a resposta seria 403 a cada troca de combo.
@@ -117,180 +135,105 @@ export function FilialForm() {
     pessoaService
       .findById(pessoaId)
       .then((p) => vigente && setPessoa(p))
-      .catch(handleApiError)
+      .catch(msg.erroApi)
     return () => {
       vigente = false
     }
-  }, [pessoaId, leDadosDaPessoa])
+  }, [pessoaId, leDadosDaPessoa, msg])
 
-  async function onSubmit(dados: FormData) {
-    if (somenteLeitura) return
-    const payload = {
-      pessoaId: dados.pessoaId,
-      tipo: dados.tipo as TipoFilial,
-      // Matriz não responde a ninguém: o backend recusa o campo na MATRIZ.
-      matrizId: dados.tipo === 'FILIAL' ? dados.matrizId || undefined : undefined,
-      cor: dados.cor,
-    }
+  const salvar = async (dados: FormData) => {
     try {
-      if (editando) {
-        await filialService.update(id!, payload)
-        toast.success('Filial salva')
+      if (id) {
+        await filialService.update(id, paraCorpo(dados))
+        msg.sucesso('Filial salva')
+        // Relê: o "Alterado em" só existe depois do commit.
+        carregar()
       } else {
-        await filialService.create(payload)
-        toast.success('Filial cadastrada')
+        const criada = await filialService.create(paraCorpo(dados))
+        msg.sucesso('Filial cadastrada')
+        navigate(`/app/filiais/${criada.id}`)
       }
-      navigate('/app/filiais')
     } catch (erro) {
-      handleApiError(erro)
+      msg.erroApi(erro)
     }
   }
 
-  if (carregando) {
-    return (
-      <div className="grid place-items-center py-20">
-        <span
-          role="status"
-          aria-label="Carregando"
-          className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
-        />
-      </div>
-    )
+  /** No cadastro novo, Novo só esvazia; num registro aberto, vai para o novo. */
+  const novo = () => {
+    if (id) return navigate('/app/filiais/nova')
+    setRotulos({})
+    form.reset(VAZIO)
   }
 
   const endereco = pessoa?.enderecos.find((e) => e.principal) ?? pessoa?.enderecos[0]
 
   return (
-    <TPage title={somenteLeitura ? 'Filial' : editando ? 'Editar filial' : 'Nova filial'}>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
-        {somenteLeitura && (
-          <p className="rounded-md bg-info-bg px-3 py-2 text-caption text-info">
-            Você tem acesso só de leitura a esta tela.
-          </p>
-        )}
-
-        {/* `min-w-0` porque o fieldset tem largura mínima de conteúdo, e em
-            360 px empurraria a tela para os lados. */}
-        <fieldset disabled={somenteLeitura} className="m-0 flex min-w-0 flex-col gap-5 border-0 p-0">
-          <TPanel title="Filial">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex items-start gap-2 sm:col-span-2">
-                <Controller
-                  control={control}
-                  name="pessoaId"
-                  render={({ field }) => (
-                    <TDBCombo
-                      label="Pessoa"
-                      className="flex-1"
-                      placeholder="Busque por nome ou documento"
-                      value={field.value}
-                      rotuloInicial={watch('pessoaRotulo')}
-                      onChange={field.onChange}
-                      buscar={(termo) =>
-                        pessoaService.select(termo).then((pessoas) =>
-                          pessoas.map((p) => ({ id: p.id, nome: rotuloComDocumento(p.nome, p.documento) })),
-                        )
-                      }
-                      ajuda="Empresa ou profissional já cadastrado em Pessoas."
-                      error={errors.pessoaId?.message}
-                    />
-                  )}
-                />
-                {!somenteLeitura && (
-                  <TButton
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setModalAberto(true)}
-                    title="Cadastrar uma pessoa nova sem sair daqui"
-                    aria-label="Cadastrar pessoa nova"
-                    // Alinhado pelo topo do campo (abaixo do rótulo): a ajuda e o
-                    // erro do combo quebram em duas linhas no celular.
-                    className="mt-6"
-                  >
-                    <IconAdicionar className="size-4" />
-                  </TButton>
-                )}
-              </div>
-
-              <TCombo
-                label="Tipo"
-                opcoes={OPCOES_TIPO_FILIAL}
-                ajuda={
-                  tipo === 'MATRIZ'
-                    ? 'Um negócio próprio. O tenant pode ter mais de uma matriz.'
-                    : 'Responde a uma matriz.'
-                }
-                {...register('tipo', {
-                  onChange: (e) => {
-                    if (e.target.value === 'MATRIZ') {
-                      setValue('matrizId', '')
-                      setValue('matrizRotulo', '')
-                    }
-                  },
-                })}
+    <TPage
+      title={somenteLeitura ? 'Filial' : id ? 'Editar filial' : 'Nova filial'}
+      breadcrumb={['Cadastros', 'Filiais', id ? 'Editar' : 'Nova']}
+      carregando={carregando}
+    >
+      <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
+        <TRow>
+          <TDBCombo
+            name="pessoaId"
+            label="Pessoa"
+            required
+            placeholder="Busque por nome ou documento"
+            rotuloInicial={rotulos.pessoa}
+            buscar={(termo) =>
+              pessoaService.select(termo).then((pessoas) =>
+                pessoas.map((p) => ({ id: p.id, nome: rotuloComDocumento(p.nome, p.documento) })),
+              )
+            }
+            ajuda="Empresa ou profissional já cadastrado em Pessoas."
+            acao={
+              <TButton
+                variant="novo"
+                label=""
+                onClick={() => setModalAberto(true)}
+                title="Cadastrar uma pessoa nova sem sair daqui"
+                aria-label="Cadastrar pessoa nova"
               />
-
-              {tipo === 'FILIAL' && (
-                <Controller
-                  control={control}
-                  name="matrizId"
-                  render={({ field }) => (
-                    <TDBCombo
-                      label="Matriz"
-                      placeholder="Busque a matriz"
-                      value={field.value ?? ''}
-                      rotuloInicial={watch('matrizRotulo')}
-                      onChange={field.onChange}
-                      buscar={(termo) =>
-                        filialService.select(termo, 'MATRIZ', id).then((matrizes) =>
-                          matrizes.map((m) => ({ id: m.id, nome: rotuloComDocumento(m.nome, m.documento) })),
-                        )
-                      }
-                      error={errors.matrizId?.message}
-                    />
-                  )}
-                />
-              )}
-
-              <fieldset className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
-                <legend className="mb-1.5 text-caption text-txt-secondary">
-                  Cor de identificação
-                </legend>
-                <div className="flex flex-wrap items-center gap-2">
-                  {CORES_SUGERIDAS.map((sugerida) => {
-                    const escolhida = sugerida.toUpperCase() === cor.toUpperCase()
-                    return (
-                      <button
-                        key={sugerida}
-                        type="button"
-                        onClick={() => setValue('cor', sugerida, { shouldDirty: true })}
-                        aria-label={`Cor ${sugerida}`}
-                        aria-pressed={escolhida}
-                        style={{ backgroundColor: sugerida }}
-                        className={`size-8 rounded-full ring-offset-2 ring-offset-surface transition-shadow
-                          ${escolhida ? 'ring-2 ring-txt' : 'ring-1 ring-line-strong hover:ring-2 hover:ring-line-strong'}`}
-                      />
-                    )
-                  })}
-                  <label className="flex items-center gap-2 text-caption text-txt-secondary">
-                    <input
-                      type="color"
-                      aria-label="Outra cor"
-                      value={cor}
-                      onChange={(e) => setValue('cor', e.target.value.toUpperCase(), { shouldDirty: true })}
-                      className="size-8 cursor-pointer rounded-md border border-line-strong bg-surface p-0.5"
-                    />
-                    Outra
-                  </label>
-                </div>
-                <p className="text-caption text-txt-muted">
-                  Identifica a filial nas listas e combos das outras telas.
-                </p>
-                {errors.cor && <p className="text-caption text-danger">{errors.cor.message}</p>}
-              </fieldset>
-            </div>
-          </TPanel>
-        </fieldset>
+            }
+          />
+        </TRow>
+        <TRow>
+          <TCombo
+            name="tipo"
+            label="Tipo"
+            required
+            opcoes={OPCOES_TIPO_FILIAL}
+            ajuda={
+              tipo === 'MATRIZ'
+                ? 'Um negócio próprio. O tenant pode ter mais de uma matriz.'
+                : 'Responde a uma matriz.'
+            }
+          />
+        </TRow>
+        {tipo === 'FILIAL' && (
+          <TRow>
+            <TDBCombo
+              name="matrizId"
+              label="Matriz"
+              required
+              placeholder="Busque a matriz"
+              rotuloInicial={rotulos.matriz}
+              buscar={(termo) =>
+                filialService.select(termo, 'MATRIZ', id).then((matrizes) =>
+                  matrizes.map((m) => ({ id: m.id, nome: rotuloComDocumento(m.nome, m.documento) })),
+                )
+              }
+            />
+          </TRow>
+        )}
+        <TRow>
+          <TCor
+            name="cor"
+            label="Cor de identificação"
+            ajuda="Identifica a filial nas listas e combos das outras telas."
+          />
+        </TRow>
 
         {pessoaId && (
           <TPanel
@@ -314,50 +257,87 @@ export function FilialForm() {
             ) : !pessoa ? (
               <p className="text-caption text-txt-secondary">Carregando…</p>
             ) : (
-              <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                <Dado rotulo={pessoa.tipoPessoa === 'PESSOA_FISICA' ? 'CPF' : 'CNPJ'}>
-                  {formatarDocumento(pessoa.cpf ?? pessoa.cnpj) || AUSENTE}
-                </Dado>
+              <>
+                <TRow>
+                  <TEntry
+                    label={pessoa.tipoPessoa === 'PESSOA_FISICA' ? 'CPF' : 'CNPJ'}
+                    width={pessoa.tipoPessoa === 'PESSOA_FISICA' ? 'cpf' : 'cnpj'}
+                    value={formatarDocumento(pessoa.cpf ?? pessoa.cnpj) || AUSENTE}
+                    disabled
+                  />
+                </TRow>
                 {pessoa.tipoPessoa === 'PESSOA_JURIDICA' && (
                   <>
-                    <Dado rotulo="Razão social">{pessoa.razaoSocial || AUSENTE}</Dado>
-                    <Dado rotulo="Nome fantasia">{pessoa.nomeFantasia || AUSENTE}</Dado>
-                    <Dado rotulo="Inscrição estadual">{pessoa.inscricaoEstadual || AUSENTE}</Dado>
-                    <Dado rotulo="Inscrição municipal">{pessoa.inscricaoMunicipal || AUSENTE}</Dado>
+                    <TRow>
+                      <TEntry label="Razão social" value={pessoa.razaoSocial || AUSENTE} disabled />
+                    </TRow>
+                    <TRow>
+                      <TEntry label="Nome fantasia" value={pessoa.nomeFantasia || AUSENTE} disabled />
+                    </TRow>
+                    <TRow>
+                      <TEntry
+                        label="Inscrição estadual"
+                        width="curto"
+                        value={pessoa.inscricaoEstadual || AUSENTE}
+                        disabled
+                      />
+                    </TRow>
+                    <TRow>
+                      <TEntry
+                        label="Inscrição municipal"
+                        width="curto"
+                        value={pessoa.inscricaoMunicipal || AUSENTE}
+                        disabled
+                      />
+                    </TRow>
                   </>
                 )}
-                <Dado rotulo="Endereço" className="sm:col-span-2 lg:col-span-3">
-                  {endereco
-                    ? [
-                        [endereco.rua, endereco.numero].filter(Boolean).join(', '),
-                        endereco.bairro,
-                        `${endereco.cidadeNome}/${endereco.estadoSigla}`,
-                      ]
-                        .filter(Boolean)
-                        .join(' — ')
-                    : 'Nenhum endereço cadastrado'}
-                </Dado>
-              </dl>
+                {endereco ? (
+                  <>
+                    <TRow>
+                      <TEntry label="Rua" value={endereco.rua || AUSENTE} disabled />
+                    </TRow>
+                    <TRow>
+                      <TEntry
+                        label="CEP"
+                        width="cep"
+                        value={endereco.cep ? mascararCep(endereco.cep) : AUSENTE}
+                        disabled
+                      />
+                      <TEntry label="Número" width="curto" value={endereco.numero || AUSENTE} disabled />
+                      <TEntry
+                        label="Complemento"
+                        width="curto"
+                        value={endereco.complemento || AUSENTE}
+                        disabled
+                      />
+                    </TRow>
+                    <TRow>
+                      <TEntry label="Bairro" width="curto" value={endereco.bairro || AUSENTE} disabled />
+                      <TEntry label="Cidade" width="medio" value={endereco.cidadeNome} disabled />
+                      <TEntry label="UF" width="uf" value={endereco.estadoSigla} disabled />
+                    </TRow>
+                  </>
+                ) : (
+                  <TRow>
+                    <TEntry label="Endereço" value="Nenhum endereço cadastrado" disabled />
+                  </TRow>
+                )}
+              </>
             )}
           </TPanel>
         )}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row">
-          <TButton
-            type="button"
-            variant="secondary"
-            onClick={() => navigate('/app/filiais')}
-            className="sm:w-auto"
-          >
-            {somenteLeitura ? 'Voltar' : 'Cancelar'}
-          </TButton>
-          {!somenteLeitura && (
-            <TButton type="submit" loading={isSubmitting}>
-              Salvar
-            </TButton>
-          )}
-        </div>
-      </form>
+        <TAuditoria registro={salvo} />
+
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+            <TButton variant="novo" onClick={novo} />
+            <TButton variant="voltar" onClick={() => navigate('/app/filiais')} />
+          </TFormActionsLeft>
+        </TFormFooter>
+      </TForm>
 
       <PessoaRapidaModal
         aberto={modalAberto}
@@ -365,28 +345,11 @@ export function FilialForm() {
         onFechar={() => setModalAberto(false)}
         onCriada={(criada) => {
           // Já entra selecionada
-          setValue('pessoaRotulo', rotuloComDocumento(criada.nome, criada.cpf ?? criada.cnpj))
-          setValue('pessoaId', criada.id, { shouldValidate: true })
+          setRotulos((r) => ({ ...r, pessoa: rotuloComDocumento(criada.nome, criada.cpf ?? criada.cnpj) }))
+          form.setValue('pessoaId', criada.id, { shouldValidate: true, shouldDirty: true })
           setModalAberto(false)
         }}
       />
     </TPage>
-  )
-}
-
-function Dado({
-  rotulo,
-  className = '',
-  children,
-}: {
-  rotulo: string
-  className?: string
-  children: ReactNode
-}) {
-  return (
-    <div className={`min-w-0 ${className}`}>
-      <dt className="text-caption text-txt-secondary">{rotulo}</dt>
-      <dd className="break-words text-body text-txt">{children}</dd>
-    </div>
   )
 }
