@@ -1,18 +1,30 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useCallback, useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
-import { toast } from 'react-toastify'
 import { z } from 'zod'
-import { TButton, TDBCombo, TEntry, TPage, TPanel, TCombo, TTextArea } from '@/components/common'
+import {
+  TAuditoria,
+  TButton,
+  TCombo,
+  TDBCombo,
+  TEntry,
+  TForm,
+  TFormActionsLeft,
+  TFormFooter,
+  TPage,
+  TPanel,
+  TRow,
+  TTextArea,
+  useMessage,
+  type OpcaoSelect,
+} from '@/components/common'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
-import { handleApiError } from '@/services/api'
 import { auxiliarService, subgrupoService } from '@/services/auxiliarProdutoService'
 import { catalogoService } from '@/services/catalogoService'
 import { pessoaService } from '@/services/pessoaService'
 import { produtoService } from '@/services/produtoService'
-import type { OpcaoSelect } from '@/components/common'
-import type { ProdutoRequest } from '@/types/produto'
+import type { ProdutoRequest, ProdutoResponse } from '@/types/produto'
 import { paraNumero, textoDaMascara } from '@/utils/format'
 
 const categorias = auxiliarService('categorias')
@@ -49,12 +61,33 @@ const VAZIO: FormData = {
   custo: '',
 }
 
-/** Rótulos do registro carregado, para os combos não abrirem com o id cru. */
-interface Rotulos {
-  subgrupo?: string
-  categoria?: string
-  marca?: string
-  fornecedor?: string
+function paraForm(p: ProdutoResponse): FormData {
+  return {
+    nome: p.nome,
+    unidadeMedidaId: p.unidadeMedidaId,
+    ean: p.ean ?? '',
+    descricao: p.descricao ?? '',
+    subgrupoId: p.subgrupoId ?? '',
+    categoriaId: p.categoriaId ?? '',
+    marcaId: p.marcaId ?? '',
+    fornecedorId: p.fornecedorId ?? '',
+    // Com as mesmas casas do campo: String(72.5) reabriria como "72,5"
+    custo: textoDaMascara(p.custo, 2),
+  }
+}
+
+function paraCorpo(dados: FormData): ProdutoRequest {
+  return {
+    nome: dados.nome.trim(),
+    unidadeMedidaId: dados.unidadeMedidaId,
+    ean: dados.ean.trim() || undefined,
+    descricao: dados.descricao.trim() || undefined,
+    subgrupoId: dados.subgrupoId || undefined,
+    categoriaId: dados.categoriaId || undefined,
+    marcaId: dados.marcaId || undefined,
+    fornecedorId: dados.fornecedorId || undefined,
+    custo: paraNumero(dados.custo) ?? null,
+  }
 }
 
 /**
@@ -65,22 +98,13 @@ interface Rotulos {
 export function ProdutoForm() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const editando = !!id
   const somenteLeitura = useSomenteLeitura('PRODUTOS')
-
-  const [carregando, setCarregando] = useState(editando)
-  const [codigo, setCodigo] = useState<number>()
-  const [rotulos, setRotulos] = useState<Rotulos>({})
+  const msg = useMessage()
+  const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: VAZIO })
+  const [salvo, setSalvo] = useState<ProdutoResponse>()
+  const [carregando, setCarregando] = useState(!!id)
   const [unidades, setUnidades] = useState<OpcaoSelect[]>()
   const [tipoFornecedor, setTipoFornecedor] = useState<string>()
-
-  const {
-    handleSubmit,
-    control,
-    reset,
-    register,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: VAZIO })
 
   useEffect(() => {
     catalogoService
@@ -88,239 +112,156 @@ export function ProdutoForm() {
       .then((lista) => setUnidades(lista.map((u) => ({ valor: u.id, rotulo: `${u.sigla} — ${u.descricao}` }))))
       .catch((erro) => {
         setUnidades([])
-        handleApiError(erro)
+        msg.erroApi(erro)
       })
     catalogoService
       .tiposCadastro()
       .then((tipos) => setTipoFornecedor(tipos.find((t) => t.nome === 'Fornecedor')?.id))
-      .catch(handleApiError)
-  }, [])
+      .catch(msg.erroApi)
+  }, [msg])
 
-  useEffect(() => {
+  const carregar = useCallback(() => {
     if (!id) return
     produtoService
       .findById(id)
       .then((p) => {
-        setCodigo(p.codigo)
-        setRotulos({
-          subgrupo: p.subgrupoNome ? `${p.grupoNome} › ${p.subgrupoNome}` : undefined,
-          categoria: p.categoriaNome ?? undefined,
-          marca: p.marcaNome ?? undefined,
-          fornecedor: p.fornecedorNome ?? undefined,
-        })
-        reset({
-          nome: p.nome,
-          unidadeMedidaId: p.unidadeMedidaId,
-          ean: p.ean ?? '',
-          descricao: p.descricao ?? '',
-          subgrupoId: p.subgrupoId ?? '',
-          categoriaId: p.categoriaId ?? '',
-          marcaId: p.marcaId ?? '',
-          fornecedorId: p.fornecedorId ?? '',
-          // Com as mesmas casas do campo: String(72.5) reabriria como "72,5"
-          custo: textoDaMascara(p.custo, 2),
-        })
+        setSalvo(p)
+        form.reset(paraForm(p))
       })
-      .catch(handleApiError)
+      .catch(msg.erroApi)
       .finally(() => setCarregando(false))
-  }, [id, reset])
+  }, [id, form, msg])
 
-  async function onSubmit(dados: FormData) {
-    if (somenteLeitura) return
-    const payload: ProdutoRequest = {
-      nome: dados.nome.trim(),
-      unidadeMedidaId: dados.unidadeMedidaId,
-      ean: dados.ean.trim() || undefined,
-      descricao: dados.descricao.trim() || undefined,
-      subgrupoId: dados.subgrupoId || undefined,
-      categoriaId: dados.categoriaId || undefined,
-      marcaId: dados.marcaId || undefined,
-      fornecedorId: dados.fornecedorId || undefined,
-      custo: paraNumero(dados.custo) ?? null,
-    }
+  useEffect(carregar, [carregar])
+
+  const salvar = async (dados: FormData) => {
     try {
-      if (editando) {
-        await produtoService.update(id!, payload)
-        toast.success('Produto salvo')
+      if (id) {
+        await produtoService.update(id, paraCorpo(dados))
+        msg.sucesso('Produto salvo')
+        // Relê: o "Alterado em" só existe depois do commit.
+        carregar()
       } else {
-        const criado = await produtoService.create(payload)
-        toast.success(`Produto ${criado.codigo} cadastrado`)
+        const criado = await produtoService.create(paraCorpo(dados))
+        msg.sucesso(`Produto ${criado.codigo} cadastrado`)
+        navigate(`/app/produtos/${criado.id}`)
       }
-      navigate('/app/produtos')
     } catch (erro) {
-      handleApiError(erro)
+      msg.erroApi(erro)
     }
   }
 
-  // As unidades antes do formulário: um <select> montado sem a opção perde o
-  // valor que o registro carregado põe nele.
-  if (carregando || !unidades) {
-    return (
-      <div className="grid place-items-center py-20">
-        <span
-          role="status"
-          aria-label="Carregando"
-          className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
-        />
-      </div>
-    )
-  }
+  /** No cadastro novo, Novo só esvazia; num registro aberto, vai para o novo. */
+  const novo = () => (id ? navigate('/app/produtos/novo') : form.reset(VAZIO))
 
   return (
-    <TPage title={somenteLeitura ? 'Produto' : editando ? 'Editar produto' : 'Novo produto'}>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
-        {somenteLeitura && (
-          <p className="rounded-md bg-info-bg px-3 py-2 text-caption text-info">
-            Você tem acesso só de leitura a esta tela.
-          </p>
-        )}
+    <TPage
+      title={somenteLeitura ? 'Produto' : id ? 'Editar produto' : 'Novo produto'}
+      breadcrumb={['Cadastros', 'Produtos', id ? 'Editar' : 'Novo']}
+      // As unidades antes do formulário: um <select> montado sem a opção perde o
+      // valor que o registro carregado põe nele.
+      carregando={carregando || !unidades}
+    >
+      <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
+        <TRow>
+          <TEntry
+            label="Código"
+            width="codigo"
+            value={salvo ? String(salvo.codigo) : ''}
+            placeholder="Automático"
+            // disabled e não readOnly: tem de parecer o que é, um campo que não se digita
+            disabled
+            ajuda={salvo ? undefined : 'Gerado ao salvar'}
+          />
+        </TRow>
+        <TRow>
+          <TEntry name="nome" label="Nome" required autoFocus maxLength={150} />
+        </TRow>
+        <TRow>
+          <TCombo name="unidadeMedidaId" label="Unidade" required vazio="Escolha" opcoes={unidades ?? []} />
+        </TRow>
+        <TRow>
+          <TEntry
+            name="ean"
+            label="EAN (código de barras)"
+            width="curto"
+            inputMode="numeric"
+            maxLength={14}
+            placeholder="Opcional"
+          />
+        </TRow>
+        <TRow>
+          <TTextArea name="descricao" label="Descrição" linhas={3} maxLength={2000} />
+        </TRow>
 
-        {/* `min-w-0` porque o fieldset tem largura mínima de conteúdo, e em
-            360 px empurraria a tela para os lados. */}
-        <fieldset disabled={somenteLeitura} className="m-0 flex min-w-0 flex-col gap-5 border-0 p-0">
-          <TPanel title="Produto">
-            <div className="grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
-              <TEntry
-                label="Código"
-                value={codigo !== undefined ? String(codigo) : ''}
-                placeholder="Automático"
-                // disabled e não readOnly: tem de parecer o que é, um campo que não se digita
-                disabled
-                ajuda={codigo === undefined ? 'Gerado ao salvar' : undefined}
-              />
-              <TEntry label="Nome" maxLength={150} error={errors.nome?.message} {...register('nome')} />
-              {/* Linha própria: na coluna de 8rem do código a unidade sairia cortada */}
-              <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
-                <TCombo
-                  label="Unidade"
-                  vazio="Escolha"
-                  opcoes={unidades}
-                  error={errors.unidadeMedidaId?.message}
-                  {...register('unidadeMedidaId')}
-                />
-                <TEntry
-                  label="EAN (código de barras)"
-                  inputMode="numeric"
-                  maxLength={14}
-                  placeholder="Opcional"
-                  error={errors.ean?.message}
-                  {...register('ean')}
-                />
-              </div>
-              <TTextArea
-                label="Descrição"
-                rows={3}
-                maxLength={2000}
-                className="sm:col-span-2"
-                error={errors.descricao?.message}
-                {...register('descricao')}
-              />
-            </div>
-          </TPanel>
+        <TPanel title="Classificação" subtitle="Opcional. Cadastre as opções em Auxiliares de produto.">
+          <TRow>
+            <TDBCombo
+              name="subgrupoId"
+              label="Grupo › Subgrupo"
+              vazio="Nenhum"
+              placeholder="Busque o subgrupo"
+              rotuloInicial={salvo?.subgrupoNome ? `${salvo.grupoNome} › ${salvo.subgrupoNome}` : undefined}
+              buscar={(t) =>
+                subgrupoService
+                  .select(t)
+                  .then((lista) => lista.map((s) => ({ id: s.id, nome: `${s.grupoNome} › ${s.nome}` })))
+              }
+            />
+          </TRow>
+          <TRow>
+            <TDBCombo
+              name="categoriaId"
+              label="Categoria"
+              vazio="Nenhuma"
+              placeholder="Busque a categoria"
+              rotuloInicial={salvo?.categoriaNome ?? undefined}
+              buscar={(t) => categorias.select(t)}
+            />
+          </TRow>
+          <TRow>
+            <TDBCombo
+              name="marcaId"
+              label="Marca"
+              vazio="Nenhuma"
+              placeholder="Busque a marca"
+              rotuloInicial={salvo?.marcaNome ?? undefined}
+              buscar={(t) => marcas.select(t)}
+            />
+          </TRow>
+        </TPanel>
 
-          <TPanel title="Classificação" subtitle="Opcional. Cadastre as opções em Auxiliares de produto.">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <Controller
-                control={control}
-                name="subgrupoId"
-                render={({ field }) => (
-                  <TDBCombo
-                    label="Grupo › Subgrupo"
-                    vazio="Nenhum"
-                    placeholder="Busque o subgrupo"
-                    value={field.value}
-                    rotuloInicial={rotulos.subgrupo}
-                    onChange={field.onChange}
-                    buscar={(t) =>
-                      subgrupoService
-                        .select(t)
-                        .then((lista) => lista.map((s) => ({ id: s.id, nome: `${s.grupoNome} › ${s.nome}` })))
-                    }
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="categoriaId"
-                render={({ field }) => (
-                  <TDBCombo
-                    label="Categoria"
-                    vazio="Nenhuma"
-                    placeholder="Busque a categoria"
-                    value={field.value}
-                    rotuloInicial={rotulos.categoria}
-                    onChange={field.onChange}
-                    buscar={(t) => categorias.select(t)}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name="marcaId"
-                render={({ field }) => (
-                  <TDBCombo
-                    label="Marca"
-                    vazio="Nenhuma"
-                    placeholder="Busque a marca"
-                    value={field.value}
-                    rotuloInicial={rotulos.marca}
-                    onChange={field.onChange}
-                    buscar={(t) => marcas.select(t)}
-                  />
-                )}
-              />
-            </div>
-          </TPanel>
+        <TPanel title="Compra" subtitle="Custo em branco fica como não informado, que não é o mesmo que zero.">
+          <TRow>
+            <TDBCombo
+              name="fornecedorId"
+              label="Fornecedor"
+              vazio="Nenhum"
+              placeholder="Busque o fornecedor"
+              rotuloInicial={salvo?.fornecedorNome ?? undefined}
+              ajuda="Pessoas com o tipo de cadastro Fornecedor"
+              buscar={(t) =>
+                pessoaService
+                  .select(t, tipoFornecedor)
+                  .then((lista) => lista.map((p) => ({ id: p.id, nome: p.nome })))
+              }
+            />
+          </TRow>
+          <TRow>
+            <TEntry name="custo" label="Custo (R$)" mascara="decimal" placeholder="Não informado" />
+          </TRow>
+        </TPanel>
 
-          <TPanel title="Compra" subtitle="Custo em branco fica como não informado, que não é o mesmo que zero.">
-            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_11rem]">
-              <Controller
-                control={control}
-                name="fornecedorId"
-                render={({ field }) => (
-                  <TDBCombo
-                    label="Fornecedor"
-                    vazio="Nenhum"
-                    placeholder="Busque o fornecedor"
-                    value={field.value}
-                    rotuloInicial={rotulos.fornecedor}
-                    onChange={field.onChange}
-                    ajuda="Pessoas com o tipo de cadastro Fornecedor"
-                    buscar={(t) =>
-                      pessoaService
-                        .select(t, tipoFornecedor)
-                        .then((lista) => lista.map((p) => ({ id: p.id, nome: p.nome })))
-                    }
-                  />
-                )}
-              />
-              <TEntry
-                label="Custo (R$)"
-                mascara="decimal"
-                inputMode="numeric"
-                placeholder="Não informado"
-                {...register('custo')}
-              />
-            </div>
-          </TPanel>
-        </fieldset>
+        <TAuditoria registro={salvo} />
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row">
-          <TButton
-            type="button"
-            variant="secondary"
-            onClick={() => navigate('/app/produtos')}
-            className="sm:w-auto"
-          >
-            {somenteLeitura ? 'Voltar' : 'Cancelar'}
-          </TButton>
-          {!somenteLeitura && (
-            <TButton type="submit" loading={isSubmitting}>
-              Salvar
-            </TButton>
-          )}
-        </div>
-      </form>
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+            <TButton variant="novo" onClick={novo} />
+            <TButton variant="voltar" onClick={() => navigate('/app/produtos')} />
+          </TFormActionsLeft>
+        </TFormFooter>
+      </TForm>
     </TPage>
   )
 }
