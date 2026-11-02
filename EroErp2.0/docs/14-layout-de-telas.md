@@ -38,6 +38,12 @@
 >   Quando não recebe (serviço, auxiliares), inativar e reativar ficam na grade,
 >   com confirmação (decisão do Eduardo, 2026-11-02).
 > - **A grade do FormList não tem filtro** e lista ativos e inativos (idem).
+> - **Botões embaixo do formulário, à esquerda, o principal primeiro** — List:
+>   Buscar · Limpar · Novo · Exportar · Pdf; Form: Salvar · Novo · Voltar;
+>   FormList: Salvar · Novo (padrão do Eduardo, 2026-11-02, §3.4).
+> - **O `id` do campo é gerado** (`useId`), não o `name`: duas abas montadas com
+>   o mesmo `name` davam `id` repetido e o rótulo apontava para o campo da aba
+>   escondida. Label ao lado (§5) passa `id` explícito ao campo.
 
 ---
 
@@ -142,6 +148,10 @@ Na dúvida entre duas, a menor — campo largo demais é o que destoa.
 | `TDBCombo` · `TDBComboMulti` | `metade` |
 | `TTextArea` | `longo` |
 | `TCheckBox` · `TDBCheckBox` · `TRadio` · `TDBRadio` | o conteúdo |
+| `TAuditoria` | quem: `medio` · quando: `dataHora` (fixo) |
+
+Dentro do `TFieldList`, o campo sem `width` fica direto na linha: `metade` é
+metade da linha da lista.
 
 `width` só aparece na tela quando o padrão não serve — e o plano diz por quê.
 
@@ -192,7 +202,7 @@ Nomes do EroErp antigo. Props em português, como o resto do 2.0.
 |---|---|---|
 | `TPage` | `title`, `breadcrumb?: string[]`, `subtitle?`, `actions?`, `documento?`, `carregando?` | Container de tela. `breadcrumb` em texto acima do título (`Cadastros › Produtos`). `carregando` mostra o spinner — a tela não monta spinner. |
 | `TForm` | `form` (o retorno do `useForm`), `onSubmit`, `somenteLeitura?`, `children` | `FormProvider` + `<form noValidate>` + cartão. Com `somenteLeitura`, faz o `fieldset disabled`, mostra a faixa "acesso só de leitura" e esconde os botões de escrita (§3.4). |
-| `TFormFooter` · `TFormActionsLeft` · `TFormActionsRight` | `children` | Rodapé do cartão, com borda no topo. Empilha no celular com o botão principal embaixo. |
+| `TFormFooter` · `TFormActionsLeft` · `TFormActionsRight` | `children` | Rodapé do cartão, com borda no topo: os botões ficam **embaixo do formulário, à esquerda**, na ordem do padrão (§3.4), o principal primeiro. No celular empilham na mesma ordem, o principal em cima. `TFormActionsRight` existe, mas nenhum modelo o usa. |
 | `TRow` | `children` | Uma linha: `flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start`. |
 | `TCol` | `width?: 'auto' \| 'rotulo' \| Largura`, `align?: 'left' \| 'right'` | Coluna da linha. **Sem `width`, divide a linha em partes iguais** (`sm:flex-1 sm:min-w-0 sm:basis-64`) — como no antigo, CNH · Categoria · Validade ficam um em cada terço. `auto` encolhe até o campo, para curtos ficarem colados. `rotulo` (`sm:w-48`, 192 px) é a coluna de labels do estilo PHP (§5). |
 | `TPanel` | `title?`, `recolhido?`, `actions?` | Seção por assunto (Pessoa física, Endereços…), recolhível pelo título. |
@@ -241,10 +251,23 @@ estado inline, não mensagem (CLAUDE.md, "Nesta tela um 400 pode ser estado").
 
 | Componente | Props | O que faz |
 |---|---|---|
-| `TButton` | `variant`, `label`, `loading?`, `size?`, `type?` | Variantes de ação **com ícone e cor prontos**: `salvar`, `novo`, `filtrar`, `limpar`, `voltar`, `editar`, `inativar`, `reativar`; e as genéricas `primary`, `secondary`, `ghost`, `danger`. Cores por token de tema, nunca hex. Dentro de `TForm somenteLeitura`, `salvar`, `novo`, `inativar` e `reativar` **não aparecem**. `label=""` deixa só o ícone (grade). |
+| `TButton` | `variant`, `label`, `loading?`, `size?`, `type?` | Variantes de ação **com ícone e cor prontos**: `salvar`, `novo`, `buscar`, `limpar`, `voltar`, `editar`, `inativar`, `reativar`; e as genéricas `primary`, `secondary`, `ghost`, `danger`. Cores por token de tema, nunca hex. Dentro de `TForm somenteLeitura`, `salvar`, `novo`, `inativar` e `reativar` **não aparecem**. `label=""` deixa só o ícone (grade). |
 | `TDataGrid` | como hoje, com `acoes(linha)` | Ações na **primeira coluna**, como no antigo. Vira cartões abaixo de `md`. |
 | `TDataGridFooter` | `pagina`, `onPaginaChange` | "Exibindo X–Y de N registros" e a paginação. |
-| `TAcoesDeExportacao` · `TBotaoImprimir` | como hoje | Vão no `actions` da `TPage`. |
+| `TAcoesDeExportacao` | como hoje | Os botões **Exportar** (planilha CSV) e **Pdf** (a folha impressa). Na List, vão no rodapé do filtro, depois do Novo. |
+| `TBotaoImprimir` | como hoje | No `actions` da `TPage`. |
+
+**Os botões de cada modelo — padrão do Eduardo (2026-11-02), nesta ordem, da
+esquerda para a direita, embaixo do formulário:**
+
+| Modelo | Botões |
+|---|---|
+| List | Buscar (ou Enter) · Limpar · Novo · Exportar · Pdf |
+| Form | Salvar · Novo · Voltar |
+| FormList | Salvar · Novo (o Novo esvazia o formulário para cadastrar) |
+
+Quem só lê não vê Salvar nem Novo (o `TButton` some sozinho dentro de
+`TForm somenteLeitura`; na List, `!somenteLeitura &&`).
 
 ### 3.5 Renomeação (fase 0)
 
@@ -272,8 +295,8 @@ tela pronta mais parecida que já o segue) e trocar o que está marcado
 
 ### 4.1 List com filtros (`/app/produtos`)
 
-Filtros num `TForm` com **botões, como no antigo**: Filtrar (ou Enter), Limpar,
-Novo. A consulta só roda ao filtrar, ao trocar de página ou ao limpar — menos
+Filtros num `TForm` com **botões, como no antigo**: Buscar (ou Enter), Limpar,
+Novo, Exportar, Pdf. A consulta só roda ao buscar, ao trocar de página ou ao limpar — menos
 requisições, o que importa quando a tabela cresce.
 
 ```tsx
@@ -311,7 +334,7 @@ export function ProdutoList() {                                        // troca
 
   return (
     <TPage title="Produtos" breadcrumb={['Cadastros', 'Produtos']}    // troca
-           actions={<TAcoesDeExportacao … />} documento={…}>
+           documento={…}>
       <TForm form={form} onSubmit={filtrar}>
         <TRow><TEntry name="codigo" label="Código" width="codigo" /></TRow>
         <TRow><TEntry name="nome" label="Nome" /></TRow>
@@ -319,9 +342,10 @@ export function ProdutoList() {                                        // troca
         <TRow><TCombo name="ativo" label="Situação" opcoes={SITUACAO_OPCOES} vazio="Todas" /></TRow>
         <TFormFooter>
           <TFormActionsLeft>
-            <TButton variant="filtrar" type="submit" />
+            <TButton variant="buscar" type="submit" />
             <TButton variant="limpar" onClick={limpar} />
             {!somenteLeitura && <TButton variant="novo" onClick={() => navigate('/app/produtos/novo')} />}
+            <TAcoesDeExportacao … />
           </TFormActionsLeft>
         </TFormFooter>
       </TForm>
@@ -375,7 +399,7 @@ export function ProdutoForm() {                                        // troca
   }
 
   return (
-    <TPage title={id ? 'Editar produto' : 'Novo produto'}              // troca
+    <TPage title={somenteLeitura ? 'Produto' : id ? 'Editar produto' : 'Novo produto'} // troca
            breadcrumb={['Cadastros', 'Produtos', id ? 'Editar' : 'Novo']} carregando={carregando}>
       <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
         <TRow><TEntry name="codigo" label="Código" width="codigo" disabled /></TRow>
@@ -393,12 +417,10 @@ export function ProdutoForm() {                                        // troca
 
         <TFormFooter>
           <TFormActionsLeft>
-            <TButton variant="voltar" onClick={() => navigate('/app/produtos')} />
-            <TButton variant="novo" onClick={() => navigate('/app/produtos/novo')} />
-          </TFormActionsLeft>
-          <TFormActionsRight>
             <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
-          </TFormActionsRight>
+            <TButton variant="novo" onClick={novo} />  {/* aberto: vai para /novo; no /novo: form.reset(VAZIO) */}
+            <TButton variant="voltar" onClick={() => navigate('/app/produtos')} />
+          </TFormActionsLeft>
         </TFormFooter>
       </TForm>
     </TPage>
@@ -415,7 +437,8 @@ Ordem fixa:
    ao vizinho.
 4. Situação.
 5. `TAuditoria`.
-6. Rodapé: Voltar · Novo à esquerda, Salvar à direita. Ação que não é salvar
+6. Rodapé: Salvar · Novo · Voltar, embaixo, à esquerda (§3.4). Título: "Novo …",
+   "Editar …" e, para quem só lê, o nome da coisa ("Produto"). Ação que não é salvar
    (Redefinir senha, Conectar) vai num `TPanel` próprio, abaixo do formulário.
 
 A rota passa por `PorRegistro` (CLAUDE.md, "Rota `/nova` e rota `/:id`").
@@ -455,8 +478,8 @@ export function CategoriaFormList() {                                  // troca
         {editando && <TRow><TCombo name="ativo" label="Situação" opcoes={SITUACAO_OPCOES} /></TRow>}
         <TFormFooter>
           <TFormActionsLeft>
-            <TButton variant="limpar" onClick={limpar} />
             <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+            <TButton variant="novo" onClick={limpar} />
           </TFormActionsLeft>
         </TFormFooter>
       </TForm>
@@ -486,7 +509,7 @@ campo `rotuloOculto` (o rótulo continua no DOM para leitor de tela).
 ```tsx
 <TRow>
   <TCol width="rotulo" align="right"><TRotulo htmlFor="nome" required>Nome</TRotulo></TCol>
-  <TCol><TEntry name="nome" label="Nome" rotuloOculto required /></TCol>
+  <TCol><TEntry name="nome" id="nome" label="Nome" rotuloOculto required /></TCol>
 </TRow>
 ```
 
@@ -531,8 +554,9 @@ O `guardiao-layout` reprova a tela que fugir deste documento. Três passos:
 - [ ] Um campo por `TRow`; lado a lado só nos grupos da §1 ou onde o plano mandou
 - [ ] Linha dividida: cada campo na sua `TCol`, com `longo`
 - [ ] Label em cima (ou ao lado em toda a tela, se o plano pediu)
-- [ ] Form: Situação, `TAuditoria` e rodapé Voltar · Novo | Salvar
-- [ ] List: filtros com Filtrar · Limpar · Novo; colunas na ordem da §4.1
+- [ ] Form: Situação (se a API recebe `ativo`), `TAuditoria` e rodapé Salvar · Novo · Voltar
+- [ ] FormList: rodapé Salvar · Novo
+- [ ] List: filtros com Buscar · Limpar · Novo · Exportar · Pdf; colunas na ordem da §4.1
 - [ ] Mensagens por `useMessage`, confirmação por `useQuestion`
 - [ ] `medir-campos.mjs` sem violação a 1440 px
 - [ ] 768 px e 360 px sem rolagem horizontal e sem campo espremido

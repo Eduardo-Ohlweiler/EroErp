@@ -215,7 +215,7 @@ O que faz a tela funcionar, além da forma:
 - **`useCallback` + `useEffect(carregar, [carregar])`.** Uma função só de recarga,
   reaproveitada depois de uma ação de linha.
 - **Filtro aplicado é estado próprio.** A lista consulta pelos filtros
-  *aplicados* (Filtrar/Enter), não pelos digitados; filtrar e limpar fazem
+  *aplicados* (Buscar/Enter), não pelos digitados; filtrar e limpar fazem
   `setPagina(0)` — sem isso, filtrar na página 3 devolve página vazia.
 - **`secundaria: true`** nas colunas que podem sumir primeiro no mobile.
 - Toda rota de formulário (`/nova` e `/:id`) entra embrulhada em `PorRegistro`

@@ -61,7 +61,7 @@ Para cada tela no escopo, como um usuário faria:
 3. **Recusa:** tentar salvar com obrigatório vazio ou valor inválido — a
    mensagem **aparece** (inline ou toast), e não um 500 calado.
 4. **Editar** e **filtrar/buscar**; a lista responde ao filtro. Com o kit do
-   doc 14, a lista filtra **ao clicar Filtrar ou apertar Enter**, não a cada
+   doc 14, a lista filtra **ao clicar Buscar ou apertar Enter**, não a cada
    tecla: confira que Limpar zera os campos e recarrega, que trocar de página
    mantém o filtro aplicado e que filtrar na página 3 volta para a 1.
 5. **Imprimir**, se a tela imprime — gere o PDF e **abra com Read** (a folha é

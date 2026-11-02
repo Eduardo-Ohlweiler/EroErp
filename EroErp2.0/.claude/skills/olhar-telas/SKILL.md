@@ -171,7 +171,7 @@ Depois **ler o PDF com a ferramenta Read** (`pages: "1-3"`). É assim que se
 enxerga página em branco, quebra ruim, traço mudo e legenda que não fecha com o
 número ao lado.
 
-Para uma lista, a folha só monta depois de clicar em **Relatório** (que refaz a
+Para uma lista, a folha só monta depois de clicar em **Pdf** (que refaz a
 consulta sem paginação) — espere ~2,5 s antes do `pdf()`.
 
 ## 5. Responsividade — regra 6 do projeto
