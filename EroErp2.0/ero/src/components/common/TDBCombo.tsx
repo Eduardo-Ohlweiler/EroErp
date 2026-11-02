@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type ReactNode,
 } from 'react'
 import { useController } from 'react-hook-form'
 import { IconBusca, IconFechar, IconSeta } from '@/assets/icons'
@@ -51,6 +52,11 @@ interface TDBComboProps {
   required?: boolean
   /** `sm` cabe em barra de navegação; `md` é o de formulário. */
   tamanho?: 'md' | 'sm'
+  /**
+   * Botão colado ao campo, na altura dele — o cadastro rápido do que não está
+   * na lista (`<TButton variant="novo" label="" …/>`, que some para quem só lê).
+   */
+  acao?: ReactNode
 }
 
 const TAMANHOS = {
@@ -101,6 +107,7 @@ function TDBComboBase({
   disabled: desabilitado = false,
   rotuloOculto = false,
   tamanho = 'md',
+  acao,
 }: TDBComboProps) {
   const idBase = useId()
   const largura = useLargura(width, 'metade')
@@ -237,98 +244,101 @@ function TDBComboBase({
         {textoDoRotulo(label, required)}
       </label>
 
-      <div className="relative">
-        <IconBusca className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-txt-muted" />
+      <div className="flex items-start gap-2">
+        <div className="relative min-w-0 flex-1">
+          <IconBusca className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-txt-muted" />
 
-        <input
-          id={idInput}
-          role="combobox"
-          aria-expanded={aberto}
-          aria-controls={idLista}
-          aria-autocomplete="list"
-          aria-invalid={!!error}
-          aria-describedby={error ? idErro : undefined}
-          autoComplete="off"
-          disabled={disabled}
-          placeholder={rotuloSelecionado || placeholder}
-          value={aberto ? termo : rotuloSelecionado}
-          onChange={(e) => {
-            setTermo(e.target.value)
-            if (!aberto) setAberto(true)
-          }}
-          onFocus={() => setAberto(true)}
-          onKeyDown={aoTeclar}
-          className={`w-full truncate rounded-md border bg-surface pl-9 pr-16 text-txt
-            placeholder:text-txt-muted transition-shadow duration-150
-            focus:outline-none focus:ring-[3px]
-            disabled:cursor-not-allowed disabled:bg-surface-alt disabled:opacity-60
-            ${TAMANHOS[tamanho]}
-            ${
-              error
-                ? 'border-danger focus:border-danger focus:ring-danger/15'
-                : 'border-line-strong focus:border-primary focus:ring-primary/10'
-            }`}
-        />
-
-        <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
-          {/*
-            Limpar só faz sentido onde não escolher é uma opção — que é
-            exatamente o que `vazio` declara. Sem ele, o campo é obrigatório e
-            oferecer o × contradiz isso; trocar continua sendo escolher outro.
-          */}
-          {vazio && value && !disabled && (
-            <button
-              type="button"
-              aria-label="Limpar seleção"
-              onClick={() => selecionar(null)}
-              className="grid size-6 place-items-center rounded text-txt-muted hover:bg-surface-alt hover:text-txt"
-            >
-              <IconFechar className="size-3.5" />
-            </button>
-          )}
-          <IconSeta
-            className={`size-4 text-txt-muted transition-transform ${aberto ? 'rotate-180' : ''}`}
+          <input
+            id={idInput}
+            role="combobox"
+            aria-expanded={aberto}
+            aria-controls={idLista}
+            aria-autocomplete="list"
+            aria-invalid={!!error}
+            aria-describedby={error ? idErro : undefined}
+            autoComplete="off"
+            disabled={disabled}
+            placeholder={rotuloSelecionado || placeholder}
+            value={aberto ? termo : rotuloSelecionado}
+            onChange={(e) => {
+              setTermo(e.target.value)
+              if (!aberto) setAberto(true)
+            }}
+            onFocus={() => setAberto(true)}
+            onKeyDown={aoTeclar}
+            className={`w-full truncate rounded-md border bg-surface pl-9 pr-16 text-txt
+              placeholder:text-txt-muted transition-shadow duration-150
+              focus:outline-none focus:ring-[3px]
+              disabled:cursor-not-allowed disabled:bg-surface-alt disabled:opacity-60
+              ${TAMANHOS[tamanho]}
+              ${
+                error
+                  ? 'border-danger focus:border-danger focus:ring-danger/15'
+                  : 'border-line-strong focus:border-primary focus:ring-primary/10'
+              }`}
           />
+
+          <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
+            {/*
+              Limpar só faz sentido onde não escolher é uma opção — que é
+              exatamente o que `vazio` declara. Sem ele, o campo é obrigatório e
+              oferecer o × contradiz isso; trocar continua sendo escolher outro.
+            */}
+            {vazio && value && !disabled && (
+              <button
+                type="button"
+                aria-label="Limpar seleção"
+                onClick={() => selecionar(null)}
+                className="grid size-6 place-items-center rounded text-txt-muted hover:bg-surface-alt hover:text-txt"
+              >
+                <IconFechar className="size-3.5" />
+              </button>
+            )}
+            <IconSeta
+              className={`size-4 text-txt-muted transition-transform ${aberto ? 'rotate-180' : ''}`}
+            />
+          </div>
+
+          {aberto && (
+            <ul
+              id={idLista}
+              role="listbox"
+              className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-md
+                border border-line-strong bg-surface py-1 shadow-hover"
+            >
+              {carregando && (
+                <li className="px-3 py-2 text-caption text-txt-muted">Buscando…</li>
+              )}
+
+              {!carregando &&
+                itens.map((opcao, i) => {
+                  const selecionado = (opcao?.id ?? '') === value
+                  return (
+                    <li
+                      key={opcao?.id ?? '__vazio'}
+                      role="option"
+                      aria-selected={selecionado}
+                      onMouseEnter={() => setDestacado(i)}
+                      onClick={() => selecionar(opcao)}
+                      className={`cursor-pointer px-3 py-2 text-body
+                        ${i === destacado ? 'bg-surface-alt' : ''}
+                        ${selecionado ? 'font-medium text-primary' : 'text-txt'}
+                        ${opcao === null ? 'text-txt-secondary' : ''}`}
+                    >
+                      {opcao?.nome ?? vazio}
+                    </li>
+                  )
+                })}
+
+              {!carregando && opcoes.length === 0 && (
+                <li className="px-3 py-2 text-caption text-txt-muted">
+                  Nenhum resultado para &ldquo;{termo}&rdquo;
+                </li>
+              )}
+            </ul>
+          )}
         </div>
-
-        {aberto && (
-          <ul
-            id={idLista}
-            role="listbox"
-            className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-md
-              border border-line-strong bg-surface py-1 shadow-hover"
-          >
-            {carregando && (
-              <li className="px-3 py-2 text-caption text-txt-muted">Buscando…</li>
-            )}
-
-            {!carregando &&
-              itens.map((opcao, i) => {
-                const selecionado = (opcao?.id ?? '') === value
-                return (
-                  <li
-                    key={opcao?.id ?? '__vazio'}
-                    role="option"
-                    aria-selected={selecionado}
-                    onMouseEnter={() => setDestacado(i)}
-                    onClick={() => selecionar(opcao)}
-                    className={`cursor-pointer px-3 py-2 text-body
-                      ${i === destacado ? 'bg-surface-alt' : ''}
-                      ${selecionado ? 'font-medium text-primary' : 'text-txt'}
-                      ${opcao === null ? 'text-txt-secondary' : ''}`}
-                  >
-                    {opcao?.nome ?? vazio}
-                  </li>
-                )
-              })}
-
-            {!carregando && opcoes.length === 0 && (
-              <li className="px-3 py-2 text-caption text-txt-muted">
-                Nenhum resultado para &ldquo;{termo}&rdquo;
-              </li>
-            )}
-          </ul>
-        )}
+        {acao}
       </div>
 
       {error ? (

@@ -18,9 +18,10 @@ export { TDBCombo } from './TDBCombo'
 export { TDBComboMulti } from './TDBComboMulti'
 export { TCheckBox, TDBCheckBox } from './TCheckBox'
 export { TRadio, TDBRadio } from './TRadio'
+export { TCor } from './TCor'
 export { TFieldList, type ColunaDaLista } from './TFieldList'
 export { TAuditoria, type Auditavel } from './TAuditoria'
-export { SITUACAO_OPCOES } from './opcoes'
+export { CORES_SUGERIDAS, SITUACAO_OPCOES } from './opcoes'
 
 // Mensagens e confirmação
 export { useMessage, type Mensagens } from './useMessage'

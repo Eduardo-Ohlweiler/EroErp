@@ -97,7 +97,7 @@ EroErp2.0/
         │                          # TRow TCol TRotulo larguras.ts TPanel TModal TTabs
         │                          # TEntry (máscaras) TDate TDateTime TTextArea
         │                          # TCombo (fixo) TDBCombo TDBComboMulti (banco)
-        │                          # TCheckBox TDBCheckBox TRadio TDBRadio TFieldList
+        │                          # TCheckBox TDBCheckBox TRadio TDBRadio TCor TFieldList
         │                          # TAuditoria TButton (ações) TDataGrid
         │                          # TDataGridFooter useMessage useQuestion
         │                          # + TBadge TAviso TResult* TBotaoImprimir

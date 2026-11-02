@@ -147,7 +147,7 @@ Na dúvida entre duas, a menor — campo largo demais é o que destoa.
 | `TCombo` | `situacao` |
 | `TDBCombo` · `TDBComboMulti` | `metade` |
 | `TTextArea` | `longo` |
-| `TCheckBox` · `TDBCheckBox` · `TRadio` · `TDBRadio` | o conteúdo |
+| `TCheckBox` · `TDBCheckBox` · `TRadio` · `TDBRadio` · `TCor` | o conteúdo |
 | `TAuditoria` | quem: `medio` · quando: `dataHora` (fixo) |
 
 Dentro do `TFieldList`, o campo sem `width` fica direto na linha: `metade` é
@@ -227,8 +227,9 @@ Todos têm `width?`, `ajuda?`, `disabled?`, `rotuloOculto?`.
 | `TDateTime` | `passoMinutos?` (padrão 5) | Data e hora; grava `AAAA-MM-DDTHH:mm`. |
 | `TTextArea` | `linhas?`, `maxLength?` | Texto longo; mostra "máx. N caracteres". |
 | `TCombo` | `opcoes: {valor, rotulo}[]`, `vazio?` | **Opções fixas** — situação, tipo, enum. `vazio` é a opção "Todos"/"Selecione…". `SITUACAO_OPCOES` está pronto no kit. |
-| `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?` | **Opções do banco**, com busca no servidor (`/select?nome=`, debounce 300 ms) e o rótulo do valor salvo. |
+| `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?`, `acao?` | **Opções do banco**, com busca no servidor (`/select?nome=`, debounce 300 ms) e o rótulo do valor salvo. `acao` é o botão colado ao campo, na altura dele, para o **cadastro rápido** do que não está na lista (`<TButton variant="novo" label="" …/>`, que some para quem só lê) — decisão do Eduardo, 2026-11-02 (Pessoa da filial). |
 | `TDBComboMulti` | `buscar`, `excluir?`, `maximo?` | Vários do banco. |
+| `TCor` | `cores?` | **Cor de identificação** de um registro (a filial): as `CORES_SUGERIDAS` em bolinhas e "Outra", com o seletor do sistema. Grava `#RRGGBB` em maiúsculas. |
 | `TCheckBox` | `opcoes?` | Sem `opcoes`, um booleano com o rótulo ao lado; com `opcoes`, um grupo fixo que grava a lista dos marcados. |
 | `TDBCheckBox` | `buscar()`, `vertical?`, `altura?` | Grupo vindo do banco (tipos de cadastro, módulos). |
 | `TRadio` | `opcoes`, `vertical?` | Escolha única fixa. |
