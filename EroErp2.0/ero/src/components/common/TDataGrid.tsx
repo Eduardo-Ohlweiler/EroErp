@@ -29,6 +29,9 @@ interface TDataGridProps<T> {
  * Tabela no desktop, **lista de cartões no mobile** — regra de responsividade
  * do projeto. Uma tabela de 6 colunas em 360px de largura é ilegível; abaixo de
  * `md` cada linha vira um cartão com rótulo e valor empilhados.
+ *
+ * As ações da linha ficam na **primeira coluna**, como no EroErp antigo; no
+ * cartão, embaixo.
  */
 export function TDataGrid<T>({
   colunas,
@@ -63,6 +66,11 @@ export function TDataGrid<T>({
           <table className="w-full border-collapse text-body">
             <thead>
               <tr className="bg-surface-alt">
+                {acoes && (
+                  <th scope="col" className="w-px px-3 py-2.5">
+                    <span className="sr-only">Ações</span>
+                  </th>
+                )}
                 {colunas.map((c) => (
                   <th
                     key={c.chave}
@@ -74,7 +82,6 @@ export function TDataGrid<T>({
                     {c.cabecalho}
                   </th>
                 ))}
-                {acoes && <th scope="col" className="w-px px-4 py-2.5" />}
               </tr>
             </thead>
             <tbody>
@@ -85,6 +92,11 @@ export function TDataGrid<T>({
                   className={`border-t border-line transition-colors
                     ${clicavel ? 'cursor-pointer hover:bg-surface-alt' : ''}`}
                 >
+                  {acoes && (
+                    <td className="px-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex gap-1">{acoes(linha)}</div>
+                    </td>
+                  )}
                   {colunas.map((c) => (
                     <td
                       key={c.chave}
@@ -96,14 +108,6 @@ export function TDataGrid<T>({
                       {c.render(linha)}
                     </td>
                   ))}
-                  {acoes && (
-                    <td
-                      className="px-4 text-right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex justify-end gap-1">{acoes(linha)}</div>
-                    </td>
-                  )}
                 </tr>
               ))}
             </tbody>

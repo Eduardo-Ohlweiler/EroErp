@@ -6,16 +6,22 @@ import {
   useState,
   type KeyboardEvent,
 } from 'react'
+import { useController } from 'react-hook-form'
 import { IconBusca, IconFechar, IconSeta } from '@/assets/icons'
 import { useDebounce } from '@/hooks/useDebounce'
 import { handleApiError } from '@/services/api'
 import type { SelectOption } from '@/types/comum'
+import { classeDoRotulo, textoDoRotulo, useLigadoAoForm } from './Campo'
+import { useLargura, type Largura } from './larguras'
+import { useSomenteLeituraDoForm } from './somenteLeitura'
 
 interface TDBComboProps {
   label: string
+  /** Dentro de um `TForm`, liga o combo ao campo — dispensa `value`/`onChange`. */
+  name?: string
   /** Id selecionado, ou string vazia. */
-  value: string
-  onChange: (valor: string) => void
+  value?: string
+  onChange?: (valor: string) => void
   /**
    * Busca no servidor, com o termo digitado. Recebe `undefined` na carga
    * inicial. Deve apontar para um endpoint `/select`.
@@ -40,6 +46,9 @@ interface TDBComboProps {
   disabled?: boolean
   /** Mantém o rótulo para leitor de tela, sem ocupar espaço. Para cabeçalho. */
   rotuloOculto?: boolean
+  /** Token da escala — só quando o padrão (`metade`) não serve. */
+  width?: Largura
+  required?: boolean
   /** `sm` cabe em barra de navegação; `md` é o de formulário. */
   tamanho?: 'md' | 'sm'
 }
@@ -58,10 +67,30 @@ const TAMANHOS = {
  *
  * Teclado: ↓/↑ navegam, Enter seleciona, Esc fecha. Clique fora fecha.
  */
-export function TDBCombo({
+export function TDBCombo(props: TDBComboProps) {
+  const ligado = useLigadoAoForm(props.name, props.onChange !== undefined || props.value !== undefined)
+  if (ligado) return <TDBComboLigado {...props} name={props.name!} />
+  return <TDBComboBase {...props} />
+}
+
+function TDBComboLigado(props: TDBComboProps & { name: string }) {
+  const { field, fieldState } = useController({ name: props.name })
+  return (
+    <TDBComboBase
+      {...props}
+      value={(field.value as string | null | undefined) ?? ''}
+      onChange={field.onChange}
+      error={props.error ?? fieldState.error?.message}
+    />
+  )
+}
+
+function TDBComboBase({
   label,
-  value,
-  onChange,
+  value = '',
+  onChange = () => {},
+  width,
+  required,
   buscar,
   rotuloInicial,
   vazio,
@@ -69,11 +98,13 @@ export function TDBCombo({
   error,
   ajuda,
   className = '',
-  disabled = false,
+  disabled: desabilitado = false,
   rotuloOculto = false,
   tamanho = 'md',
 }: TDBComboProps) {
   const idBase = useId()
+  const largura = useLargura(width, 'metade')
+  const disabled = useSomenteLeituraDoForm() || desabilitado
   const idInput = `${idBase}-input`
   const idLista = `${idBase}-lista`
   const idErro = `${idBase}-erro`
@@ -198,12 +229,12 @@ export function TDBCombo({
   }
 
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`} ref={raiz}>
+    <div className={`flex flex-col gap-1.5 ${largura} ${className}`} ref={raiz}>
       <label
         htmlFor={idInput}
-        className={rotuloOculto ? 'sr-only' : 'text-caption text-txt-secondary'}
+        className={classeDoRotulo(rotuloOculto)}
       >
-        {label}
+        {textoDoRotulo(label, required)}
       </label>
 
       <div className="relative">
