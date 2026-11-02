@@ -22,7 +22,10 @@ export interface ServicoResponse {
   ativo: boolean
   /** Em ordem de nome da filial. */
   filiais: ServicoFilialResponse[]
+  /** Quem cadastrou e quem alterou por último — o `TAuditoria` mostra. */
+  criadoPorNome?: string | null
   createdAt: string
+  alteradoPorNome?: string | null
   updatedAt: string | null
 }
 
