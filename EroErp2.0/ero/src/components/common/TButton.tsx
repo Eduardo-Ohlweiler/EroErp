@@ -14,7 +14,7 @@ import { useSomenteLeituraDoForm } from './somenteLeitura'
 type Generica = 'primary' | 'secondary' | 'ghost' | 'danger'
 
 /** As ações do kit (doc 14 §3.4): ícone, cor e rótulo prontos. */
-type Acao = 'salvar' | 'novo' | 'filtrar' | 'limpar' | 'voltar' | 'editar' | 'inativar' | 'reativar'
+type Acao = 'salvar' | 'novo' | 'buscar' | 'limpar' | 'voltar' | 'editar' | 'inativar' | 'reativar'
 
 type Variante = Generica | Acao
 type Tamanho = 'md' | 'sm'
@@ -51,7 +51,7 @@ type Icone = ComponentType<SVGProps<SVGSVGElement>>
 
 const ACOES: Record<Acao, { rotulo: string; cor: keyof typeof CORES; icone: Icone; escreve: boolean }> = {
   salvar: { rotulo: 'Salvar', cor: 'primary', icone: IconCheck, escreve: true },
-  filtrar: { rotulo: 'Filtrar', cor: 'primary', icone: IconBusca, escreve: false },
+  buscar: { rotulo: 'Buscar', cor: 'primary', icone: IconBusca, escreve: false },
   novo: { rotulo: 'Novo', cor: 'secondary', icone: IconAdicionar, escreve: true },
   limpar: { rotulo: 'Limpar', cor: 'secondary', icone: IconFechar, escreve: false },
   voltar: { rotulo: 'Voltar', cor: 'secondary', icone: IconAnterior, escreve: false },

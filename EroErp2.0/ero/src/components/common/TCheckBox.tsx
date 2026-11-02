@@ -46,7 +46,6 @@ function CaixaLigada(props: TCheckBoxProps & { name: string }) {
   return (
     <Caixa
       {...props}
-      id={props.id ?? props.name}
       ref={field.ref}
       checked={!!field.value}
       onChange={(e) => field.onChange(e.target.checked)}

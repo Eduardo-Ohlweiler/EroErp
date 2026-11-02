@@ -50,8 +50,9 @@ export function TForm<T extends FieldValues>({
 }
 
 /**
- * Rodapé do cartão, com borda no topo. No celular empilha, com o botão
- * principal embaixo, perto do polegar; os botões ocupam a largura toda.
+ * Rodapé do cartão, com borda no topo: os botões ficam embaixo do formulário,
+ * à esquerda, na ordem do padrão do Eduardo (doc 14 §3.4) — o principal
+ * primeiro. No celular empilham na mesma ordem, ocupando a largura toda.
  */
 export function TFormFooter({ children }: { children: ReactNode }) {
   return (
@@ -61,16 +62,16 @@ export function TFormFooter({ children }: { children: ReactNode }) {
   )
 }
 
-/** Voltar · Novo, ou Filtrar · Limpar · Novo — o primeiro fica embaixo no celular. */
+/** Salvar · Novo · Voltar, ou Buscar · Limpar · Novo · Exportar · Pdf. */
 export function TFormActionsLeft({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap [&>*]:w-full sm:[&>*]:w-auto">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap [&>*]:w-full sm:[&>*]:w-auto">
       {children}
     </div>
   )
 }
 
-/** Salvar. */
+/** Ações à direita — os modelos de hoje não usam; existe para a tela que o plano pedir. */
 export function TFormActionsRight({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row sm:flex-wrap [&>*]:w-full sm:[&>*]:w-auto">

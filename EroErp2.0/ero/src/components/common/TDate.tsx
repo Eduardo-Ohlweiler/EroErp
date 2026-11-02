@@ -40,7 +40,6 @@ function DataLigada(props: TEntryProps & { name: string }) {
   return (
     <TEntry
       {...props}
-      id={props.id ?? props.name}
       ref={field.ref}
       value={valor}
       onChange={(e) => field.onChange(e.target.value)}

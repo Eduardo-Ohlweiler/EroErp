@@ -39,7 +39,6 @@ function TTextAreaLigado(props: TTextAreaProps & { name: string }) {
   return (
     <TTextAreaBase
       {...props}
-      id={props.id ?? props.name}
       ref={field.ref}
       value={(field.value as string | null | undefined) ?? ''}
       onChange={(e) => field.onChange(e.target.value)}

@@ -44,7 +44,6 @@ function TComboLigado(props: TComboProps & { name: string }) {
   return (
     <TComboBase
       {...props}
-      id={props.id ?? props.name}
       ref={field.ref}
       value={(field.value as string | null | undefined) ?? ''}
       onChange={(e) => field.onChange(e.target.value)}

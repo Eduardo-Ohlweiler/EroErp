@@ -1,4 +1,4 @@
-import { formatarDataHora } from '@/utils/format'
+import { AUSENTE, formatarDataHora } from '@/utils/format'
 import { TEntry } from './TEntry'
 import { TCol, TRow } from './TRow'
 
@@ -12,7 +12,8 @@ export interface Auditavel {
 
 /**
  * Quem criou e quem alterou, e quando — só na edição, no fim do formulário,
- * só leitura. A linha que não tem dado (registro nunca alterado) não aparece.
+ * só leitura. A linha que não tem dado (registro nunca alterado) não aparece;
+ * metade de uma linha sem dado (alterado antes de se guardar quem) mostra o traço.
  */
 export function TAuditoria({ registro }: { registro?: Auditavel }) {
   if (!registro) return null
@@ -56,10 +57,10 @@ function Linha({
   return (
     <TRow>
       <TCol width="auto">
-        <TEntry label={rotuloQuem} value={quem ?? ''} readOnly tabIndex={-1} width="medio" />
+        <TEntry label={rotuloQuem} value={quem || AUSENTE} readOnly tabIndex={-1} width="medio" />
       </TCol>
       <TCol width="auto">
-        <TEntry label={rotuloQuando} value={quando ? formatarDataHora(quando) : ''} readOnly tabIndex={-1} width="dataHora" />
+        <TEntry label={rotuloQuando} value={quando ? formatarDataHora(quando) : AUSENTE} readOnly tabIndex={-1} width="dataHora" />
       </TCol>
     </TRow>
   )

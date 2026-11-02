@@ -134,7 +134,6 @@ function TEntryLigado(props: TEntryProps & { name: string }) {
   return (
     <TEntryBase
       {...props}
-      id={props.id ?? props.name}
       ref={field.ref}
       value={digitos ? DE_DIGITOS[props.mascara as MascaraDeDigitos](valor) : valor}
       onChange={(e) => field.onChange(digitos ? e.target.value.replace(/\D/g, '') : e.target.value)}
