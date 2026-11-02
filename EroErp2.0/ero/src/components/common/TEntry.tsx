@@ -225,7 +225,8 @@ const TEntryBase = forwardRef<HTMLInputElement, TEntryProps>(function TEntryBase
             placeholder:text-txt-muted
             transition-shadow duration-150
             focus:outline-none focus:ring-[3px]
-            disabled:cursor-not-allowed disabled:opacity-60
+            disabled:cursor-not-allowed disabled:bg-surface-alt disabled:opacity-60
+            read-only:cursor-default read-only:bg-surface-alt read-only:opacity-60 read-only:focus:ring-0
             ${moeda ? 'pl-9' : ''}
             ${suffix ? 'pr-11' : ''}
             ${classeDaBorda(error)}`}

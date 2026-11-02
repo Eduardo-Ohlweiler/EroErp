@@ -298,3 +298,29 @@ export const IconWhatsapp = (p: IconProps) => (
     <path d="M9.2 8.6c.2-.4.6-.4.8 0l.6 1.3c.1.3 0 .5-.2.7l-.4.4c.5 1 1.3 1.8 2.3 2.3l.4-.4c.2-.2.5-.3.7-.2l1.3.6c.4.2.4.6 0 .8-.6.5-1.4.7-2.2.4a6 6 0 0 1-3.6-3.6c-.3-.8-.1-1.6.3-2.3Z" />
   </Icon>
 )
+
+/** Exportar — a planilha. */
+export const IconPlanilha = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M3 9h18M3 15h18M9 3v18" />
+  </Icon>
+)
+
+/** Pdf — a folha impressa. */
+export const IconPdf = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+    <path d="M14 3v5h5" />
+    <path d="M9 13h6M9 17h4" />
+  </Icon>
+)
+
+/** Limpar — a borracha. */
+export const IconBorracha = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m7 21-4.3-4.3a2.4 2.4 0 0 1 0-3.4l9.6-9.6a2.4 2.4 0 0 1 3.4 0l5.6 5.6a2.4 2.4 0 0 1 0 3.4L13 21" />
+    <path d="M22 21H7" />
+    <path d="m5 11 9 9" />
+  </Icon>
+)

@@ -3,18 +3,22 @@ import {
   IconAdicionar,
   IconAnterior,
   IconBloqueado,
+  IconBorracha,
   IconBusca,
   IconCheck,
   IconDesbloquear,
   IconEditar,
-  IconFechar,
+  IconPdf,
+  IconPlanilha,
 } from '@/assets/icons'
 import { useSomenteLeituraDoForm } from './somenteLeitura'
 
 type Generica = 'primary' | 'secondary' | 'ghost' | 'danger'
 
 /** As ações do kit (doc 14 §3.4): ícone, cor e rótulo prontos. */
-type Acao = 'salvar' | 'novo' | 'buscar' | 'limpar' | 'voltar' | 'editar' | 'inativar' | 'reativar'
+type Acao =
+  | 'salvar' | 'novo' | 'buscar' | 'limpar' | 'voltar' | 'exportar' | 'pdf'
+  | 'editar' | 'inativar' | 'reativar'
 
 type Variante = Generica | Acao
 type Tamanho = 'md' | 'sm'
@@ -36,28 +40,40 @@ interface TButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * a primária é clara (`#5F8FD8`) e texto branco sobre ela dá 3,28:1 —
  * reprovado. Com o inverso (navy) sobe para 6,08:1, e no tema claro o inverso
  * já é branco sobre `#1E4686`, 9,23:1. Um token resolve os dois.
+ *
+ * As ações têm cor que diz o que fazem (padrão do Eduardo, 2026-11-02): Salvar
+ * verde, Buscar azul, Limpar vermelho, Novo na cor do tenant, Exportar verde
+ * (planilha), Pdf âmbar, Voltar neutro. Os pares de contraste de cada uma com o
+ * texto do botão estão no `npm run paletas`, nas 10 paletas e nos dois temas.
  */
-const CORES: Record<Generica | 'perigoLeve', string> = {
+const CORES: Record<Generica | 'sucesso' | 'info' | 'alerta' | 'perigoLeve' | 'infoLeve' | 'sucessoLeve', string> = {
   primary:
     'bg-primary text-txt-inverse hover:bg-primary-hover active:bg-primary-active',
   secondary:
     'bg-surface text-txt border border-line-strong hover:bg-surface-alt',
   ghost: 'text-primary hover:bg-surface-alt',
   danger: 'bg-danger text-txt-inverse hover:opacity-90',
+  sucesso: 'bg-success text-txt-inverse hover:opacity-90',
+  info: 'bg-info text-txt-inverse hover:opacity-90',
+  alerta: 'bg-warning text-txt-inverse hover:opacity-90',
   perigoLeve: 'text-danger hover:bg-danger-bg',
+  infoLeve: 'text-info hover:bg-info-bg',
+  sucessoLeve: 'text-success hover:bg-success-bg',
 }
 
 type Icone = ComponentType<SVGProps<SVGSVGElement>>
 
 const ACOES: Record<Acao, { rotulo: string; cor: keyof typeof CORES; icone: Icone; escreve: boolean }> = {
-  salvar: { rotulo: 'Salvar', cor: 'primary', icone: IconCheck, escreve: true },
-  buscar: { rotulo: 'Buscar', cor: 'primary', icone: IconBusca, escreve: false },
-  novo: { rotulo: 'Novo', cor: 'secondary', icone: IconAdicionar, escreve: true },
-  limpar: { rotulo: 'Limpar', cor: 'secondary', icone: IconFechar, escreve: false },
+  salvar: { rotulo: 'Salvar', cor: 'sucesso', icone: IconCheck, escreve: true },
+  buscar: { rotulo: 'Buscar', cor: 'info', icone: IconBusca, escreve: false },
+  novo: { rotulo: 'Novo', cor: 'primary', icone: IconAdicionar, escreve: true },
+  limpar: { rotulo: 'Limpar', cor: 'danger', icone: IconBorracha, escreve: false },
   voltar: { rotulo: 'Voltar', cor: 'secondary', icone: IconAnterior, escreve: false },
-  editar: { rotulo: 'Editar', cor: 'ghost', icone: IconEditar, escreve: false },
+  exportar: { rotulo: 'Exportar', cor: 'sucesso', icone: IconPlanilha, escreve: false },
+  pdf: { rotulo: 'Pdf', cor: 'alerta', icone: IconPdf, escreve: false },
+  editar: { rotulo: 'Editar', cor: 'infoLeve', icone: IconEditar, escreve: false },
   inativar: { rotulo: 'Inativar', cor: 'perigoLeve', icone: IconBloqueado, escreve: true },
-  reativar: { rotulo: 'Reativar', cor: 'ghost', icone: IconDesbloquear, escreve: true },
+  reativar: { rotulo: 'Reativar', cor: 'sucessoLeve', icone: IconDesbloquear, escreve: true },
 }
 
 const TAMANHOS: Record<Tamanho, string> = {

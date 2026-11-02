@@ -261,7 +261,7 @@ function TDBComboBase({
           className={`w-full truncate rounded-md border bg-surface pl-9 pr-16 text-txt
             placeholder:text-txt-muted transition-shadow duration-150
             focus:outline-none focus:ring-[3px]
-            disabled:cursor-not-allowed disabled:opacity-60
+            disabled:cursor-not-allowed disabled:bg-surface-alt disabled:opacity-60
             ${TAMANHOS[tamanho]}
             ${
               error

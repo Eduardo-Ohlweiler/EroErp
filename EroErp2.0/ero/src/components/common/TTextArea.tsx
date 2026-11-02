@@ -75,7 +75,8 @@ const TTextAreaBase = forwardRef<HTMLTextAreaElement, TTextAreaProps>(function T
         className={`w-full rounded-md border bg-surface px-3 py-2 text-body text-txt
           placeholder:text-txt-muted transition-shadow duration-150
           focus:outline-none focus:ring-[3px]
-          disabled:cursor-not-allowed disabled:opacity-60
+          disabled:cursor-not-allowed disabled:bg-surface-alt disabled:opacity-60
+          read-only:cursor-default read-only:bg-surface-alt read-only:opacity-60 read-only:focus:ring-0
           ${classeDaBorda(error)}`}
         {...props}
       />

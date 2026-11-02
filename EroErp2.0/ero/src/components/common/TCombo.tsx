@@ -95,7 +95,7 @@ const TComboBase = forwardRef<HTMLSelectElement, TComboProps>(function TComboBas
           className={`h-[38px] w-full appearance-none rounded-md border bg-surface pl-3 pr-9
             text-body text-txt transition-shadow duration-150
             focus:outline-none focus:ring-[3px]
-            disabled:cursor-not-allowed disabled:opacity-60
+            disabled:cursor-not-allowed disabled:bg-surface-alt disabled:opacity-60
             ${classeDaBorda(error)}`}
         >
           {vazio !== undefined && <option value="">{vazio}</option>}

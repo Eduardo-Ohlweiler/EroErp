@@ -266,6 +266,28 @@ esquerda para a direita, embaixo do formulário:**
 | Form | Salvar · Novo · Voltar |
 | FormList | Salvar · Novo (o Novo esvazia o formulário para cadastrar) |
 
+**Cor e ícone de cada ação** (padrão do Eduardo, 2026-11-02 — o `TButton` já
+traz; a tela só escolhe a `variant`):
+
+| Ação | Cor | Ícone |
+|---|---|---|
+| `salvar` | verde (`success`), letra clara | ✓ |
+| `buscar` | azul (`info`), letra clara | lupa |
+| `limpar` | vermelho (`danger`), letra clara | borracha |
+| `novo` | a cor do tenant (`primary`), letra clara | + |
+| `exportar` | verde (`success`), letra clara | planilha |
+| `pdf` | âmbar (`warning`), letra clara | folha |
+| `voltar` | neutro, com borda | ‹ |
+| `editar` · `inativar` · `reativar` (grade, só ícone) | azul · vermelho · verde | lápis · cadeado · cadeado aberto |
+
+A letra "clara" é `text-txt-inverse`: branca no tema claro, escura no escuro,
+onde as cores clareiam e o branco perderia contraste. Os pares de cada cor com
+ela estão no `npm run paletas`, nas 10 paletas.
+
+**Campo só leitura tem fundo diferente.** `disabled` (Código) e `readOnly`
+(`TAuditoria`) saem iguais: fundo `surface-alt` e texto apagado — quem olha
+vê que ali não se digita.
+
 Quem só lê não vê Salvar nem Novo (o `TButton` some sozinho dentro de
 `TForm somenteLeitura`; na List, `!somenteLeitura &&`).
 
