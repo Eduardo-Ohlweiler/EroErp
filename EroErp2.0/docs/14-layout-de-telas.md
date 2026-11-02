@@ -15,8 +15,8 @@
 ## 0. Estado
 
 > **O kit da §3 existe** (fase 0 do `/padronizar-layout`, 2026-11-02), exportado
-> por `components/common/index.ts`. Telas no kit: `ServicoList` (List),
-> `ServicoForm` (Form) e as abas Grupos, Categorias e Marcas de
+> por `components/common/index.ts`. Telas no kit: Serviços (`ServicoList`,
+> `ServicoForm`), Produtos (`ProdutoList`, `ProdutoForm`) e as quatro abas de
 > `AuxiliaresProduto` (FormList). As demais ainda estão na forma antiga e vão
 > para o kit pelo `/padronizar-layout`, um módulo por vez.
 >
