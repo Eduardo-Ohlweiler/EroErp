@@ -1,4 +1,6 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useForm } from 'react-hook-form'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { IconAdicionar, IconBusca } from '@/assets/icons'
@@ -9,11 +11,17 @@ import {
   TDataGrid,
   TDataGridFooter,
   TEntry,
+  TForm,
+  TFormActionsLeft,
+  TFormFooter,
   TPage,
   TPanel,
   TCombo,
+  TRow,
   TTabPanel,
   TTabs,
+  useMessage,
+  useQuestion,
   type Aba,
   type Coluna,
 } from '@/components/common'
@@ -24,6 +32,7 @@ import { handleApiError } from '@/services/api'
 import { auxiliarService, subgrupoService } from '@/services/auxiliarProdutoService'
 import type { AuxiliarResponse, AuxiliarSimples, SubgrupoResponse } from '@/types/auxiliarProduto'
 import type { Page } from '@/types/comum'
+import { z } from 'zod'
 
 const ABAS: Aba[] = [
   { id: 'grupos', rotulo: 'Grupos' },
@@ -54,6 +63,7 @@ export function AuxiliaresProduto() {
   return (
     <TPage
       title="Auxiliares de produto"
+      breadcrumb={['Cadastros', 'Auxiliares de produto']}
       subtitle="Como o seu tenant organiza os produtos. Tudo opcional no cadastro do produto."
     >
       <TTabs abas={ABAS} ativa={aba} onChange={(id) => setBusca({ aba: id }, { replace: true })} />
@@ -124,159 +134,142 @@ function situacao(ativo: boolean) {
 
 // ─── Grupo, categoria e marca ────────────────────────────────────────────
 
+const schemaSimples = z.object({
+  nome: z.string().trim().min(1, 'Informe o nome').max(100, 'Até 100 caracteres'),
+})
+
+type DadosSimples = z.infer<typeof schemaSimples>
+
+const SIMPLES_VAZIO: DadosSimples = { nome: '' }
+
+/**
+ * FormList (doc 14 §4.3): o formulário em cima cadastra ou, com uma linha
+ * escolhida na grade, edita; a grade embaixo lista ativos e inativos, sem
+ * filtro. Inativar e reativar são da grade.
+ */
 function PainelSimples({ tipo }: { tipo: AuxiliarSimples }) {
   const { sessao } = useAuth()
   const somenteLeitura = useSomenteLeitura('AUXILIARES_PRODUTO')
+  const msg = useMessage()
+  const { confirmar } = useQuestion()
   const servico = auxiliarService(tipo)
   const { singular, feminino } = NOMES[tipo]
-  const f = useFiltrosDaLista()
-
+  const form = useForm<DadosSimples>({ resolver: zodResolver(schemaSimples), defaultValues: SIMPLES_VAZIO })
+  /** O id em edição; sem ele, o formulário cadastra. */
+  const [editando, setEditando] = useState<string>()
+  const [pagina, setPagina] = useState(0)
   const [dados, setDados] = useState<Page<AuxiliarResponse>>()
   const [carregando, setCarregando] = useState(true)
-  /** O registro em edição; sem ele, o formulário cadastra. */
-  const [editando, setEditando] = useState<AuxiliarResponse>()
-  const [nome, setNome] = useState('')
-  const [erro, setErro] = useState<string>()
-  const [salvando, setSalvando] = useState(false)
 
   const carregar = useCallback(() => {
     setCarregando(true)
     servico
-      .getAll({
-        termo: f.termoBusca || undefined,
-        ativo: f.ativo === '' ? undefined : f.ativo === 'true',
-        page: f.pagina,
-        size: 20,
-      })
+      .getAll({ page: pagina, size: 20 })
       .then(setDados)
-      .catch(handleApiError)
+      .catch(msg.erroApi)
       .finally(() => setCarregando(false))
     // `sessao.tenantId` é sinal de invalidação: trocar de tenant refaz a consulta.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessao?.tenantId, tipo, f.termoBusca, f.ativo, f.pagina])
+  }, [sessao?.tenantId, tipo, pagina])
 
   useEffect(carregar, [carregar])
 
-  function limpar() {
+  const limpar = () => {
     setEditando(undefined)
-    setNome('')
-    setErro(undefined)
+    form.reset(SIMPLES_VAZIO)
   }
 
-  async function salvar(evento: FormEvent) {
-    evento.preventDefault()
-    const texto = nome.trim()
-    if (!texto) return setErro('Informe o nome')
-    if (texto.length > 100) return setErro('Até 100 caracteres')
-    setSalvando(true)
+  const editar = (item: AuxiliarResponse) => {
+    setEditando(item.id)
+    form.reset({ nome: item.nome })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const salvar = async (d: DadosSimples) => {
+    const nome = d.nome.trim()
     try {
       if (editando) {
-        await servico.update(editando.id, texto)
-        toast.success(`${maiuscula(singular)} ${feminino ? 'salva' : 'salvo'}`)
+        await servico.update(editando, nome)
+        msg.sucesso(`${maiuscula(singular)} ${feminino ? 'salva' : 'salvo'}`)
       } else {
-        await servico.create(texto)
-        toast.success(`${maiuscula(singular)} ${feminino ? 'cadastrada' : 'cadastrado'}`)
+        await servico.create(nome)
+        msg.sucesso(`${maiuscula(singular)} ${feminino ? 'cadastrada' : 'cadastrado'}`)
       }
       limpar()
+      setPagina(0)
       carregar()
     } catch (e) {
-      handleApiError(e)
-    } finally {
-      setSalvando(false)
+      msg.erroApi(e)
     }
   }
 
-  async function alternarAtivo(item: AuxiliarResponse) {
+  const alternar = async (item: AuxiliarResponse) => {
+    if (
+      !(await confirmar({
+        mensagem: `${item.ativo ? 'Inativar' : 'Reativar'} ${item.nome}?`,
+        variante: item.ativo ? 'inativar' : 'reativar',
+      }))
+    )
+      return
     try {
       await servico.alterarAtivo(item.id, !item.ativo)
-      toast.success(`${item.nome} foi ${item.ativo ? 'inativad' : 'reativad'}${feminino ? 'a' : 'o'}`)
+      msg.sucesso(`${item.nome} foi ${item.ativo ? 'inativad' : 'reativad'}${feminino ? 'a' : 'o'}`)
       carregar()
     } catch (e) {
-      handleApiError(e)
+      msg.erroApi(e)
     }
   }
 
   const colunas: Coluna<AuxiliarResponse>[] = [
     { chave: 'nome', cabecalho: 'Nome', render: (a) => a.nome },
-    { chave: 'situacao', cabecalho: 'Situação', className: 'w-32', render: (a) => situacao(a.ativo) },
+    {
+      chave: 'situacao',
+      cabecalho: 'Situação',
+      className: 'w-px whitespace-nowrap',
+      render: (a) => situacao(a.ativo),
+    },
   ]
 
   return (
     <div className="flex flex-col gap-5 pt-5">
-      {!somenteLeitura && (
-        <TPanel title={editando ? `Editar ${singular}` : `${feminino ? 'Nova' : 'Novo'} ${singular}`}>
-          <form onSubmit={salvar} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-start">
-            <TEntry
-              label="Nome"
-              className="min-w-0 sm:flex-1"
-              maxLength={100}
-              value={nome}
-              error={erro}
-              onChange={(e) => {
-                setNome(e.target.value)
-                setErro(undefined)
-              }}
-            />
-            <div className="flex gap-2 sm:mt-6">
-              {editando && (
-                <TButton type="button" variant="secondary" onClick={limpar}>
-                  Cancelar
-                </TButton>
-              )}
-              <TButton type="submit" loading={salvando}>
-                {!editando && <IconAdicionar className="size-4" />}
-                {editando ? 'Salvar' : 'Adicionar'}
-              </TButton>
-            </div>
-          </form>
-        </TPanel>
-      )}
-
-      <TPanel>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Filtros
-            termo={f.termo}
-            ativo={f.ativo}
-            aoMudarTermo={(v) => {
-              f.setTermo(v)
-              f.setPagina(0)
-            }}
-            aoMudarAtivo={(v) => {
-              f.setAtivo(v)
-              f.setPagina(0)
-            }}
-          />
-        </div>
-      </TPanel>
+      <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
+        <TRow>
+          <TEntry name="nome" label="Nome" required maxLength={100} />
+        </TRow>
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="limpar" onClick={limpar} />
+            <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+          </TFormActionsLeft>
+        </TFormFooter>
+      </TForm>
 
       <TDataGrid
         colunas={colunas}
         linhas={dados?.content ?? []}
         chaveDe={(a) => a.id}
         carregando={carregando}
-        onLinhaClick={
-          somenteLeitura
-            ? undefined
-            : (a) => {
-                setEditando(a)
-                setNome(a.nome)
-                setErro(undefined)
-              }
-        }
+        onLinhaClick={somenteLeitura ? undefined : editar}
         tituloCartao={(a) => a.nome}
         vazioTitulo={`${feminino ? 'Nenhuma' : 'Nenhum'} ${singular} ${feminino ? 'encontrada' : 'encontrado'}`}
-        vazioDescricao={somenteLeitura ? 'Ajuste os filtros.' : 'Ajuste os filtros ou cadastre acima.'}
+        vazioDescricao={somenteLeitura ? '' : 'Cadastre acima.'}
         acoes={
           somenteLeitura
             ? undefined
             : (a) => (
-                <TButton variant="secondary" size="sm" onClick={() => void alternarAtivo(a)}>
-                  {a.ativo ? 'Inativar' : 'Reativar'}
-                </TButton>
+                <>
+                  <TButton variant="editar" label="" size="sm" onClick={() => editar(a)} />
+                  <TButton
+                    variant={a.ativo ? 'inativar' : 'reativar'}
+                    label=""
+                    size="sm"
+                    onClick={() => void alternar(a)}
+                  />
+                </>
               )
         }
       />
-      <TDataGridFooter pagina={dados} onPaginaChange={f.setPagina} />
+      <TDataGridFooter pagina={dados} onPaginaChange={setPagina} />
     </div>
   )
 }
