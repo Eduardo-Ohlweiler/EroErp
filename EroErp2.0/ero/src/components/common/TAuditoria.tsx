@@ -18,7 +18,7 @@ export interface Auditavel {
 export function TAuditoria({ registro }: { registro?: Auditavel }) {
   if (!registro) return null
   const criado = !!(registro.criadoPorNome || registro.createdAt)
-  const alterado = !!(registro.alteradoPorNome || registro.updatedAt)
+  const alterado = !!registro.alteradoPorNome || mudouDepois(registro.createdAt, registro.updatedAt)
   if (!criado && !alterado) return null
 
   return (
@@ -41,6 +41,16 @@ export function TAuditoria({ registro }: { registro?: Auditavel }) {
       )}
     </div>
   )
+}
+
+/**
+ * O servidor pode carimbar `updatedAt` já na criação (gravação em dois passos):
+ * a mesma hora não é alteração. Só conta o que veio depois de 1 s.
+ */
+function mudouDepois(criado?: string | null, alterado?: string | null): boolean {
+  if (!alterado) return false
+  if (!criado) return true
+  return new Date(alterado).getTime() - new Date(criado).getTime() > 1000
 }
 
 function Linha({
