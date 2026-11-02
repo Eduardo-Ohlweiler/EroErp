@@ -30,7 +30,9 @@ public final class ServicoMapper {
                 servico.getObservacao(),
                 servico.getAtivo(),
                 filiais,
+                servico.getCreatedBy() != null ? servico.getCreatedBy().getNome() : null,
                 servico.getCreatedAt(),
+                servico.getUpdatedBy() != null ? servico.getUpdatedBy().getNome() : null,
                 servico.getUpdatedAt());
     }
 

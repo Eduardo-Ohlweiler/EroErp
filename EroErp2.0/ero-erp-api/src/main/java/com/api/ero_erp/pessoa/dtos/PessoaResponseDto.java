@@ -36,6 +36,8 @@ public record PessoaResponseDto(
         List<RedeSocialResponseDto> redesSociais,
         List<EnderecoResponseDto> enderecos,
         List<VinculoResponseDto> vinculos,
+        String criadoPorNome,
         Instant createdAt,
+        String alteradoPorNome,
         Instant updatedAt
 ) {}

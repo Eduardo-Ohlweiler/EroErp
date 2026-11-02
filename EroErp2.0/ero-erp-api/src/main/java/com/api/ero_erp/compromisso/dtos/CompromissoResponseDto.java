@@ -12,6 +12,7 @@ import java.util.UUID;
  * @param corExibicao  a que a tela pinta: a gravada ou, sem ela, a da filial
  * @param consultaId   a consulta feita sobre ele; nulo quando não é consulta
  * @param criadoPorNome quem digitou, que não é necessariamente o responsável
+ * @param alteradoPorNome quem alterou por último
  */
 public record CompromissoResponseDto(
         UUID id,
@@ -35,5 +36,6 @@ public record CompromissoResponseDto(
         List<ConvidadoDto> convidados,
         String criadoPorNome,
         Instant createdAt,
+        String alteradoPorNome,
         Instant updatedAt
 ) {}

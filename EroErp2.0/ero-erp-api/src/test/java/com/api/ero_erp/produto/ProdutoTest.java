@@ -2,6 +2,8 @@ package com.api.ero_erp.produto;
 
 import com.api.ero_erp.AbstractIntegrationTest;
 import com.api.ero_erp.catalogo.repository.TipoCadastroRepository;
+import com.api.ero_erp.permissao.enums.NivelAcesso;
+import com.api.ero_erp.permissao.enums.Tela;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import com.api.ero_erp.tenant.entity.Tenant;
 import org.junit.jupiter.api.BeforeEach;
@@ -289,6 +291,35 @@ class ProdutoTest extends AbstractIntegrationTest {
 
         mockMvc.perform(get("/produtos").header(AUTHORIZATION, tokenB))
                 .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Auditoria
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("publica quem criou e, depois da alteração, quem alterou — o criador fica")
+    void publicaQuemCriouEQuemAlterou() throws Exception {
+        UUID id = idDe(criar(base("Parafuso"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.alteradoPorNome").doesNotExist()));
+
+        conceder(userA, Tela.PRODUTOS, NivelAcesso.ESCRITA);
+        mockMvc.perform(put("/produtos/{id}", id).header(AUTHORIZATION, autenticar(userA.getEmail()))
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(base("Parafuso 10mm"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()));
+
+        mockMvc.perform(get("/produtos/{id}", id).header(AUTHORIZATION, token))
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()))
+                .andExpect(jsonPath("$.updatedAt").exists());
+        listar("termo", "Parafuso")
+                .andExpect(jsonPath("$.content[0].alteradoPorNome").value(userA.getNome()));
     }
 
     // ─────────────────────────────────────────────────────────────────

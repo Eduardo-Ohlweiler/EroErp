@@ -1,6 +1,8 @@
 package com.api.ero_erp.estoque;
 
 import com.api.ero_erp.AbstractIntegrationTest;
+import com.api.ero_erp.permissao.enums.NivelAcesso;
+import com.api.ero_erp.permissao.enums.Tela;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -368,6 +370,38 @@ class EstoqueTest extends AbstractIntegrationTest {
         saldo(idNoA)
                 .andExpect(jsonPath("$.quantidade").value(10))
                 .andExpect(jsonPath("$.precoVenda").value(9.9));
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Auditoria
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("publica quem abriu a linha e, depois da alteração, quem alterou — quem abriu fica")
+    void publicaQuemCriouEQuemAlterou() throws Exception {
+        // Sem saldo inicial: a ENTRADA dele já conta como alteração da linha
+        UUID id = idDe(abrir(loja, parafuso, "1.50", true, null, null)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.alteradoPorNome").doesNotExist()));
+
+        conceder(userA, Tela.ESTOQUE, NivelAcesso.ESCRITA);
+        Map<String, Object> campos = new LinkedHashMap<>();
+        campos.put("precoVenda", new BigDecimal("1.80"));
+        campos.put("controlaEstoque", true);
+        mockMvc.perform(put("/estoques/{id}", id).header(AUTHORIZATION, autenticar(userA.getEmail()))
+                        .contentType("application/json").content(objectMapper.writeValueAsString(campos)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()));
+
+        saldo(id)
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()))
+                .andExpect(jsonPath("$.updatedAt").exists());
+        mockMvc.perform(get("/estoques").header(AUTHORIZATION, token))
+                .andExpect(jsonPath("$.content[0].alteradoPorNome").value(userA.getNome()));
     }
 
     // ─────────────────────────────────────────────────────────────────

@@ -46,7 +46,9 @@ public final class ProdutoMapper {
                 fornecedor != null ? fornecedor.getNome() : null,
                 p.getCusto(),
                 p.getAtivo(),
+                p.getCreatedBy() != null ? p.getCreatedBy().getNome() : null,
                 p.getCreatedAt(),
+                p.getUpdatedBy() != null ? p.getUpdatedBy().getNome() : null,
                 p.getUpdatedAt());
     }
 

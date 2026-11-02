@@ -36,5 +36,6 @@ public record ConsultaResponseDto(
         BigDecimal total,
         String criadoPorNome,
         Instant createdAt,
+        String alteradoPorNome,
         Instant updatedAt
 ) {}

@@ -25,6 +25,8 @@ public record EstoqueResponseDto(
         Boolean controlaEstoque,
         BigDecimal quantidadeMinima,
         Boolean ativo,
+        String criadoPorNome,
         Instant createdAt,
+        String alteradoPorNome,
         Instant updatedAt
 ) {}

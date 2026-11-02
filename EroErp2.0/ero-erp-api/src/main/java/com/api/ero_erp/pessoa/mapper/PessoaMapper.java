@@ -50,7 +50,9 @@ public final class PessoaMapper {
                 ContatoMapper.toRedeSocialList(pessoa.getRedesSociais()),
                 ContatoMapper.toEnderecoList(pessoa.getEnderecos()),
                 PessoaVinculoMapper.toResponseList(pessoa, vinculos),
+                pessoa.getCreatedBy() != null ? pessoa.getCreatedBy().getNome() : null,
                 pessoa.getCreatedAt(),
+                pessoa.getUpdatedBy() != null ? pessoa.getUpdatedBy().getNome() : null,
                 pessoa.getUpdatedAt());
     }
 
