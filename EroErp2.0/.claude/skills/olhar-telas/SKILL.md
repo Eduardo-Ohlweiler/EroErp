@@ -127,7 +127,7 @@ com a ferramenta Read** — gerar e não olhar não vale.
 10. **Registre a requisição no gancho `request`, não no `response`.** Fazer
     `await r.text()` antes do `push` faz a troca entrar no array depois que a
     verificação já o leu. `request` é síncrono e não perde.
-11. **Ache o campo pelo RÓTULO, não pela posição no DOM.** `TEntry` e `TSelect`
+11. **Ache o campo pelo RÓTULO, não pela posição no DOM.** `TEntry` e `TCombo`
     põem o `<label htmlFor>` como irmão, mas o **`TTextArea` embrulha** o
     controle — ali `following::textarea[1]` não acha nada, ou acha o campo do
     rótulo seguinte, calado. Use `getByLabel`, que é a associação que o

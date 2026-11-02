@@ -110,27 +110,34 @@ import { IconBusca } from '@/assets/icons'
 Componentes em `components/common/`. **Nunca** criar input, select, checkbox,
 radio, grid, modal ou container de página novos quando já existe equivalente.
 
-> **O kit de telas é o [doc 14 §3](14-layout-de-telas.md)** — `TForm`, `TRow`,
-> `TCol`, `TDate`, `TDateTime`, `TCombo` (fixo), `TDBCombo` (banco), `TCheckBox`,
-> `TDBCheckBox`, `TAuditoria`, `useMessage`, `useQuestion`, com nomes do EroErp
-> antigo. Ele nasce na fase 0 do `/padronizar-layout`; até lá, a tabela abaixo
-> descreve o **código de hoje**, e quem construir o kit a reescreve.
+> **O kit de telas é o [doc 14 §3](14-layout-de-telas.md)**, com nomes do EroErp
+> antigo, e existe desde a fase 0 do `/padronizar-layout` (2026-11-02). Tela
+> nova ou migrada usa só ele; as que ainda não foram migradas continuam com
+> `{...register()}` e `grid`, e os mesmos componentes as atendem — a largura
+> padrão do campo só vale dentro de uma `TRow`.
 
 ### Existe hoje
 
 | Componente | Papel |
 |---|---|
-| `TPage` | container de tela: título, subtítulo, ações do topo; recebe o `documento` impresso |
+| `TPage` | container de tela: `breadcrumb`, título, subtítulo, ações do topo, `carregando` (spinner); recebe o `documento` impresso |
+| `TForm` · `TFormFooter` · `TFormActionsLeft` · `TFormActionsRight` | formulário do kit: `FormProvider` + cartão; `somenteLeitura` trava os campos, mostra a faixa e some com os botões que gravam; rodapé que empilha no celular |
+| `TRow` · `TCol` · `TRotulo` | linha (empilha abaixo de `sm`), coluna que divide a linha ou tem largura da escala, rótulo do estilo PHP |
+| `larguras.ts` | a escala de `width` (doc 14 §2) e a largura padrão de cada campo |
 | `TPanel` | agrupamento visual, com título opcional |
-| `TEntry` | campo de texto/número, com rótulo, erro, ajuda, sufixo e `mascara` numérica |
-| `TTextArea` | texto longo, com o mesmo rótulo e erro do `TEntry` |
-| `TSelect` | `<select>` nativo, com opção "todos"/vazio |
-| `TCombo` | select **com busca no servidor**, via `/select?nome=`; teclado e clique-fora |
-| `TCheckBox` · `TRadio` | marcação e escolha única, rotuladas |
-| `TDataGrid` | tabela no desktop, **cartões abaixo de `md`**; skeleton, estado vazio, ação de linha |
-| `TDataGridFooter` | paginação e contagem |
+| `TEntry` | texto, com rótulo, erro, ajuda, sufixo e `mascara`: `cpf` `cnpj` `cpfCnpj` `telefone` `celular` `cep` `hora` `moeda` `decimal` `inteiro` `decimalComSinal` |
+| `TDate` · `TDateTime` | data (`AAAA-MM-DD`, com limpar) e data e hora (`AAAA-MM-DDTHH:mm`) |
+| `TTextArea` | texto longo, com `linhas` e "máx. N caracteres" |
+| `TCombo` | **opções fixas**: `<select>` nativo, com opção "todos"/vazio |
+| `TDBCombo` · `TDBComboMulti` | opções **do banco**, com busca no servidor (`/select?nome=`); um ou vários |
+| `TCheckBox` · `TDBCheckBox` · `TRadio` · `TDBRadio` | marcação (booleano ou grupo) e escolha única, fixas ou do banco |
+| `TFieldList` | lista filha editável (`useFieldArray`): uma `TRow` por linha, remover e Acrescentar |
+| `TAuditoria` | criado por/em e alterado por/em do `ResponseDto`, só na edição |
+| `useMessage` · `useQuestion` (`TQuestionProvider` no `App`) | mensagens (a tela não importa `toast`) e confirmação `await confirmar(...)` |
+| `TDataGrid` | tabela no desktop, **cartões abaixo de `md`**; skeleton, estado vazio, ações na primeira coluna |
+| `TDataGridFooter` | "Exibindo X–Y de N registros" e a paginação |
 | `TAcoesDeExportacao` | relatório e planilha da lista **inteira** do filtro, não da página aberta |
-| `TButton` | `variant`: primary · secondary · danger · ghost; `size`; `loading` |
+| `TButton` | ações com ícone e cor prontos (`salvar` `novo` `filtrar` `limpar` `voltar` `editar` `inativar` `reativar`, `label=""` só ícone) e as genéricas primary · secondary · danger · ghost; `size`; `loading` |
 | `TBadge` | status com rótulo — `tom`: sucesso · alerta · neutro · info |
 | `TModal` | janela modal |
 | `TTabs` · `TTabPanel` | abas, com a faixa rolando sozinha no mobile |
@@ -175,8 +182,7 @@ fatia pedir.
 **`TCombo` para lista fixa e curta** (nível de acesso, situação, enum);
 **`TDBCombo` quando a lista vem do banco** (cliente, pessoa, produto). Um
 `<select>` com dezenas de clientes obriga a rolar procurando; o `TDBCombo` busca
-no servidor com debounce, sem carregar tudo para filtrar no navegador. (Até a
-fase 0, os nomes no código são `TSelect` e `TCombo`, nessa ordem.)
+no servidor com debounce, sem carregar tudo para filtrar no navegador.
 
 Todos com props tipadas, `forwardRef` quando o react-hook-form precisa, e estilo
 só por tokens.
@@ -301,7 +307,7 @@ resultados **daquelas** entradas logo abaixo, no mesmo lugar em que se digitou.
           <TEntry label="Custo de compra" suffix="R$" mascara="decimal" … />
           <TEntry label="Frete"           suffix="R$" mascara="decimal" … />
           <TEntry label="Margem"          suffix="%"  mascara="decimal" … />
-          <TSelect label="Regime tributário" … />
+          <TCombo label="Regime tributário" … />
         </div>
 
         <hr className="my-5 border-line" />

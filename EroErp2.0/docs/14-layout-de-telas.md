@@ -14,15 +14,30 @@
 
 ## 0. Estado
 
-> **O kit da §3 ainda não existe no código.** Ele nasce na fase 0 do
-> `/padronizar-layout` (`.claude/skills/padronizar-layout/SKILL.md`), antes da
-> primeira tela corrigida. Até lá, as telas do 2.0 usam `TSelect`/`TCombo` com os
-> nomes de hoje e `grid sm:grid-cols-N` — e **tela nova não nasce antes do kit**
-> sem o Eduardo decidir: o `dev-frontend` para e pergunta, para a tela não ser
-> feita duas vezes.
+> **O kit da §3 existe** (fase 0 do `/padronizar-layout`, 2026-11-02), exportado
+> por `components/common/index.ts`. Telas no kit: `ServicoList` (List),
+> `ServicoForm` (Form) e as abas Grupos, Categorias e Marcas de
+> `AuxiliaresProduto` (FormList). As demais ainda estão na forma antiga e vão
+> para o kit pelo `/padronizar-layout`, um módulo por vez.
 >
-> Quem constrói o kit atualiza esta seção para "existe" e a lista de
-> `components/common/` no `CLAUDE.md`.
+> O que a primeira passada fixou, e vale para quem copiar:
+>
+> - **A largura padrão só vale dentro de uma `TRow`.** Fora dela (tela ainda
+>   não migrada, campo num `grid`) o campo ocupa a célula, como antes; `width`
+>   explícito vale sempre.
+> - **Dentro de `TForm`, o campo se liga pelo `name`** — a não ser que receba
+>   `value`/`onChange` (ou o `{...register()}` das telas antigas, que traz
+>   `onChange`): aí é controlado por quem chama.
+> - **Só leitura é por contexto, não por `<fieldset disabled>`**: o fieldset
+>   desligaria também o Voltar. Campos, `TFieldList` e `TButton` leem o
+>   `somenteLeitura` do `TForm`.
+> - **Máscara numérica grava o texto** (`"72,50"`), que o `paraCorpo` converte
+>   com `paraNumero` — vazio continua vazio. Só CPF, CNPJ, CEP e telefone gravam
+>   cru (dígitos).
+> - **Situação no Form ou no FormList só quando a API de alterar recebe `ativo`.**
+>   Quando não recebe (serviço, auxiliares), inativar e reativar ficam na grade,
+>   com confirmação (decisão do Eduardo, 2026-11-02).
+> - **A grade do FormList não tem filtro** e lista ativos e inativos (idem).
 
 ---
 
@@ -197,18 +212,18 @@ Todos têm `width?`, `ajuda?`, `disabled?`, `rotuloOculto?`.
 
 | Componente | Props próprias | O que faz |
 |---|---|---|
-| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?` | Texto. Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado, grava cru** (CPF só dígitos, moeda número) — reaproveitando `utils/format.ts` (`mascararCpf`, `mascararCnpj`, `mascararCep`, `mascararTelefone`, `paraNumero`, `textoDaMascara`). A tela nunca chama máscara no `onChange`. |
+| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?` | Texto. Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado; CPF, CNPJ, CEP e telefone gravam só os dígitos, as numéricas gravam o texto da máscara** (§0) — reaproveitando `utils/format.ts` (`mascararCpf`, `mascararCnpj`, `mascararCep`, `mascararTelefone`, `paraNumero`, `textoDaMascara`). A tela nunca chama máscara no `onChange`. |
 | `TDate` | — | Data com calendário em pt-BR e botão de limpar. Grava `AAAA-MM-DD`; monta com `T00:00:00` para exibir; valor inicial `hojeIso()` quando o form pede hoje. |
 | `TDateTime` | `passoMinutos?` (padrão 5) | Data e hora; grava `AAAA-MM-DDTHH:mm`. |
 | `TTextArea` | `linhas?`, `maxLength?` | Texto longo; mostra "máx. N caracteres". |
-| `TCombo` | `opcoes: {valor, rotulo}[]`, `vazio?` | **Opções fixas** — situação, tipo, enum. `vazio` é a opção "Todos"/"Selecione…". (Hoje se chama `TSelect`.) |
-| `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?` | **Opções do banco**, com busca no servidor (`/select?nome=`, debounce 300 ms) e o rótulo do valor salvo. (Hoje se chama `TCombo`.) |
-| `TDBComboMulti` | `buscar`, `excluir?`, `maximo?` | Vários do banco. (Hoje `TComboMulti`.) |
+| `TCombo` | `opcoes: {valor, rotulo}[]`, `vazio?` | **Opções fixas** — situação, tipo, enum. `vazio` é a opção "Todos"/"Selecione…". `SITUACAO_OPCOES` está pronto no kit. |
+| `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?` | **Opções do banco**, com busca no servidor (`/select?nome=`, debounce 300 ms) e o rótulo do valor salvo. |
+| `TDBComboMulti` | `buscar`, `excluir?`, `maximo?` | Vários do banco. |
 | `TCheckBox` | `opcoes?` | Sem `opcoes`, um booleano com o rótulo ao lado; com `opcoes`, um grupo fixo que grava a lista dos marcados. |
 | `TDBCheckBox` | `buscar()`, `vertical?`, `altura?` | Grupo vindo do banco (tipos de cadastro, módulos). |
 | `TRadio` | `opcoes`, `vertical?` | Escolha única fixa. |
 | `TDBRadio` | `buscar()`, `vertical?` | Escolha única vinda do banco. |
-| `TFieldList` | `name`, `colunas: {name, componente, width?}[]`, `novaLinha`, `minimo?`, `rotuloAdicionar?` | **Lista filha editável** dentro do formulário, como no antigo (e-mails, telefones, valores por filial): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão e o remover no fim, botão Acrescentar no rodapé. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
+| `TFieldList` | `name`, `colunas: {name, componente(campo, i, linha), width?}[]`, `novaLinha`, `minimo?`, `rotuloAdicionar?`, `vazio?`, `detalhe?(i, linha)` | **Lista filha editável** dentro do formulário, como no antigo (e-mails, telefones, valores por filial): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão e o remover no fim, botão Acrescentar no rodapé. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
 | `TRotulo` | `htmlFor`, `required?` | Só o rótulo, para a coluna de labels do estilo PHP (§5). |
 | `TAuditoria` | `registro` | Só na edição, no fim do formulário: Criado por · Criado em, Alterado por · Alterado em, só leitura. Lê `criadoPorNome`, `createdAt`, `alteradoPorNome`, `updatedAt` do `ResponseDto`. Linha sem dado não aparece. |
 
@@ -456,7 +471,7 @@ export function CategoriaFormList() {                                  // troca
 }
 ```
 
-Sem filtro e sem auditoria. Situação só aparece na edição. Várias tabelas de
+Sem filtro e sem auditoria. Situação só aparece na edição, e só se a API de alterar recebe `ativo` (§0); senão, fica na grade. Várias tabelas de
 apoio do mesmo assunto podem dividir uma tela por `TTabs` (como
 `AuxiliaresProduto`), cada aba um FormList.
 
