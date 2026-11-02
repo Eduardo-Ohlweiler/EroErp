@@ -1228,6 +1228,11 @@ body {
     padding-right: 0;
   }
 
+  /* CPF/CNPJ e data inteiros (`semQuebra` da coluna). */
+  .folha-tabela .folha-sem-quebra {
+    white-space: nowrap;
+  }
+
   /* À direita, com a especificidade de `.folha-tabela td` (que alinha à
      esquerda e, sem isto, ganhava); e "R$ 1,00" não se parte em "R$" e "1,00". */
   .folha-tabela .folha-num {

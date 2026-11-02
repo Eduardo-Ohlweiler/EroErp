@@ -174,7 +174,7 @@ export function TabelaDoc<T>({
   chaveDe,
   vazio = 'Sem registro no período.',
 }: {
-  colunas: { titulo: string; celula: (linha: T) => ReactNode; numerica?: boolean }[]
+  colunas: { titulo: string; celula: (linha: T) => ReactNode; numerica?: boolean; semQuebra?: boolean }[]
   linhas: T[]
   chaveDe: (linha: T, indice: number) => string | number
   vazio?: string
@@ -196,7 +196,12 @@ export function TabelaDoc<T>({
         {linhas.map((l, i) => (
           <tr key={chaveDe(l, i)}>
             {colunas.map((c) => (
-              <td key={c.titulo} className={c.numerica ? 'folha-num numeric' : undefined}>
+              <td
+                key={c.titulo}
+                className={[c.numerica && 'folha-num numeric', c.semQuebra && 'folha-sem-quebra']
+                  .filter(Boolean)
+                  .join(' ') || undefined}
+              >
                 {c.celula(l)}
               </td>
             ))}

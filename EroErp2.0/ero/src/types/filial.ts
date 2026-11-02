@@ -29,7 +29,10 @@ export interface FilialResponse {
   /** #RRGGBB */
   cor: string
   ativo: boolean
+  /** Quem cadastrou e quem alterou por último — o `TAuditoria` mostra. */
+  criadoPorNome?: string | null
   createdAt: string
+  alteradoPorNome?: string | null
   updatedAt: string | null
 }
 

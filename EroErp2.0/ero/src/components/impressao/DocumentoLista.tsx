@@ -70,6 +70,7 @@ export function DocumentoLista<T>({
           colunas={colunas.map((c) => ({
             titulo: c.titulo,
             numerica: c.numerica,
+            semQuebra: c.semQuebra,
             celula: (l: T) => c.valor(l),
           }))}
         />

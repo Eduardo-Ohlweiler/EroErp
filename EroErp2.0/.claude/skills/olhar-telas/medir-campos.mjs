@@ -7,7 +7,7 @@
  *   node .claude/skills/olhar-telas/medir-campos.mjs /app/pessoas/nova --aba "Endereços"
  *   node .claude/skills/olhar-telas/medir-campos.mjs /app/estoque --largura 1280
  *
- * Mede a 1440 px por padrão: a escala do doc 13 vale a partir de `sm`, e no
+ * Mede a 1440 px por padrão: a escala do doc 14 vale a partir de `sm`, e no
  * celular todo campo é 100 % de propósito. Sai com código 1 se houver campo
  * acima do limite — dá para usar como verificação.
  *
@@ -23,7 +23,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 /**
- * Limite em px de cada tipo de campo curto: a largura do doc 13 §2 com folga
+ * Limite em px de cada tipo de campo curto: a largura do doc 14 §2 com folga
  * de ~25 % (borda, sufixo, arredondamento). Acima disso, o campo esticou.
  */
 export const LIMITES = {
@@ -37,6 +37,7 @@ export const LIMITES = {
   situacao: { doc: 192, limite: 245 },
   cnpj: { doc: 208, limite: 265 },
   dataHora: { doc: 224, limite: 285 },
+  curto: { doc: 224, limite: 285 },
 }
 
 /**
@@ -75,7 +76,7 @@ export function coletarCampos() {
   return campos
 }
 
-/** Que tipo de campo curto é este, pelo doc 13 — ou null se é longo/livre. */
+/** Que tipo de campo curto é este, pelo doc 14 — ou null se é longo/livre. */
 export function classificar(c) {
   const r = c.rotulo.toLowerCase()
   if (c.tipo === 'date') return 'data'
@@ -86,7 +87,10 @@ export function classificar(c) {
   if (/\bcpf\b|telefone|celular|whatsapp/.test(r)) return 'cpf'
   if (/\bcep\b/.test(r)) return 'cep'
   if (/^uf$|\buf\b|^estado \(uf\)/.test(r)) return 'uf'
-  if (/c[oó]digo|^n[uú]mero$|^n[ºo°]\.?$/.test(r)) return 'codigo'
+  // "Código" no começo do rótulo: "EAN (código de barras)" é texto curto, não código.
+  if (/^c[oó]digo|^n[ºo°]\.?$/.test(r)) return 'codigo'
+  // "Número" sozinho é o do endereço (doc 14 §2.1: `curto`), não o do registro.
+  if (/^n[uú]mero$|^ean\b|^complemento$|^bairro$/.test(r)) return 'curto'
   if (c.tipo === 'select') {
     const o = c.opcoes ?? []
     const curto = o.length > 0 && o.length <= 6 && o.every((t) => t.length <= 20)
