@@ -127,7 +127,7 @@ export function UsuarioList() {
     { titulo: 'Acesso', valor: (u) => ROLE_LABEL[u.role] },
     { titulo: 'Situação', valor: (u) => (u.ativo ? 'Ativo' : 'Inativo') },
     { titulo: 'Bloqueado', valor: (u) => (u.bloqueado ? 'Sim' : 'Não') },
-    { titulo: 'Criado em', valor: (u) => formatarData(u.createdAt) },
+    { titulo: 'Criado em', semQuebra: true, valor: (u) => formatarData(u.createdAt) },
   ]
 
   const filtrosAplicados = [

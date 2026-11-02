@@ -105,7 +105,7 @@ export function TenantList() {
       titulo: 'Situação',
       valor: (t) => (t.acessoExpirado ? 'Expirado' : t.ativo ? 'Ativo' : 'Inativo'),
     },
-    { titulo: 'Criado em', valor: (t) => formatarData(t.createdAt) },
+    { titulo: 'Criado em', semQuebra: true, valor: (t) => formatarData(t.createdAt) },
   ]
 
   const filtrosAplicados = [

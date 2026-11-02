@@ -41,6 +41,11 @@ export interface ColunaExportavel<T> {
   valor: (linha: T) => string
   /** Alinha à direita no relatório impresso. Não muda o CSV. */
   numerica?: boolean
+  /**
+   * Não quebra a linha no relatório impresso — CPF/CNPJ e data partidos em
+   * dois ("61.616.161/0001-" e "07") não se leem. Não muda o CSV.
+   */
+  semQuebra?: boolean
 }
 
 /**

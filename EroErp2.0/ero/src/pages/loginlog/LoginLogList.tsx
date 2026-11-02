@@ -107,7 +107,7 @@ export function LoginLogList() {
    * para separar acesso humano de robô.
    */
   const colunasExportadas: ColunaExportavel<LoginLogResponse>[] = [
-    { titulo: 'Data e hora', valor: (l) => formatarDataHora(l.dataLogin) },
+    { titulo: 'Data e hora', semQuebra: true, valor: (l) => formatarDataHora(l.dataLogin) },
     { titulo: 'Usuário', valor: (l) => l.usuarioNome ?? '' },
     { titulo: 'E-mail tentado', valor: (l) => l.emailTentativa ?? '' },
     ...(escopo === 'global'
@@ -118,7 +118,7 @@ export function LoginLogList() {
       titulo: 'Motivo da falha',
       valor: (l) => (l.motivoFalha ? MOTIVO_FALHA_LABEL[l.motivoFalha] : ''),
     },
-    { titulo: 'Saída', valor: (l) => (l.dataLogout ? formatarDataHora(l.dataLogout) : '') },
+    { titulo: 'Saída', semQuebra: true, valor: (l) => (l.dataLogout ? formatarDataHora(l.dataLogout) : '') },
     {
       titulo: 'Tipo de saída',
       valor: (l) => (l.tipoLogout ? TIPO_LOGOUT_LABEL[l.tipoLogout] : ''),

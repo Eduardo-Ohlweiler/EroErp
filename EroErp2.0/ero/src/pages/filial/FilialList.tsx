@@ -103,7 +103,7 @@ export function FilialList() {
   const colunasExportadas: ColunaExportavel<FilialResponse>[] = [
     { titulo: 'Nome', valor: (f) => f.pessoaNome },
     { titulo: 'Nome fantasia', valor: (f) => f.nomeFantasia ?? '' },
-    { titulo: 'CPF / CNPJ', valor: (f) => formatarDocumento(f.documento) },
+    { titulo: 'CPF / CNPJ', semQuebra: true, valor: (f) => formatarDocumento(f.documento) },
     { titulo: 'Tipo', valor: (f) => rotuloDe(OPCOES_TIPO_FILIAL, f.tipo) ?? '' },
     { titulo: 'Matriz', valor: (f) => f.matrizNome ?? '' },
     { titulo: 'Situação', valor: (f) => (f.ativo ? 'Ativa' : 'Inativa') },

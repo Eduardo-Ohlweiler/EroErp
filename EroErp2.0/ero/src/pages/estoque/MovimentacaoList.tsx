@@ -121,7 +121,7 @@ export function MovimentacaoList() {
   )
 
   const colunasExportadas: ColunaExportavel<MovimentacaoResponse>[] = [
-    { titulo: 'Data', valor: (m) => formatarDataHora(m.createdAt) },
+    { titulo: 'Data', semQuebra: true, valor: (m) => formatarDataHora(m.createdAt) },
     { titulo: 'Tipo', valor: (m) => ROTULO_MOVIMENTACAO[m.tipo] },
     { titulo: 'Código', valor: (m) => String(m.produtoCodigo) },
     { titulo: 'Produto', valor: (m) => m.produtoNome },

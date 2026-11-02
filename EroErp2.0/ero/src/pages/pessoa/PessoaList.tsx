@@ -113,7 +113,7 @@ export function PessoaList() {
     { titulo: 'Nome', valor: (p) => p.nome },
     { titulo: 'Nome fantasia', valor: (p) => p.nomeFantasia ?? '' },
     { titulo: 'Tipo de pessoa', valor: (p) => rotuloDe(OPCOES_TIPO_PESSOA, p.tipoPessoa) ?? '' },
-    { titulo: 'CPF / CNPJ', valor: (p) => formatarDocumento(p.cpf ?? p.cnpj) },
+    { titulo: 'CPF / CNPJ', semQuebra: true, valor: (p) => formatarDocumento(p.cpf ?? p.cnpj) },
     {
       titulo: 'Nascimento',
       valor: (p) => (p.dataNascimento ? formatarData(p.dataNascimento) : ''),
