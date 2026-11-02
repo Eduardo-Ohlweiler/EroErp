@@ -238,8 +238,8 @@ function PainelSimples({ tipo }: { tipo: AuxiliarSimples }) {
         </TRow>
         <TFormFooter>
           <TFormActionsLeft>
-            <TButton variant="limpar" onClick={limpar} />
             <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+            <TButton variant="novo" onClick={limpar} />
           </TFormActionsLeft>
         </TFormFooter>
       </TForm>

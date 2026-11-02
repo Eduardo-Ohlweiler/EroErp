@@ -215,14 +215,6 @@ export function ServicoList() {
       title="Serviços"
       breadcrumb={['Cadastros', 'Serviços']}
       subtitle="O que o seu tenant presta. Serviço não tem estoque; o valor, opcional, é por filial."
-      actions={
-        <TAcoesDeExportacao
-          nome="Serviços"
-          colunas={colunasExportadas}
-          carregar={carregarTudo}
-          aoCarregarParaImprimir={setParaImprimir}
-        />
-      }
       documento={
         paraImprimir && (
           <DocumentoLista
@@ -276,9 +268,15 @@ export function ServicoList() {
         </TRow>
         <TFormFooter>
           <TFormActionsLeft>
-            <TButton variant="filtrar" type="submit" />
+            <TButton variant="buscar" type="submit" />
             <TButton variant="limpar" onClick={limpar} />
             {!somenteLeitura && <TButton variant="novo" onClick={() => navigate('/app/servicos/novo')} />}
+            <TAcoesDeExportacao
+              nome="Serviços"
+              colunas={colunasExportadas}
+              carregar={carregarTudo}
+              aoCarregarParaImprimir={setParaImprimir}
+            />
           </TFormActionsLeft>
         </TFormFooter>
       </TForm>

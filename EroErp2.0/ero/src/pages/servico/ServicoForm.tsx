@@ -12,7 +12,6 @@ import {
   TFieldList,
   TForm,
   TFormActionsLeft,
-  TFormActionsRight,
   TFormFooter,
   TPage,
   TPanel,
@@ -133,6 +132,9 @@ export function ServicoForm() {
     }
   }
 
+  /** No cadastro novo, Novo só esvazia; num registro aberto, vai para o novo. */
+  const novo = () => (id ? navigate('/app/servicos/novo') : form.reset(VAZIO))
+
   /** As filiais já escolhidas saem do combo das outras linhas. */
   const escolhidas = (exceto: number) =>
     new Set((linhas ?? []).filter((_, i) => i !== exceto).map((l) => l.filialId).filter(Boolean))
@@ -213,12 +215,10 @@ export function ServicoForm() {
 
         <TFormFooter>
           <TFormActionsLeft>
-            <TButton variant="voltar" onClick={() => navigate('/app/servicos')} />
-            <TButton variant="novo" onClick={() => navigate('/app/servicos/novo')} />
-          </TFormActionsLeft>
-          <TFormActionsRight>
             <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
-          </TFormActionsRight>
+            <TButton variant="novo" onClick={novo} />
+            <TButton variant="voltar" onClick={() => navigate('/app/servicos')} />
+          </TFormActionsLeft>
         </TFormFooter>
       </TForm>
     </TPage>
