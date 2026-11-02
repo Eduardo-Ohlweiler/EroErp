@@ -147,12 +147,8 @@ export function TAcoesDeExportacao<T>({
 
   return (
     <>
-      <TButton variant="secondary" onClick={relatorio} loading={ocupado}>
-        Relatório
-      </TButton>
-      <TButton variant="secondary" onClick={planilha} loading={ocupado}>
-        Planilha
-      </TButton>
+      <TButton variant="exportar" onClick={planilha} loading={ocupado} />
+      <TButton variant="pdf" onClick={relatorio} loading={ocupado} />
     </>
   )
 }

@@ -5,13 +5,13 @@ import {
   TAcoesDeExportacao,
   TBadge,
   TButton,
-  TCombo,
+  TDBCombo,
   TDataGrid,
   TDataGridFooter,
   TEntry,
   TPage,
   TPanel,
-  TSelect,
+  TCombo,
   type Coluna,
   type PaginaDaCarga,
   type ResultadoDaCarga,
@@ -105,7 +105,7 @@ export function ConsultaList() {
     { titulo: 'Responsável', valor: (c) => c.responsavelNome },
     { titulo: 'Filial', valor: (c) => c.filialNome },
     { titulo: 'Situação', valor: (c) => STATUS_ROTULO[c.status] },
-    { titulo: 'Total', valor: (c) => formatarMoeda(c.total) },
+    { titulo: 'Total', numerica: true, valor: (c) => formatarMoeda(c.total) },
   ]
 
   const filtrosAplicados = [
@@ -208,7 +208,7 @@ export function ConsultaList() {
     >
       <TPanel>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <TCombo
+          <TDBCombo
             label="Filial"
             vazio="Todas"
             placeholder="Todas"
@@ -219,7 +219,7 @@ export function ConsultaList() {
             }}
             buscar={(t) => filialService.select(t).then(guardarNome)}
           />
-          <TCombo
+          <TDBCombo
             label="Responsável"
             vazio="Todos"
             placeholder="Todos"
@@ -230,7 +230,7 @@ export function ConsultaList() {
             }}
             buscar={(t) => usuarioService.select(t).then(guardarNome)}
           />
-          <TCombo
+          <TDBCombo
             label="Cliente"
             vazio="Todos"
             placeholder="Todos"
@@ -241,7 +241,7 @@ export function ConsultaList() {
             }}
             buscar={(t) => pessoaService.select(t).then(guardarNome)}
           />
-          <TSelect
+          <TCombo
             label="Situação"
             vazio="Todas"
             opcoes={Object.entries(STATUS_ROTULO).map(([valor, rotulo]) => ({ valor, rotulo }))}

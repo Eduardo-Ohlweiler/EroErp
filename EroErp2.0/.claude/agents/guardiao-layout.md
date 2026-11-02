@@ -33,7 +33,8 @@ ajuda ninguém). **Depois**, julgue tudo abaixo.
    - **Modelo:** é List, Form ou FormList, e difere do modelo só no que é
      `// troca` (nomes, rota, service, campos, máscaras, colunas). Ordem do
      Form: código → principal → demais → painéis → Situação → `TAuditoria` →
-     rodapé Voltar · Novo | Salvar. List: filtros com Filtrar · Limpar · Novo,
+     rodapé Salvar · Novo · Voltar (FormList: Salvar · Novo), embaixo e à
+     esquerda. List: filtros com Buscar · Limpar · Novo · Exportar · Pdf,
      colunas na ordem da §4.1. FormList: Situação só na edição.
    - **Só o kit:** nenhum `<input>`, `<select>`, `<textarea>` cru; nenhuma
      máscara chamada no `onChange` (`mascararCpf` etc. é do `TEntry`); nenhum

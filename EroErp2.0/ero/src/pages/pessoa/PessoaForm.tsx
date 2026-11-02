@@ -7,11 +7,11 @@ import { z } from 'zod'
 import { IconAdicionar, IconFechar } from '@/assets/icons'
 import {
   TButton,
-  TCombo,
+  TDBCombo,
   TEntry,
   TPage,
   TPanel,
-  TSelect,
+  TCombo,
   type OpcaoSelect,
 } from '@/components/common'
 import { CampoCep } from '@/components/pessoa/CampoCep'
@@ -385,14 +385,14 @@ export function PessoaForm() {
 
         {/*
           `disabled` no fieldset trava de uma vez todo campo e botão nativo de
-          dentro — inclusive o input do TCombo. `min-w-0` porque o fieldset
+          dentro — inclusive o input do TDBCombo. `min-w-0` porque o fieldset
           nasce com `min-width: min-content` e rolaria em 360 px.
         */}
         <SomenteLeitura.Provider value={somenteLeitura}>
           <fieldset disabled={somenteLeitura} className="m-0 flex min-w-0 flex-col gap-5 border-0 p-0">
             <TPanel title="Identificação">
               <div className="grid gap-4 sm:grid-cols-2">
-                <TSelect
+                <TCombo
                   label="Tipo de pessoa"
                   opcoes={OPCOES_TIPO_PESSOA}
                   ajuda={editando ? 'Trocar o tipo limpa os campos do tipo anterior' : undefined}
@@ -425,7 +425,7 @@ export function PessoaForm() {
                   <TEntry label="RG" error={errors.rg?.message} {...register('rg')} />
                   <TEntry label="Data de nascimento" type="date" {...register('dataNascimento')} />
                   {/* Opcional. */}
-                  <TSelect
+                  <TCombo
                     label="Sexo"
                     vazio="Não informado"
                     opcoes={OPCOES_SEXO}
@@ -532,7 +532,7 @@ export function PessoaForm() {
                       key={campo.id}
                       className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
                     >
-                      <TSelect
+                      <TCombo
                         label="Tipo"
                         opcoes={tiposTelefone}
                         {...register(`telefones.${i}.tipoTelefoneId`)}
@@ -587,7 +587,7 @@ export function PessoaForm() {
                       key={campo.id}
                       className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
                     >
-                      <TSelect
+                      <TCombo
                         label="Tipo"
                         opcoes={tiposEmail}
                         {...register(`emails.${i}.tipoEmailId`)}
@@ -633,7 +633,7 @@ export function PessoaForm() {
                       key={campo.id}
                       className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
                     >
-                      <TSelect
+                      <TCombo
                         label="Rede"
                         opcoes={tiposRedeSocial}
                         {...register(`redesSociais.${i}.tipoRedeSocialId`)}
@@ -693,7 +693,7 @@ export function PessoaForm() {
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <TSelect
+                        <TCombo
                           label="Tipo"
                           opcoes={tiposEndereco}
                           {...register(`enderecos.${i}.tipoEnderecoId`)}
@@ -715,7 +715,7 @@ export function PessoaForm() {
                           control={control}
                           name={`enderecos.${i}.cidadeId`}
                           render={({ field }) => (
-                            <TCombo
+                            <TDBCombo
                               label="Cidade"
                               placeholder="Busque pelo nome"
                               value={field.value}
@@ -774,7 +774,7 @@ export function PessoaForm() {
                           control={control}
                           name={`vinculos.${i}.pessoaId`}
                           render={({ field }) => (
-                            <TCombo
+                            <TDBCombo
                               label="Pessoa"
                               className="flex-1"
                               placeholder="Busque por nome ou documento"
@@ -810,7 +810,7 @@ export function PessoaForm() {
                         )}
                       </div>
 
-                      <TSelect
+                      <TCombo
                         label="É o quê desta pessoa"
                         opcoes={OPCOES_TIPO_VINCULO}
                         {...register(`vinculos.${i}.tipo`)}

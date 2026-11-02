@@ -1,33 +1,53 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
-import { IconAdicionar, IconBusca } from '@/assets/icons'
 import {
+  SITUACAO_OPCOES,
   TAcoesDeExportacao,
   TBadge,
   TButton,
   TCombo,
   TDataGrid,
   TDataGridFooter,
+  TDBCombo,
   TEntry,
+  TForm,
+  TFormActionsLeft,
+  TFormFooter,
   TPage,
-  TPanel,
-  TSelect,
+  TRow,
+  useMessage,
+  useQuestion,
   type Coluna,
   type PaginaDaCarga,
   type ResultadoDaCarga,
 } from '@/components/common'
 import { DocumentoLista } from '@/components/impressao/DocumentoLista'
 import { useAuth } from '@/hooks/useAuth'
-import { useDebounce } from '@/hooks/useDebounce'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
-import { handleApiError } from '@/services/api'
 import { filialService } from '@/services/filialService'
 import { servicoService } from '@/services/servicoService'
 import type { Page } from '@/types/comum'
 import type { ServicoResponse } from '@/types/servico'
 import { AUSENTE, formatarMoeda } from '@/utils/format'
 import type { ColunaExportavel } from '@/utils/planilha'
+
+interface Filtros {
+  termo: string
+  filialId: string
+  ativo: string
+}
+
+const FILTROS_VAZIOS: Filtros = { termo: '', filialId: '', ativo: 'true' }
+
+/** O que a API recebe: vazio é "sem filtro". */
+function paraConsulta(f: Filtros) {
+  return {
+    termo: f.termo.trim() || undefined,
+    filialId: f.filialId || undefined,
+    ativo: f.ativo === '' ? undefined : f.ativo === 'true',
+  }
+}
 
 /**
  * O valor que a lista mostra. Com uma filial no filtro, o daquela filial; sem
@@ -56,80 +76,94 @@ export function ServicoList() {
   const navigate = useNavigate()
   const { sessao } = useAuth()
   const somenteLeitura = useSomenteLeitura('SERVICOS')
-
-  const [termo, setTermo] = useState('')
-  const [filialId, setFilialId] = useState('')
-  const [filialRotulo, setFilialRotulo] = useState('')
-  /** Nome de cada filial que o combo já trouxe — o filtro aplicado da folha o mostra. */
-  const nomesDeFilial = useRef(new Map<string, string>())
-  const [ativo, setAtivo] = useState('true')
+  const msg = useMessage()
+  const { confirmar } = useQuestion()
+  const form = useForm<Filtros>({ defaultValues: FILTROS_VAZIOS })
+  const [aplicados, setAplicados] = useState(FILTROS_VAZIOS)
   const [pagina, setPagina] = useState(0)
   const [dados, setDados] = useState<Page<ServicoResponse>>()
   const [carregando, setCarregando] = useState(true)
   const [paraImprimir, setParaImprimir] = useState<ResultadoDaCarga<ServicoResponse>>()
-
-  const termoBusca = useDebounce(termo)
-
-  const filtros = useCallback(
-    () => ({
-      termo: termoBusca || undefined,
-      filialId: filialId || undefined,
-      ativo: ativo === '' ? undefined : ativo === 'true',
-    }),
-    [termoBusca, filialId, ativo],
-  )
+  /** Nome de cada filial que o combo já trouxe — o filtro aplicado da folha o mostra. */
+  const nomesDeFilial = useRef(new Map<string, string>())
 
   const carregar = useCallback(() => {
     setCarregando(true)
     servicoService
-      .getAll({ ...filtros(), page: pagina, size: 20 })
+      .getAll({ ...paraConsulta(aplicados), page: pagina, size: 20 })
       .then(setDados)
-      .catch(handleApiError)
+      .catch(msg.erroApi)
       .finally(() => setCarregando(false))
     // `sessao.tenantId` é sinal de invalidação: trocar de tenant refaz a
     // consulta, senão a tela fica com os dados do cliente anterior.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessao?.tenantId, filtros, pagina])
+  }, [sessao?.tenantId, aplicados, pagina])
 
   useEffect(carregar, [carregar])
 
+  const filtrar = (f: Filtros) => {
+    setAplicados(f)
+    setPagina(0)
+  }
+  const limpar = () => {
+    form.reset(FILTROS_VAZIOS)
+    filtrar(FILTROS_VAZIOS)
+  }
+
   // A filial escolhida é do tenant de antes: trocar de tenant limpa o filtro.
   useEffect(() => {
-    setFilialId('')
-    setFilialRotulo('')
+    form.reset(FILTROS_VAZIOS)
+    setAplicados(FILTROS_VAZIOS)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessao?.tenantId])
 
-  /** Cobre o filtro inteiro, não a página aberta. Ver `TAcoesDeExportacao`. */
+  /** Cobre o filtro aplicado inteiro, não a página aberta. Ver `TAcoesDeExportacao`. */
   const carregarTudo = useCallback(
     async (limite: number, indice: number): Promise<PaginaDaCarga<ServicoResponse>> => {
-      const pagina = await servicoService.getAll({ ...filtros(), page: indice, size: limite })
+      const pagina = await servicoService.getAll({ ...paraConsulta(aplicados), page: indice, size: limite })
       return { linhas: pagina.content, total: pagina.totalElements }
     },
-    [filtros],
+    [aplicados],
   )
+
+  const filialRotulo = nomesDeFilial.current.get(aplicados.filialId) ?? ''
 
   const colunasExportadas: ColunaExportavel<ServicoResponse>[] = [
     { titulo: 'Código', valor: (s) => String(s.codigo) },
     { titulo: 'Nome', valor: (s) => s.nome },
-    { titulo: filialId ? `Valor (${filialRotulo})` : 'Valor', valor: (s) => valorExibido(s, filialId) },
+    {
+      titulo: aplicados.filialId ? `Valor (${filialRotulo})` : 'Valor',
+      numerica: true,
+      valor: (s) => valorExibido(s, aplicados.filialId),
+    },
     { titulo: 'Valores por filial', valor: (s) => valoresPorFilial(s) },
     { titulo: 'Observação', valor: (s) => s.observacao ?? '' },
     { titulo: 'Situação', valor: (s) => (s.ativo ? 'Ativo' : 'Inativo') },
   ]
 
   const filtrosAplicados = [
-    { rotulo: 'Busca', valor: termoBusca },
-    { rotulo: 'Filial', valor: filialId ? filialRotulo : '' },
-    { rotulo: 'Situação', valor: ativo === 'true' ? 'Ativo' : ativo === 'false' ? 'Inativo' : '' },
+    { rotulo: 'Busca', valor: aplicados.termo.trim() },
+    { rotulo: 'Filial', valor: aplicados.filialId ? filialRotulo : '' },
+    {
+      rotulo: 'Situação',
+      valor: aplicados.ativo === 'true' ? 'Ativo' : aplicados.ativo === 'false' ? 'Inativo' : '',
+    },
   ]
 
-  async function alternarAtivo(servico: ServicoResponse) {
+  const alternar = async (servico: ServicoResponse) => {
+    if (
+      !(await confirmar({
+        mensagem: `${servico.ativo ? 'Inativar' : 'Reativar'} ${servico.nome}?`,
+        variante: servico.ativo ? 'inativar' : 'reativar',
+      }))
+    )
+      return
     try {
       await servicoService.alterarAtivo(servico.id, !servico.ativo)
-      toast.success(servico.ativo ? `${servico.nome} foi inativado` : `${servico.nome} foi reativado`)
+      msg.sucesso(servico.ativo ? `${servico.nome} foi inativado` : `${servico.nome} foi reativado`)
       carregar()
     } catch (erro) {
-      handleApiError(erro)
+      msg.erroApi(erro)
     }
   }
 
@@ -137,7 +171,7 @@ export function ServicoList() {
     {
       chave: 'codigo',
       cabecalho: 'Código',
-      className: 'w-24 tabular-nums',
+      className: 'w-px whitespace-nowrap tabular-nums',
       render: (s) => s.codigo,
     },
     {
@@ -154,12 +188,13 @@ export function ServicoList() {
     },
     {
       chave: 'valor',
-      cabecalho: filialId ? 'Valor na filial' : 'Valor',
+      cabecalho: aplicados.filialId ? 'Valor na filial' : 'Valor',
       numerica: true,
+      className: 'w-px whitespace-nowrap',
       render: (s) => (
         <span className="flex flex-col">
-          <span>{valorExibido(s, filialId)}</span>
-          {!filialId && s.filiais.length > 0 && (
+          <span>{valorExibido(s, aplicados.filialId)}</span>
+          {!aplicados.filialId && s.filiais.length > 0 && (
             <span className="text-caption text-txt-secondary">
               {s.filiais.length === 1 ? s.filiais[0].filialNome : `${s.filiais.length} filiais`}
             </span>
@@ -170,6 +205,7 @@ export function ServicoList() {
     {
       chave: 'situacao',
       cabecalho: 'Situação',
+      className: 'w-px whitespace-nowrap',
       render: (s) =>
         s.ativo ? <TBadge tom="sucesso">Ativo</TBadge> : <TBadge tom="neutro">Inativo</TBadge>,
     },
@@ -178,23 +214,8 @@ export function ServicoList() {
   return (
     <TPage
       title="Serviços"
+      breadcrumb={['Cadastros', 'Serviços']}
       subtitle="O que o seu tenant presta. Serviço não tem estoque; o valor, opcional, é por filial."
-      actions={
-        <>
-          <TAcoesDeExportacao
-            nome="Serviços"
-            colunas={colunasExportadas}
-            carregar={carregarTudo}
-            aoCarregarParaImprimir={setParaImprimir}
-          />
-          {!somenteLeitura && (
-            <TButton onClick={() => navigate('/app/servicos/novo')}>
-              <IconAdicionar className="size-4" />
-              Novo serviço
-            </TButton>
-          )}
-        </>
-      }
       documento={
         paraImprimir && (
           <DocumentoLista
@@ -213,7 +234,8 @@ export function ServicoList() {
               {
                 rotulo: 'Sem valor',
                 valor: String(
-                  paraImprimir.linhas.filter((s) => valorExibido(s, filialId) === AUSENTE).length,
+                  paraImprimir.linhas.filter((s) => valorExibido(s, aplicados.filialId) === AUSENTE)
+                    .length,
                 ),
               },
             ]}
@@ -222,29 +244,16 @@ export function ServicoList() {
         )
       }
     >
-      <TPanel>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <TEntry
-            label="Busca"
-            placeholder="Nome ou código"
-            value={termo}
-            suffix={<IconBusca className="size-4" />}
-            onChange={(e) => {
-              setTermo(e.target.value)
-              setPagina(0)
-            }}
-          />
-          <TCombo
+      <TForm form={form} onSubmit={filtrar}>
+        <TRow>
+          <TEntry name="termo" label="Busca" placeholder="Nome ou código" />
+        </TRow>
+        <TRow>
+          <TDBCombo
+            name="filialId"
             label="Filial"
             vazio="Todas"
             placeholder="Todas"
-            value={filialId}
-            rotuloInicial={filialRotulo}
-            onChange={(valor) => {
-              setFilialId(valor)
-              setFilialRotulo(nomesDeFilial.current.get(valor) ?? '')
-              setPagina(0)
-            }}
             buscar={(t) =>
               filialService.select(t).then((filiais) =>
                 filiais.map((f) => {
@@ -254,21 +263,24 @@ export function ServicoList() {
               )
             }
           />
-          <TSelect
-            label="Situação"
-            vazio="Todas"
-            opcoes={[
-              { valor: 'true', rotulo: 'Ativo' },
-              { valor: 'false', rotulo: 'Inativo' },
-            ]}
-            value={ativo}
-            onChange={(e) => {
-              setAtivo(e.target.value)
-              setPagina(0)
-            }}
-          />
-        </div>
-      </TPanel>
+        </TRow>
+        <TRow>
+          <TCombo name="ativo" label="Situação" opcoes={SITUACAO_OPCOES} vazio="Todas" />
+        </TRow>
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="buscar" type="submit" />
+            <TButton variant="limpar" onClick={limpar} />
+            {!somenteLeitura && <TButton variant="novo" onClick={() => navigate('/app/servicos/novo')} />}
+            <TAcoesDeExportacao
+              nome="Serviços"
+              colunas={colunasExportadas}
+              carregar={carregarTudo}
+              aoCarregarParaImprimir={setParaImprimir}
+            />
+          </TFormActionsLeft>
+        </TFormFooter>
+      </TForm>
 
       <TDataGrid
         colunas={colunas}
@@ -281,18 +293,22 @@ export function ServicoList() {
         vazioDescricao={
           somenteLeitura ? 'Ajuste os filtros.' : 'Ajuste os filtros ou cadastre o primeiro serviço.'
         }
-        acoes={somenteLeitura ? undefined : (s) => (
-          <TButton
-            variant="secondary"
-            size="sm"
-            onClick={() => void alternarAtivo(s)}
-            title={s.ativo ? 'Inativar — o cadastro continua no histórico' : 'Reativar o serviço'}
-          >
-            {s.ativo ? 'Inativar' : 'Reativar'}
-          </TButton>
-        )}
+        acoes={
+          somenteLeitura
+            ? undefined
+            : (s) => (
+                <>
+                  <TButton variant="editar" label="" size="sm" onClick={() => navigate(`/app/servicos/${s.id}`)} />
+                  <TButton
+                    variant={s.ativo ? 'inativar' : 'reativar'}
+                    label=""
+                    size="sm"
+                    onClick={() => void alternar(s)}
+                  />
+                </>
+              )
+        }
       />
-
       <TDataGridFooter pagina={dados} onPaginaChange={setPagina} />
     </TPage>
   )

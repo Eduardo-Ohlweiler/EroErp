@@ -12,13 +12,13 @@ import {
   TAviso,
   TBadge,
   TButton,
-  TCombo,
+  TDBCombo,
   TEntry,
   TModal,
   TPage,
   TPanel,
   TResult,
-  TSelect,
+  TCombo,
   TTabs,
   TTextArea,
   type Aba,
@@ -587,7 +587,7 @@ export function ConsultaForm() {
               <TPanel title="Serviços">
                 <div className="flex flex-col gap-4">
                   {!travado && (
-                    <TCombo
+                    <TDBCombo
                       key={acrescentados}
                       label="Acrescentar serviço"
                       value=""
@@ -644,7 +644,7 @@ export function ConsultaForm() {
                 <div className="flex flex-col gap-4">
                   {!travado &&
                     (v.filialId ? (
-                      <TCombo
+                      <TDBCombo
                         key={`${v.filialId}-${acrescentados}`}
                         label="Acrescentar produto"
                         value=""
@@ -870,7 +870,7 @@ function ErroDaConta({ mensagem, className = '' }: { mensagem: string; className
 function CamposDeAjuste({ ajuste, onChange }: { ajuste: AjusteTela; onChange: (a: AjusteTela) => void }) {
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <TSelect
+      <TCombo
         label="Ajuste"
         vazio="Sem ajuste"
         opcoes={TIPOS_DE_AJUSTE}
@@ -879,7 +879,7 @@ function CamposDeAjuste({ ajuste, onChange }: { ajuste: AjusteTela; onChange: (a
       />
       {ajuste.tipo && (
         <>
-          <TSelect
+          <TCombo
             label="Como"
             opcoes={CALCULOS}
             value={ajuste.calculo}

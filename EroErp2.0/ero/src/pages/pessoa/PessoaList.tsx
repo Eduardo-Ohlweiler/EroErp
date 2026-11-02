@@ -11,7 +11,7 @@ import {
   TEntry,
   TPage,
   TPanel,
-  TSelect,
+  TCombo,
   type Coluna,
   type OpcaoSelect,
   type PaginaDaCarga,
@@ -276,7 +276,7 @@ export function PessoaList() {
               setPagina(0)
             }}
           />
-          <TSelect
+          <TCombo
             label="Tipo de pessoa"
             vazio="Todos"
             opcoes={OPCOES_TIPO_PESSOA}
@@ -286,7 +286,7 @@ export function PessoaList() {
               setPagina(0)
             }}
           />
-          <TSelect
+          <TCombo
             label="Tipo de cadastro"
             vazio="Todos"
             opcoes={tiposCadastro}
@@ -296,7 +296,7 @@ export function PessoaList() {
               setPagina(0)
             }}
           />
-          <TSelect
+          <TCombo
             label="Situação"
             vazio="Todas"
             opcoes={[

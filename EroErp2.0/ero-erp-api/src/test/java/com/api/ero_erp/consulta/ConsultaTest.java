@@ -804,6 +804,37 @@ class ConsultaTest extends AbstractIntegrationTest {
     }
 
     // ─────────────────────────────────────────────────────────────────
+    //  Auditoria
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("publica quem criou e, depois da alteração, quem alterou — o criador fica, aqui e no compromisso")
+    void publicaQuemCriouEQuemAlterou() throws Exception {
+        UUID id = idDe(criarNova("", "", "")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.alteradoPorNome").doesNotExist())
+                .andExpect(jsonPath("$.compromisso.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.compromisso.alteradoPorNome").doesNotExist()));
+
+        conceder(userA, Tela.CONSULTAS, NivelAcesso.ESCRITA);
+        mockMvc.perform(put("/consultas/{id}", id).header(AUTHORIZATION, autenticar(userA.getEmail()))
+                        .contentType("application/json")
+                        .content(atualizacao(INICIO, FIM, null, null, ",\"observacao\":\"Voltou\"")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()))
+                .andExpect(jsonPath("$.compromisso.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.compromisso.alteradoPorNome").value(userA.getNome()));
+
+        buscar(id)
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()))
+                .andExpect(jsonPath("$.updatedAt").exists());
+    }
+
+    // ─────────────────────────────────────────────────────────────────
 
     private ResultActions criar(String json) throws Exception {
         return mockMvc.perform(post("/consultas").header(AUTHORIZATION, token)

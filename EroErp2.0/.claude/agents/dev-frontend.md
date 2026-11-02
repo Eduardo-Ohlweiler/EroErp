@@ -44,8 +44,9 @@ segredo, sem decisão de layout nova a cada tela.
   `sm:w-*`, `flex-1` de campo, `"50%"`, `"200px"`.
 - **Label em cima**, do próprio componente. Label ao lado (doc 14 §5) só se o
   plano mandar, e então na tela inteira.
-- Form termina em Situação → `TAuditoria` → rodapé Voltar · Novo | Salvar. List
-  tem filtros com Filtrar · Limpar · Novo (a consulta roda ao filtrar, não a
+- Form termina em Situação → `TAuditoria` → rodapé Salvar · Novo · Voltar (FormList: Salvar ·
+  Novo). List tem filtros com Buscar · Limpar · Novo · Exportar · Pdf (a
+  consulta roda ao buscar, não a
   cada tecla). Spinner, faixa de só leitura e esconder botões de escrita são do
   kit (`TPage carregando`, `TForm somenteLeitura`), nunca da tela.
 

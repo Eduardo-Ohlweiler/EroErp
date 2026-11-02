@@ -33,7 +33,7 @@ export const localidadeService = {
       .get<CidadeSelect[]>('/cidades/select', { params: { nome, estadoId } })
       .then((r) => r.data),
 
-  /** Para o `TCombo`, que espera `{ id, nome }`. A UF entra no rótulo. */
+  /** Para o `TDBCombo`, que espera `{ id, nome }`. A UF entra no rótulo. */
   cidadesParaCombo: (nome?: string, estadoId?: string) =>
     localidadeService
       .cidades(nome, estadoId)

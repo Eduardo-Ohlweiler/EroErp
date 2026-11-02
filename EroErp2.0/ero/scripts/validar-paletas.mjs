@@ -124,6 +124,12 @@ function pares(c, e) {
     ['claro', 'texto do botão / primária', c['txt-inverse'], c.primary, 4.5],
     ['claro', 'texto do botão / primária hover', c['txt-inverse'], c['primary-hover'], 4.5],
     ['claro', 'texto do botão / primária active', c['txt-inverse'], c['primary-active'], 4.5],
+    // Botões de ação do kit (doc 14 §3.4): Salvar verde, Buscar azul, Limpar
+    // vermelho, Pdf âmbar, todos com o texto do botão cheio.
+    ['claro', 'texto do botão / sucesso (Salvar, Exportar)', c['txt-inverse'], c.success, 4.5],
+    ['claro', 'texto do botão / info (Buscar)', c['txt-inverse'], c.info, 4.5],
+    ['claro', 'texto do botão / perigo (Limpar)', c['txt-inverse'], c.danger, 4.5],
+    ['claro', 'texto do botão / alerta (Pdf)', c['txt-inverse'], c.warning, 4.5],
     ['claro', 'secundário / superfície', c['txt-secondary'], c.surface, 4.5],
     ['claro', 'secundário / surface-alt', c['txt-secondary'], c['surface-alt'], 4.5],
     ['claro', 'secundário / canvas', c['txt-secondary'], c.bg, 4.5],
@@ -145,6 +151,10 @@ function pares(c, e) {
     ['escuro', 'texto do botão / primária', e['txt-inverse'], e.primary, 4.5],
     ['escuro', 'texto do botão / primária hover', e['txt-inverse'], e['primary-hover'], 4.5],
     ['escuro', 'texto do botão / primária active', e['txt-inverse'], e['primary-active'], 4.5],
+    ['escuro', 'texto do botão / sucesso (Salvar, Exportar)', e['txt-inverse'], e.success, 4.5],
+    ['escuro', 'texto do botão / info (Buscar)', e['txt-inverse'], e.info, 4.5],
+    ['escuro', 'texto do botão / perigo (Limpar)', e['txt-inverse'], e.danger, 4.5],
+    ['escuro', 'texto do botão / alerta (Pdf)', e['txt-inverse'], e.warning, 4.5],
     ['escuro', 'primária (link, foco) / superfície', e.primary, e.surface, 3],
     ['escuro', 'superfície / canvas (degrau)', e.surface, e.bg, 1.15],
     ['escuro', 'gráfico série 1 / superfície', e['viz-serie-1'], e.surface, 4],

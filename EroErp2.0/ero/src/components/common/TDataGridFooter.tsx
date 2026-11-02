@@ -15,7 +15,8 @@ export function TDataGridFooter<T>({ pagina, onPaginaChange }: TDataGridFooterPr
   return (
     <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
       <p className="text-caption text-txt-secondary">
-        {primeiro}–{ultimo} de {pagina.totalElements}
+        Exibindo {primeiro}–{ultimo} de {pagina.totalElements}{' '}
+        {pagina.totalElements === 1 ? 'registro' : 'registros'}
       </p>
 
       <div className="flex items-center gap-1">

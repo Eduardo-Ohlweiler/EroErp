@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
-import { TBadge, TButton, TCheckBox, TCombo, TEntry, TPage, TPanel } from '@/components/common'
+import { TBadge, TButton, TCheckBox, TDBCombo, TEntry, TPage, TPanel } from '@/components/common'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
 import { BolinhaDaCor } from '@/pages/filial/FilialList'
 import { handleApiError } from '@/services/api'
@@ -193,7 +193,7 @@ export function EstoqueForm() {
                   control={control}
                   name="produtoId"
                   render={({ field }) => (
-                    <TCombo
+                    <TDBCombo
                       label="Produto"
                       placeholder="Nome, código ou EAN"
                       value={field.value}
@@ -217,7 +217,7 @@ export function EstoqueForm() {
                   control={control}
                   name="filialId"
                   render={({ field }) => (
-                    <TCombo
+                    <TDBCombo
                       label="Filial"
                       placeholder="Busque a filial"
                       value={field.value}

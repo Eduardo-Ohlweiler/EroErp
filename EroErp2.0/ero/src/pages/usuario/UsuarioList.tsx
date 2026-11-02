@@ -11,8 +11,8 @@ import {
   TEntry,
   TPage,
   TPanel,
+  TDBCombo,
   TCombo,
-  TSelect,
   type Coluna,
   type PaginaDaCarga,
   type ResultadoDaCarga,
@@ -267,7 +267,7 @@ export function UsuarioList() {
           />
 
           {!dentroDeTenant && (
-            <TCombo
+            <TDBCombo
               label="Cliente"
               vazio="Todos"
               placeholder="Todos"
@@ -280,7 +280,7 @@ export function UsuarioList() {
             />
           )}
 
-          <TSelect
+          <TCombo
             label="Nível de acesso"
             vazio="Todos"
             opcoes={OPCOES_ROLE}
@@ -290,7 +290,7 @@ export function UsuarioList() {
               setPagina(0)
             }}
           />
-          <TSelect
+          <TCombo
             label="Situação"
             vazio="Todas"
             opcoes={[

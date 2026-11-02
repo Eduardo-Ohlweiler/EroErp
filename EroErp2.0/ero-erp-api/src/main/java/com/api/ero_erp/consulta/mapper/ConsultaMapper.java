@@ -47,6 +47,7 @@ public final class ConsultaMapper {
                 resultado.total(),
                 c.getCreatedBy() != null ? c.getCreatedBy().getNome() : null,
                 c.getCreatedAt(),
+                c.getUpdatedBy() != null ? c.getUpdatedBy().getNome() : null,
                 c.getUpdatedAt());
     }
 

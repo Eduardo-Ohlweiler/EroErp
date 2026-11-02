@@ -31,7 +31,9 @@ public final class EstoqueMapper {
                 e.getControlaEstoque(),
                 e.getQuantidadeMinima(),
                 e.getAtivo(),
+                e.getCreatedBy() != null ? e.getCreatedBy().getNome() : null,
                 e.getCreatedAt(),
+                e.getUpdatedBy() != null ? e.getUpdatedBy().getNome() : null,
                 e.getUpdatedAt());
     }
 

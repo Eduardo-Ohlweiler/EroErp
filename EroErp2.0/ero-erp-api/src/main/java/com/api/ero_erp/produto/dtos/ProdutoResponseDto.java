@@ -29,6 +29,8 @@ public record ProdutoResponseDto(
         String fornecedorNome,
         BigDecimal custo,
         Boolean ativo,
+        String criadoPorNome,
         Instant createdAt,
+        String alteradoPorNome,
         Instant updatedAt
 ) {}

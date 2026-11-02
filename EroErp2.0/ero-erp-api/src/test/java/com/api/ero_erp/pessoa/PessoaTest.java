@@ -431,6 +431,40 @@ class PessoaTest extends AbstractIntegrationTest {
     }
 
     // ─────────────────────────────────────────────────────────────────
+    //  Auditoria
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("publica quem criou e, depois da alteração, quem alterou — o criador fica")
+    void publicaQuemCriouEQuemAlterou() throws Exception {
+        UUID id = criarPessoaFisica(autenticar(adminA.getEmail()), "José", CPF_VALIDO);
+
+        mockMvc.perform(get("/pessoas/{id}", id).header(AUTHORIZATION, autenticar(adminA.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.alteradoPorNome").doesNotExist());
+
+        conceder(userA, Tela.PESSOAS, NivelAcesso.ESCRITA);
+        mockMvc.perform(put("/pessoas/{id}", id).header(AUTHORIZATION, autenticar(userA.getEmail()))
+                        .contentType("application/json")
+                        .content(pessoaFisicaJson("José Alterado", CPF_VALIDO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()));
+
+        mockMvc.perform(get("/pessoas/{id}", id).header(AUTHORIZATION, autenticar(adminA.getEmail())))
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()))
+                .andExpect(jsonPath("$.updatedAt").exists());
+
+        // A listagem passa pelo mesmo mapper
+        mockMvc.perform(get("/pessoas").header(AUTHORIZATION, autenticar(adminA.getEmail())))
+                .andExpect(jsonPath("$.content[0].criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.content[0].alteradoPorNome").value(userA.getNome()));
+    }
+
+    // ─────────────────────────────────────────────────────────────────
 
     private UUID idDoTipoCadastro(String nome) {
         return tipoCadastroRepository.findAllByAtivoTrueOrderByNome().stream()

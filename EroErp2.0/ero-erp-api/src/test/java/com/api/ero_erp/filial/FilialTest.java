@@ -1,6 +1,8 @@
 package com.api.ero_erp.filial;
 
 import com.api.ero_erp.AbstractIntegrationTest;
+import com.api.ero_erp.permissao.enums.NivelAcesso;
+import com.api.ero_erp.permissao.enums.Tela;
 import com.api.ero_erp.pessoa.entity.Pessoa;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -275,6 +277,35 @@ class FilialTest extends AbstractIntegrationTest {
 
         assertThat(filialRepository.findAll()).singleElement()
                 .satisfies(f -> assertThat(f.getId()).isEqualTo(matrizNoA));
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Auditoria
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("publica quem criou e, depois da alteração, quem alterou — o criador fica")
+    void publicaQuemCriouEQuemAlterou() throws Exception {
+        UUID id = idDe(criar(loja.getId(), "MATRIZ", null, "#3B82F6")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.alteradoPorNome").doesNotExist()));
+
+        conceder(userA, Tela.FILIAIS, NivelAcesso.ESCRITA);
+        mockMvc.perform(put("/filiais/{id}", id).header(AUTHORIZATION, autenticar(userA.getEmail()))
+                        .contentType("application/json")
+                        .content(json(loja.getId(), "MATRIZ", null, "#10B981")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()));
+
+        mockMvc.perform(get("/filiais/{id}", id).header(AUTHORIZATION, token))
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()))
+                .andExpect(jsonPath("$.updatedAt").exists());
+        mockMvc.perform(get("/filiais").header(AUTHORIZATION, token))
+                .andExpect(jsonPath("$.content[0].alteradoPorNome").value(userA.getNome()));
     }
 
     // ─────────────────────────────────────────────────────────────────

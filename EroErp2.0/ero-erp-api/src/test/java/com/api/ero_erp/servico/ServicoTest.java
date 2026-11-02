@@ -1,6 +1,8 @@
 package com.api.ero_erp.servico;
 
 import com.api.ero_erp.AbstractIntegrationTest;
+import com.api.ero_erp.permissao.enums.NivelAcesso;
+import com.api.ero_erp.permissao.enums.Tela;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -272,6 +274,35 @@ class ServicoTest extends AbstractIntegrationTest {
         criarCom(tokenB, "Instalação", null, linha(loja, "10"))
                 .andExpect(status().isNotFound());
         assertThat(servicoRepository.findAll()).isEmpty();
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Auditoria
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("publica quem criou e, depois da alteração, quem alterou — o criador fica")
+    void publicaQuemCriouEQuemAlterou() throws Exception {
+        UUID id = idDe(criar("Instalação", null, "")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.alteradoPorNome").doesNotExist()));
+
+        conceder(userA, Tela.SERVICOS, NivelAcesso.ESCRITA);
+        mockMvc.perform(put("/servicos/{id}", id).header(AUTHORIZATION, autenticar(userA.getEmail()))
+                        .contentType("application/json")
+                        .content(json("Instalação completa", null, "")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()));
+
+        mockMvc.perform(get("/servicos/{id}", id).header(AUTHORIZATION, token))
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()))
+                .andExpect(jsonPath("$.updatedAt").exists());
+        listar("termo", "Instalação")
+                .andExpect(jsonPath("$.content[0].alteradoPorNome").value(userA.getNome()));
     }
 
     // ─────────────────────────────────────────────────────────────────

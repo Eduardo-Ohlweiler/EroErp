@@ -2,6 +2,8 @@ package com.api.ero_erp.compromisso;
 
 import com.api.ero_erp.AbstractIntegrationTest;
 import com.api.ero_erp.compromisso.enums.StatusCompromisso;
+import com.api.ero_erp.permissao.enums.NivelAcesso;
+import com.api.ero_erp.permissao.enums.Tela;
 import com.api.ero_erp.usuario.entity.Usuario;
 import com.api.ero_erp.usuario.enums.Role;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -489,6 +491,36 @@ class CompromissoTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/usuarios/select").header(AUTHORIZATION, autenticar(userA.getEmail())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)));
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Auditoria
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("publica quem criou e, depois da alteração, quem alterou — o criador fica")
+    void publicaQuemCriouEQuemAlterou() throws Exception {
+        UUID id = criarUm(profissional.getId(), "2027-03-10T13:00:00Z", "2027-03-10T14:00:00Z");
+
+        mockMvc.perform(get("/compromissos/{id}", id).header(AUTHORIZATION, token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.alteradoPorNome").doesNotExist());
+
+        conceder(userA, Tela.AGENDA, NivelAcesso.ESCRITA);
+        mockMvc.perform(put("/compromissos/{id}", id).header(AUTHORIZATION, autenticar(userA.getEmail()))
+                        .contentType("application/json")
+                        .content(json(profissional.getId(), "2027-03-10T15:00:00Z", "2027-03-10T16:00:00Z",
+                                List.of(), null)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()));
+
+        mockMvc.perform(get("/compromissos/{id}", id).header(AUTHORIZATION, token))
+                .andExpect(jsonPath("$.criadoPorNome").value(adminA.getNome()))
+                .andExpect(jsonPath("$.alteradoPorNome").value(userA.getNome()))
+                .andExpect(jsonPath("$.updatedAt").exists());
     }
 
     // ─────────────────────────────────────────────────────────────────

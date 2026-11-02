@@ -31,7 +31,10 @@ export interface ProdutoResponse {
   /** Ausente é não informado — não é zero. */
   custo?: number | null
   ativo: boolean
+  /** Quem cadastrou e quem alterou por último — o `TAuditoria` mostra. */
+  criadoPorNome?: string | null
   createdAt: string
+  alteradoPorNome?: string | null
   updatedAt?: string | null
 }
 

@@ -1,27 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
-import { IconAdicionar, IconBusca } from '@/assets/icons'
 import {
+  SITUACAO_OPCOES,
   TAcoesDeExportacao,
   TBadge,
   TButton,
   TCombo,
   TDataGrid,
   TDataGridFooter,
+  TDBCombo,
   TEntry,
+  TForm,
+  TFormActionsLeft,
+  TFormFooter,
   TPage,
-  TPanel,
-  TSelect,
+  TRow,
+  useMessage,
+  useQuestion,
   type Coluna,
   type PaginaDaCarga,
   type ResultadoDaCarga,
 } from '@/components/common'
 import { DocumentoLista } from '@/components/impressao/DocumentoLista'
 import { useAuth } from '@/hooks/useAuth'
-import { useDebounce } from '@/hooks/useDebounce'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
-import { handleApiError } from '@/services/api'
 import { auxiliarService } from '@/services/auxiliarProdutoService'
 import { produtoService } from '@/services/produtoService'
 import type { Page } from '@/types/comum'
@@ -32,6 +35,25 @@ import type { ColunaExportavel } from '@/utils/planilha'
 const grupos = auxiliarService('grupos')
 const marcas = auxiliarService('marcas')
 
+interface Filtros {
+  termo: string
+  grupoId: string
+  marcaId: string
+  ativo: string
+}
+
+const FILTROS_VAZIOS: Filtros = { termo: '', grupoId: '', marcaId: '', ativo: 'true' }
+
+/** O que a API recebe: vazio é "sem filtro". */
+function paraConsulta(f: Filtros) {
+  return {
+    termo: f.termo.trim() || undefined,
+    grupoId: f.grupoId || undefined,
+    marcaId: f.marcaId || undefined,
+    ativo: f.ativo === '' ? undefined : f.ativo === 'true',
+  }
+}
+
 /** "Bebidas › Sucos", só o grupo não existe: o produto aponta para o subgrupo. */
 function classificacao(p: ProdutoResponse): string {
   return p.subgrupoNome ? `${p.grupoNome} › ${p.subgrupoNome}` : AUSENTE
@@ -41,56 +63,53 @@ export function ProdutoList() {
   const navigate = useNavigate()
   const { sessao } = useAuth()
   const somenteLeitura = useSomenteLeitura('PRODUTOS')
-
-  const [termo, setTermo] = useState('')
-  const [grupoId, setGrupoId] = useState('')
-  const [marcaId, setMarcaId] = useState('')
-  /** Nome de cada opção que os combos já trouxeram — o filtro aplicado da folha o mostra. */
-  const nomes = useRef(new Map<string, string>())
-  const [ativo, setAtivo] = useState('true')
+  const msg = useMessage()
+  const { confirmar } = useQuestion()
+  const form = useForm<Filtros>({ defaultValues: FILTROS_VAZIOS })
+  const [aplicados, setAplicados] = useState(FILTROS_VAZIOS)
   const [pagina, setPagina] = useState(0)
   const [dados, setDados] = useState<Page<ProdutoResponse>>()
   const [carregando, setCarregando] = useState(true)
   const [paraImprimir, setParaImprimir] = useState<ResultadoDaCarga<ProdutoResponse>>()
-
-  const termoBusca = useDebounce(termo)
-
-  const filtros = useCallback(
-    () => ({
-      termo: termoBusca || undefined,
-      grupoId: grupoId || undefined,
-      marcaId: marcaId || undefined,
-      ativo: ativo === '' ? undefined : ativo === 'true',
-    }),
-    [termoBusca, grupoId, marcaId, ativo],
-  )
+  /** Nome de cada opção que os combos já trouxeram — o filtro aplicado da folha o mostra. */
+  const nomes = useRef(new Map<string, string>())
 
   const carregar = useCallback(() => {
     setCarregando(true)
     produtoService
-      .getAll({ ...filtros(), page: pagina, size: 20 })
+      .getAll({ ...paraConsulta(aplicados), page: pagina, size: 20 })
       .then(setDados)
-      .catch(handleApiError)
+      .catch(msg.erroApi)
       .finally(() => setCarregando(false))
     // `sessao.tenantId` é sinal de invalidação: trocar de tenant refaz a consulta.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessao?.tenantId, filtros, pagina])
+  }, [sessao?.tenantId, aplicados, pagina])
 
   useEffect(carregar, [carregar])
 
+  const filtrar = (f: Filtros) => {
+    setAplicados(f)
+    setPagina(0)
+  }
+  const limpar = () => {
+    form.reset(FILTROS_VAZIOS)
+    filtrar(FILTROS_VAZIOS)
+  }
+
   // Grupo e marca são do tenant de antes: trocar de tenant limpa os filtros.
   useEffect(() => {
-    setGrupoId('')
-    setMarcaId('')
+    form.reset(FILTROS_VAZIOS)
+    setAplicados(FILTROS_VAZIOS)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessao?.tenantId])
 
-  /** Cobre o filtro inteiro, não a página aberta. Ver `TAcoesDeExportacao`. */
+  /** Cobre o filtro aplicado inteiro, não a página aberta. Ver `TAcoesDeExportacao`. */
   const carregarTudo = useCallback(
     async (limite: number, indice: number): Promise<PaginaDaCarga<ProdutoResponse>> => {
-      const pagina = await produtoService.getAll({ ...filtros(), page: indice, size: limite })
+      const pagina = await produtoService.getAll({ ...paraConsulta(aplicados), page: indice, size: limite })
       return { linhas: pagina.content, total: pagina.totalElements }
     },
-    [filtros],
+    [aplicados],
   )
 
   const colunasExportadas: ColunaExportavel<ProdutoResponse>[] = [
@@ -102,29 +121,44 @@ export function ProdutoList() {
     { titulo: 'Categoria', valor: (p) => p.categoriaNome ?? AUSENTE },
     { titulo: 'Marca', valor: (p) => p.marcaNome ?? AUSENTE },
     { titulo: 'Fornecedor', valor: (p) => p.fornecedorNome ?? AUSENTE },
-    { titulo: 'Custo', valor: (p) => formatarMoeda(p.custo) },
+    { titulo: 'Custo', numerica: true, valor: (p) => formatarMoeda(p.custo) },
     { titulo: 'Situação', valor: (p) => (p.ativo ? 'Ativo' : 'Inativo') },
   ]
 
   const filtrosAplicados = [
-    { rotulo: 'Busca', valor: termoBusca },
-    { rotulo: 'Grupo', valor: grupoId ? (nomes.current.get(grupoId) ?? '') : '' },
-    { rotulo: 'Marca', valor: marcaId ? (nomes.current.get(marcaId) ?? '') : '' },
-    { rotulo: 'Situação', valor: ativo === 'true' ? 'Ativo' : ativo === 'false' ? 'Inativo' : '' },
+    { rotulo: 'Busca', valor: aplicados.termo.trim() },
+    { rotulo: 'Grupo', valor: aplicados.grupoId ? (nomes.current.get(aplicados.grupoId) ?? '') : '' },
+    { rotulo: 'Marca', valor: aplicados.marcaId ? (nomes.current.get(aplicados.marcaId) ?? '') : '' },
+    {
+      rotulo: 'Situação',
+      valor: aplicados.ativo === 'true' ? 'Ativo' : aplicados.ativo === 'false' ? 'Inativo' : '',
+    },
   ]
 
-  async function alternarAtivo(produto: ProdutoResponse) {
+  const alternar = async (produto: ProdutoResponse) => {
+    if (
+      !(await confirmar({
+        mensagem: `${produto.ativo ? 'Inativar' : 'Reativar'} ${produto.nome}?`,
+        variante: produto.ativo ? 'inativar' : 'reativar',
+      }))
+    )
+      return
     try {
       await produtoService.alterarAtivo(produto.id, !produto.ativo)
-      toast.success(produto.ativo ? `${produto.nome} foi inativado` : `${produto.nome} foi reativado`)
+      msg.sucesso(produto.ativo ? `${produto.nome} foi inativado` : `${produto.nome} foi reativado`)
       carregar()
     } catch (erro) {
-      handleApiError(erro)
+      msg.erroApi(erro)
     }
   }
 
   const colunas: Coluna<ProdutoResponse>[] = [
-    { chave: 'codigo', cabecalho: 'Código', className: 'w-24 tabular-nums', render: (p) => p.codigo },
+    {
+      chave: 'codigo',
+      cabecalho: 'Código',
+      className: 'w-px whitespace-nowrap tabular-nums',
+      render: (p) => p.codigo,
+    },
     {
       chave: 'nome',
       cabecalho: 'Nome',
@@ -135,13 +169,20 @@ export function ProdutoList() {
         </span>
       ),
     },
-    { chave: 'unidade', cabecalho: 'Un.', className: 'w-16', render: (p) => p.unidadeSigla },
+    { chave: 'unidade', cabecalho: 'Un.', className: 'w-px whitespace-nowrap', render: (p) => p.unidadeSigla },
     { chave: 'grupo', cabecalho: 'Grupo › Subgrupo', secundaria: true, render: classificacao },
     { chave: 'marca', cabecalho: 'Marca', secundaria: true, render: (p) => p.marcaNome ?? AUSENTE },
-    { chave: 'custo', cabecalho: 'Custo', numerica: true, render: (p) => formatarMoeda(p.custo) },
+    {
+      chave: 'custo',
+      cabecalho: 'Custo',
+      numerica: true,
+      className: 'w-px whitespace-nowrap',
+      render: (p) => formatarMoeda(p.custo),
+    },
     {
       chave: 'situacao',
       cabecalho: 'Situação',
+      className: 'w-px whitespace-nowrap',
       render: (p) =>
         p.ativo ? <TBadge tom="sucesso">Ativo</TBadge> : <TBadge tom="neutro">Inativo</TBadge>,
     },
@@ -150,23 +191,8 @@ export function ProdutoList() {
   return (
     <TPage
       title="Produtos"
+      breadcrumb={['Cadastros', 'Produtos']}
       subtitle="O que o seu tenant vende ou consome. O preço de venda é por filial, no estoque."
-      actions={
-        <>
-          <TAcoesDeExportacao
-            nome="Produtos"
-            colunas={colunasExportadas}
-            carregar={carregarTudo}
-            aoCarregarParaImprimir={setParaImprimir}
-          />
-          {!somenteLeitura && (
-            <TButton onClick={() => navigate('/app/produtos/novo')}>
-              <IconAdicionar className="size-4" />
-              Novo produto
-            </TButton>
-          )}
-        </>
-      }
       documento={
         paraImprimir && (
           <DocumentoLista
@@ -189,27 +215,16 @@ export function ProdutoList() {
         )
       }
     >
-      <TPanel>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <TEntry
-            label="Busca"
-            placeholder="Nome, código ou EAN"
-            value={termo}
-            suffix={<IconBusca className="size-4" />}
-            onChange={(e) => {
-              setTermo(e.target.value)
-              setPagina(0)
-            }}
-          />
-          <TCombo
+      <TForm form={form} onSubmit={filtrar}>
+        <TRow>
+          <TEntry name="termo" label="Busca" placeholder="Nome, código ou EAN" />
+        </TRow>
+        <TRow>
+          <TDBCombo
+            name="grupoId"
             label="Grupo"
             vazio="Todos"
             placeholder="Todos"
-            value={grupoId}
-            onChange={(valor) => {
-              setGrupoId(valor)
-              setPagina(0)
-            }}
             buscar={(t) =>
               grupos.select(t).then((lista) =>
                 lista.map((g) => {
@@ -219,15 +234,13 @@ export function ProdutoList() {
               )
             }
           />
-          <TCombo
+        </TRow>
+        <TRow>
+          <TDBCombo
+            name="marcaId"
             label="Marca"
             vazio="Todas"
             placeholder="Todas"
-            value={marcaId}
-            onChange={(valor) => {
-              setMarcaId(valor)
-              setPagina(0)
-            }}
             buscar={(t) =>
               marcas.select(t).then((lista) =>
                 lista.map((m) => {
@@ -237,21 +250,24 @@ export function ProdutoList() {
               )
             }
           />
-          <TSelect
-            label="Situação"
-            vazio="Todas"
-            opcoes={[
-              { valor: 'true', rotulo: 'Ativo' },
-              { valor: 'false', rotulo: 'Inativo' },
-            ]}
-            value={ativo}
-            onChange={(e) => {
-              setAtivo(e.target.value)
-              setPagina(0)
-            }}
-          />
-        </div>
-      </TPanel>
+        </TRow>
+        <TRow>
+          <TCombo name="ativo" label="Situação" opcoes={SITUACAO_OPCOES} vazio="Todas" />
+        </TRow>
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="buscar" type="submit" />
+            <TButton variant="limpar" onClick={limpar} />
+            {!somenteLeitura && <TButton variant="novo" onClick={() => navigate('/app/produtos/novo')} />}
+            <TAcoesDeExportacao
+              nome="Produtos"
+              colunas={colunasExportadas}
+              carregar={carregarTudo}
+              aoCarregarParaImprimir={setParaImprimir}
+            />
+          </TFormActionsLeft>
+        </TFormFooter>
+      </TForm>
 
       <TDataGrid
         colunas={colunas}
@@ -268,18 +284,18 @@ export function ProdutoList() {
           somenteLeitura
             ? undefined
             : (p) => (
-                <TButton
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => void alternarAtivo(p)}
-                  title={p.ativo ? 'Inativar — o cadastro continua no histórico' : 'Reativar o produto'}
-                >
-                  {p.ativo ? 'Inativar' : 'Reativar'}
-                </TButton>
+                <>
+                  <TButton variant="editar" label="" size="sm" onClick={() => navigate(`/app/produtos/${p.id}`)} />
+                  <TButton
+                    variant={p.ativo ? 'inativar' : 'reativar'}
+                    label=""
+                    size="sm"
+                    onClick={() => void alternar(p)}
+                  />
+                </>
               )
         }
       />
-
       <TDataGridFooter pagina={dados} onPaginaChange={setPagina} />
     </TPage>
   )

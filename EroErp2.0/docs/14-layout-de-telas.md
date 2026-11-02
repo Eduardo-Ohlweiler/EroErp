@@ -14,15 +14,36 @@
 
 ## 0. Estado
 
-> **O kit da §3 ainda não existe no código.** Ele nasce na fase 0 do
-> `/padronizar-layout` (`.claude/skills/padronizar-layout/SKILL.md`), antes da
-> primeira tela corrigida. Até lá, as telas do 2.0 usam `TSelect`/`TCombo` com os
-> nomes de hoje e `grid sm:grid-cols-N` — e **tela nova não nasce antes do kit**
-> sem o Eduardo decidir: o `dev-frontend` para e pergunta, para a tela não ser
-> feita duas vezes.
+> **O kit da §3 existe** (fase 0 do `/padronizar-layout`, 2026-11-02), exportado
+> por `components/common/index.ts`. Telas no kit: Serviços (`ServicoList`,
+> `ServicoForm`), Produtos (`ProdutoList`, `ProdutoForm`) e as quatro abas de
+> `AuxiliaresProduto` (FormList). As demais ainda estão na forma antiga e vão
+> para o kit pelo `/padronizar-layout`, um módulo por vez.
 >
-> Quem constrói o kit atualiza esta seção para "existe" e a lista de
-> `components/common/` no `CLAUDE.md`.
+> O que a primeira passada fixou, e vale para quem copiar:
+>
+> - **A largura padrão só vale dentro de uma `TRow`.** Fora dela (tela ainda
+>   não migrada, campo num `grid`) o campo ocupa a célula, como antes; `width`
+>   explícito vale sempre.
+> - **Dentro de `TForm`, o campo se liga pelo `name`** — a não ser que receba
+>   `value`/`onChange` (ou o `{...register()}` das telas antigas, que traz
+>   `onChange`): aí é controlado por quem chama.
+> - **Só leitura é por contexto, não por `<fieldset disabled>`**: o fieldset
+>   desligaria também o Voltar. Campos, `TFieldList` e `TButton` leem o
+>   `somenteLeitura` do `TForm`.
+> - **Máscara numérica grava o texto** (`"72,50"`), que o `paraCorpo` converte
+>   com `paraNumero` — vazio continua vazio. Só CPF, CNPJ, CEP e telefone gravam
+>   cru (dígitos).
+> - **Situação no Form ou no FormList só quando a API de alterar recebe `ativo`.**
+>   Quando não recebe (serviço, auxiliares), inativar e reativar ficam na grade,
+>   com confirmação (decisão do Eduardo, 2026-11-02).
+> - **A grade do FormList não tem filtro** e lista ativos e inativos (idem).
+> - **Botões embaixo do formulário, à esquerda, o principal primeiro** — List:
+>   Buscar · Limpar · Novo · Exportar · Pdf; Form: Salvar · Novo · Voltar;
+>   FormList: Salvar · Novo (padrão do Eduardo, 2026-11-02, §3.4).
+> - **O `id` do campo é gerado** (`useId`), não o `name`: duas abas montadas com
+>   o mesmo `name` davam `id` repetido e o rótulo apontava para o campo da aba
+>   escondida. Label ao lado (§5) passa `id` explícito ao campo.
 
 ---
 
@@ -127,6 +148,10 @@ Na dúvida entre duas, a menor — campo largo demais é o que destoa.
 | `TDBCombo` · `TDBComboMulti` | `metade` |
 | `TTextArea` | `longo` |
 | `TCheckBox` · `TDBCheckBox` · `TRadio` · `TDBRadio` | o conteúdo |
+| `TAuditoria` | quem: `medio` · quando: `dataHora` (fixo) |
+
+Dentro do `TFieldList`, o campo sem `width` fica direto na linha: `metade` é
+metade da linha da lista.
 
 `width` só aparece na tela quando o padrão não serve — e o plano diz por quê.
 
@@ -177,7 +202,7 @@ Nomes do EroErp antigo. Props em português, como o resto do 2.0.
 |---|---|---|
 | `TPage` | `title`, `breadcrumb?: string[]`, `subtitle?`, `actions?`, `documento?`, `carregando?` | Container de tela. `breadcrumb` em texto acima do título (`Cadastros › Produtos`). `carregando` mostra o spinner — a tela não monta spinner. |
 | `TForm` | `form` (o retorno do `useForm`), `onSubmit`, `somenteLeitura?`, `children` | `FormProvider` + `<form noValidate>` + cartão. Com `somenteLeitura`, faz o `fieldset disabled`, mostra a faixa "acesso só de leitura" e esconde os botões de escrita (§3.4). |
-| `TFormFooter` · `TFormActionsLeft` · `TFormActionsRight` | `children` | Rodapé do cartão, com borda no topo. Empilha no celular com o botão principal embaixo. |
+| `TFormFooter` · `TFormActionsLeft` · `TFormActionsRight` | `children` | Rodapé do cartão, com borda no topo: os botões ficam **embaixo do formulário, à esquerda**, na ordem do padrão (§3.4), o principal primeiro. No celular empilham na mesma ordem, o principal em cima. `TFormActionsRight` existe, mas nenhum modelo o usa. |
 | `TRow` | `children` | Uma linha: `flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start`. |
 | `TCol` | `width?: 'auto' \| 'rotulo' \| Largura`, `align?: 'left' \| 'right'` | Coluna da linha. **Sem `width`, divide a linha em partes iguais** (`sm:flex-1 sm:min-w-0 sm:basis-64`) — como no antigo, CNH · Categoria · Validade ficam um em cada terço. `auto` encolhe até o campo, para curtos ficarem colados. `rotulo` (`sm:w-48`, 192 px) é a coluna de labels do estilo PHP (§5). |
 | `TPanel` | `title?`, `recolhido?`, `actions?` | Seção por assunto (Pessoa física, Endereços…), recolhível pelo título. |
@@ -197,18 +222,18 @@ Todos têm `width?`, `ajuda?`, `disabled?`, `rotuloOculto?`.
 
 | Componente | Props próprias | O que faz |
 |---|---|---|
-| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?` | Texto. Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado, grava cru** (CPF só dígitos, moeda número) — reaproveitando `utils/format.ts` (`mascararCpf`, `mascararCnpj`, `mascararCep`, `mascararTelefone`, `paraNumero`, `textoDaMascara`). A tela nunca chama máscara no `onChange`. |
+| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?` | Texto. Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado; CPF, CNPJ, CEP e telefone gravam só os dígitos, as numéricas gravam o texto da máscara** (§0) — reaproveitando `utils/format.ts` (`mascararCpf`, `mascararCnpj`, `mascararCep`, `mascararTelefone`, `paraNumero`, `textoDaMascara`). A tela nunca chama máscara no `onChange`. |
 | `TDate` | — | Data com calendário em pt-BR e botão de limpar. Grava `AAAA-MM-DD`; monta com `T00:00:00` para exibir; valor inicial `hojeIso()` quando o form pede hoje. |
 | `TDateTime` | `passoMinutos?` (padrão 5) | Data e hora; grava `AAAA-MM-DDTHH:mm`. |
 | `TTextArea` | `linhas?`, `maxLength?` | Texto longo; mostra "máx. N caracteres". |
-| `TCombo` | `opcoes: {valor, rotulo}[]`, `vazio?` | **Opções fixas** — situação, tipo, enum. `vazio` é a opção "Todos"/"Selecione…". (Hoje se chama `TSelect`.) |
-| `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?` | **Opções do banco**, com busca no servidor (`/select?nome=`, debounce 300 ms) e o rótulo do valor salvo. (Hoje se chama `TCombo`.) |
-| `TDBComboMulti` | `buscar`, `excluir?`, `maximo?` | Vários do banco. (Hoje `TComboMulti`.) |
+| `TCombo` | `opcoes: {valor, rotulo}[]`, `vazio?` | **Opções fixas** — situação, tipo, enum. `vazio` é a opção "Todos"/"Selecione…". `SITUACAO_OPCOES` está pronto no kit. |
+| `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?` | **Opções do banco**, com busca no servidor (`/select?nome=`, debounce 300 ms) e o rótulo do valor salvo. |
+| `TDBComboMulti` | `buscar`, `excluir?`, `maximo?` | Vários do banco. |
 | `TCheckBox` | `opcoes?` | Sem `opcoes`, um booleano com o rótulo ao lado; com `opcoes`, um grupo fixo que grava a lista dos marcados. |
 | `TDBCheckBox` | `buscar()`, `vertical?`, `altura?` | Grupo vindo do banco (tipos de cadastro, módulos). |
 | `TRadio` | `opcoes`, `vertical?` | Escolha única fixa. |
 | `TDBRadio` | `buscar()`, `vertical?` | Escolha única vinda do banco. |
-| `TFieldList` | `name`, `colunas: {name, componente, width?}[]`, `novaLinha`, `minimo?`, `rotuloAdicionar?` | **Lista filha editável** dentro do formulário, como no antigo (e-mails, telefones, valores por filial): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão e o remover no fim, botão Acrescentar no rodapé. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
+| `TFieldList` | `name`, `colunas: {name, componente(campo, i, linha), width?}[]`, `novaLinha`, `minimo?`, `rotuloAdicionar?`, `vazio?`, `detalhe?(i, linha)` | **Lista filha editável** dentro do formulário, como no antigo (e-mails, telefones, valores por filial): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão e o remover no fim, botão Acrescentar no rodapé. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
 | `TRotulo` | `htmlFor`, `required?` | Só o rótulo, para a coluna de labels do estilo PHP (§5). |
 | `TAuditoria` | `registro` | Só na edição, no fim do formulário: Criado por · Criado em, Alterado por · Alterado em, só leitura. Lê `criadoPorNome`, `createdAt`, `alteradoPorNome`, `updatedAt` do `ResponseDto`. Linha sem dado não aparece. |
 
@@ -226,10 +251,45 @@ estado inline, não mensagem (CLAUDE.md, "Nesta tela um 400 pode ser estado").
 
 | Componente | Props | O que faz |
 |---|---|---|
-| `TButton` | `variant`, `label`, `loading?`, `size?`, `type?` | Variantes de ação **com ícone e cor prontos**: `salvar`, `novo`, `filtrar`, `limpar`, `voltar`, `editar`, `inativar`, `reativar`; e as genéricas `primary`, `secondary`, `ghost`, `danger`. Cores por token de tema, nunca hex. Dentro de `TForm somenteLeitura`, `salvar`, `novo`, `inativar` e `reativar` **não aparecem**. `label=""` deixa só o ícone (grade). |
+| `TButton` | `variant`, `label`, `loading?`, `size?`, `type?` | Variantes de ação **com ícone e cor prontos**: `salvar`, `novo`, `buscar`, `limpar`, `voltar`, `editar`, `inativar`, `reativar`; e as genéricas `primary`, `secondary`, `ghost`, `danger`. Cores por token de tema, nunca hex. Dentro de `TForm somenteLeitura`, `salvar`, `novo`, `inativar` e `reativar` **não aparecem**. `label=""` deixa só o ícone (grade). |
 | `TDataGrid` | como hoje, com `acoes(linha)` | Ações na **primeira coluna**, como no antigo. Vira cartões abaixo de `md`. |
 | `TDataGridFooter` | `pagina`, `onPaginaChange` | "Exibindo X–Y de N registros" e a paginação. |
-| `TAcoesDeExportacao` · `TBotaoImprimir` | como hoje | Vão no `actions` da `TPage`. |
+| `TAcoesDeExportacao` | como hoje | Os botões **Exportar** (planilha CSV) e **Pdf** (a folha impressa). Na List, vão no rodapé do filtro, depois do Novo. |
+| `TBotaoImprimir` | como hoje | No `actions` da `TPage`. |
+
+**Os botões de cada modelo — padrão do Eduardo (2026-11-02), nesta ordem, da
+esquerda para a direita, embaixo do formulário:**
+
+| Modelo | Botões |
+|---|---|
+| List | Buscar (ou Enter) · Limpar · Novo · Exportar · Pdf |
+| Form | Salvar · Novo · Voltar |
+| FormList | Salvar · Novo (o Novo esvazia o formulário para cadastrar) |
+
+**Cor e ícone de cada ação** (padrão do Eduardo, 2026-11-02 — o `TButton` já
+traz; a tela só escolhe a `variant`):
+
+| Ação | Cor | Ícone |
+|---|---|---|
+| `salvar` | verde (`success`), letra clara | ✓ |
+| `buscar` | azul (`info`), letra clara | lupa |
+| `limpar` | vermelho (`danger`), letra clara | borracha |
+| `novo` | a cor do tenant (`primary`), letra clara | + |
+| `exportar` | verde (`success`), letra clara | planilha |
+| `pdf` | âmbar (`warning`), letra clara | folha |
+| `voltar` | neutro, com borda | ‹ |
+| `editar` · `inativar` · `reativar` (grade, só ícone) | azul · vermelho · verde | lápis · cadeado · cadeado aberto |
+
+A letra "clara" é `text-txt-inverse`: branca no tema claro, escura no escuro,
+onde as cores clareiam e o branco perderia contraste. Os pares de cada cor com
+ela estão no `npm run paletas`, nas 10 paletas.
+
+**Campo só leitura tem fundo diferente.** `disabled` (Código) e `readOnly`
+(`TAuditoria`) saem iguais: fundo `surface-alt` e texto apagado — quem olha
+vê que ali não se digita.
+
+Quem só lê não vê Salvar nem Novo (o `TButton` some sozinho dentro de
+`TForm somenteLeitura`; na List, `!somenteLeitura &&`).
 
 ### 3.5 Renomeação (fase 0)
 
@@ -257,8 +317,8 @@ tela pronta mais parecida que já o segue) e trocar o que está marcado
 
 ### 4.1 List com filtros (`/app/produtos`)
 
-Filtros num `TForm` com **botões, como no antigo**: Filtrar (ou Enter), Limpar,
-Novo. A consulta só roda ao filtrar, ao trocar de página ou ao limpar — menos
+Filtros num `TForm` com **botões, como no antigo**: Buscar (ou Enter), Limpar,
+Novo, Exportar, Pdf. A consulta só roda ao buscar, ao trocar de página ou ao limpar — menos
 requisições, o que importa quando a tabela cresce.
 
 ```tsx
@@ -296,7 +356,7 @@ export function ProdutoList() {                                        // troca
 
   return (
     <TPage title="Produtos" breadcrumb={['Cadastros', 'Produtos']}    // troca
-           actions={<TAcoesDeExportacao … />} documento={…}>
+           documento={…}>
       <TForm form={form} onSubmit={filtrar}>
         <TRow><TEntry name="codigo" label="Código" width="codigo" /></TRow>
         <TRow><TEntry name="nome" label="Nome" /></TRow>
@@ -304,9 +364,10 @@ export function ProdutoList() {                                        // troca
         <TRow><TCombo name="ativo" label="Situação" opcoes={SITUACAO_OPCOES} vazio="Todas" /></TRow>
         <TFormFooter>
           <TFormActionsLeft>
-            <TButton variant="filtrar" type="submit" />
+            <TButton variant="buscar" type="submit" />
             <TButton variant="limpar" onClick={limpar} />
             {!somenteLeitura && <TButton variant="novo" onClick={() => navigate('/app/produtos/novo')} />}
+            <TAcoesDeExportacao … />
           </TFormActionsLeft>
         </TFormFooter>
       </TForm>
@@ -360,7 +421,7 @@ export function ProdutoForm() {                                        // troca
   }
 
   return (
-    <TPage title={id ? 'Editar produto' : 'Novo produto'}              // troca
+    <TPage title={somenteLeitura ? 'Produto' : id ? 'Editar produto' : 'Novo produto'} // troca
            breadcrumb={['Cadastros', 'Produtos', id ? 'Editar' : 'Novo']} carregando={carregando}>
       <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
         <TRow><TEntry name="codigo" label="Código" width="codigo" disabled /></TRow>
@@ -378,12 +439,10 @@ export function ProdutoForm() {                                        // troca
 
         <TFormFooter>
           <TFormActionsLeft>
-            <TButton variant="voltar" onClick={() => navigate('/app/produtos')} />
-            <TButton variant="novo" onClick={() => navigate('/app/produtos/novo')} />
-          </TFormActionsLeft>
-          <TFormActionsRight>
             <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
-          </TFormActionsRight>
+            <TButton variant="novo" onClick={novo} />  {/* aberto: vai para /novo; no /novo: form.reset(VAZIO) */}
+            <TButton variant="voltar" onClick={() => navigate('/app/produtos')} />
+          </TFormActionsLeft>
         </TFormFooter>
       </TForm>
     </TPage>
@@ -400,7 +459,8 @@ Ordem fixa:
    ao vizinho.
 4. Situação.
 5. `TAuditoria`.
-6. Rodapé: Voltar · Novo à esquerda, Salvar à direita. Ação que não é salvar
+6. Rodapé: Salvar · Novo · Voltar, embaixo, à esquerda (§3.4). Título: "Novo …",
+   "Editar …" e, para quem só lê, o nome da coisa ("Produto"). Ação que não é salvar
    (Redefinir senha, Conectar) vai num `TPanel` próprio, abaixo do formulário.
 
 A rota passa por `PorRegistro` (CLAUDE.md, "Rota `/nova` e rota `/:id`").
@@ -431,7 +491,7 @@ export function CategoriaFormList() {                                  // troca
   const editar = (c: AuxiliarResponse) => {
     setEditando(c.id); form.reset(paraForm(c)); window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-  const salvar = async (d: Dados) => { /* create ou update → msg.sucesso → limpar → setPagina(0) → carregar */ }
+  const salvar = async (d: Dados) => { /* create ou update → msg.sucesso → limpar → pagina === 0 ? carregar() : setPagina(0) */ }
 
   return (
     <TPage title="Categorias de produto" breadcrumb={['Cadastros', 'Auxiliar produto', 'Categorias']}> {/* troca */}
@@ -440,8 +500,8 @@ export function CategoriaFormList() {                                  // troca
         {editando && <TRow><TCombo name="ativo" label="Situação" opcoes={SITUACAO_OPCOES} /></TRow>}
         <TFormFooter>
           <TFormActionsLeft>
-            <TButton variant="limpar" onClick={limpar} />
             <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+            <TButton variant="novo" onClick={limpar} />
           </TFormActionsLeft>
         </TFormFooter>
       </TForm>
@@ -456,7 +516,7 @@ export function CategoriaFormList() {                                  // troca
 }
 ```
 
-Sem filtro e sem auditoria. Situação só aparece na edição. Várias tabelas de
+Sem filtro e sem auditoria. Situação só aparece na edição, e só se a API de alterar recebe `ativo` (§0); senão, fica na grade. Várias tabelas de
 apoio do mesmo assunto podem dividir uma tela por `TTabs` (como
 `AuxiliaresProduto`), cada aba um FormList.
 
@@ -471,7 +531,7 @@ campo `rotuloOculto` (o rótulo continua no DOM para leitor de tela).
 ```tsx
 <TRow>
   <TCol width="rotulo" align="right"><TRotulo htmlFor="nome" required>Nome</TRotulo></TCol>
-  <TCol><TEntry name="nome" label="Nome" rotuloOculto required /></TCol>
+  <TCol><TEntry name="nome" id="nome" label="Nome" rotuloOculto required /></TCol>
 </TRow>
 ```
 
@@ -516,8 +576,9 @@ O `guardiao-layout` reprova a tela que fugir deste documento. Três passos:
 - [ ] Um campo por `TRow`; lado a lado só nos grupos da §1 ou onde o plano mandou
 - [ ] Linha dividida: cada campo na sua `TCol`, com `longo`
 - [ ] Label em cima (ou ao lado em toda a tela, se o plano pediu)
-- [ ] Form: Situação, `TAuditoria` e rodapé Voltar · Novo | Salvar
-- [ ] List: filtros com Filtrar · Limpar · Novo; colunas na ordem da §4.1
+- [ ] Form: Situação (se a API recebe `ativo`), `TAuditoria` e rodapé Salvar · Novo · Voltar
+- [ ] FormList: rodapé Salvar · Novo
+- [ ] List: filtros com Buscar · Limpar · Novo · Exportar · Pdf; colunas na ordem da §4.1
 - [ ] Mensagens por `useMessage`, confirmação por `useQuestion`
 - [ ] `medir-campos.mjs` sem violação a 1440 px
 - [ ] 768 px e 360 px sem rolagem horizontal e sem campo espremido

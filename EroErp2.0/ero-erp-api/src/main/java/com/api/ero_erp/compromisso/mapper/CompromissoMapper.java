@@ -19,6 +19,7 @@ public final class CompromissoMapper {
 
     public static CompromissoResponseDto toResponse(Compromisso c) {
         Usuario criador = c.getCreatedBy();
+        Usuario alterador = c.getUpdatedBy();
         return new CompromissoResponseDto(
                 c.getId(),
                 c.getFilial().getId(),
@@ -41,6 +42,7 @@ public final class CompromissoMapper {
                 convidados(c),
                 criador != null ? criador.getNome() : null,
                 c.getCreatedAt(),
+                alterador != null ? alterador.getNome() : null,
                 c.getUpdatedAt());
     }
 

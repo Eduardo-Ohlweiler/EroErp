@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { z } from 'zod'
 import { IconAdicionar, IconAlerta } from '@/assets/icons'
-import { TBadge, TButton, TEntry, TPage, TPanel, TSelect } from '@/components/common'
+import { TBadge, TButton, TEntry, TPage, TPanel, TCombo } from '@/components/common'
 import { SeletorPaleta } from '@/components/tenant/SeletorPaleta'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
@@ -194,7 +194,7 @@ export function TenantForm() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <TSelect
+          <TCombo
             label="Período de acesso"
             opcoes={OPCOES_PERIODO_ACESSO}
             value={periodo}

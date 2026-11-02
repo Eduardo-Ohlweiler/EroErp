@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useController } from 'react-hook-form'
 import { IconBusca, IconFechar } from '@/assets/icons'
 import { useDebounce } from '@/hooks/useDebounce'
 import { handleApiError } from '@/services/api'
 import type { SelectOption } from '@/types/comum'
+import { classeDoRotulo, textoDoRotulo, useLigadoAoForm } from './Campo'
+import { useLargura, type Largura } from './larguras'
+import { useSomenteLeituraDoForm } from './somenteLeitura'
 
-interface TComboMultiProps {
+interface TDBComboMultiProps {
   label: string
+  /** Dentro de um `TForm`, liga ao campo (uma lista de `{ id, nome }`). */
+  name?: string
   /** Os escolhidos, com o nome — o chip precisa dele sem nova busca. */
-  value: SelectOption[]
-  onChange: (valor: SelectOption[]) => void
+  value?: SelectOption[]
+  onChange?: (valor: SelectOption[]) => void
   /** Busca no servidor (um `/select`). Recebe `undefined` na carga inicial. */
   buscar: (termo?: string) => Promise<SelectOption[]>
   /** Ids que não podem ser escolhidos aqui — ex.: o responsável entre os convidados. */
@@ -20,17 +26,42 @@ interface TComboMultiProps {
   ajuda?: string
   className?: string
   disabled?: boolean
+  /** Token da escala — só quando o padrão (`metade`) não serve. */
+  width?: Largura
+  required?: boolean
+  rotuloOculto?: boolean
 }
 
 /**
- * O {@link TCombo} para vários: cada escolhido vira um chip removível, e a
+ * O {@link TDBCombo} para vários: cada escolhido vira um chip removível, e a
  * busca continua embaixo. Mesma busca no servidor com debounce, mesmo
  * teclado (↓/↑, Enter, Esc); Backspace com a busca vazia tira o último chip.
  */
-export function TComboMulti({
+export function TDBComboMulti(props: TDBComboMultiProps) {
+  const ligado = useLigadoAoForm(props.name, props.onChange !== undefined || props.value !== undefined)
+  if (ligado) return <TDBComboMultiLigado {...props} name={props.name!} />
+  return <TDBComboMultiBase {...props} />
+}
+
+function TDBComboMultiLigado(props: TDBComboMultiProps & { name: string }) {
+  const { field, fieldState } = useController({ name: props.name })
+  return (
+    <TDBComboMultiBase
+      {...props}
+      value={(field.value as SelectOption[] | null | undefined) ?? []}
+      onChange={field.onChange}
+      error={props.error ?? fieldState.error?.message}
+    />
+  )
+}
+
+function TDBComboMultiBase({
   label,
-  value,
-  onChange,
+  value = [],
+  onChange = () => {},
+  width,
+  required,
+  rotuloOculto,
   buscar,
   excluir = [],
   maximo,
@@ -38,9 +69,11 @@ export function TComboMulti({
   error,
   ajuda,
   className = '',
-  disabled = false,
-}: TComboMultiProps) {
+  disabled: desabilitado = false,
+}: TDBComboMultiProps) {
   const idBase = useId()
+  const largura = useLargura(width, 'metade')
+  const disabled = useSomenteLeituraDoForm() || desabilitado
   const idInput = `${idBase}-input`
   const idLista = `${idBase}-lista`
   const idErro = `${idBase}-erro`
@@ -116,9 +149,9 @@ export function TComboMulti({
   }
 
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`} ref={raiz}>
-      <label htmlFor={idInput} className="text-caption text-txt-secondary">
-        {label}
+    <div className={`flex flex-col gap-1.5 ${largura} ${className}`} ref={raiz}>
+      <label htmlFor={idInput} className={classeDoRotulo(rotuloOculto)}>
+        {textoDoRotulo(label, required)}
       </label>
 
       <div

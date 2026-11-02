@@ -24,7 +24,9 @@ public final class FilialMapper {
                 matriz != null ? matriz.getPessoa().getNome() : null,
                 filial.getCor(),
                 filial.getAtivo(),
+                filial.getCreatedBy() != null ? filial.getCreatedBy().getNome() : null,
                 filial.getCreatedAt(),
+                filial.getUpdatedBy() != null ? filial.getUpdatedBy().getNome() : null,
                 filial.getUpdatedAt());
     }
 

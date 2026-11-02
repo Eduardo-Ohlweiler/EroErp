@@ -12,7 +12,8 @@ Alvo: **$ARGUMENTS**
 O padrão é o do EroErp antigo: um kit pronto, campos com tamanho padrão, e toda
 tela copiada de um modelo (doc 14). Decisões do Eduardo de 2026-10-23: label em
 cima, nomes do antigo (`TCombo` fixo, `TDBCombo` banco), largura por token da
-escala, lista com botões Filtrar · Limpar · Novo.
+escala, lista com botões Buscar · Limpar · Novo · Exportar · Pdf, Form com
+Salvar · Novo · Voltar e FormList com Salvar · Novo (2026-11-02).
 
 ## 0. Preparar
 
@@ -62,8 +63,9 @@ seu modelo** do doc 14 §4 com o kit:
   um por `TRow`, lado a lado só nos grupos da §1;
 - larguras pelo padrão do componente, `width` por token só onde preciso, nenhum
   `grid` ou classe de largura sobrando na página;
-- Form com Situação, `TAuditoria` e rodapé Voltar · Novo | Salvar;
-- **List com filtros por botão** (Filtrar/Enter · Limpar · Novo) no lugar da
+- Form com Situação (se a API de alterar recebe `ativo`), `TAuditoria` e
+  rodapé Salvar · Novo · Voltar; FormList com Salvar · Novo;
+- **List com filtros por botão** (Buscar/Enter · Limpar · Novo · Exportar · Pdf) no lugar da
   busca automática por `useDebounce` — mudança aprovada pelo Eduardo em
   2026-10-23, faz parte da migração;
 - mensagens por `useMessage`, confirmação por `useQuestion`; spinner, faixa de

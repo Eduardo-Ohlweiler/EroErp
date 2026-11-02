@@ -21,11 +21,15 @@ interface TPanelProps {
  * (`#EAEEF6`). No escuro a sombra não aparece — fundo escuro engole sombra —
  * então é a borda (`#16305A`) que desenha a aresta do card. A mesma classe
  * serve os dois: quem muda é o token.
+ *
+ * `TRow` seguida de `TRow` ganha o mesmo respiro que tem no `TForm` (gap-4).
+ * Só entre linhas do kit: as telas antigas, com vários filhos soltos no
+ * painel, ficam como estão.
  */
 export function TPanel({ title, subtitle, actions, children, className = '' }: TPanelProps) {
   return (
     <section
-      className={`rounded-lg border border-line bg-surface p-5 shadow-card ${className}`}
+      className={`rounded-lg border border-line bg-surface p-5 shadow-card [&>[data-trow]+[data-trow]]:mt-4 ${className}`}
     >
       {(title || actions) && (
         <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">

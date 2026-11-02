@@ -21,6 +21,8 @@ public record FilialResponseDto(
         String matrizNome,
         String cor,
         Boolean ativo,
+        String criadoPorNome,
         Instant createdAt,
+        String alteradoPorNome,
         Instant updatedAt
 ) {}

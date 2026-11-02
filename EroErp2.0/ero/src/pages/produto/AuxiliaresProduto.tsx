@@ -1,29 +1,32 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useCallback, useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { useSearchParams } from 'react-router-dom'
-import { toast } from 'react-toastify'
-import { IconAdicionar, IconBusca } from '@/assets/icons'
 import {
   TBadge,
   TButton,
-  TCombo,
+  TDBCombo,
   TDataGrid,
   TDataGridFooter,
   TEntry,
+  TForm,
+  TFormActionsLeft,
+  TFormFooter,
   TPage,
-  TPanel,
-  TSelect,
+  TRow,
   TTabPanel,
   TTabs,
+  useMessage,
+  useQuestion,
   type Aba,
   type Coluna,
 } from '@/components/common'
 import { useAuth } from '@/hooks/useAuth'
-import { useDebounce } from '@/hooks/useDebounce'
 import { useSomenteLeitura } from '@/hooks/useSomenteLeitura'
-import { handleApiError } from '@/services/api'
 import { auxiliarService, subgrupoService } from '@/services/auxiliarProdutoService'
 import type { AuxiliarResponse, AuxiliarSimples, SubgrupoResponse } from '@/types/auxiliarProduto'
 import type { Page } from '@/types/comum'
+import { z } from 'zod'
 
 const ABAS: Aba[] = [
   { id: 'grupos', rotulo: 'Grupos' },
@@ -54,6 +57,7 @@ export function AuxiliaresProduto() {
   return (
     <TPage
       title="Auxiliares de produto"
+      breadcrumb={['Cadastros', 'Auxiliares de produto']}
       subtitle="Como o seu tenant organiza os produtos. Tudo opcional no cadastro do produto."
     >
       <TTabs abas={ABAS} ativa={aba} onChange={(id) => setBusca({ aba: id }, { replace: true })} />
@@ -75,208 +79,150 @@ export function AuxiliaresProduto() {
 
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Busca e situação, comuns às quatro abas. */
-function useFiltrosDaLista() {
-  const [termo, setTermo] = useState('')
-  const [ativo, setAtivo] = useState('true')
-  const [pagina, setPagina] = useState(0)
-  const termoBusca = useDebounce(termo)
-  return { termo, setTermo, termoBusca, ativo, setAtivo, pagina, setPagina }
-}
-
-function Filtros({
-  termo,
-  ativo,
-  aoMudarTermo,
-  aoMudarAtivo,
-}: {
-  termo: string
-  ativo: string
-  aoMudarTermo: (v: string) => void
-  aoMudarAtivo: (v: string) => void
-}) {
-  return (
-    <>
-      <TEntry
-        label="Busca"
-        placeholder="Nome"
-        value={termo}
-        suffix={<IconBusca className="size-4" />}
-        onChange={(e) => aoMudarTermo(e.target.value)}
-      />
-      <TSelect
-        label="Situação"
-        vazio="Todas"
-        opcoes={[
-          { valor: 'true', rotulo: 'Ativo' },
-          { valor: 'false', rotulo: 'Inativo' },
-        ]}
-        value={ativo}
-        onChange={(e) => aoMudarAtivo(e.target.value)}
-      />
-    </>
-  )
-}
-
 function situacao(ativo: boolean) {
   return ativo ? <TBadge tom="sucesso">Ativo</TBadge> : <TBadge tom="neutro">Inativo</TBadge>
 }
 
 // ─── Grupo, categoria e marca ────────────────────────────────────────────
 
+const schemaSimples = z.object({
+  nome: z.string().trim().min(1, 'Informe o nome').max(100, 'Até 100 caracteres'),
+})
+
+type DadosSimples = z.infer<typeof schemaSimples>
+
+const SIMPLES_VAZIO: DadosSimples = { nome: '' }
+
+/**
+ * FormList (doc 14 §4.3): o formulário em cima cadastra ou, com uma linha
+ * escolhida na grade, edita; a grade embaixo lista ativos e inativos, sem
+ * filtro. Inativar e reativar são da grade.
+ */
 function PainelSimples({ tipo }: { tipo: AuxiliarSimples }) {
   const { sessao } = useAuth()
   const somenteLeitura = useSomenteLeitura('AUXILIARES_PRODUTO')
+  const msg = useMessage()
+  const { confirmar } = useQuestion()
   const servico = auxiliarService(tipo)
   const { singular, feminino } = NOMES[tipo]
-  const f = useFiltrosDaLista()
-
+  const form = useForm<DadosSimples>({ resolver: zodResolver(schemaSimples), defaultValues: SIMPLES_VAZIO })
+  /** O id em edição; sem ele, o formulário cadastra. */
+  const [editando, setEditando] = useState<string>()
+  const [pagina, setPagina] = useState(0)
   const [dados, setDados] = useState<Page<AuxiliarResponse>>()
   const [carregando, setCarregando] = useState(true)
-  /** O registro em edição; sem ele, o formulário cadastra. */
-  const [editando, setEditando] = useState<AuxiliarResponse>()
-  const [nome, setNome] = useState('')
-  const [erro, setErro] = useState<string>()
-  const [salvando, setSalvando] = useState(false)
 
   const carregar = useCallback(() => {
     setCarregando(true)
     servico
-      .getAll({
-        termo: f.termoBusca || undefined,
-        ativo: f.ativo === '' ? undefined : f.ativo === 'true',
-        page: f.pagina,
-        size: 20,
-      })
+      .getAll({ page: pagina, size: 20 })
       .then(setDados)
-      .catch(handleApiError)
+      .catch(msg.erroApi)
       .finally(() => setCarregando(false))
     // `sessao.tenantId` é sinal de invalidação: trocar de tenant refaz a consulta.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessao?.tenantId, tipo, f.termoBusca, f.ativo, f.pagina])
+  }, [sessao?.tenantId, tipo, pagina])
 
   useEffect(carregar, [carregar])
 
-  function limpar() {
+  const limpar = () => {
     setEditando(undefined)
-    setNome('')
-    setErro(undefined)
+    form.reset(SIMPLES_VAZIO)
   }
 
-  async function salvar(evento: FormEvent) {
-    evento.preventDefault()
-    const texto = nome.trim()
-    if (!texto) return setErro('Informe o nome')
-    if (texto.length > 100) return setErro('Até 100 caracteres')
-    setSalvando(true)
+  const editar = (item: AuxiliarResponse) => {
+    setEditando(item.id)
+    form.reset({ nome: item.nome })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const salvar = async (d: DadosSimples) => {
+    const nome = d.nome.trim()
     try {
       if (editando) {
-        await servico.update(editando.id, texto)
-        toast.success(`${maiuscula(singular)} ${feminino ? 'salva' : 'salvo'}`)
+        await servico.update(editando, nome)
+        msg.sucesso(`${maiuscula(singular)} ${feminino ? 'salva' : 'salvo'}`)
       } else {
-        await servico.create(texto)
-        toast.success(`${maiuscula(singular)} ${feminino ? 'cadastrada' : 'cadastrado'}`)
+        await servico.create(nome)
+        msg.sucesso(`${maiuscula(singular)} ${feminino ? 'cadastrada' : 'cadastrado'}`)
       }
       limpar()
-      carregar()
+      // Na página 0, recarrega; noutra, a troca de página já recarrega — as
+      // duas juntas disparavam duas consultas, e a da página velha podia chegar depois.
+      if (pagina === 0) carregar()
+      else setPagina(0)
     } catch (e) {
-      handleApiError(e)
-    } finally {
-      setSalvando(false)
+      msg.erroApi(e)
     }
   }
 
-  async function alternarAtivo(item: AuxiliarResponse) {
+  const alternar = async (item: AuxiliarResponse) => {
+    if (
+      !(await confirmar({
+        mensagem: `${item.ativo ? 'Inativar' : 'Reativar'} ${item.nome}?`,
+        variante: item.ativo ? 'inativar' : 'reativar',
+      }))
+    )
+      return
     try {
       await servico.alterarAtivo(item.id, !item.ativo)
-      toast.success(`${item.nome} foi ${item.ativo ? 'inativad' : 'reativad'}${feminino ? 'a' : 'o'}`)
+      msg.sucesso(`${item.nome} foi ${item.ativo ? 'inativad' : 'reativad'}${feminino ? 'a' : 'o'}`)
       carregar()
     } catch (e) {
-      handleApiError(e)
+      msg.erroApi(e)
     }
   }
 
   const colunas: Coluna<AuxiliarResponse>[] = [
     { chave: 'nome', cabecalho: 'Nome', render: (a) => a.nome },
-    { chave: 'situacao', cabecalho: 'Situação', className: 'w-32', render: (a) => situacao(a.ativo) },
+    {
+      chave: 'situacao',
+      cabecalho: 'Situação',
+      className: 'w-px whitespace-nowrap',
+      render: (a) => situacao(a.ativo),
+    },
   ]
 
   return (
     <div className="flex flex-col gap-5 pt-5">
-      {!somenteLeitura && (
-        <TPanel title={editando ? `Editar ${singular}` : `${feminino ? 'Nova' : 'Novo'} ${singular}`}>
-          <form onSubmit={salvar} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-start">
-            <TEntry
-              label="Nome"
-              className="min-w-0 sm:flex-1"
-              maxLength={100}
-              value={nome}
-              error={erro}
-              onChange={(e) => {
-                setNome(e.target.value)
-                setErro(undefined)
-              }}
-            />
-            <div className="flex gap-2 sm:mt-6">
-              {editando && (
-                <TButton type="button" variant="secondary" onClick={limpar}>
-                  Cancelar
-                </TButton>
-              )}
-              <TButton type="submit" loading={salvando}>
-                {!editando && <IconAdicionar className="size-4" />}
-                {editando ? 'Salvar' : 'Adicionar'}
-              </TButton>
-            </div>
-          </form>
-        </TPanel>
-      )}
-
-      <TPanel>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Filtros
-            termo={f.termo}
-            ativo={f.ativo}
-            aoMudarTermo={(v) => {
-              f.setTermo(v)
-              f.setPagina(0)
-            }}
-            aoMudarAtivo={(v) => {
-              f.setAtivo(v)
-              f.setPagina(0)
-            }}
-          />
-        </div>
-      </TPanel>
+      <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
+        <TRow>
+          <TEntry name="nome" label="Nome" required maxLength={100} />
+        </TRow>
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+            <TButton variant="novo" onClick={limpar} />
+          </TFormActionsLeft>
+        </TFormFooter>
+      </TForm>
 
       <TDataGrid
         colunas={colunas}
         linhas={dados?.content ?? []}
         chaveDe={(a) => a.id}
         carregando={carregando}
-        onLinhaClick={
-          somenteLeitura
-            ? undefined
-            : (a) => {
-                setEditando(a)
-                setNome(a.nome)
-                setErro(undefined)
-              }
-        }
+        onLinhaClick={somenteLeitura ? undefined : editar}
         tituloCartao={(a) => a.nome}
         vazioTitulo={`${feminino ? 'Nenhuma' : 'Nenhum'} ${singular} ${feminino ? 'encontrada' : 'encontrado'}`}
-        vazioDescricao={somenteLeitura ? 'Ajuste os filtros.' : 'Ajuste os filtros ou cadastre acima.'}
+        vazioDescricao={somenteLeitura ? '' : 'Cadastre acima.'}
         acoes={
           somenteLeitura
             ? undefined
             : (a) => (
-                <TButton variant="secondary" size="sm" onClick={() => void alternarAtivo(a)}>
-                  {a.ativo ? 'Inativar' : 'Reativar'}
-                </TButton>
+                <>
+                  <TButton variant="editar" label="" size="sm" onClick={() => editar(a)} />
+                  <TButton
+                    variant={a.ativo ? 'inativar' : 'reativar'}
+                    label=""
+                    size="sm"
+                    onClick={() => void alternar(a)}
+                  />
+                </>
               )
         }
       />
-      <TDataGridFooter pagina={dados} onPaginaChange={f.setPagina} />
+      <TDataGridFooter pagina={dados} onPaginaChange={setPagina} />
     </div>
   )
 }
@@ -285,83 +231,89 @@ function PainelSimples({ tipo }: { tipo: AuxiliarSimples }) {
 
 const grupos = auxiliarService('grupos')
 
+const schemaSubgrupo = z.object({
+  grupoId: z.string().min(1, 'Escolha o grupo'),
+  nome: z.string().trim().min(1, 'Informe o nome').max(100, 'Até 100 caracteres'),
+})
+
+type DadosSubgrupo = z.infer<typeof schemaSubgrupo>
+
+const SUBGRUPO_VAZIO: DadosSubgrupo = { grupoId: '', nome: '' }
+
+/** FormList como o `PainelSimples`, com o grupo a que o subgrupo pertence. */
 function PainelSubgrupos() {
   const { sessao } = useAuth()
   const somenteLeitura = useSomenteLeitura('AUXILIARES_PRODUTO')
-  const f = useFiltrosDaLista()
-  const [grupoFiltro, setGrupoFiltro] = useState('')
-
+  const msg = useMessage()
+  const { confirmar } = useQuestion()
+  const form = useForm<DadosSubgrupo>({ resolver: zodResolver(schemaSubgrupo), defaultValues: SUBGRUPO_VAZIO })
+  /** O id em edição; sem ele, o formulário cadastra. */
+  const [editando, setEditando] = useState<string>()
+  /** O nome do grupo do subgrupo em edição, para o combo não abrir com o id cru. */
+  const [grupoRotulo, setGrupoRotulo] = useState('')
+  const [pagina, setPagina] = useState(0)
   const [dados, setDados] = useState<Page<SubgrupoResponse>>()
   const [carregando, setCarregando] = useState(true)
-  const [editando, setEditando] = useState<SubgrupoResponse>()
-  const [grupoId, setGrupoId] = useState('')
-  const [grupoRotulo, setGrupoRotulo] = useState('')
-  const [nome, setNome] = useState('')
-  const [erros, setErros] = useState<{ grupo?: string; nome?: string }>({})
-  const [salvando, setSalvando] = useState(false)
 
   const carregar = useCallback(() => {
     setCarregando(true)
     subgrupoService
-      .getAll({
-        termo: f.termoBusca || undefined,
-        grupoId: grupoFiltro || undefined,
-        ativo: f.ativo === '' ? undefined : f.ativo === 'true',
-        page: f.pagina,
-        size: 20,
-      })
+      .getAll({ page: pagina, size: 20 })
       .then(setDados)
-      .catch(handleApiError)
+      .catch(msg.erroApi)
       .finally(() => setCarregando(false))
+    // `sessao.tenantId` é sinal de invalidação: trocar de tenant refaz a consulta.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessao?.tenantId, f.termoBusca, f.ativo, f.pagina, grupoFiltro])
+  }, [sessao?.tenantId, pagina])
 
   useEffect(carregar, [carregar])
 
-  // O grupo do filtro é do tenant de antes: trocar de tenant o limpa.
-  useEffect(() => setGrupoFiltro(''), [sessao?.tenantId])
-
-  function limpar() {
+  const limpar = () => {
     setEditando(undefined)
-    setGrupoId('')
     setGrupoRotulo('')
-    setNome('')
-    setErros({})
+    form.reset(SUBGRUPO_VAZIO)
   }
 
-  async function salvar(evento: FormEvent) {
-    evento.preventDefault()
-    const texto = nome.trim()
-    const novos = {
-      grupo: grupoId ? undefined : 'Escolha o grupo',
-      nome: !texto ? 'Informe o nome' : texto.length > 100 ? 'Até 100 caracteres' : undefined,
-    }
-    if (novos.grupo || novos.nome) return setErros(novos)
-    setSalvando(true)
+  const editar = (item: SubgrupoResponse) => {
+    setEditando(item.id)
+    setGrupoRotulo(item.grupoNome)
+    form.reset({ grupoId: item.grupoId, nome: item.nome })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const salvar = async (d: DadosSubgrupo) => {
+    const nome = d.nome.trim()
     try {
       if (editando) {
-        await subgrupoService.update(editando.id, grupoId, texto)
-        toast.success('Subgrupo salvo')
+        await subgrupoService.update(editando, d.grupoId, nome)
+        msg.sucesso('Subgrupo salvo')
       } else {
-        await subgrupoService.create(grupoId, texto)
-        toast.success('Subgrupo cadastrado')
+        await subgrupoService.create(d.grupoId, nome)
+        msg.sucesso('Subgrupo cadastrado')
       }
       limpar()
-      carregar()
+      // Na página 0, recarrega; noutra, a troca de página já recarrega.
+      if (pagina === 0) carregar()
+      else setPagina(0)
     } catch (e) {
-      handleApiError(e)
-    } finally {
-      setSalvando(false)
+      msg.erroApi(e)
     }
   }
 
-  async function alternarAtivo(item: SubgrupoResponse) {
+  const alternar = async (item: SubgrupoResponse) => {
+    if (
+      !(await confirmar({
+        mensagem: `${item.ativo ? 'Inativar' : 'Reativar'} ${item.nome}?`,
+        variante: item.ativo ? 'inativar' : 'reativar',
+      }))
+    )
+      return
     try {
       await subgrupoService.alterarAtivo(item.id, !item.ativo)
-      toast.success(`${item.nome} foi ${item.ativo ? 'inativado' : 'reativado'}`)
+      msg.sucesso(`${item.nome} foi ${item.ativo ? 'inativado' : 'reativado'}`)
       carregar()
     } catch (e) {
-      handleApiError(e)
+      msg.erroApi(e)
     }
   }
 
@@ -377,113 +329,64 @@ function PainelSubgrupos() {
         </span>
       ),
     },
-    { chave: 'situacao', cabecalho: 'Situação', className: 'w-32', render: (s) => situacao(s.ativo) },
+    {
+      chave: 'situacao',
+      cabecalho: 'Situação',
+      className: 'w-px whitespace-nowrap',
+      render: (s) => situacao(s.ativo),
+    },
   ]
 
   return (
     <div className="flex flex-col gap-5 pt-5">
-      {!somenteLeitura && (
-        <TPanel title={editando ? 'Editar subgrupo' : 'Novo subgrupo'}>
-          <form
-            onSubmit={salvar}
-            noValidate
-            className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-start"
-          >
-            <TCombo
-              label="Grupo"
-              placeholder="Busque o grupo"
-              value={grupoId}
-              rotuloInicial={grupoRotulo}
-              onChange={(v) => {
-                setGrupoId(v)
-                setErros((e) => ({ ...e, grupo: undefined }))
-              }}
-              buscar={(t) => grupos.select(t)}
-              error={erros.grupo}
-            />
-            <TEntry
-              label="Nome"
-              maxLength={100}
-              value={nome}
-              error={erros.nome}
-              onChange={(e) => {
-                setNome(e.target.value)
-                setErros((x) => ({ ...x, nome: undefined }))
-              }}
-            />
-            <div className="flex gap-2 sm:mt-6">
-              {editando && (
-                <TButton type="button" variant="secondary" onClick={limpar}>
-                  Cancelar
-                </TButton>
-              )}
-              <TButton type="submit" loading={salvando}>
-                {!editando && <IconAdicionar className="size-4" />}
-                {editando ? 'Salvar' : 'Adicionar'}
-              </TButton>
-            </div>
-          </form>
-        </TPanel>
-      )}
-
-      <TPanel>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Filtros
-            termo={f.termo}
-            ativo={f.ativo}
-            aoMudarTermo={(v) => {
-              f.setTermo(v)
-              f.setPagina(0)
-            }}
-            aoMudarAtivo={(v) => {
-              f.setAtivo(v)
-              f.setPagina(0)
-            }}
-          />
-          <TCombo
+      <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
+        <TRow>
+          <TDBCombo
+            name="grupoId"
             label="Grupo"
-            vazio="Todos"
-            placeholder="Todos"
-            value={grupoFiltro}
-            onChange={(v) => {
-              setGrupoFiltro(v)
-              f.setPagina(0)
-            }}
+            required
+            placeholder="Busque o grupo"
+            rotuloInicial={grupoRotulo}
             buscar={(t) => grupos.select(t)}
           />
-        </div>
-      </TPanel>
+        </TRow>
+        <TRow>
+          <TEntry name="nome" label="Nome" required maxLength={100} />
+        </TRow>
+        <TFormFooter>
+          <TFormActionsLeft>
+            <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
+            <TButton variant="novo" onClick={limpar} />
+          </TFormActionsLeft>
+        </TFormFooter>
+      </TForm>
 
       <TDataGrid
         colunas={colunas}
         linhas={dados?.content ?? []}
         chaveDe={(s) => s.id}
         carregando={carregando}
-        onLinhaClick={
-          somenteLeitura
-            ? undefined
-            : (s) => {
-                setEditando(s)
-                setGrupoId(s.grupoId)
-                setGrupoRotulo(s.grupoNome)
-                setNome(s.nome)
-                setErros({})
-              }
-        }
+        onLinhaClick={somenteLeitura ? undefined : editar}
         tituloCartao={(s) => s.nome}
         vazioTitulo="Nenhum subgrupo encontrado"
-        vazioDescricao={somenteLeitura ? 'Ajuste os filtros.' : 'Ajuste os filtros ou cadastre acima.'}
+        vazioDescricao={somenteLeitura ? '' : 'Cadastre acima.'}
         acoes={
           somenteLeitura
             ? undefined
             : (s) => (
-                <TButton variant="secondary" size="sm" onClick={() => void alternarAtivo(s)}>
-                  {s.ativo ? 'Inativar' : 'Reativar'}
-                </TButton>
+                <>
+                  <TButton variant="editar" label="" size="sm" onClick={() => editar(s)} />
+                  <TButton
+                    variant={s.ativo ? 'inativar' : 'reativar'}
+                    label=""
+                    size="sm"
+                    onClick={() => void alternar(s)}
+                  />
+                </>
               )
         }
       />
-      <TDataGridFooter pagina={dados} onPaginaChange={f.setPagina} />
+      <TDataGridFooter pagina={dados} onPaginaChange={setPagina} />
     </div>
   )
 }

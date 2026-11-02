@@ -14,6 +14,8 @@ public record ServicoResponseDto(
         String observacao,
         Boolean ativo,
         List<ServicoFilialResponseDto> filiais,
+        String criadoPorNome,
         Instant createdAt,
+        String alteradoPorNome,
         Instant updatedAt
 ) {}
