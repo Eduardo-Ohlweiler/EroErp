@@ -10,9 +10,11 @@ import fs from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+/** Onde o front responde: OLHAR_FRONT, senão o Vite padrão. Outra sessão no 5173 → suba um Vite no 5174 e passe OLHAR_FRONT=http://localhost:5174. */
+const FRONT = process.env.OLHAR_FRONT ?? 'http://localhost:5173'
 const CHROME = process.env.CHROME_PATH
   ?? (process.platform === 'win32'
-    ? 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+    ? 'C:/Program Files/Google/Chrome/Application/chrome.exe'
     : '/usr/bin/google-chrome')
 // Credencial do superadmin de desenvolvimento (ero-erp-api/.env.example).
 const EMAIL = process.env.OLHAR_EMAIL ?? 'ohlweilereduardo@gmail.com'
@@ -68,7 +70,7 @@ export async function abrir() {
     try { t.res = JSON.parse(await r.text()) } catch { t.res = null }
   })
   await pg.addInitScript(() => { window.print = () => {} })
-  await pg.goto('http://localhost:5173/app/login', { waitUntil: 'domcontentloaded' })
+  await pg.goto(`${FRONT}/app/login`, { waitUntil: 'domcontentloaded' })
   await pg.fill('input[type="email"]', EMAIL)
   await pg.fill('input[type="password"]', SENHA)
   await pg.click('button[type="submit"]')

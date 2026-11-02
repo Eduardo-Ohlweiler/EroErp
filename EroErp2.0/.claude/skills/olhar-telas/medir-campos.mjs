@@ -14,7 +14,7 @@
  * A régua cobre TAMANHO. Disposição (ordem, agrupamento, um campo longo por
  * linha) só se confere olhando o screenshot do olhar.mjs.
  *
- * Mesmas variáveis do olhar.mjs: CHROME_PATH, OLHAR_EMAIL, OLHAR_SENHA. No Git
+ * Mesmas variáveis do olhar.mjs: CHROME_PATH, OLHAR_FRONT, OLHAR_EMAIL, OLHAR_SENHA. No Git
  * Bash do Windows, rode com MSYS_NO_PATHCONV=1.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -125,6 +125,8 @@ export function relatorio(rota, larguraTela, avaliados) {
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { chromium } = await import('../../../ero/node_modules/playwright-core/index.mjs')
 
+  /** Onde o front responde: OLHAR_FRONT, senão o Vite padrão. Outra sessão no 5173 → suba um Vite no 5174 e passe OLHAR_FRONT=http://localhost:5174. */
+  const FRONT = process.env.OLHAR_FRONT ?? 'http://localhost:5173'
   const CHROME = process.env.CHROME_PATH
     ?? (process.platform === 'win32'
       ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
@@ -161,7 +163,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const pg = await (await b.newContext({ viewport: { width: larguraTela, height: 1100 } })).newPage()
   await pg.addInitScript(() => { window.print = () => {} })
 
-  await pg.goto('http://localhost:5173/app/login', { waitUntil: 'domcontentloaded' })
+  await pg.goto(`${FRONT}/app/login`, { waitUntil: 'domcontentloaded' })
   await pg.fill('input[type="email"]', EMAIL)
   await pg.fill('input[type="password"]', SENHA)
   await pg.click('button[type="submit"]')

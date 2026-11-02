@@ -10,7 +10,7 @@
  * Sai em <tmp do SO>/olhar/<nome>.png (e .pdf). Depois ABRA o arquivo — gerar
  * e não olhar não vale de nada.
  *
- * Variáveis opcionais: CHROME_PATH, OLHAR_EMAIL, OLHAR_SENHA. Sem as duas
+ * Variáveis opcionais: CHROME_PATH, OLHAR_FRONT, OLHAR_EMAIL, OLHAR_SENHA. Sem as duas
  * últimas, entra com o superadmin do ero-erp-api/.env.
  *
  * No Git Bash do Windows, rode com MSYS_NO_PATHCONV=1: sem isso o shell
@@ -21,6 +21,8 @@ import { mkdirSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+/** Onde o front responde: OLHAR_FRONT, senão o Vite padrão. Outra sessão no 5173 → suba um Vite no 5174 e passe OLHAR_FRONT=http://localhost:5174. */
+const FRONT = process.env.OLHAR_FRONT ?? 'http://localhost:5173'
 const CHROME = process.env.CHROME_PATH
   ?? (process.platform === 'win32'
     ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
@@ -61,14 +63,14 @@ pg.on('console', (m) => m.type() === 'error' && erros.push(m.text()))
 // Sem isto o window.print() abre diálogo e trava o headless.
 await pg.addInitScript(() => { window.print = () => {} })
 
-await pg.goto('http://localhost:5173/app/login', { waitUntil: 'domcontentloaded' })
+await pg.goto(`${FRONT}/app/login`, { waitUntil: 'domcontentloaded' })
 await pg.fill('input[type="email"]', EMAIL)
 await pg.fill('input[type="password"]', SENHA)
 await pg.click('button[type="submit"]')
 // `aside` e não `**/app**`: esse padrão casa com a própria /app/login.
 await pg.waitForSelector('aside', { timeout: 20000 })
 
-await pg.goto(`http://localhost:5173${rota}`, { waitUntil: 'domcontentloaded' })
+await pg.goto(`${FRONT}${rota}`, { waitUntil: 'domcontentloaded' })
 // Dá tempo às consultas e às animações de layout.
 await pg.waitForTimeout(1800)
 
