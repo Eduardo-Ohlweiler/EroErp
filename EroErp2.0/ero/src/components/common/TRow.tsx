@@ -11,7 +11,9 @@ import { CLASSE_LARGURA, DentroDaLinha, type Largura } from './larguras'
 export function TRow({ children }: { children: ReactNode }) {
   return (
     <DentroDaLinha.Provider value>
-      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start">{children}</div>
+      <div data-trow className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start">
+        {children}
+      </div>
     </DentroDaLinha.Provider>
   )
 }
