@@ -126,9 +126,9 @@ export function MovimentacaoList() {
     { titulo: 'Código', valor: (m) => String(m.produtoCodigo) },
     { titulo: 'Produto', valor: (m) => m.produtoNome },
     { titulo: 'Filial', valor: filiais },
-    { titulo: 'Quantidade', valor: (m) => formatarQuantidadeComSinal(m.quantidade, m.unidadeSigla) },
-    { titulo: 'Saldo antes', valor: (m) => formatarQuantidade(m.quantidadeAnterior, m.unidadeSigla) },
-    { titulo: 'Saldo depois', valor: (m) => formatarQuantidade(m.quantidadePosterior, m.unidadeSigla) },
+    { titulo: 'Quantidade', numerica: true, valor: (m) => formatarQuantidadeComSinal(m.quantidade, m.unidadeSigla) },
+    { titulo: 'Saldo antes', numerica: true, valor: (m) => formatarQuantidade(m.quantidadeAnterior, m.unidadeSigla) },
+    { titulo: 'Saldo depois', numerica: true, valor: (m) => formatarQuantidade(m.quantidadePosterior, m.unidadeSigla) },
     { titulo: 'Motivo', valor: (m) => m.motivo ?? '' },
     { titulo: 'Usuário', valor: (m) => m.usuarioNome ?? '' },
   ]

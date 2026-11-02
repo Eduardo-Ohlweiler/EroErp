@@ -105,7 +105,7 @@ export function ConsultaList() {
     { titulo: 'Responsável', valor: (c) => c.responsavelNome },
     { titulo: 'Filial', valor: (c) => c.filialNome },
     { titulo: 'Situação', valor: (c) => STATUS_ROTULO[c.status] },
-    { titulo: 'Total', valor: (c) => formatarMoeda(c.total) },
+    { titulo: 'Total', numerica: true, valor: (c) => formatarMoeda(c.total) },
   ]
 
   const filtrosAplicados = [

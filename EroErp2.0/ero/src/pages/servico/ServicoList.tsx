@@ -133,6 +133,7 @@ export function ServicoList() {
     { titulo: 'Nome', valor: (s) => s.nome },
     {
       titulo: aplicados.filialId ? `Valor (${filialRotulo})` : 'Valor',
+      numerica: true,
       valor: (s) => valorExibido(s, aplicados.filialId),
     },
     { titulo: 'Valores por filial', valor: (s) => valoresPorFilial(s) },

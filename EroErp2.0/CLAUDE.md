@@ -488,8 +488,10 @@ de entrada.
 
 **`break-inside: avoid` numa caixa mais alta que a página esvazia a página.**
 Só promete não quebrar quem é menor que a página — a linha da tabela, a tira de
-indicadores. Para o título existe `break-after: avoid`; o rodapé precisa de
-`break-before: avoid`.
+indicadores. Para o título existe `break-after: avoid`. O rodapé **não** se
+segura com `break-before: avoid`: logo depois de uma tabela o Chrome o ignora, e
+a última página cheia mandava o rodapé sozinho para uma folha nova. Ele vai no
+`tfoot` da moldura da `Folha`, que o navegador repete no pé de cada página.
 
 **Componente de folha impressa carrega a forma do dado que o pariu.**
 `LinhasDeValor` foi desenhado para número (coluna de 22 % à direita); para

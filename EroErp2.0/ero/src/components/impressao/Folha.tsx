@@ -37,25 +37,45 @@ export function Folha({
 }) {
   return (
     <article className="folha">
-      {/* Faixa de identificação: marca à esquerda, documento à direita. */}
-      <header className="folha-faixa">
-        <LogoFull className="folha-logo" />
-        <div className="folha-identidade">
-          <h1 className="folha-titulo">{titulo}</h1>
-          {pessoa && <p className="folha-pessoa">{pessoa}</p>}
-        </div>
-      </header>
+      {/*
+        A moldura é uma tabela de uma célula só para o rodapé ir no `tfoot`,
+        que o navegador repete no pé de cada página. Rodapé em fluxo, depois do
+        corpo, ficava órfão: o Chrome não honra `break-before: avoid` logo
+        depois de uma tabela, e quando a última linha enchia a página o rodapé
+        ia sozinho para uma folha nova.
+      */}
+      <table className="folha-moldura">
+        <tbody>
+          <tr>
+            <td>
+              {/* Faixa de identificação: marca à esquerda, documento à direita. */}
+              <header className="folha-faixa">
+                <LogoFull className="folha-logo" />
+                <div className="folha-identidade">
+                  <h1 className="folha-titulo">{titulo}</h1>
+                  {pessoa && <p className="folha-pessoa">{pessoa}</p>}
+                </div>
+              </header>
 
-      {referencia && <p className="folha-referencia">{referencia}</p>}
+              {referencia && <p className="folha-referencia">{referencia}</p>}
 
-      <div className="folha-corpo">{children}</div>
-
-      {/* A numeração de página vem do diálogo do navegador: `counter(page)`
-          dentro de `@page` não é suportado por nenhum deles. */}
-      <footer className="folha-rodape">
-        Documento gerado por EroErp ·{' '}
-        {new Date().toLocaleString('pt-BR')}
-      </footer>
+              <div className="folha-corpo">{children}</div>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>
+              {/* A numeração de página vem do diálogo do navegador: `counter(page)`
+                  dentro de `@page` não é suportado por nenhum deles. */}
+              <footer className="folha-rodape">
+                Documento gerado por EroErp ·{' '}
+                {new Date().toLocaleString('pt-BR')}
+              </footer>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
     </article>
   )
 }

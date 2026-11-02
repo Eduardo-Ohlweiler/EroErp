@@ -1209,8 +1209,30 @@ body {
     font-weight: 500;
   }
 
-  .folha-num {
+  /* Tabela de várias colunas (a do `DocumentoLista` chega a dez): 3 mm de
+     cada lado em cada célula comiam um terço dos 180 mm da folha, e o nome
+     quebrava palavra por palavra. As bordas encostam na margem, como o título
+     da seção. */
+  .folha-tabela:not(.folha-tabela-valores) th,
+  .folha-tabela:not(.folha-tabela-valores) td {
+    padding: 1.6mm 1.5mm;
+  }
+
+  .folha-tabela:not(.folha-tabela-valores) th:first-child,
+  .folha-tabela:not(.folha-tabela-valores) td:first-child {
+    padding-left: 0;
+  }
+
+  .folha-tabela:not(.folha-tabela-valores) th:last-child,
+  .folha-tabela:not(.folha-tabela-valores) td:last-child {
+    padding-right: 0;
+  }
+
+  /* À direita, com a especificidade de `.folha-tabela td` (que alinha à
+     esquerda e, sem isto, ganhava); e "R$ 1,00" não se parte em "R$" e "1,00". */
+  .folha-tabela .folha-num {
     text-align: right;
+    white-space: nowrap;
   }
 
   /* Rótulo → valor → detalhe. O valor puxa o olho, o rótulo o guia, e o
@@ -1264,17 +1286,35 @@ body {
     white-space: pre-wrap;
   }
 
-  /* Fecha o documento, e **não puxa página nova para isso**: 8 mm de respiro
-     mais a altura do rodapé bastavam para ele sozinho virar uma segunda folha
-     com nada além dele. */
+  /* A moldura (ver `Folha.tsx`): uma célula para o documento e o `tfoot` com o
+     rodapé, que o navegador repete no pé de cada página. Ela não é tabela de
+     dados: sem a borda e o respiro das regras de `td` acima, e a linha do
+     corpo **pode** quebrar — o `tr { break-inside: avoid }` geral a empurraria
+     inteira, maior que a página, para a folha seguinte. */
+  .folha-moldura > tbody > tr,
+  .folha-moldura > tfoot > tr {
+    break-inside: auto;
+  }
+
+  .folha-moldura > tbody > tr > td,
+  .folha-moldura > tfoot > tr > td {
+    padding: 0;
+    border: none;
+  }
+
+  .folha-moldura > tfoot {
+    display: table-footer-group;
+  }
+
+  /* Fecha cada página. Rodapé em fluxo, depois do corpo, ficava órfão: o
+     Chrome não honra `break-before: avoid` logo depois de uma tabela, e a
+     última página cheia o mandava sozinho para uma folha nova. */
   .folha-rodape {
     margin-top: 5mm;
     padding-top: 2mm;
     border-top: 1px solid var(--line);
     color: var(--txt-muted);
     font-size: 7.5pt;
-    break-before: avoid;
-    break-inside: avoid;
   }
 
   /* A linha não se parte ao meio — e é a maior unidade que pode prometer isso

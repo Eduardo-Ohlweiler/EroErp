@@ -570,7 +570,7 @@ unidade é pequena:
 | `.folha-tabela tr` | `break-inside: avoid` | a maior unidade que cabe sempre |
 | `.folha-secao-titulo` | `break-after: avoid` | título no pé com o conteúdo na folha seguinte é pior que quebrar a tabela |
 | `.folha-tabela thead` | `display: table-header-group` | da segunda folha em diante seriam números sem nome de coluna |
-| `.folha-rodape` | `break-before: avoid` | senão ele sozinho vira uma última folha |
+| `.folha-rodape` | no `tfoot` da moldura (`.folha-moldura`), repetido em cada página | `break-before: avoid` depois de uma tabela o Chrome ignora, e o rodapé sozinho virava a última folha |
 | `.folha-secao` | **nenhuma** | é o que pode ser mais alto que a página |
 
 ### 8.2 O que não conseguimos entregar

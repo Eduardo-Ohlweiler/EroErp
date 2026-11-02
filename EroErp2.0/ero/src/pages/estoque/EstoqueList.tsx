@@ -99,9 +99,9 @@ export function EstoqueList() {
     { titulo: 'Código', valor: (e) => String(e.produtoCodigo) },
     { titulo: 'Produto', valor: (e) => e.produtoNome },
     { titulo: 'Filial', valor: (e) => e.filialNome },
-    { titulo: 'Saldo', valor: saldo },
-    { titulo: 'Preço de venda', valor: (e) => formatarMoeda(e.precoVenda) },
-    { titulo: 'Mínimo', valor: (e) => formatarQuantidade(e.quantidadeMinima, e.unidadeSigla) },
+    { titulo: 'Saldo', numerica: true, valor: saldo },
+    { titulo: 'Preço de venda', numerica: true, valor: (e) => formatarMoeda(e.precoVenda) },
+    { titulo: 'Mínimo', numerica: true, valor: (e) => formatarQuantidade(e.quantidadeMinima, e.unidadeSigla) },
     { titulo: 'Situação', valor: (e) => (e.ativo ? 'Ativo' : 'Inativo') },
   ]
 

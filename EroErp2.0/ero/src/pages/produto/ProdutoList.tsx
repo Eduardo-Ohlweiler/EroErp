@@ -121,7 +121,7 @@ export function ProdutoList() {
     { titulo: 'Categoria', valor: (p) => p.categoriaNome ?? AUSENTE },
     { titulo: 'Marca', valor: (p) => p.marcaNome ?? AUSENTE },
     { titulo: 'Fornecedor', valor: (p) => p.fornecedorNome ?? AUSENTE },
-    { titulo: 'Custo', valor: (p) => formatarMoeda(p.custo) },
+    { titulo: 'Custo', numerica: true, valor: (p) => formatarMoeda(p.custo) },
     { titulo: 'Situação', valor: (p) => (p.ativo ? 'Ativo' : 'Inativo') },
   ]
 
