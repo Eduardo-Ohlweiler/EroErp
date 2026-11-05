@@ -108,6 +108,16 @@ function corDoToken(el: HTMLElement, nome: string): [number, number, number] {
 
 type Pendente = { alvo: 0 | 1; ponto: number; resolve: (trocar: boolean) => void };
 
+/** Desfoque (px) → nível de mipmap do shader. */
+const nivelDeFoco = (px: number) => Math.log2(1 + Math.max(0, px));
+
+/** Desfoque (px) → teto de pixels do canvas: nítido usa mais resolução, desfocado economiza GPU. */
+function pixelsParaFoco(px: number) {
+  const { nitido, desfocado, desfocadoDesde } = tempos.canvasMaxPixels;
+  const k = clamp01(px / desfocadoDesde);
+  return Math.round(nitido + (desfocado - nitido) * k);
+}
+
 export function SceneBackground({ cena }: { cena: Cena }) {
   const { settings } = useSettings();
   const reduce = useReduce();
@@ -118,6 +128,7 @@ export function SceneBackground({ cena }: { cena: Cena }) {
   const [geracao, setGeracao] = useState(0);
   const alvoTema: 0 | 1 = settings.theme === 'light' ? 1 : 0;
   const deriva = settings.fundoAnimado && !reduce;
+  const focoPx = settings.fundoFoco;
 
   // Estado mutável do roteiro (não causa render).
   const s = useRef({
@@ -129,7 +140,8 @@ export function SceneBackground({ cena }: { cena: Cena }) {
     rend: null as Renderizador | null,
     raf: 0,
     ultimo: 0,
-    foco: 1.5,
+    foco: nivelDeFoco(focoPx),
+    pixels: pixelsParaFoco(focoPx),
     deriva,
     reduce,
     /** relógio da deriva e da água: só anda com o fundo animado (congela, não volta ao zero) */
@@ -248,8 +260,6 @@ export function SceneBackground({ cena }: { cena: Cena }) {
     el.style.setProperty('--p', String(s.current.p));
     el.style.setProperty('--tinta', String(s.current.p));
     if (!webgl || !cv) return;
-    const blur = parseFloat(getComputedStyle(el).getPropertyValue('--scene-blur')) || 0;
-    s.current.foco = Math.log2(1 + blur);
     const cores: Cores = {
       gradeNoite: corDoToken(el, '--scene-grade-noite'),
       gradeDia: corDoToken(el, '--scene-grade-dia'),
@@ -265,7 +275,7 @@ export function SceneBackground({ cena }: { cena: Cena }) {
       return;
     }
     cv.style.opacity = '0';
-    rend.redimensionar(tempos.canvasMaxPixels);
+    rend.redimensionar(s.current.pixels);
     rend
       .carregar()
       .then((ok) => {
@@ -279,7 +289,7 @@ export function SceneBackground({ cena }: { cena: Cena }) {
       })
       .catch(() => setWebgl(false));
     const ro = new ResizeObserver(() => {
-      rend.redimensionar(tempos.canvasMaxPixels);
+      rend.redimensionar(s.current.pixels);
       desenhar();
     });
     ro.observe(cv);
@@ -339,6 +349,16 @@ export function SceneBackground({ cena }: { cena: Cena }) {
     });
     return () => c.stop();
   }, [alvoTema, reduce]);
+
+  // Foco do fundo (Aparência): muda o desfoque e a resolução do canvas na hora.
+  useEffect(() => {
+    const e = s.current;
+    e.foco = nivelDeFoco(focoPx);
+    e.pixels = pixelsParaFoco(focoPx);
+    e.rend?.redimensionar(e.pixels);
+    desenhar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focoPx]);
 
   // Deriva ligada/desligada: acorda o laço (ao desligar, a câmera congela onde está).
   useEffect(() => {

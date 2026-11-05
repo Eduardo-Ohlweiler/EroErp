@@ -12,6 +12,8 @@ export type Settings = {
   fundo: Fundo;
   fundoAnimado: boolean;
   blur: number;
+  /** desfoque da foto nos fundos de cena, em px (0 = nítido) */
+  fundoFoco: number;
   movimento: Movimento;
 };
 
@@ -21,6 +23,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fundo: 'orbs',
   fundoAnimado: true,
   blur: 12,
+  fundoFoco: 3,
   movimento: 'completa',
 };
 
@@ -47,6 +50,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     root.dataset.theme = settings.theme;
     root.dataset.accent = settings.accent;
     root.style.setProperty('--blur', `${settings.blur}px`);
+    root.style.setProperty('--scene-blur', `${settings.fundoFoco}px`);
     try {
       localStorage.setItem(KEY, JSON.stringify(settings));
     } catch {

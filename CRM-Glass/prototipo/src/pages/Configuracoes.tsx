@@ -6,7 +6,7 @@ import { Segmented, Toggle } from '../components/ui/Bits';
 import { useSettings, type Accent, type Fundo, type Theme } from '../theme/settings';
 import { spring } from '../motion/tokens';
 import { cn } from '../lib/utils';
-import { ESCRITORIO } from '../components/layout/cenas';
+import { CENAS, ESCRITORIO } from '../components/layout/cenas';
 
 const ACCENTS: { id: Accent; nome: string }[] = [
   { id: 'violeta', nome: 'Violeta' },
@@ -142,10 +142,14 @@ export default function Configuracoes() {
 
         <GlassCard className="col-span-12 lg:col-span-4 space-y-6">
           <div>
-            <CardHeader title="Intensidade do vidro" subtitle={`Desfoque de ${settings.blur}px`} className="!mb-3" />
+            <CardHeader
+              title="Intensidade do vidro"
+              subtitle={settings.blur === 0 ? 'Sem desfoque: vidro transparente' : `Desfoque de ${settings.blur}px`}
+              className="!mb-3"
+            />
             <input
               type="range"
-              min={6}
+              min={0}
               max={40}
               value={settings.blur}
               onChange={(e) => set({ blur: Number(e.target.value) })}
@@ -157,6 +161,29 @@ export default function Configuracoes() {
               <span>Mais fosco</span>
             </div>
           </div>
+          {CENAS.some((c) => c.id === settings.fundo) && (
+            <div>
+              <CardHeader
+                title="Foco do fundo"
+                subtitle={settings.fundoFoco === 0 ? 'Foto totalmente nítida' : `Desfoque da foto de ${settings.fundoFoco}px`}
+                className="!mb-3"
+              />
+              <input
+                type="range"
+                min={0}
+                max={10}
+                step={0.5}
+                value={settings.fundoFoco}
+                onChange={(e) => set({ fundoFoco: Number(e.target.value) })}
+                className="w-full accent-[var(--accent)]"
+                aria-label="Desfoque da foto do fundo"
+              />
+              <div className="flex justify-between text-[11px] text-subtle mt-1">
+                <span>Nítido</span>
+                <span>Desfocado</span>
+              </div>
+            </div>
+          )}
           <div>
             <CardHeader title="Animações" subtitle="Reduzida: troca de tela vira só um fade" className="!mb-3" />
             <Segmented

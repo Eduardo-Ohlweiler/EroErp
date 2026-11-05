@@ -102,8 +102,11 @@ export const cena = {
   derivaFps: 12,
   /** Teto de quadros por segundo durante a troca (monitores de 120/144 Hz). */
   trocaFps: 60,
-  /** Resolução interna do canvas: a cena é desfocada, então não precisa de mais que isto. */
-  canvasMaxPixels: 1_200_000,
+  /**
+   * Resolução interna do canvas conforme o foco do fundo (Aparência): nítido precisa de mais pixels;
+   * a partir de `desfocadoDesde` px de desfoque, o mínimo basta. Entre os dois, proporcional.
+   */
+  canvasMaxPixels: { nitido: 2_800_000, desfocado: 1_200_000, desfocadoDesde: 3 },
   /** O canvas surge esmaecendo quando as fotos terminam de carregar (s). */
   surgir: 0.6,
 
