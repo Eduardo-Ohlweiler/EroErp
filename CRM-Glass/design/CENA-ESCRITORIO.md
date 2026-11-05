@@ -32,28 +32,35 @@ Máscaras:
 python -I scripts/cena-mascaras.py public/cenas/escritorio/dia.webp public/cenas/escritorio/noite.webp public/cenas/escritorio/mascaras.png --teto 0.38 --exterior "0,30 185,120 335,195 430,245 545,300 635,340 635,505 555,520 555,540 372,560 372,690 272,705 272,648 0,650"
 ```
 
-## Cidade (a gerar)
+## Cidade
 
-Composição: orla com prédios e reflexo na água, tipo Singapura ao entardecer. A imagem de referência (`images.jpg`) está na Lixeira. Se quiser usá-la, restaure e anexe como referência de composição.
+Orla com prédios e reflexo na água. O par foi gerado no Gemini em 05/11/2026, com a foto de Singapura (`images.jpg`) só como referência de composição. Fica em `public/cenas/cidade/` (`dia.webp`, `noite.webp`, 1376×768, alinhados pixel a pixel).
 
-1. No Gemini, use o prompt **Dia** (com a referência anexada, se houver).
-2. **Na mesma conversa**, anexe a imagem do dia que saiu e use o prompt **Noite**.
-3. Salve em Downloads como `cidade-dia.png` e `cidade-noite.png`.
+Na foto de noite foram retocados os logotipos, a faixa de neon azul e os letreiros no topo das torres, copiando a fachada vizinha. As luzes vermelhas e azuis restantes, inclusive os reflexos na água, viraram luz quente de janela.
 
-O fundo fica atrás de cartões de vidro, então nada muito saturado (neon) nem muito escuro no centro.
+Realismo próprio das cenas externas:
+- estrelas só no céu (máscara G), cintilando e surgindo com a noite;
+- faixa quente do amanhecer acima dos prédios;
+- neblina de luz sobre a cidade acesa;
+- água com ondinhas irregulares, maiores perto da câmera;
+- cada reflexo acende junto com a janela acima dele.
 
-### Dia
+Máscaras:
+
+```bash
+python -I scripts/cena-mascaras.py public/cenas/cidade/dia.webp public/cenas/cidade/noite.webp public/cenas/cidade/mascaras.png --ceu --exterior "0,0 1376,0 1376,768 0,768" --agua "0,533 1376,537 1376,768 0,768"
+```
+
+### Prompts usados
+
+**Dia**, com a referência anexada:
 
 > Use the attached image only as a composition reference (waterfront skyline seen from the opposite shore). Create a new, original scene; do not copy it.
 >
 > Photorealistic wide cinematic photo of a modern city skyline on a calm waterfront in the morning, eye level from the opposite shore. The skyline fills the middle third of the frame, calm water in the lower third with soft reflections of the buildings, clear light-blue sky with a few thin clouds in the upper third. Muted natural palette: soft blues, warm greys, glass and concrete. Building windows unlit. No neon, no saturated colors, no logos, no text, no boats or people in the center. 16:9, the highest resolution available.
 
-### Noite (edição da imagem do dia)
+**Noite**, como edição da imagem do dia:
 
 > Same image, exact same framing, camera and buildings. Change to night: deep navy sky, warm lights on in many building windows (scattered, not all of them), soft reflections of those lights on the water, a few warm street lights along the shore. No neon colors, no fireworks. Do not move, add or remove anything.
 
-### Ao receber as imagens
-
-- Conferir o alinhamento e converter para WebP em `public/cenas/cidade/`.
-- Gerar as máscaras com `--exterior` cobrindo o céu e os prédios (tudo menos a água) e `--agua` cobrindo a água.
-- Criar a cena em `cenas.ts` sem luminárias e registrar em `CENAS`, `Fundo` (`settings.tsx`) e na página Aparência.
+Em uma nova geração, acrescentar ao prompt de noite: *"No logos, brand signs, neon strips or text on any building; no red or blue lights."*

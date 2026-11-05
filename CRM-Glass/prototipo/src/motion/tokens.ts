@@ -91,8 +91,12 @@ export const cena = {
   camera: { zoomBase: 1.02, aproximacao: 0.03, focoExtra: 1.1 },
   /** Ao inverter no meio, o quadro antigo se mistura ao novo por este tempo (s), sem saltos. */
   inversao: 0.18,
-  /** Ondulação da água (cenas com reflexo). */
-  agua: { amplitude: 0.0016, frequencia: 230, velocidade: 1.4 },
+  /** Ondulação da água (cenas com reflexo): amplitude em fração da foto, frequência das faixas, velocidade. */
+  agua: { amplitude: 0.0042, frequencia: 520, velocidade: 0.9 },
+  /** Estrelas (cenas externas): fração de células com estrela, brilho e velocidade da cintilação. */
+  estrelas: { densidade: 0.0035, brilho: 0.55, cintilar: 1.8 },
+  /** Neblina de luz sobre a cidade acesa (0–1). */
+  neblina: 0.18,
   /** Granulação de filme e vinheta. */
   grao: 0.035,
   vinheta: 0.32,

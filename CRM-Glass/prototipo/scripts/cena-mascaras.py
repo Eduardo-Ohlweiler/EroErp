@@ -3,7 +3,7 @@ Gera a textura de máscaras de uma cena do fundo (usada pelo shader em SceneShad
 
 Canais de saída (PNG RGBA, metade da resolução da foto):
   R = exterior (janela ou céu): onde a cena muda com o dia, não com as luminárias
-  G = brilho das luminárias (realces da foto de dia, desfocados)
+  G = brilho das luminárias (cenas internas) ou céu (cenas externas, com --ceu): onde podem surgir estrelas
   B = luzes da cidade (pontos claros da foto noturna dentro do exterior)
   A = 255 − água/2 (reflexos que ondulam). Guardado invertido e nunca abaixo de 128 para o
       navegador não descartar o RGB de pixels transparentes; o shader desfaz: água = (1 − a) × 2.
@@ -32,6 +32,7 @@ def main():
     ap.add_argument('--exterior', default='')
     ap.add_argument('--agua', default='')
     ap.add_argument('--teto', type=float, default=1.0, help='fração da altura abaixo da qual não há luminárias (0–1)')
+    ap.add_argument('--ceu', action='store_true', help='cena externa: G vira a máscara do céu (acima da linha dos prédios)')
     a = ap.parse_args()
 
     dia = Image.open(a.dia).convert('L')
@@ -59,6 +60,26 @@ def main():
     pontos = ImageChops.multiply(ImageChops.multiply(pontos, exterior), quente)
 
     agua = poligono((W, H), a.agua, 6).point(lambda v: 255 - v // 2)
+
+    if a.ceu:
+        # Linha dos prédios: em cada coluna, o primeiro contorno forte de cima para baixo na foto de dia
+        # (nuvens têm borda suave e não contam). Suavizada entre colunas e com margem para não pegar telhado.
+        bordas = dia.filter(ImageFilter.FIND_EDGES).filter(ImageFilter.MaxFilter(3))
+        px = bordas.load()
+        limite = [H] * W
+        for x in range(W):
+            for y in range(4, H):  # as primeiras linhas têm a borda da própria imagem
+                if px[x, y] > 38:
+                    limite[x] = y
+                    break
+        raio = 3
+        limite = [min(limite[max(0, x - raio):x + raio + 1]) for x in range(W)]
+        ceu = Image.new('L', (W, H), 0)
+        d = ImageDraw.Draw(ceu)
+        for x in range(W):
+            if limite[x] > 6:
+                d.line([(x, 0), (x, limite[x] - 6)], fill=255)
+        brilho = ceu.filter(ImageFilter.GaussianBlur(2))
 
     meio = (W // 2, H // 2)
     saida = Image.merge('RGBA', [c.resize(meio, Image.LANCZOS) for c in (exterior, brilho, pontos, agua)])

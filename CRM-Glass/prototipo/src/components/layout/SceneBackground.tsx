@@ -269,7 +269,13 @@ export function SceneBackground({ cena }: { cena: Cena }) {
     };
     let rend: Renderizador;
     try {
-      rend = new Renderizador(cv, cena, cores, { grao: tempos.grao, vinheta: tempos.vinheta, agua: tempos.agua });
+      rend = new Renderizador(cv, cena, cores, {
+        grao: tempos.grao,
+        vinheta: tempos.vinheta,
+        agua: tempos.agua,
+        estrelas: tempos.estrelas,
+        neblina: tempos.neblina,
+      });
     } catch {
       setWebgl(false);
       return;

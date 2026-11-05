@@ -38,6 +38,8 @@ export type Ajustes = {
   grao: number;
   vinheta: number;
   agua: { amplitude: number; frequencia: number; velocidade: number };
+  estrelas: { densidade: number; brilho: number; cintilar: number };
+  neblina: number;
 };
 
 export type Cores = {
@@ -74,11 +76,27 @@ uniform float uP, uCeu, uAurora, uCidade, uExpo, uZoom, uFoco, uTempo, uSemente,
 uniform float uLiFixo;
 uniform vec2 uDeriva;
 uniform vec3 uAgua;
+// Cena externa (cidade): G da máscara é o céu; uHorizonte = linha d'água em fração da altura.
+uniform float uExterior, uHorizonte;
+uniform vec3 uEstrelas;
+uniform float uNeblina;
 uniform vec3 uGradeNoite, uGradeDia, uCorAurora, uBloom, uBloomCidade;
 
 vec3 lin(vec3 c) { return pow(c, vec3(2.2)); }
 vec3 srgb(vec3 c) { return pow(max(c, 0.0), vec3(1.0 / 2.2)); }
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+// Hash estável para coordenadas grandes (sem o padrão de listras do fract(sin(...)) em float de 32 bits).
+float hash(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+// Ruído de valor suave (para a água não ondular em padrão regular).
+float ruido(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
 
 // Compressão suave dos realces: nada estoura em branco chapado.
 vec3 joelho(vec3 c) {
@@ -95,9 +113,19 @@ void main() {
   else uv.x = (uv.x - 0.5) * ta / uImg + 0.5;
   uv = (uv - 0.5) / uZoom + 0.5 + uDeriva;
 
-  // Água: ondula o reflexo (alfa da máscara guarda 1 - água/2).
+  // Água: ondula o reflexo (alfa da máscara guarda 1 - água/2). Duas frequências cruzadas, e ondas
+  // maiores perto da câmera (perspectiva): o reflexo tremula em faixas horizontais, como na água real.
+  vec2 uvSeco = uv;
   float agua = clamp((1.0 - textureLod(uMasc, uv, 0.0).a) * 2.0, 0.0, 1.0);
-  uv.x += sin(uv.y * uAgua.y + uTempo * uAgua.z) * uAgua.x * agua;
+  if (agua > 0.0) {
+    // Ondinhas finas: faixas horizontais irregulares (ruído alongado em x), duas escalas, andando devagar.
+    float perto = 0.3 + clamp((uv.y - uHorizonte) / max(1.0 - uHorizonte, 0.01), 0.0, 1.0) * 1.7;
+    float escala = uAgua.y / perto;
+    vec2 q = vec2(uv.x * escala * 0.08, uv.y * escala);
+    float t = uTempo * uAgua.z;
+    float onda = (ruido(q + vec2(t * 0.3, t)) - 0.5) + 0.5 * (ruido(q * 2.3 + vec2(-t * 0.2, t * 1.6)) - 0.5);
+    uv.x += onda * uAgua.x * perto * agua;
+  }
 
   // Desfoque de lente pelos níveis de mipmap (LOD fixo, filtragem trilinear).
   vec3 n = lin(textureLod(uNoite, uv, uFoco).rgb);
@@ -120,7 +148,10 @@ void main() {
 
   // Exterior: céu clareando e luzes da cidade apagando cada uma no seu tempo.
   vec3 exterior = mix(n, d, uCeu);
-  float celula = hash(floor(uv * vec2(260.0, 146.0)));
+  // Cada janela acende no seu tempo; o reflexo na água usa a célula da janela acima (espelhada na linha d'água).
+  vec2 uvCel = uvSeco;
+  if (agua > 0.0) uvCel.y = 2.0 * uHorizonte - uvCel.y;
+  float celula = hash(floor(uvCel * vec2(260.0, 146.0)));
   float acesa = smoothstep(celula - 0.04, celula + 0.04, uCidade);
   exterior -= n * m.b * (1.0 - acesa) * (1.0 - uCeu) * 0.9;
 
@@ -129,13 +160,27 @@ void main() {
   float horizonte = smoothstep(0.05, 0.75, uv.y);
   float derrame = textureLod(uMasc, uv, 5.0).r;
   exterior = exterior * mix(vec3(1.0), quente * 1.5, uAurora * horizonte * 0.8) + quente * uAurora * horizonte * 0.18;
+  // Céu (cenas externas): faixa quente logo acima dos prédios e estrelas que surgem com a noite.
+  float ceu = uExterior * m.g;
+  if (ceu > 0.0) {
+    float faixa = exp(-abs(uv.y - (uHorizonte - 0.12)) * 7.0);
+    exterior += quente * uAurora * faixa * ceu * 0.45;
+    vec2 grade = uv * vec2(1100.0, 620.0);
+    float h = hash(floor(grade));
+    float estrela = step(1.0 - uEstrelas.x, h) * (1.0 - smoothstep(0.0, 0.5, length(fract(grade) - 0.5)));
+    float cintila = 0.65 + 0.35 * sin(uTempo * uEstrelas.z + h * 40.0);
+    float noite = (1.0 - uCeu) * (1.0 - uCeu);
+    exterior += vec3(estrela * cintila * uEstrelas.y * noite * ceu);
+  }
   interior *= mix(vec3(1.0), quente * 1.4, uAurora * derrame * 0.55);
 
   vec3 c = mix(interior, exterior, ext);
 
   // Bloom das luminárias (segue a luz local) e das luzes da cidade.
-  c += lin(uBloom) * textureLod(uMasc, uv, 2.5).g * li * 0.3;
+  c += lin(uBloom) * textureLod(uMasc, uv, 2.5).g * li * 0.3 * (1.0 - uExterior);
   c += lin(uBloomCidade) * textureLod(uMasc, uv, 3.0).b * uCidade * (1.0 - uCeu) * 0.6;
+  // Neblina de luz: a cidade acesa ilumina o ar acima dela.
+  c += lin(uBloomCidade) * textureLod(uMasc, uv, 6.0).b * uCidade * (1.0 - uCeu) * uNeblina;
 
   c *= uExpo;
   c *= mix(lin(uGradeNoite), lin(uGradeDia), uP);
@@ -144,7 +189,7 @@ void main() {
   vec3 s = srgb(c);
   vec2 vv = v - 0.5;
   s *= 1.0 - uVinheta * dot(vv, vv) * 1.6;
-  s += (hash(v * uTela + uSemente * 61.0) - 0.5) * uGrao;
+  s += (hash(gl_FragCoord.xy + uSemente * 61.0) - 0.5) * uGrao;
   saida = vec4(s, 1.0);
 }`;
 
@@ -220,6 +265,7 @@ export class Renderizador {
       'uDia', 'uNoite', 'uMasc', 'uTela', 'uImg', 'uLuz', 'uOn', 'uN', 'uP', 'uCeu', 'uAurora', 'uCidade',
       'uExpo', 'uZoom', 'uFoco', 'uTempo', 'uSemente', 'uLiFixo', 'uGrao', 'uVinheta', 'uDeriva', 'uAgua',
       'uGradeNoite', 'uGradeDia', 'uCorAurora', 'uBloom', 'uBloomCidade',
+      'uExterior', 'uHorizonte', 'uEstrelas', 'uNeblina',
     ]) {
       this.u[nome] = gl.getUniformLocation(prog, nome);
     }
@@ -265,6 +311,11 @@ export class Renderizador {
     gl.uniform1f(this.u.uVinheta, this.ajustes.vinheta);
     const a = this.ajustes.agua;
     gl.uniform3f(this.u.uAgua, a.amplitude, a.frequencia, a.velocidade);
+    const e = this.ajustes.estrelas;
+    gl.uniform3f(this.u.uEstrelas, e.densidade, e.brilho, e.cintilar);
+    gl.uniform1f(this.u.uNeblina, this.ajustes.neblina);
+    gl.uniform1f(this.u.uExterior, cena.tipo === 'exterior' ? 1 : 0);
+    gl.uniform1f(this.u.uHorizonte, cena.horizonte ?? 1);
     const c = this.cores;
     gl.uniform3fv(this.u.uGradeNoite, c.gradeNoite);
     gl.uniform3fv(this.u.uGradeDia, c.gradeDia);

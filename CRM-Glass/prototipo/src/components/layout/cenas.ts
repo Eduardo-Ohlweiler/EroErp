@@ -4,7 +4,7 @@
  *
  * Cada cena tem a foto de dia, a de noite (mesmo enquadramento, alinhadas pixel a pixel)
  * e uma textura de máscaras gerada por `scripts/cena-mascaras.py`:
- *   R = exterior (janela ou céu) · G = brilho das luminárias · B = luzes da cidade · A = água
+ *   R = exterior (janela ou céu) · G = brilho das luminárias (interna) ou céu (externa) · B = luzes da cidade · A = água
  */
 
 export type Luminaria = {
@@ -21,6 +21,10 @@ export type Luminaria = {
 export type Cena = {
   id: string;
   nome: string;
+  /** interna: luminárias e janela · externa: céu, estrelas, água */
+  tipo: 'interior' | 'exterior';
+  /** linha d'água em fração da altura (cenas com reflexo) */
+  horizonte?: number;
   dia: string;
   noite: string;
   mascaras: string;
@@ -41,6 +45,7 @@ const base = import.meta.env.BASE_URL;
 export const ESCRITORIO: Cena = {
   id: 'escritorio',
   nome: 'Escritório',
+  tipo: 'interior',
   dia: `${base}cenas/escritorio/dia.webp`,
   noite: `${base}cenas/escritorio/noite.webp`,
   mascaras: `${base}cenas/escritorio/mascaras.png`,
@@ -70,4 +75,22 @@ export const ESCRITORIO: Cena = {
   alcance: { base: 0.1, fator: 1.1 },
 };
 
-export const CENAS = [ESCRITORIO];
+/**
+ * Orla com prédios e reflexo na água. Par gerado no Gemini (05/11/2026) com a foto de referência só como
+ * composição; a noite foi retocada (logotipos, neons e letreiros removidos; luzes vermelhas e azuis
+ * trocadas por luz quente). 1376×768, WebP. Sem luminárias: muda o céu, as janelas e a água.
+ */
+export const CIDADE: Cena = {
+  id: 'cidade',
+  nome: 'Cidade',
+  tipo: 'exterior',
+  dia: `${base}cenas/cidade/dia.webp`,
+  noite: `${base}cenas/cidade/noite.webp`,
+  mascaras: `${base}cenas/cidade/mascaras.png`,
+  proporcao: 1376 / 768,
+  luzes: [],
+  alcance: { base: 0, fator: 0 },
+  horizonte: 535 / 768,
+};
+
+export const CENAS = [ESCRITORIO, CIDADE];
