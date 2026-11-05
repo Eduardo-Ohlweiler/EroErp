@@ -52,8 +52,33 @@
     position: relative;
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-xl);
-    -webkit-backdrop-filter: blur(var(--blur)) saturate(170%);
-    backdrop-filter: blur(var(--blur)) saturate(170%);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--blur)) saturate(var(--glass-saturate));
+  }
+  /* Borda de luz em degradê: forte no canto de cima, some no meio, volta fraca embaixo. */
+  .glass::before,
+  .glass-subtle::before,
+  .glass-solid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      150deg,
+      var(--glass-edge-strong),
+      var(--glass-edge-soft) 28%,
+      transparent 55%,
+      var(--glass-edge-soft)
+    );
+    -webkit-mask:
+      linear-gradient(var(--mask-on) 0 0) content-box,
+      linear-gradient(var(--mask-on) 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(var(--mask-on) 0 0) content-box exclude,
+      linear-gradient(var(--mask-on) 0 0);
+    pointer-events: none;
   }
   .glass {
     background: linear-gradient(155deg, var(--glass-sheen), transparent 42%), var(--glass);
@@ -66,8 +91,8 @@
   .glass-solid {
     background: var(--glass-solid);
     box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--glass-shadow);
-    -webkit-backdrop-filter: blur(calc(var(--blur) * 1.5)) saturate(180%);
-    backdrop-filter: blur(calc(var(--blur) * 1.5)) saturate(180%);
+    -webkit-backdrop-filter: blur(calc(var(--blur) * 1.5)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(calc(var(--blur) * 1.5)) saturate(var(--glass-saturate));
   }
   .glass-hover {
     transition:
