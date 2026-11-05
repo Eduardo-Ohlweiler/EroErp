@@ -124,14 +124,11 @@ export default function Configuracoes() {
                       </svg>
                     )}
                     {f.id === 'escritorio' && (
-                      <>
-                        <img
-                          src={ESCRITORIO.dia}
-                          alt=""
-                          className={cn('absolute inset-0 size-full object-cover', settings.theme === 'dark' && 'scene-noite-derivada')}
-                        />
-                        {settings.theme === 'dark' && <span className="scene-noite-tinta" />}
-                      </>
+                      <img
+                        src={settings.theme === 'dark' ? (ESCRITORIO.noite ?? ESCRITORIO.dia) : ESCRITORIO.dia}
+                        alt=""
+                        className="absolute inset-0 size-full object-cover"
+                      />
                     )}
                     {f.id === 'minimo' && <span className="absolute inset-0" style={{ background: 'radial-gradient(circle at 20% 0%, var(--accent-glow), transparent 70%)' }} />}
                   </div>

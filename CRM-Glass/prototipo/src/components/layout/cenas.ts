@@ -33,40 +33,48 @@ export type Cena = {
   };
 };
 
-const AJUSTE_PADRAO: Cena['ajuste'] = {
-  alcance: { fator: 2.6, min: 6, max: 20, achatamento: 0.9 },
-  brilho: { largura: 1.9, altura: 0.45 },
-};
-
 const base = import.meta.env.BASE_URL;
 
 /**
- * PROVISÓRIA: prévia de banco de imagens só para aprovar o movimento.
- * Não vai para o produto — será trocada pelo par dia/noite gerado por IA.
+ * Par dia/noite gerado por IA (Gemini) a partir da composição escolhida; mesmo enquadramento.
+ * 1672×941, WebP. Luminárias medidas na foto de dia (fileiras da frente para o fundo).
  */
 export const ESCRITORIO: Cena = {
   id: 'escritorio',
-  dia: `${base}cenas/_provisorio/escritorio-dia.jpg`,
-  proporcao: 16 / 9,
+  dia: `${base}cenas/escritorio/dia.webp`,
+  noite: `${base}cenas/escritorio/noite.webp`,
+  proporcao: 1672 / 941,
   luzes: [
     // fileira 1 (frente)
-    { x: 28.6, y: 14, w: 7.4 },
-    { x: 57.2, y: 14, w: 6.2 },
-    { x: 85.7, y: 14, w: 7.6 },
+    { x: 24.6, y: 6.7, w: 12.6 },
+    { x: 57.4, y: 6.7, w: 10.7 },
+    { x: 89.1, y: 6.7, w: 13.2 },
     // fileira 2
-    { x: 36.6, y: 27, w: 2.9 },
-    { x: 54.5, y: 27, w: 3.8 },
-    { x: 72.7, y: 27, w: 4.4 },
-    { x: 90.7, y: 27, w: 4.8 },
+    { x: 32.1, y: 20, w: 7.2 },
+    { x: 54.8, y: 20, w: 7.2 },
+    { x: 76.7, y: 20, w: 8.2 },
     // fileira 3
-    { x: 40.1, y: 33, w: 1.8 },
-    { x: 53.3, y: 33, w: 2.6 },
-    { x: 66.6, y: 33, w: 2.7 },
-    // fileira 4 (fundo)
-    { x: 42.1, y: 36.7, w: 2 },
-    { x: 52.7, y: 36.7, w: 1.4 },
-    { x: 63.1, y: 36.7, w: 2 },
+    { x: 37.6, y: 26.6, w: 4.3 },
+    { x: 53.5, y: 26.6, w: 5.4 },
+    { x: 70.4, y: 26.6, w: 5.9 },
+    { x: 92.9, y: 27.6, w: 4.4 },
+    // fileira 4
+    { x: 39.7, y: 30.7, w: 2.6 },
+    { x: 52.7, y: 30.7, w: 4.4 },
+    { x: 66.4, y: 30.7, w: 4.5 },
+    { x: 83.6, y: 29.6, w: 5 },
+    // fileira 5
+    { x: 40.4, y: 33.3, w: 3.7 },
+    { x: 52.2, y: 33.3, w: 3.8 },
+    { x: 63.8, y: 33.3, w: 3.6 },
+    // fileira 6 (fundo)
+    { x: 41.5, y: 35.1, w: 3.2 },
+    { x: 51.9, y: 35.1, w: 3.2 },
+    { x: 62.1, y: 35.1, w: 2.9 },
   ],
-  janela: { x: 17, y: 44, rx: 27, ry: 50 },
-  ajuste: AJUSTE_PADRAO,
+  janela: { x: 17, y: 40, rx: 26, ry: 52 },
+  ajuste: {
+    alcance: { fator: 2.2, min: 6, max: 20, achatamento: 0.9 },
+    brilho: { largura: 1.5, altura: 0.3 },
+  },
 };

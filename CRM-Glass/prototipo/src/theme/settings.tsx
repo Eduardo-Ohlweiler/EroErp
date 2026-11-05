@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   accent: 'violeta',
   fundo: 'orbs',
   fundoAnimado: true,
-  blur: 14,
+  blur: 12,
   movimento: 'completa',
 };
 

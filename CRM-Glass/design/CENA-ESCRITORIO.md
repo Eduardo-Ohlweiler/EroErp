@@ -2,7 +2,7 @@
 
 Fundo fotográfico que acompanha o tema: no **claro** a janela amanhece e as luminárias acendem uma a uma (da frente para o fundo); no **escuro** apagam na ordem inversa. Código em `prototipo/src/components/layout/SceneBackground.tsx`, dados em `cenas.ts`, tempos em `motion/tokens.ts` (`cena`), cores em `styles/tokens.css` (bloco "Fundo de cena").
 
-Hoje roda com uma **imagem provisória** (prévia de banco, sem licença, em `prototipo/public/cenas/_provisorio/`, fora do git) e a noite é derivada por filtro. A definitiva será um par dia/noite gerado por IA.
+Usa o par dia/noite gerado no Gemini (05/11/2026), em `prototipo/public/cenas/escritorio/` (`dia.webp` e `noite.webp`, 1672×941, alinhados pixel a pixel). Se uma cena não tiver foto noturna, a noite é derivada por filtro.
 
 ## Como gerar o par (Gemini, plano gratuito)
 

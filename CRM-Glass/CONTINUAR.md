@@ -94,7 +94,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
   - ficha do cliente com transição em profundidade e abas;
   - página Design system (catálogo) e página Aparência (troca tema, destaque, fundo, vidro e animação ao vivo);
   - busca global com Ctrl + K e troca de tema com revelação circular;
-  - fundo **Escritório** (Aparência → Fundo): no claro a janela amanhece e as luminárias acendem uma a uma; no escuro apagam. Roda com foto **provisória** (fora do git); a definitiva será um par dia/noite gerado por IA — prompts e passos em `design/CENA-ESCRITORIO.md`.
+  - fundo **Escritório** (Aparência → Fundo): no claro a janela amanhece e as luminárias acendem uma a uma; no escuro apagam. Usa o par dia/noite gerado no Gemini; prompts e passos em `design/CENA-ESCRITORIO.md`.
 
 ### O que foi verificado e o que não foi
 
