@@ -50,42 +50,66 @@ export const staggerGroup: Variants = {
 };
 
 /**
- * Fundo de cena (escritório): troca de tema acende ou apaga as luzes uma a uma.
- * Os trechos são frações do progresso 0 → 1 (0 = noite, 1 = dia); o tema escuro percorre o mesmo caminho ao contrário.
+ * Fundo de cena (escritório, cidade): troca de tema como um plano de cinema.
+ * Progresso p: 0 = noite, 1 = dia. Os trechos são frações de p; o tema escuro percorre o caminho ao contrário.
  */
 export const cena = {
-  /** Sequência completa, em segundos. */
-  duracao: 2.8,
-  /** Movimento reduzido: só esmaece, sem sequência. */
+  /** Duração da sequência completa, em segundos: amanhecer/acender e anoitecer/apagar. */
+  duracaoClaro: 4.4,
+  duracaoEscuro: 3.4,
+  /** Movimento reduzido: só esmaece. */
   duracaoReduzida: 0.35,
-  /** Janela amanhecendo / anoitecendo. */
-  janela: [0, 0.62] as [number, number],
-  /** Primeira luz começa em `inicio`, a última em `fim`; cada uma leva `luz` para acender. */
-  luzes: { inicio: 0.06, fim: 0.66, luz: 0.16 },
-  /** Depois da última luz, o resto do ambiente clareia. */
-  preencher: [0.74, 1] as [number, number],
-  /** Quanto o ambiente todo já clareou quando todas as luzes acenderam, antes do preenchimento final (0–1). */
-  ambiente: 0.5,
-  /** Quanto o brilho das luminárias fica depois que tudo clareou (0–1). */
-  brilhoFinal: 0.3,
-  /** As tintas de contraste seguem o tema logo, sem esperar a sequência (mesma duração da revelação circular). */
-  tinta: 0.7,
-  tintaEase: ease.out,
-  /** O progresso corre linear; cada trecho aplica a própria curva (`curva`). */
   progressoEase: 'linear' as const,
   curva: (v: number) => v * v * (3 - 2 * v),
-  /** Piscada de lâmpada ao acender: pontos [x, y], interpolados em linha reta (sobe, falha, volta, falha de leve, firma). */
+
+  /** Céu da janela clareando (ou escurecendo). */
+  ceu: [0, 0.62] as [number, number],
+  /** Luz quente do amanhecer/entardecer: sobe e desce dentro deste trecho (pico no meio). */
+  aurora: [0, 0.78] as [number, number],
+  /** Luzes da cidade apagando (claro) ou acendendo (escuro), cada uma no seu tempo. */
+  cidade: [0.04, 0.52] as [number, number],
+
+  /** Fileiras de luminárias: uma por vez, como circuitos; dentro da fileira, pequena diferença entre lâmpadas. */
+  fileiras: { inicio: 0.22, passo: 0.07, acender: 0.12, apagar: 0.025, dispersao: 0.02 },
+  /**
+   * Partida de lâmpada: multiplicador da luz de cada lâmpada enquanto acende ([x, y], linha reta).
+   * Acessibilidade (WCAG 2.3.1): uma única falha leve (−8 %, abaixo de 10 % de luminância) por lâmpada —
+   * nada de piscar de verdade, que passaria de 3 flashes por segundo.
+   */
   piscada: [
-    [0, 0],
-    [0.12, 0.9],
-    [0.121, 0.15],
-    [0.22, 0.15],
-    [0.221, 0.85],
-    [0.34, 0.85],
-    [0.341, 0.35],
-    [0.44, 0.35],
+    [0, 1],
+    [0.32, 1],
+    [0.36, 0.92],
+    [0.52, 0.92],
+    [0.56, 1],
     [1, 1],
   ] as [number, number][],
-  /** Deriva lenta da foto em repouso, em segundos. */
-  deriva: 60,
+
+  /** Exposição automática da câmera: uma única subida suave enquanto as luzes acendem, depois se ajusta. */
+  exposicao: { intensidade: 0.12, trecho: [0.24, 0.8] as [number, number] },
+  /** Câmera: enquadramento com folga para a deriva, leve aproximação e respiro de foco durante a troca. */
+  camera: { zoomBase: 1.02, aproximacao: 0.03, focoExtra: 1.1 },
+  /** Ao inverter no meio, o quadro antigo se mistura ao novo por este tempo (s), sem saltos. */
+  inversao: 0.18,
+  /** Ondulação da água (cenas com reflexo). */
+  agua: { amplitude: 0.0016, frequencia: 230, velocidade: 1.4 },
+  /** Granulação de filme e vinheta. */
+  grao: 0.035,
+  vinheta: 0.32,
+  /** Deriva lenta em repouso: s por ciclo, amplitude (fração da foto) e quadros por segundo (economiza GPU). */
+  deriva: 70,
+  derivaAmplitude: [0.006, 0.004] as [number, number],
+  derivaFps: 12,
+  /** Teto de quadros por segundo durante a troca (monitores de 120/144 Hz). */
+  trocaFps: 60,
+  /** Resolução interna do canvas: a cena é desfocada, então não precisa de mais que isto. */
+  canvasMaxPixels: 1_200_000,
+  /** O canvas surge esmaecendo quando as fotos terminam de carregar (s). */
+  surgir: 0.6,
+
+  /** A interface troca de tema quando a cena passa deste ponto (luz já subindo / caindo). */
+  trocaInterface: { claro: 0.4, escuro: 0.45 },
+  /** Esmaecimento da interface na troca, em segundos. */
+  esmaecerInterface: 0.9,
+  esmaecerEase: ease.inOut,
 };

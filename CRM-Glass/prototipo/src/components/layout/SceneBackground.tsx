@@ -1,23 +1,27 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
-import { animate } from 'motion/react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { animate, type AnimationPlaybackControls } from 'motion/react';
 import { useReduce, useSettings } from '../../theme/settings';
 import { cena as tempos } from '../../motion/tokens';
-import { cn } from '../../lib/utils';
 import type { Cena } from './cenas';
+import { MAX_LUZES, Renderizador, type Cores, type Quadro } from './SceneShader';
+import { registrarCena } from './sceneSync';
 
 /*
- * Fundo fotográfico que acompanha o tema.
- * Progresso p: 0 = noite (escuro), 1 = dia (claro). Camadas, de baixo para cima:
- *   foto noite → foto dia mascarada (cada luminária revela a área em volta) → brilhos → tintas.
- * Por quadro mudam só variáveis CSS no contêiner: --p, --jan, --amb, --l0…, --g0… (cena) e --tinta (contraste).
- * As tintas seguem o tema em seguida (tempos.tinta), não a sequência: o texto do tema novo
- * nunca fica sobre a foto do tema antigo sem proteção.
+ * Fundo de cena: roteiro da troca de tema. Um progresso p (0 = noite, 1 = dia) anda no tempo;
+ * daqui sai cada quadro (céu, aurora, luzes da cidade, cada luminária, exposição, câmera, foco),
+ * desenhado pelo shader. Sem WebGL 2, as duas fotos só esmaecem uma sobre a outra.
  */
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const trecho = (p: number, a: number, b: number) => tempos.curva(clamp01((p - a) / (b - a)));
+const trecho = (p: number, [a, b]: [number, number]) => tempos.curva(clamp01((p - a) / (b - a)));
+const sino = (p: number, [a, b]: [number, number]) => Math.sin(Math.PI * clamp01((p - a) / (b - a)));
+const mistura = (a: number, b: number, k: number) => a + (b - a) * k;
+/** Pseudoaleatório estável por luminária (a mesma lâmpada atrasa sempre igual). */
+const semente = (i: number) => {
+  const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+};
 
-/** Interpolação linear entre os pontos da piscada. */
 function piscada(x: number) {
   const pts = tempos.piscada;
   if (x <= pts[0][0]) return pts[0][1];
@@ -31,149 +35,353 @@ function piscada(x: number) {
   return pts[pts.length - 1][1];
 }
 
-function inicioDaLuz(i: number, total: number) {
-  const { inicio, fim } = tempos.luzes;
-  return total <= 1 ? inicio : inicio + ((fim - inicio) * i) / (total - 1);
+function inicioDaLuz(c: Cena, i: number) {
+  const f = tempos.fileiras;
+  return f.inicio + c.luzes[i].fileira * f.passo + semente(i) * f.dispersao;
 }
 
-/**
- * Grava o estado da cena para o progresso p.
- * `piscar`: só quando acende a partir do escuro total; invertendo no meio, o brilho segue a curva suave (sem saltos).
- * `simples`: movimento reduzido — tudo esmaece junto; o estado final é o mesmo do caminho completo.
- */
-function aplicar(el: HTMLElement, c: Cena, p: number, piscar: boolean, simples: boolean) {
-  const s = el.style;
-  const fim = simples ? p : trecho(p, tempos.preencher[0], tempos.preencher[1]);
-  s.setProperty('--p', p.toFixed(4));
-  s.setProperty('--jan', (simples ? p : trecho(p, tempos.janela[0], tempos.janela[1])).toFixed(4));
-  let soma = 0;
-  c.luzes.forEach((_, i) => {
-    const l = simples ? p : tempos.curva(clamp01((p - inicioDaLuz(i, c.luzes.length)) / tempos.luzes.luz));
-    const acesa = simples ? p : piscar ? piscada(l) : l;
-    soma += l;
-    s.setProperty(`--l${i}`, l.toFixed(4));
-    s.setProperty(`--g${i}`, (acesa * (1 - (1 - tempos.brilhoFinal) * fim)).toFixed(4));
+/** acendendo: sentido da sequência · completa: saiu do escuro total (partida de lâmpada e exposição) · simples: movimento reduzido */
+type Modo = { acendendo: boolean; completa: boolean; simples: boolean };
+
+type Camera = { foco: number; tempo: number; deriva: [number, number]; semente: number };
+
+function montarQuadro(c: Cena, p: number, modo: Modo, cam: Camera): Quadro {
+  const { acendendo, completa, simples } = modo;
+  const f = tempos.fileiras;
+  const luzes = new Float32Array(MAX_LUZES);
+  c.luzes.slice(0, MAX_LUZES).forEach((_, i) => {
+    const a = inicioDaLuz(c, i);
+    if (simples) luzes[i] = p;
+    else if (acendendo) {
+      const x = clamp01((p - a) / f.acender);
+      luzes[i] = tempos.curva(x) * (completa ? piscada(x) : 1);
+    } else luzes[i] = tempos.curva(clamp01((p - a) / f.apagar));
   });
-  // Cada luz acesa também clareia um pouco o ambiente todo, para não sobrar mancha escura entre elas.
-  const ambiente = Math.max(fim, (soma / Math.max(c.luzes.length, 1)) * tempos.ambiente);
-  s.setProperty('--amb', ambiente.toFixed(4));
+  const ceu = simples ? p : trecho(p, tempos.ceu);
+  const curso = simples ? 0 : Math.sin(Math.PI * p);
+  return {
+    p,
+    ceu,
+    aurora: simples ? 0 : sino(p, tempos.aurora),
+    cidade: 1 - (simples ? p : trecho(p, tempos.cidade)),
+    luzes,
+    exposicao: 1 + (completa && !simples ? tempos.exposicao.intensidade * sino(p, tempos.exposicao.trecho) : 0),
+    zoom: tempos.camera.zoomBase + tempos.camera.aproximacao * curso,
+    foco: cam.foco + tempos.camera.focoExtra * curso,
+    deriva: cam.deriva,
+    tempo: cam.tempo,
+    semente: cam.semente,
+  };
 }
 
-/** Cor da máscara com opacidade dada por uma variável 0–1. */
-const opaco = (v: string) => `color-mix(in srgb, var(--scene-mask) calc(var(${v}) * 100%), transparent)`;
-
-function mascaraDoDia(c: Cena) {
-  const { fator, min, max, achatamento } = c.ajuste.alcance;
-  const camadas = c.luzes.map((l, i) => {
-    const rx = Math.min(Math.max(l.w * fator, min), max);
-    const ry = rx * c.proporcao * achatamento;
-    return `radial-gradient(ellipse calc(var(--l${i}) * ${rx}% + 0.1%) calc(var(--l${i}) * ${ry.toFixed(1)}% + 0.1%) at ${l.x}% ${l.y}%, ${opaco(`--l${i}`)} 30%, transparent 100%)`;
-  });
-  const j = c.janela;
-  camadas.push(
-    `radial-gradient(ellipse calc(var(--jan) * ${j.rx}% + 0.1%) calc(var(--jan) * ${j.ry}% + 0.1%) at ${j.x}% ${j.y}%, ${opaco('--jan')} 45%, transparent 100%)`,
-  );
-  camadas.push(`linear-gradient(${opaco('--amb')}, ${opaco('--amb')})`);
-  return camadas.join(', ');
+/** Mistura dois quadros (inversão no meio da sequência). */
+function misturarQuadros(a: Quadro, b: Quadro, k: number): Quadro {
+  const luzes = new Float32Array(MAX_LUZES);
+  for (let i = 0; i < MAX_LUZES; i++) luzes[i] = mistura(a.luzes[i], b.luzes[i], k);
+  return {
+    ...b,
+    ceu: mistura(a.ceu, b.ceu, k),
+    aurora: mistura(a.aurora, b.aurora, k),
+    cidade: mistura(a.cidade, b.cidade, k),
+    luzes,
+    exposicao: mistura(a.exposicao, b.exposicao, k),
+    zoom: mistura(a.zoom, b.zoom, k),
+    foco: mistura(a.foco, b.foco, k),
+  };
 }
+
+/** Lê uma cor do tokens.css como [r, g, b] em 0–1, qualquer que seja o formato (rgb, oklch, color()). */
+function corDoToken(el: HTMLElement, nome: string): [number, number, number] {
+  const tmp = document.createElement('span');
+  tmp.style.color = `var(${nome})`;
+  el.appendChild(tmp);
+  const css = getComputedStyle(tmp).color;
+  tmp.remove();
+  const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  if (!ctx) return [1, 1, 1];
+  ctx.canvas.width = ctx.canvas.height = 1;
+  ctx.fillStyle = css;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return [r / 255, g / 255, b / 255];
+}
+
+type Pendente = { alvo: 0 | 1; ponto: number; resolve: (trocar: boolean) => void };
 
 export function SceneBackground({ cena }: { cena: Cena }) {
   const { settings } = useSettings();
   const reduce = useReduce();
   const raiz = useRef<HTMLDivElement>(null);
-  const alvo = settings.theme === 'light' ? 1 : 0;
-  const p = useRef(alvo);
-  const tinta = useRef(alvo);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [webgl, setWebgl] = useState(() => Renderizador.suportado());
+  /** Sobe quando o contexto WebGL é restaurado, para recriar o renderizador. */
+  const [geracao, setGeracao] = useState(0);
+  const alvoTema: 0 | 1 = settings.theme === 'light' ? 1 : 0;
+  const deriva = settings.fundoAnimado && !reduce;
 
-  const mascara = useMemo(() => mascaraDoDia(cena), [cena]);
+  // Estado mutável do roteiro (não causa render).
+  const s = useRef({
+    p: alvoTema as number,
+    destino: alvoTema as 0 | 1,
+    modo: { acendendo: true, completa: false, simples: false } as Modo,
+    controle: null as AnimationPlaybackControls | null,
+    pendentes: [] as Pendente[],
+    rend: null as Renderizador | null,
+    raf: 0,
+    ultimo: 0,
+    foco: 1.5,
+    deriva,
+    reduce,
+    /** relógio da deriva e da água: só anda com o fundo animado (congela, não volta ao zero) */
+    relogio: 0,
+    relogioMarca: performance.now(),
+    semente: 0,
+    /** inversão no meio: quadro de onde saiu e quando */
+    inversao: null as { de: Quadro; t0: number } | null,
+    ultimoQuadro: null as Quadro | null,
+  });
+  s.current.deriva = deriva;
+  s.current.reduce = reduce;
 
-  // Primeiro quadro já no estado do tema atual, sem animação.
+  /** Desenha um quadro agora (canvas) e atualiza --p para as tintas e o modo sem WebGL. */
+  const desenhar = () => {
+    const e = s.current;
+    raiz.current?.style.setProperty('--p', e.p.toFixed(4));
+    if (!e.rend) return;
+    const agora = performance.now();
+    if (e.deriva) e.relogio += (agora - e.relogioMarca) / 1000;
+    e.relogioMarca = agora;
+    if (e.controle) e.semente = (e.semente + 0.618034) % 1;
+    const t = (e.relogio / tempos.deriva) * Math.PI * 2;
+    const [ax, ay] = tempos.derivaAmplitude;
+    const cam: Camera = {
+      foco: e.foco,
+      tempo: e.relogio,
+      deriva: [Math.sin(t) * ax, Math.cos(t * 0.8) * ay],
+      semente: e.semente,
+    };
+    let q = montarQuadro(cena, e.p, e.modo, cam);
+    if (e.inversao) {
+      const k = (agora - e.inversao.t0) / 1000 / tempos.inversao;
+      if (k >= 1) e.inversao = null;
+      else q = misturarQuadros(e.inversao.de, q, tempos.curva(k));
+    }
+    e.ultimoQuadro = q;
+    e.rend.desenhar(q);
+  };
+
+  /** Laço de quadros: na troca até cena.trocaFps; em repouso, só com deriva, a cena.derivaFps. */
+  const laco = (agora: number) => {
+    const e = s.current;
+    e.raf = 0;
+    if (!e.rend) return;
+    const animando = !!e.controle || !!e.inversao;
+    const intervalo = 1000 / (animando ? tempos.trocaFps : tempos.derivaFps);
+    if (agora - e.ultimo >= intervalo - 2) {
+      e.ultimo = agora;
+      desenhar();
+    }
+    if (animando || e.deriva) e.raf = requestAnimationFrame(laco);
+  };
+  const acordar = () => {
+    const e = s.current;
+    if (!e.raf && e.rend) e.raf = requestAnimationFrame(laco);
+  };
+
+  /** Resolve quem já pode trocar a interface (true) e quem foi substituído ou cancelado (false). */
+  const resolverPendentes = (fim: 'andando' | 'chegou' | 'cancelou') => {
+    const e = s.current;
+    e.pendentes = e.pendentes.filter((x) => {
+      if (fim === 'cancelou' || x.alvo !== e.destino) {
+        x.resolve(false);
+        return false;
+      }
+      const passou = x.alvo === 1 ? e.p >= x.ponto : e.p <= x.ponto;
+      if (fim === 'chegou' || passou) {
+        x.resolve(true);
+        return false;
+      }
+      return true;
+    });
+  };
+
+  /** Leva a cena até o alvo. Resolve true na hora de trocar o tema da interface; false se outra troca a substituiu. */
+  const irPara = (alvo: 0 | 1) =>
+    new Promise<boolean>((resolve) => {
+      const e = s.current;
+      const ponto = alvo === 1 ? tempos.trocaInterface.claro : tempos.trocaInterface.escuro;
+      if (e.destino === alvo && (e.controle || e.p === alvo)) {
+        e.pendentes.push({ alvo, ponto: e.reduce ? alvo : ponto, resolve });
+        resolverPendentes(e.p === alvo ? 'chegou' : 'andando');
+        return;
+      }
+      if (e.controle && e.ultimoQuadro) e.inversao = { de: e.ultimoQuadro, t0: performance.now() };
+      e.controle?.stop();
+      e.destino = alvo;
+      resolverPendentes('andando'); // pedidos para o alvo antigo: substituídos
+      e.pendentes.push({ alvo, ponto: e.reduce ? alvo : ponto, resolve });
+      e.modo = { acendendo: alvo === 1, completa: alvo === 1 && e.p <= 0, simples: e.reduce };
+      const total = e.reduce ? tempos.duracaoReduzida : alvo === 1 ? tempos.duracaoClaro : tempos.duracaoEscuro;
+      e.controle = animate(e.p, alvo, {
+        duration: total * Math.abs(alvo - e.p),
+        ease: tempos.progressoEase,
+        onUpdate: (v) => {
+          e.p = v;
+          resolverPendentes('andando');
+        },
+        onComplete: () => {
+          e.controle = null;
+          e.p = alvo;
+          e.modo = { acendendo: alvo === 1, completa: false, simples: false };
+          resolverPendentes('chegou');
+          desenhar();
+        },
+      });
+      acordar();
+    });
+
+  // Renderizador: cria, carrega as fotos e desenha o estado atual.
   useLayoutEffect(() => {
     const el = raiz.current;
+    const cv = canvas.current;
     if (!el) return;
-    aplicar(el, cena, p.current, false, false);
-    el.style.setProperty('--tinta', String(tinta.current));
+    el.style.setProperty('--p', String(s.current.p));
+    el.style.setProperty('--tinta', String(s.current.p));
+    if (!webgl || !cv) return;
+    const blur = parseFloat(getComputedStyle(el).getPropertyValue('--scene-blur')) || 0;
+    s.current.foco = Math.log2(1 + blur);
+    const cores: Cores = {
+      gradeNoite: corDoToken(el, '--scene-grade-noite'),
+      gradeDia: corDoToken(el, '--scene-grade-dia'),
+      aurora: corDoToken(el, '--scene-aurora'),
+      bloom: corDoToken(el, '--scene-bloom'),
+      bloomCidade: corDoToken(el, '--scene-bloom-cidade'),
+    };
+    let rend: Renderizador;
+    try {
+      rend = new Renderizador(cv, cena, cores, { grao: tempos.grao, vinheta: tempos.vinheta, agua: tempos.agua });
+    } catch {
+      setWebgl(false);
+      return;
+    }
+    cv.style.opacity = '0';
+    rend.redimensionar(tempos.canvasMaxPixels);
+    rend
+      .carregar()
+      .then((ok) => {
+        if (!ok) return;
+        s.current.rend = rend;
+        desenhar();
+        // Surge esmaecendo: nada de retângulo preto enquanto as fotos chegam.
+        cv.style.transition = `opacity ${tempos.surgir}s`;
+        cv.style.opacity = '1';
+        acordar();
+      })
+      .catch(() => setWebgl(false));
+    const ro = new ResizeObserver(() => {
+      rend.redimensionar(tempos.canvasMaxPixels);
+      desenhar();
+    });
+    ro.observe(cv);
+    // Perda de contexto (suspensão, troca de GPU): recria quando o navegador devolver.
+    const perdeu = (ev: Event) => {
+      ev.preventDefault();
+      s.current.rend = null;
+    };
+    const voltou = () => setGeracao((g) => g + 1);
+    cv.addEventListener('webglcontextlost', perdeu);
+    cv.addEventListener('webglcontextrestored', voltou);
+    return () => {
+      ro.disconnect();
+      cv.removeEventListener('webglcontextlost', perdeu);
+      cv.removeEventListener('webglcontextrestored', voltou);
+      cancelAnimationFrame(s.current.raf);
+      s.current.raf = 0;
+      s.current.rend = null;
+      rend.destruir();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cena, webgl, geracao]);
+
+  // O botão de tema conversa com a cena por aqui.
+  useEffect(() => {
+    registrarCena(irPara);
+    return () => {
+      registrarCena(null);
+      const e = s.current;
+      e.controle?.stop();
+      e.controle = null;
+      e.p = e.destino; // desmontado no meio: não fica preso a meio caminho
+      e.inversao = null;
+      resolverPendentes('cancelou');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cena]);
 
-  // Tintas de contraste: acompanham o tema logo.
+  // Tema trocado por qualquer caminho (botão, página Aparência, Ctrl+K): a cena segue.
+  useEffect(() => {
+    void irPara(alvoTema);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alvoTema]);
+
+  // Tintas de contraste acompanham o tema da interface, no mesmo esmaecimento dela.
+  const tinta = useRef(alvoTema as number);
   useEffect(() => {
     const el = raiz.current;
-    if (!el || tinta.current === alvo) return;
-    const controle = animate(tinta.current, alvo, {
-      duration: (reduce ? tempos.duracaoReduzida : tempos.tinta) * Math.abs(alvo - tinta.current),
-      ease: tempos.tintaEase,
+    if (!el || tinta.current === alvoTema) return;
+    const c = animate(tinta.current, alvoTema, {
+      duration: (reduce ? tempos.duracaoReduzida : tempos.esmaecerInterface) * Math.abs(alvoTema - tinta.current),
+      ease: tempos.esmaecerEase,
       onUpdate: (v) => {
         tinta.current = v;
         el.style.setProperty('--tinta', v.toFixed(4));
       },
     });
-    return () => controle.stop();
-  }, [alvo, reduce]);
+    return () => c.stop();
+  }, [alvoTema, reduce]);
 
-  // Cena: percorre o caminho do ponto em que está até o alvo.
+  // Deriva ligada/desligada: acorda o laço (ao desligar, a câmera congela onde está).
   useEffect(() => {
-    const el = raiz.current;
-    if (!el) return;
-    const final = () => aplicar(el, cena, alvo, false, false);
-    if (p.current === alvo) {
-      final();
-      return;
-    }
-    const piscar = p.current <= 0 && alvo === 1;
-    const total = reduce ? tempos.duracaoReduzida : tempos.duracao;
-    const controle = animate(p.current, alvo, {
-      duration: total * Math.abs(alvo - p.current),
-      ease: tempos.progressoEase,
-      onUpdate: (v) => {
-        p.current = v;
-        aplicar(el, cena, v, piscar, reduce);
+    s.current.relogioMarca = performance.now();
+    if (deriva) acordar();
+    else desenhar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deriva]);
+
+  // Ferramenta de conferência (só em desenvolvimento): desenha um ponto qualquer da sequência.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const w = window as unknown as { __cena?: unknown };
+    w.__cena = {
+      quadro: (p: number, acendendo = true) => {
+        const e = s.current;
+        e.controle?.stop();
+        e.controle = null;
+        e.inversao = null;
+        e.p = p;
+        e.modo = { acendendo, completa: acendendo, simples: false };
+        resolverPendentes('cancelou');
+        desenhar();
       },
-      onComplete: final,
-    });
-    return () => controle.stop();
-  }, [alvo, cena, reduce]);
+    };
+    return () => {
+      delete w.__cena;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cena]);
 
   const vars = { '--scene-ratio': cena.proporcao } as CSSProperties;
-  const { brilho } = cena.ajuste;
 
   return (
     <div ref={raiz} className="scene" style={vars} aria-hidden>
-      <div className="scene-box">
-        <div
-          className={cn('scene-drift', (!settings.fundoAnimado || reduce) && 'paused')}
-          style={{ animationDuration: `${tempos.deriva}s` }}
-        >
-          {cena.noite ? (
-            <img className="scene-img" src={cena.noite} alt="" draggable={false} decoding="async" />
-          ) : (
-            <>
-              <img className="scene-img scene-noite-derivada" src={cena.dia} alt="" draggable={false} decoding="async" />
-              <div className="scene-noite-tinta" />
-            </>
-          )}
-          <img
-            className="scene-img"
-            src={cena.dia}
-            alt=""
-            draggable={false}
-            decoding="async"
-            style={{ maskImage: mascara, WebkitMaskImage: mascara }}
-          />
-          {cena.luzes.map((l, i) => (
-            <span
-              key={i}
-              className="scene-glow"
-              style={{
-                left: `${l.x}%`,
-                top: `${l.y}%`,
-                width: `${l.w * brilho.largura}%`,
-                height: `${l.w * brilho.altura * cena.proporcao}%`,
-                opacity: `var(--g${i})`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
+      {webgl ? (
+        <canvas ref={canvas} className="scene-canvas" />
+      ) : (
+        <>
+          <img className="scene-img" src={cena.noite} alt="" draggable={false} decoding="async" />
+          <img className="scene-img scene-img-dia" src={cena.dia} alt="" draggable={false} decoding="async" />
+        </>
+      )}
       <div className="scene-tinta scene-tinta-noite" />
       <div className="scene-tinta scene-tinta-noite-forte" />
       <div className="scene-tinta scene-tinta-dia" />

@@ -5,7 +5,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Bell, CalendarPlus, ChevronDown, ChevronRight, Handshake, Moon, Plus, Search, Sun, UserPlus } from 'lucide-react';
 import { useStore } from '../../store';
 import { useReduce, useSettings } from '../../theme/settings';
-import { ease } from '../../motion/tokens';
+import { cena, ease } from '../../motion/tokens';
+import { cenaAtiva, pedirCena } from './sceneSync';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Bits';
 import { MenuItem, Popover } from '../ui/Overlays';
@@ -130,15 +131,61 @@ export function Topbar() {
   );
 }
 
-/** Troca de tema com revelação circular a partir do botão (View Transitions API). */
+/**
+ * Troca de tema. Com fundo de cena (escritório, cidade) a luz muda primeiro e a interface esmaece
+ * no meio da sequência; nos outros fundos, revelação circular a partir do botão (View Transitions API).
+ */
 export function ThemeToggle() {
   const { settings, set } = useSettings();
   const reduce = useReduce();
-  const dark = settings.theme === 'dark';
+  /** Tema pedido enquanto a cena ainda não chegou no ponto de troca: o ícone já responde ao clique. */
+  const [pedido, setPedido] = useState<'light' | 'dark' | null>(null);
+  const vez = useRef(0);
+  const visivel = pedido ?? settings.theme;
+  const dark = visivel === 'dark';
+
+  async function trocarComCena(next: 'light' | 'dark') {
+    const minha = ++vez.current;
+    setPedido(next);
+    const root = document.documentElement;
+    try {
+      const pode = await pedirCena(next === 'light' ? 1 : 0);
+      if (!pode || minha !== vez.current) return; // outra troca tomou o lugar desta
+      const doc = document as Document & {
+        startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> };
+      };
+      if (!doc.startViewTransition) {
+        set({ theme: next });
+        return;
+      }
+      root.classList.add('vt-cena');
+      const t = doc.startViewTransition(() => {
+        flushSync(() => set({ theme: next }));
+        root.dataset.theme = next;
+      });
+      const opcoes = { duration: cena.esmaecerInterface * 1000, easing: `cubic-bezier(${cena.esmaecerEase.join(',')})` };
+      t.ready
+        .then(() => {
+          root.animate({ opacity: [1, 0] }, { ...opcoes, fill: 'forwards', pseudoElement: '::view-transition-old(root)' });
+          root.animate({ opacity: [0, 1] }, { ...opcoes, pseudoElement: '::view-transition-new(root)' });
+        })
+        .catch(() => {});
+      await t.finished.catch(() => {});
+    } finally {
+      if (minha === vez.current) {
+        root.classList.remove('vt-cena');
+        setPedido(null);
+      }
+    }
+  }
 
   function toggle(e: MouseEvent) {
     const next = dark ? 'light' : 'dark';
     const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
+    if (cenaAtiva() && !reduce) {
+      void trocarComCena(next);
+      return;
+    }
     if (!doc.startViewTransition || reduce) {
       set({ theme: next });
       return;
@@ -155,18 +202,21 @@ export function ThemeToggle() {
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
         { duration: 700, easing: 'cubic-bezier(.16,1,.3,1)', pseudoElement: '::view-transition-new(root)' },
       ),
-    );
+    ).catch(() => {
+      /* transição abortada (aba oculta, clique duplo): o tema já foi trocado */
+    });
   }
 
   return (
     <button
       onClick={toggle}
       aria-label={dark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+      aria-busy={pedido !== null}
       className="chip size-11 rounded-2xl grid place-items-center overflow-hidden hover:bg-[var(--chip-hover)] transition-colors"
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
-          key={settings.theme}
+          key={visivel}
           initial={{ y: 18, rotate: -90, opacity: 0 }}
           animate={{ y: 0, rotate: 0, opacity: 1 }}
           exit={{ y: -18, rotate: 90, opacity: 0 }}

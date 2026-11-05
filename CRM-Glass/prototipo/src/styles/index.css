@@ -385,60 +385,31 @@
   opacity: var(--noise-opacity);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-/* ---------- Fundo de cena (foto) ---------- */
+/* ---------- Fundo de cena (foto renderizada por shader) ---------- */
 .scene {
   position: absolute;
   inset: 0;
   overflow: hidden;
 }
-/* Caixa na proporção da foto que sempre cobre a tela: as % da cena batem com a foto. */
-.scene-box {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: max(100vw, calc(100vh * var(--scene-ratio)));
-  aspect-ratio: var(--scene-ratio);
-  translate: -50% -50%;
-  filter: blur(var(--scene-blur));
-}
-.scene-drift {
-  position: absolute;
-  inset: -2%;
-  /* duração vem de cena.deriva (motion/tokens.ts), aplicada no componente */
-  animation: scene-drift ease-in-out infinite alternate;
-  will-change: transform;
-}
-.scene-drift.paused {
-  animation-play-state: paused;
-}
-@keyframes scene-drift {
-  to {
-    transform: scale(1.04) translate3d(-0.6%, 0.4%, 0);
-  }
-}
-.scene-img {
+.scene-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  display: block;
+}
+/* Sem WebGL 2: as duas fotos esmaecem uma sobre a outra. */
+.scene-img {
+  position: absolute;
+  inset: -2%;
+  width: 104%;
+  height: 104%;
   object-fit: cover;
+  filter: blur(var(--scene-blur));
   user-select: none;
 }
-.scene-noite-derivada {
-  filter: var(--scene-night-filter);
-}
-.scene-noite-tinta {
-  position: absolute;
-  inset: 0;
-  background: var(--scene-night-tint);
-  mix-blend-mode: multiply;
-}
-.scene-glow {
-  position: absolute;
-  translate: -50% -50%;
-  background: radial-gradient(closest-side, var(--scene-glow), transparent);
-  mix-blend-mode: screen;
-  pointer-events: none;
+.scene-img-dia {
+  opacity: var(--p, 0);
 }
 .scene-tinta {
   position: absolute;
@@ -503,12 +474,23 @@
   mix-blend-mode: normal;
 }
 
+/*
+ * Troca de tema com fundo de cena: esmaecimento cruzado da página inteira (Topbar.tsx).
+ * plus-lighter soma as duas capturas, então o meio do esmaecimento não perde opacidade.
+ */
+html.vt-cena::view-transition-old(root),
+html.vt-cena::view-transition-new(root) {
+  mix-blend-mode: plus-lighter;
+}
+html.vt-cena::view-transition-image-pair(root) {
+  isolation: isolate;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .orb,
   .aurora,
   .wave-1,
   .wave-2,
-  .scene-drift,
   .animate-wave-hand {
     animation: none;
   }

@@ -1,12 +1,21 @@
 import { useReduce, useSettings } from '../../theme/settings';
 import { cn } from '../../lib/utils';
 import { SceneBackground } from './SceneBackground';
-import { ESCRITORIO } from './cenas';
+import { CENAS } from './cenas';
 
 /** Fundo vivo: o vidro só fica bonito quando tem algo com cor e profundidade atrás. */
 export function LiveBackground() {
   const { settings } = useSettings();
   const reduce = useReduce();
+  const cena = CENAS.find((c) => c.id === settings.fundo);
+  if (cena) {
+    // Cena fotográfica: o shader já faz vinheta e grão; o brilho de destaque tingiria a foto.
+    return (
+      <div className="live-bg" aria-hidden>
+        <SceneBackground key={cena.id} cena={cena} />
+      </div>
+    );
+  }
   return (
     <div className={cn('live-bg', (!settings.fundoAnimado || reduce) && 'paused')} aria-hidden>
       <div className="base" />
@@ -24,7 +33,6 @@ export function LiveBackground() {
         </>
       )}
       {settings.fundo === 'ondas' && <Waves />}
-      {settings.fundo === 'escritorio' && <SceneBackground cena={ESCRITORIO} />}
       <div className="vignette" />
       <div className="noise" />
     </div>

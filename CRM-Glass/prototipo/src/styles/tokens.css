@@ -143,22 +143,23 @@
 }
 
 /* ---------- Fundo de cena (foto que acende/apaga com o tema) ----------
- * Valem nos dois temas: a cena passa de noite para dia durante a troca,
- * então a tinta de cada tema é misturada pela própria animação, não pelo seletor.
+ * Valem nos dois temas: a cena passa de noite para dia durante a troca.
+ * O shader lê estas cores na inicialização (SceneShader.ts) — nada de cor literal no GLSL.
  */
 :root {
   --scene-blur: 3px;
-  /* noite derivada da foto de dia quando a cena não tem foto noturna própria */
-  --scene-night-filter: brightness(0.6) contrast(1.1) saturate(0.55);
-  --scene-night-tint: rgb(28 42 96 / 0.62);
   /* tinta por cima da foto para garantir contraste do vidro e do texto */
   --scene-tint-noite: rgb(7 7 13 / 0.28);
   --scene-tint-dia: rgb(233 236 244 / 0.3);
   /* reforço durante a troca de tema, enquanto a foto ainda mostra o tema anterior */
   --scene-tint-noite-forte: rgb(7 7 13 / 0.75);
   --scene-tint-dia-forte: rgb(233 236 244 / 0.7);
-  /* brilho das luminárias ao acender */
-  --scene-glow: rgb(255 250 236 / 0.95);
-  /* valor opaco usado só nas máscaras (não aparece como cor) */
-  --scene-mask: #000;
+  /* gradação de cor (multiplicadores; branco = sem mudança) */
+  --scene-grade-noite: rgb(236 242 255);
+  --scene-grade-dia: rgb(255 253 249);
+  /* luz quente do amanhecer e do entardecer */
+  --scene-aurora: rgb(255 178 122);
+  /* brilho (bloom) das luminárias e das luzes da cidade */
+  --scene-bloom: rgb(255 246 226);
+  --scene-bloom-cidade: rgb(255 204 140);
 }

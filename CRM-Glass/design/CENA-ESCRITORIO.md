@@ -1,29 +1,59 @@
-# Fundo de cena: escritório
+# Fundos de cena: escritório e cidade
 
-Fundo fotográfico que acompanha o tema: no **claro** a janela amanhece e as luminárias acendem uma a uma (da frente para o fundo); no **escuro** apagam na ordem inversa. Código em `prototipo/src/components/layout/SceneBackground.tsx`, dados em `cenas.ts`, tempos em `motion/tokens.ts` (`cena`), cores em `styles/tokens.css` (bloco "Fundo de cena").
+Fundo fotográfico que acompanha o tema, como um plano de cinema. Um shader WebGL mistura a foto de **noite** e a de **dia** (mesmo enquadramento) em espaço linear, como luz de verdade.
 
-Usa o par dia/noite gerado no Gemini (05/11/2026), em `prototipo/public/cenas/escritorio/` (`dia.webp` e `noite.webp`, 1672×941, alinhados pixel a pixel). Se uma cena não tiver foto noturna, a noite é derivada por filtro.
+- **Escritório, tema claro:** a janela amanhece com luz quente e as luzes da cidade apagam uma a uma. As fileiras de luminárias acendem da frente para o fundo, com partida de lâmpada fluorescente. A câmera dá um leve estouro de exposição quando cada fileira firma e depois se ajusta.
+- **Escritório, tema escuro:** o inverso. As fileiras apagam do fundo para a frente, a janela entardece e a cidade acende.
+- **Cidade:** sem luminárias. O céu amanhece ou anoitece, as janelas dos prédios acendem ou apagam cada uma no seu tempo, e o reflexo na água ondula.
+- **Durante a troca:** leve aproximação de câmera, respiro de foco, bloom nas luzes, vinheta e grão de filme. A interface troca de tema esmaecendo no meio da sequência (`cena.trocaInterface`), não no clique.
+- **Movimento reduzido:** só esmaece. **Sem WebGL 2:** as duas fotos esmaecem uma sobre a outra.
 
-## Como gerar o par (Gemini, plano gratuito)
+## Onde está cada coisa
 
-1. Anexe a imagem de referência de composição e use o prompt **Dia**.
-2. **Na mesma conversa**, anexe a imagem do dia que saiu (não a referência) e use o prompt **Noite**.
-3. Salve como `escritorio-dia.png` e `escritorio-noite.png`. O alinhamento é conferido antes de entrar no sistema.
+| O quê | Arquivo |
+|---|---|
+| Roteiro (tempo → quadro) | `prototipo/src/components/layout/SceneBackground.tsx` |
+| Shader e texturas | `prototipo/src/components/layout/SceneShader.ts` |
+| Dados das cenas (fotos, luminárias por fileira) | `prototipo/src/components/layout/cenas.ts` |
+| Ponte com o botão de tema | `prototipo/src/components/layout/sceneSync.ts` e `Topbar.tsx` |
+| Tempos e curvas | `prototipo/src/motion/tokens.ts` (`cena`) |
+| Cores (gradação, aurora, bloom, tintas) | `prototipo/src/styles/tokens.css` (bloco "Fundo de cena") |
+| Máscaras | `prototipo/scripts/cena-mascaras.py` → `public/cenas/<cena>/mascaras.png` |
 
-Por que estes cuidados: o fundo fica atrás de cartões de vidro, então **nada muito escuro ou saturado** pode ficar no terço de baixo e no centro (onde ficam os cartões). Monitores escuros e móveis amarelos viravam manchas no tema claro.
+Para conferir um ponto da sequência em desenvolvimento, rode no console do navegador `__cena.quadro(0.35)`. O segundo parâmetro `false` mostra o caminho de apagar.
+
+## Escritório
+
+Par gerado no Gemini em 05/11/2026, em `public/cenas/escritorio/` (`dia.webp`, `noite.webp`, 1672×941, alinhados pixel a pixel). São 20 luminárias em 6 fileiras.
+
+Máscaras:
+
+```bash
+python -I scripts/cena-mascaras.py public/cenas/escritorio/dia.webp public/cenas/escritorio/noite.webp public/cenas/escritorio/mascaras.png --teto 0.38 --exterior "0,30 185,120 335,195 430,245 545,300 635,340 635,505 555,520 555,540 372,560 372,690 272,705 272,648 0,650"
+```
+
+## Cidade (a gerar)
+
+Composição: orla com prédios e reflexo na água, tipo Singapura ao entardecer. A imagem de referência (`images.jpg`) está na Lixeira. Se quiser usá-la, restaure e anexe como referência de composição.
+
+1. No Gemini, use o prompt **Dia** (com a referência anexada, se houver).
+2. **Na mesma conversa**, anexe a imagem do dia que saiu e use o prompt **Noite**.
+3. Salve em Downloads como `cidade-dia.png` e `cidade-noite.png`.
+
+O fundo fica atrás de cartões de vidro, então nada muito saturado (neon) nem muito escuro no centro.
 
 ### Dia
 
-> Use the attached image only as a composition reference (camera angle, window wall on the left, rows of ceiling lights). Create a new, original scene; do not copy it.
+> Use the attached image only as a composition reference (waterfront skyline seen from the opposite shore). Create a new, original scene; do not copy it.
 >
-> Photorealistic wide-angle photo of a modern open-plan office interior, eye level, symmetric one-point perspective toward the back wall. Floor-to-ceiling window wall on the left showing a city skyline under a clear daytime sky. White ceiling with 4 rows of rectangular recessed LED panel lights receding into the distance, all switched ON. Low white desks with light grey chairs; no desktop monitors. A few laptops, closed or showing a soft light-grey screen. Nothing dark or high-contrast in the lower third or in the center of the image. A glass-walled meeting room on the right with light grey chairs. Neutral palette: white, light grey, soft natural wood, a few green plants. No saturated colors, no yellow furniture, no black objects, no logos, no text, no people. Calm, uncluttered, evenly lit. 16:9, the highest resolution available.
+> Photorealistic wide cinematic photo of a modern city skyline on a calm waterfront in the morning, eye level from the opposite shore. The skyline fills the middle third of the frame, calm water in the lower third with soft reflections of the buildings, clear light-blue sky with a few thin clouds in the upper third. Muted natural palette: soft blues, warm greys, glass and concrete. Building windows unlit. No neon, no saturated colors, no logos, no text, no boats or people in the center. 16:9, the highest resolution available.
 
 ### Noite (edição da imagem do dia)
 
-> Same image, exact same framing, camera and objects. Change to night: every ceiling light switched OFF, laptop screens off, office interior dark with faint cool blue light coming from the window, city outside at night with scattered lit windows, deep navy sky. Do not move, add or remove anything.
+> Same image, exact same framing, camera and buildings. Change to night: deep navy sky, warm lights on in many building windows (scattered, not all of them), soft reflections of those lights on the water, a few warm street lights along the shore. No neon colors, no fireworks. Do not move, add or remove anything.
 
-## Ao receber as imagens
+### Ao receber as imagens
 
-- Converter para AVIF/WebP em 1280 e 2560 px (ou o que o gerador entregar) em `prototipo/public/cenas/escritorio/`.
-- Em `cenas.ts`: trocar `dia`, preencher `noite` e **remapear as luminárias** (x, y, largura em % da foto) e a elipse da janela.
-- Repetir a conferência: escuro, claro, troca de tema, movimento reduzido, 375 px, contraste.
+- Conferir o alinhamento e converter para WebP em `public/cenas/cidade/`.
+- Gerar as máscaras com `--exterior` cobrindo o céu e os prédios (tudo menos a água) e `--agua` cobrindo a água.
+- Criar a cena em `cenas.ts` sem luminárias e registrar em `CENAS`, `Fundo` (`settings.tsx`) e na página Aparência.
