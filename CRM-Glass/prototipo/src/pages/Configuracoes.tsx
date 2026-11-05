@@ -6,6 +6,7 @@ import { Segmented, Toggle } from '../components/ui/Bits';
 import { useSettings, type Accent, type Fundo, type Theme } from '../theme/settings';
 import { spring } from '../motion/tokens';
 import { cn } from '../lib/utils';
+import { ESCRITORIO } from '../components/layout/cenas';
 
 const ACCENTS: { id: Accent; nome: string }[] = [
   { id: 'violeta', nome: 'Violeta' },
@@ -20,6 +21,7 @@ const FUNDOS: { id: Fundo; nome: string; desc: string }[] = [
   { id: 'aurora', nome: 'Aurora', desc: 'Gradiente cônico girando' },
   { id: 'ondas', nome: 'Ondas', desc: 'Curvas de luz' },
   { id: 'minimo', nome: 'Mínimo', desc: 'Só um brilho suave' },
+  { id: 'escritorio', nome: 'Escritório', desc: 'Luzes que seguem o tema' },
 ];
 
 /** Painel para experimentar a direção visual ao vivo. */
@@ -92,7 +94,7 @@ export default function Configuracoes() {
 
         <GlassCard className="col-span-12 lg:col-span-8">
           <CardHeader title="Fundo" subtitle="O vidro precisa de algo vivo atrás para brilhar" action={<Toggle checked={settings.fundoAnimado} onChange={(v) => set({ fundoAnimado: v })} label="Animado" />} />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
             {FUNDOS.map((f) => {
               const on = settings.fundo === f.id;
               return (
@@ -120,6 +122,16 @@ export default function Configuracoes() {
                         <path d="M0 42 C 25 20, 50 60, 100 22 L100 60 L0 60Z" style={{ fill: 'var(--accent)' }} opacity=".6" />
                         <path d="M0 14 C 30 0, 60 34, 100 8 L100 0 L0 0Z" style={{ fill: 'var(--accent-2)' }} opacity=".5" />
                       </svg>
+                    )}
+                    {f.id === 'escritorio' && (
+                      <>
+                        <img
+                          src={ESCRITORIO.dia}
+                          alt=""
+                          className={cn('absolute inset-0 size-full object-cover', settings.theme === 'dark' && 'scene-noite-derivada')}
+                        />
+                        {settings.theme === 'dark' && <span className="scene-noite-tinta" />}
+                      </>
                     )}
                     {f.id === 'minimo' && <span className="absolute inset-0" style={{ background: 'radial-gradient(circle at 20% 0%, var(--accent-glow), transparent 70%)' }} />}
                   </div>

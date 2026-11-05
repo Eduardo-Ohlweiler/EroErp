@@ -132,3 +132,24 @@
 [data-accent] {
   --accent-glow: color-mix(in srgb, var(--accent) 50%, transparent);
 }
+
+/* ---------- Fundo de cena (foto que acende/apaga com o tema) ----------
+ * Valem nos dois temas: a cena passa de noite para dia durante a troca,
+ * então a tinta de cada tema é misturada pela própria animação, não pelo seletor.
+ */
+:root {
+  --scene-blur: 3px;
+  /* noite derivada da foto de dia quando a cena não tem foto noturna própria */
+  --scene-night-filter: brightness(0.42) contrast(1.08) saturate(0.45);
+  --scene-night-tint: rgb(28 42 96 / 0.62);
+  /* tinta por cima da foto para garantir contraste do vidro e do texto */
+  --scene-tint-noite: rgb(7 7 13 / 0.5);
+  --scene-tint-dia: rgb(233 236 244 / 0.3);
+  /* reforço durante a troca de tema, enquanto a foto ainda mostra o tema anterior */
+  --scene-tint-noite-forte: rgb(7 7 13 / 0.75);
+  --scene-tint-dia-forte: rgb(233 236 244 / 0.7);
+  /* brilho das luminárias ao acender */
+  --scene-glow: rgb(255 250 236 / 0.95);
+  /* valor opaco usado só nas máscaras (não aparece como cor) */
+  --scene-mask: #000;
+}

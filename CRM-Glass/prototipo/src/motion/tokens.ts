@@ -48,3 +48,44 @@ export const staggerGroup: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.035 } },
 };
+
+/**
+ * Fundo de cena (escritório): troca de tema acende ou apaga as luzes uma a uma.
+ * Os trechos são frações do progresso 0 → 1 (0 = noite, 1 = dia); o tema escuro percorre o mesmo caminho ao contrário.
+ */
+export const cena = {
+  /** Sequência completa, em segundos. */
+  duracao: 2.8,
+  /** Movimento reduzido: só esmaece, sem sequência. */
+  duracaoReduzida: 0.35,
+  /** Janela amanhecendo / anoitecendo. */
+  janela: [0, 0.62] as [number, number],
+  /** Primeira luz começa em `inicio`, a última em `fim`; cada uma leva `luz` para acender. */
+  luzes: { inicio: 0.06, fim: 0.66, luz: 0.16 },
+  /** Depois da última luz, o resto do ambiente clareia. */
+  preencher: [0.74, 1] as [number, number],
+  /** Quanto o ambiente todo já clareou quando todas as luzes acenderam, antes do preenchimento final (0–1). */
+  ambiente: 0.5,
+  /** Quanto o brilho das luminárias fica depois que tudo clareou (0–1). */
+  brilhoFinal: 0.3,
+  /** As tintas de contraste seguem o tema logo, sem esperar a sequência (mesma duração da revelação circular). */
+  tinta: 0.7,
+  tintaEase: ease.out,
+  /** O progresso corre linear; cada trecho aplica a própria curva (`curva`). */
+  progressoEase: 'linear' as const,
+  curva: (v: number) => v * v * (3 - 2 * v),
+  /** Piscada de lâmpada ao acender: pontos [x, y], interpolados em linha reta (sobe, falha, volta, falha de leve, firma). */
+  piscada: [
+    [0, 0],
+    [0.12, 0.9],
+    [0.121, 0.15],
+    [0.22, 0.15],
+    [0.221, 0.85],
+    [0.34, 0.85],
+    [0.341, 0.35],
+    [0.44, 0.35],
+    [1, 1],
+  ] as [number, number][],
+  /** Deriva lenta da foto em repouso, em segundos. */
+  deriva: 60,
+};

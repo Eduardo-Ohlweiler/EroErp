@@ -1,0 +1,6 @@
+# Imagens provisórias de banco (prévias sem licença), só para testar o fundo de cena
+prototipo/public/cenas/_provisorio/
+
+# Artefatos de build do protótipo
+prototipo/dist/
+prototipo/*.tsbuildinfo

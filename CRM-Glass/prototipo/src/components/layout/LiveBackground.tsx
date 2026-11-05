@@ -1,11 +1,14 @@
-import { useSettings } from '../../theme/settings';
+import { useReduce, useSettings } from '../../theme/settings';
 import { cn } from '../../lib/utils';
+import { SceneBackground } from './SceneBackground';
+import { ESCRITORIO } from './cenas';
 
 /** Fundo vivo: o vidro só fica bonito quando tem algo com cor e profundidade atrás. */
 export function LiveBackground() {
   const { settings } = useSettings();
+  const reduce = useReduce();
   return (
-    <div className={cn('live-bg', !settings.fundoAnimado && 'paused')} aria-hidden>
+    <div className={cn('live-bg', (!settings.fundoAnimado || reduce) && 'paused')} aria-hidden>
       <div className="base" />
       {settings.fundo === 'orbs' && (
         <>
@@ -21,6 +24,7 @@ export function LiveBackground() {
         </>
       )}
       {settings.fundo === 'ondas' && <Waves />}
+      {settings.fundo === 'escritorio' && <SceneBackground cena={ESCRITORIO} />}
       <div className="vignette" />
       <div className="noise" />
     </div>
