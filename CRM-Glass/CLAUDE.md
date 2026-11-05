@@ -2,7 +2,7 @@
 
 Produto comercial (SaaS web): CRM com visual glass, que vai crescer para agenda, cadastros (pessoas, filiais, produtos) e outros módulos. A direção visual está em `design/DIRECAO-VISUAL.md` e vale para tudo.
 
-Estado atual: só front-end. Backend (NestJS ou Spring Boot, PostgreSQL) e multiempresa ainda não decididos.
+Estado atual: só front-end. Backend decidido: Java + Spring Boot, PostgreSQL, Docker, multi-tenant (uma aplicação e um banco para todos os clientes).
 Onde paramos, decisões em aberto e próximos passos: `CONTINUAR.md`.
 
 ## Pastas

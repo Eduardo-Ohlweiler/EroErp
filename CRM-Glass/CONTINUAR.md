@@ -1,6 +1,6 @@
 # Como continuar este projeto em outro computador
 
-Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 04/11/2026.
+Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 05/11/2026.
 
 ---
 
@@ -67,13 +67,15 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 | Cor de destaque | Configurável por empresa cliente; padrão violeta → azul |
 | Vidro | Três níveis: `glass-subtle`, `glass`, `glass-solid` (tabelas e formulários usam o mais opaco) |
 | Front-end | React + TypeScript + Vite + Tailwind CSS 4 + Motion (Framer Motion) + lucide-react |
+| Backend | Java + Spring Boot (versão a confirmar ao criar o projeto; recomendação: Java 25 LTS + Spring Boot 4) |
 | Banco | PostgreSQL |
+| Multiempresa | **Multi-tenant**: uma aplicação e um banco para todos os clientes, separados por empresa (decidido em 05/11/2026) |
+| Infraestrutura | Docker (Docker Compose) |
 | Primeira entrega | Design system + protótipo navegável, **só visual, com dados fictícios** |
 
 ### Decisões em aberto
 
-- **Backend:** NestJS ou Java com Spring Boot.
-- **Multiempresa (multi-tenant):** ainda não decidido.
+- **Para ver mais tarde:** hospedagem, integração com WhatsApp (Evolution API), assistente de IA, filas e demais detalhes de infraestrutura.
 - **Nome e identidade:** "Vitrum" é provisório; falta escolher a cor de destaque oficial e o logotipo.
 - **Biblioteca de componentes do produto final:** a proposta é shadcn/ui (Radix) reestilizado para glass. O protótipo usa componentes próprios mais simples.
 
@@ -110,5 +112,5 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 1. **Feedback visual:** navegar no protótipo e listar o que mudar (cores, densidade, fundo, intensidade do vidro, animações). A página **Aparência** ajuda a testar opções antes de decidir.
 2. **Fechar a identidade:** nome, cor de destaque oficial, logotipo. Atualizar `tokens.css` e a direção visual.
 3. **Conferir o que ficou sem verificar:** as telas da seção 4, o celular, e uma revisão com o agente `revisor-ui`.
-4. **Decidir o backend** (NestJS × Spring Boot) e o modelo multiempresa.
+4. **Começar o backend** em Java + Spring Boot, PostgreSQL e Docker, já multi-tenant.
 5. **Montar o projeto definitivo:** estrutura por módulos, shadcn/ui reestilizado, TanStack Router/Query/Table, React Hook Form + Zod, MSW para simular a API e, depois, a API real com PostgreSQL.
