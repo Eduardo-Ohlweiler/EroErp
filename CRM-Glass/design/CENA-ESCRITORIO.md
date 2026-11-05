@@ -1,4 +1,4 @@
-# Fundos de cena: escritório e cidade
+# Fundos de cena: escritório, cidade, marina, expediente e coworking
 
 Fundo fotográfico que acompanha o tema, como um plano de cinema. Um shader WebGL mistura a foto de **noite** e a de **dia** (mesmo enquadramento) em espaço linear, como luz de verdade.
 
@@ -64,3 +64,47 @@ python -I scripts/cena-mascaras.py public/cenas/cidade/dia.webp public/cenas/cid
 > Same image, exact same framing, camera and buildings. Change to night: deep navy sky, warm lights on in many building windows (scattered, not all of them), soft reflections of those lights on the water, a few warm street lights along the shore. No neon colors, no fireworks. Do not move, add or remove anything.
 
 Em uma nova geração, acrescentar ao prompt de noite: *"No logos, brand signs, neon strips or text on any building; no red or blue lights."*
+
+## Marina
+
+Baía com iates e cores fortes. O par foi **editado** no Gemini em 05/11/2026 a partir de uma foto de Dubai (`HAzlPE.webp`, 500×336): primeiro a versão de dia da própria foto e, na mesma conversa, a noite a partir do dia. Fica em `public/cenas/marina/` (`dia.webp`, `noite.webp`, 1262×848, alinhados pixel a pixel).
+
+**Atenção:** a cena mostra o Burj Al Arab e o Jumeirah Beach Hotel, prédios reais com silhueta registrada como marca. Serve para o protótipo; antes de vender, trocar a cena ou mudar a torre.
+
+- Retoque para tirar o ar de cartão-postal gerado por IA: dia com saturação 0,8, menos contraste local e curva de filme; noite quase original (saturação 0,93).
+- Como a foto tem cores fortes, a cena deixa os cartões mais opacos enquanto está ativa (`vidro: 'denso'` em `cenas.ts`, tokens `[data-vidro='denso']` em `tokens.css`).
+- As luzes acendem **andar por andar, de baixo para cima**, e apagam no sentido inverso (`janelas` em `cenas.ts`). A máscara inclui luz de qualquer cor (`--luz-noite`), para o holofote violeta da torre e os reflexos coloridos entrarem na sequência.
+- Só a água aberta à direita ondula; os barcos ficam parados.
+
+Máscaras:
+
+```bash
+python -I scripts/cena-mascaras.py public/cenas/marina/dia.webp public/cenas/marina/noite.webp public/cenas/marina/mascaras.png --ceu --luz-noite 0.4 --exterior "0,0 1262,0 1262,848 0,848" --agua "950,630 1130,628 1130,710 1262,710 1262,848 795,848 800,770 890,758 890,695 950,688"
+```
+
+Prompts de edição (com a foto anexada):
+
+> Edit this exact photo. Keep every building, boat, pier and the exact framing and camera position unchanged. Only change the time of day to a bright sunny morning: blue sky with a few thin clouds, turquoise water, sunlight on the buildings, all lights off. Output at the highest resolution available, sharp and photorealistic.
+
+> Same image, exact same framing, buildings and boats. Change to night, like the original photo: deep blue and violet sky, the tower lit with blue and violet floodlights, warm lights in the hotel windows, colorful reflections on the water. Do not move, add or remove anything.
+
+## Expediente e Coworking (fotos desfocadas)
+
+Duas fotos desfocadas (bokeh) de banco de imagens gratuito, baixadas em 05/11/2026: um escritório envidraçado no fim do dia, com luzes quentes (Expediente), e um open space claro (Coworking). Combinam bem com o vidro: o desfoque já vem pronto e não há detalhe duro competindo com os cartões.
+
+**Licença:** são versões gratuitas de banco de imagens. Antes de vender, licenciar a versão em alta ou gerar equivalentes.
+
+Cada uma tinha só uma versão (500 a 600 px de largura). O script `scripts/cena-bokeh.py` amplia 3× e deriva a outra:
+
+- **Expediente:** a foto é a noite; o dia sai com mais exposição, branco neutro e lâmpadas mais fracas (1575×1050).
+- **Coworking:** a foto é o dia; a noite sai com o ambiente escuro e frio e só os pontos de luz acesos. As bordas finas de cadeiras e vidro ficam de fora (1875×1050).
+
+Nessas cenas, **no tema escuro as luzes acendem ponto a ponto** e no claro apagam. As luzes acendem em manchas de borda suave (`janelas.suave` em `cenas.ts`), não em células quadradas, para cada ponto de luz e cada brilho grande acenderem inteiros.
+
+```bash
+python -I scripts/cena-bokeh.py noite <foto-expediente> public/cenas/expediente
+python -I scripts/cena-mascaras.py public/cenas/expediente/dia.webp public/cenas/expediente/noite.webp public/cenas/expediente/mascaras.png --luz-noite 0.55 --exterior "0,0 1575,0 1575,1050 0,1050"
+
+python -I scripts/cena-bokeh.py dia <foto-coworking> public/cenas/coworking
+python -I scripts/cena-mascaras.py public/cenas/coworking/dia.webp public/cenas/coworking/noite.webp public/cenas/coworking/mascaras.png --luz-noite 0.4 --exterior "0,0 1875,0 1875,1050 0,1050"
+```

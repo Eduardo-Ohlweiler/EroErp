@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useReduce, useSettings } from '../../theme/settings';
 import { cn } from '../../lib/utils';
 import { SceneBackground } from './SceneBackground';
@@ -8,6 +9,13 @@ export function LiveBackground() {
   const { settings } = useSettings();
   const reduce = useReduce();
   const cena = CENAS.find((c) => c.id === settings.fundo);
+  const vidro = cena?.vidro;
+  useEffect(() => {
+    // Cena com cores fortes pede cartões mais opacos (tokens.css, [data-vidro='denso']).
+    const root = document.documentElement;
+    if (vidro) root.dataset.vidro = vidro;
+    else delete root.dataset.vidro;
+  }, [vidro]);
   if (cena) {
     // Cena fotográfica: o shader já faz vinheta e grão; o brilho de destaque tingiria a foto.
     return (

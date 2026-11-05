@@ -34,7 +34,24 @@ export type Cena = {
   luzes: Luminaria[];
   /** quanto cada luminária ilumina em volta: raio = base + largura × fator (em fração da altura) */
   alcance: { base: number; fator: number };
+  /** foto com cores fortes: os cartões ficam mais opacos enquanto a cena está ativa (tokens.css, data-vidro) */
+  vidro?: 'denso';
+  /**
+   * Como as luzes externas (canal B das máscaras) acendem: grade de colunas × linhas sobre a foto, cada célula
+   * no seu tempo; subida (0–1) faz os andares de baixo acenderem primeiro. Padrão: janelas pequenas, ordem sorteada.
+   */
+  janelas?: Janelas;
 };
+
+export type Janelas = {
+  colunas: number;
+  linhas: number;
+  subida: number;
+  /** manchas de bordas suaves em vez de células quadradas (fotos desfocadas: cada ponto de luz acende inteiro) */
+  suave?: boolean;
+};
+
+export const JANELAS_PADRAO: Janelas = { colunas: 260, linhas: 146, subida: 0 };
 
 const base = import.meta.env.BASE_URL;
 
@@ -93,4 +110,60 @@ export const CIDADE: Cena = {
   horizonte: 535 / 768,
 };
 
-export const CENAS = [ESCRITORIO, CIDADE];
+/**
+ * Marina com iates, cores fortes. Par editado no Gemini (05/11/2026) a partir de uma foto de Dubai e retocado
+ * para tirar o ar de cartão-postal (menos saturação e nitidez artificial). 1262×848, WebP.
+ * Atenção: mostra prédios reais com marca registrada; serve para o protótipo, trocar antes de vender.
+ * A água que ondula é só a área aberta à direita (os barcos ficam parados). As luzes de qualquer cor entram
+ * na máscara (--luz-noite), para o holofote da torre e a fachada do hotel acenderem andar por andar.
+ */
+export const MARINA: Cena = {
+  id: 'marina',
+  nome: 'Marina',
+  tipo: 'exterior',
+  dia: `${base}cenas/marina/dia.webp`,
+  noite: `${base}cenas/marina/noite.webp`,
+  mascaras: `${base}cenas/marina/mascaras.png`,
+  proporcao: 1262 / 848,
+  luzes: [],
+  alcance: { base: 0, fator: 0 },
+  horizonte: 628 / 848,
+  vidro: 'denso',
+  // Holofotes e fachadas: faixas largas (andares), de baixo para cima.
+  janelas: { colunas: 60, linhas: 120, subida: 0.45 },
+};
+
+/**
+ * Fotos desfocadas (bokeh) de 05/11/2026, ampliadas 3× (o desfoque esconde a resolução baixa da original).
+ * Sem céu nem água: no tema escuro as luzes acendem ponto a ponto, em manchas suaves; no claro, apagam.
+ * Licença: fotos de banco de imagens gratuito; antes de vender, licenciar a versão em alta ou gerar equivalente.
+ */
+/** Escritório envidraçado no fim do dia, luzes quentes. A original é a noite; o dia foi derivado (mais exposição, branco neutro). */
+export const EXPEDIENTE: Cena = {
+  id: 'expediente',
+  nome: 'Expediente',
+  tipo: 'exterior',
+  dia: `${base}cenas/expediente/dia.webp`,
+  noite: `${base}cenas/expediente/noite.webp`,
+  mascaras: `${base}cenas/expediente/mascaras.png`,
+  proporcao: 1575 / 1050,
+  luzes: [],
+  alcance: { base: 0, fator: 0 },
+  janelas: { colunas: 14, linhas: 9, subida: 0, suave: true },
+};
+
+/** Open space claro com luzes desfocadas. A original é o dia; a noite foi derivada (ambiente escuro, só as lâmpadas acesas). */
+export const COWORKING: Cena = {
+  id: 'coworking',
+  nome: 'Coworking',
+  tipo: 'exterior',
+  dia: `${base}cenas/coworking/dia.webp`,
+  noite: `${base}cenas/coworking/noite.webp`,
+  mascaras: `${base}cenas/coworking/mascaras.png`,
+  proporcao: 1875 / 1050,
+  luzes: [],
+  alcance: { base: 0, fator: 0 },
+  janelas: { colunas: 30, linhas: 17, subida: 0, suave: true },
+};
+
+export const CENAS = [ESCRITORIO, CIDADE, MARINA, EXPEDIENTE, COWORKING];

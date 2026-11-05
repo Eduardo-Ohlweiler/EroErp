@@ -1,4 +1,4 @@
-import type { Cena } from './cenas';
+import { JANELAS_PADRAO, type Cena } from './cenas';
 
 /**
  * Renderizador WebGL 2 do fundo de cena: uma foto de noite e uma de dia, alinhadas, misturadas
@@ -78,6 +78,9 @@ uniform vec2 uDeriva;
 uniform vec3 uAgua;
 // Cena externa (cidade): G da máscara é o céu; uHorizonte = linha d'água em fração da altura.
 uniform float uExterior, uHorizonte;
+// Grade das luzes que acendem cada uma no seu tempo: colunas, linhas, quanto a ordem sobe de baixo para cima (0–1)
+// e w = 1 para manchas suaves (ruído) em vez de células quadradas (fotos desfocadas, bokeh).
+uniform vec4 uJanela;
 uniform vec3 uEstrelas;
 uniform float uNeblina;
 uniform vec3 uGradeNoite, uGradeDia, uCorAurora, uBloom, uBloomCidade;
@@ -151,7 +154,11 @@ void main() {
   // Cada janela acende no seu tempo; o reflexo na água usa a célula da janela acima (espelhada na linha d'água).
   vec2 uvCel = uvSeco;
   if (agua > 0.0) uvCel.y = 2.0 * uHorizonte - uvCel.y;
-  float celula = hash(floor(uvCel * vec2(260.0, 146.0)));
+  // Com subida > 0, os andares de baixo acendem primeiro (e apagam por último), cada faixa no seu tempo.
+  float sorteio = uJanela.w > 0.5
+    ? clamp((ruido(uvCel * uJanela.xy) - 0.2) / 0.6, 0.0, 1.0)
+    : hash(floor(uvCel * uJanela.xy));
+  float celula = mix(sorteio, clamp(1.0 - uvCel.y, 0.0, 1.0), uJanela.z) * 0.92 + 0.04;
   float acesa = smoothstep(celula - 0.04, celula + 0.04, uCidade);
   exterior -= n * m.b * (1.0 - acesa) * (1.0 - uCeu) * 0.9;
 
@@ -265,7 +272,7 @@ export class Renderizador {
       'uDia', 'uNoite', 'uMasc', 'uTela', 'uImg', 'uLuz', 'uOn', 'uN', 'uP', 'uCeu', 'uAurora', 'uCidade',
       'uExpo', 'uZoom', 'uFoco', 'uTempo', 'uSemente', 'uLiFixo', 'uGrao', 'uVinheta', 'uDeriva', 'uAgua',
       'uGradeNoite', 'uGradeDia', 'uCorAurora', 'uBloom', 'uBloomCidade',
-      'uExterior', 'uHorizonte', 'uEstrelas', 'uNeblina',
+      'uExterior', 'uHorizonte', 'uEstrelas', 'uNeblina', 'uJanela',
     ]) {
       this.u[nome] = gl.getUniformLocation(prog, nome);
     }
@@ -316,6 +323,8 @@ export class Renderizador {
     gl.uniform1f(this.u.uNeblina, this.ajustes.neblina);
     gl.uniform1f(this.u.uExterior, cena.tipo === 'exterior' ? 1 : 0);
     gl.uniform1f(this.u.uHorizonte, cena.horizonte ?? 1);
+    const j = cena.janelas ?? JANELAS_PADRAO;
+    gl.uniform4f(this.u.uJanela, j.colunas, j.linhas, j.subida, j.suave ? 1 : 0);
     const c = this.cores;
     gl.uniform3fv(this.u.uGradeNoite, c.gradeNoite);
     gl.uniform3fv(this.u.uGradeDia, c.gradeDia);

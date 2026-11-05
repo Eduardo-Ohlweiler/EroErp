@@ -23,6 +23,9 @@ const FUNDOS: { id: Fundo; nome: string; desc: string }[] = [
   { id: 'minimo', nome: 'Mínimo', desc: 'Só um brilho suave' },
   { id: 'escritorio', nome: 'Escritório', desc: 'Luzes que seguem o tema' },
   { id: 'cidade', nome: 'Cidade', desc: 'Orla que amanhece e anoitece' },
+  { id: 'marina', nome: 'Marina', desc: 'Baía com iates, dia e noite' },
+  { id: 'expediente', nome: 'Expediente', desc: 'Luzes quentes que acendem ao anoitecer' },
+  { id: 'coworking', nome: 'Coworking', desc: 'Open space com luzes desfocadas' },
 ];
 
 /** Painel para experimentar a direção visual ao vivo. */

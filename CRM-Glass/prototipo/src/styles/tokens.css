@@ -99,6 +99,20 @@
   --accent-text: color-mix(in srgb, var(--accent) 78%, black);
 }
 
+/* ---------- Vidro denso: fundos de cena com cores fortes (cenas.ts, vidro: 'denso') ---------- */
+[data-vidro='denso'][data-theme='dark'],
+[data-vidro='denso'] [data-theme='dark'] {
+  --glass-subtle: rgb(10 10 18 / 0.24);
+  --glass: rgb(10 10 18 / 0.36);
+  --glass-solid: rgb(14 14 24 / 0.64);
+}
+[data-vidro='denso'][data-theme='light'],
+[data-vidro='denso'] [data-theme='light'] {
+  --glass-subtle: rgb(255 255 255 / 0.32);
+  --glass: rgb(255 255 255 / 0.46);
+  --glass-solid: rgb(255 255 255 / 0.7);
+}
+
 /* ---------- Cores de destaque (trocáveis por empresa cliente) ---------- */
 :root,
 [data-accent='violeta'] {

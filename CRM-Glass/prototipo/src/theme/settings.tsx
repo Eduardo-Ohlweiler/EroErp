@@ -3,7 +3,7 @@ import { MotionConfig, useReducedMotion } from 'motion/react';
 
 export type Theme = 'dark' | 'light';
 export type Accent = 'violeta' | 'azul' | 'laranja' | 'esmeralda' | 'rosa' | 'ambar';
-export type Fundo = 'orbs' | 'aurora' | 'ondas' | 'minimo' | 'escritorio' | 'cidade';
+export type Fundo = 'orbs' | 'aurora' | 'ondas' | 'minimo' | 'escritorio' | 'cidade' | 'marina' | 'expediente' | 'coworking';
 export type Movimento = 'completa' | 'reduzida';
 
 export type Settings = {

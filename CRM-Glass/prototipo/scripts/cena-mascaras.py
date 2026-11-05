@@ -33,6 +33,9 @@ def main():
     ap.add_argument('--agua', default='')
     ap.add_argument('--teto', type=float, default=1.0, help='fração da altura abaixo da qual não há luminárias (0–1)')
     ap.add_argument('--ceu', action='store_true', help='cena externa: G vira a máscara do céu (acima da linha dos prédios)')
+    ap.add_argument('--luz-noite', type=float, default=0.0,
+                    help='0–1: tudo que na foto noturna for mais claro que isso (fora do céu) é luz artificial, de qualquer cor '
+                         '(holofotes, fachadas iluminadas, reflexos coloridos); soma-se às luzes quentes')
     a = ap.parse_args()
 
     dia = Image.open(a.dia).convert('L')
@@ -80,6 +83,15 @@ def main():
             if limite[x] > 6:
                 d.line([(x, 0), (x, limite[x] - 6)], fill=255)
         brilho = ceu.filter(ImageFilter.GaussianBlur(2))
+
+    if a.luz_noite > 0:
+        # À noite, o que é claro fora do céu só pode ser luz artificial, de qualquer cor.
+        lim = a.luz_noite * 255
+        claro = noite.point(lambda v: min(255, max(0, int((v - lim) * 6))))
+        claro = ImageChops.multiply(claro, exterior)
+        if a.ceu:
+            claro = ImageChops.multiply(claro, ImageChops.invert(brilho))
+        pontos = ImageChops.lighter(pontos, claro)
 
     meio = (W // 2, H // 2)
     saida = Image.merge('RGBA', [c.resize(meio, Image.LANCZOS) for c in (exterior, brilho, pontos, agua)])
