@@ -45,6 +45,8 @@ import {
   type ColunaTabela,
 } from '../ui';
 import { ChipContratante, CommandPalette, MenuUsuario, MobileNav, Sidebar, Topbar, type Comando, type ItemMenu } from '../shell';
+import { MedidorFps } from './MedidorFps';
+import { SecaoMovimento } from './SecaoMovimento';
 
 /* ---------------- Dados fictícios só para o catálogo ---------------- */
 type UsuarioDemo = { id: string; nome: string; email: string; papel: 'ADMIN' | 'USUARIO'; situacao: 'ATIVO' | 'INATIVO' | 'BLOQUEADO'; acesso: string };
@@ -160,15 +162,8 @@ export default function DesignSystem() {
 
   return (
     <>
-      {/* Fundo provisório só com CSS (o fundo vivo de verdade é do motion-designer). */}
-      <div className="live-bg" aria-hidden>
-        <div className="base" />
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-        <div className="vignette" />
-        <div className="noise" />
-      </div>
+      {/* O fundo (vivo ou de cena) é o LiveBackground montado na raiz (main.tsx). */}
+      <MedidorFps />
 
       {casca && (
         <>
@@ -228,6 +223,9 @@ export default function DesignSystem() {
           />
 
           <div className="grid grid-cols-12 gap-4">
+            {/* ---------- Movimento (motion-designer) ---------- */}
+            <SecaoMovimento />
+
             {/* ---------- Fundamentos ---------- */}
             <Secao titulo="Níveis de vidro" subtitulo="glass-subtle, glass e glass-solid (tabelas, formulários, modais, menus)" className="col-span-12">
               <div className="grid md:grid-cols-3 gap-4">

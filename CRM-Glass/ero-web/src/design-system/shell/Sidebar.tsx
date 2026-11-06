@@ -1,8 +1,10 @@
-import { useState, type ComponentType, type ReactNode } from 'react';
+import { useMemo, useState, type ComponentType, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { LogOut, Sparkles } from 'lucide-react';
-import { ease, spring } from '../../motion/tokens';
+import { blocoReduzido, cascaMenu, micro, spring } from '../../motion/tokens';
+import { useAtrasoMontagem } from '../../motion/coreografia/contexto';
+import { useReduzirMovimento } from '../../motion/reduzir';
 import { cn } from '../../shared/util/utils';
 import { isActive, type ItemMenu } from './navegacao';
 
@@ -19,11 +21,16 @@ export type SidebarProps = {
 /** Menu lateral flutuante em pílula. O destaque do item ativo desliza entre os itens. */
 export function Sidebar({ itens, itensSistema = [], onSair, marca = 'CRM Glass' }: SidebarProps) {
   const { pathname } = useLocation();
+  // Primeira parte da casca a montar e a última a sair (motion/tokens.ts, casca).
+  const reduzir = useReduzirMovimento();
+  const atraso = useAtrasoMontagem();
+  const variants = useMemo(() => (reduzir ? blocoReduzido : cascaMenu(atraso)), [reduzir, atraso]);
   return (
     <motion.aside
-      initial={{ x: -48, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.7, ease: ease.out }}
+      variants={variants}
+      initial="hidden"
+      animate="show"
+      exit="exit"
       className="glass fixed z-40 left-4 top-4 bottom-4 w-[72px] rounded-[28px] hidden md:flex flex-col items-center py-4 gap-1.5"
     >
       <Link to="/" aria-label={`${marca} — início`} className="mb-3 size-11 rounded-2xl accent-gradient accent-glow grid place-items-center">
@@ -83,7 +90,7 @@ function ComDica({ label, children }: { label: string; children: (dica: Dica) =>
             aria-hidden
             initial={{ opacity: 0, x: -8, scale: 0.94 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -4, scale: 0.97, transition: { duration: 0.12 } }}
+            exit={{ opacity: 0, x: -4, scale: 0.97, transition: { duration: micro.saidaRapida } }}
             transition={spring.snappy}
             className="tooltip absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap pointer-events-none"
           >

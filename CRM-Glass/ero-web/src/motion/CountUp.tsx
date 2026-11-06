@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { animate } from 'motion/react';
-import { useReduce } from '../shared/aparencia/AparenciaProvider';
-import { ease } from './tokens';
+import { useReduzirMovimento } from './reduzir';
+import { dados, ease } from './tokens';
 
 /** Número que conta até o valor ao entrar na tela (só na primeira exibição). */
 export function CountUp({
   value,
   format = (v: number) => String(Math.round(v)),
-  duration = 1.3,
-  delay = 0.15,
+  duration = dados.contagem.duracao,
+  delay = dados.contagem.atraso,
   className,
 }: {
   value: number;
@@ -18,7 +18,7 @@ export function CountUp({
   className?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const reduce = useReduce();
+  const reduce = useReduzirMovimento();
   const fmt = useRef(format);
   fmt.current = format;
 

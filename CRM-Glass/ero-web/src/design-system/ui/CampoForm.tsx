@@ -1,7 +1,7 @@
 import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { cn } from '../../shared/util/utils';
-import { variantesDoBloco, type PropsBloco } from './bloco';
+import { useVariantesBloco, type PropsBloco } from './bloco';
 
 /** Atributos que ligam o controle ao rótulo, à dica e ao erro. */
 export type IdsCampo = { id: string; 'aria-describedby'?: string; 'aria-invalid'?: true };
@@ -50,9 +50,10 @@ export function CampoForm({ rotulo, erro, dica, id, obrigatorio, grupo, acao, cl
   } else controle = children;
 
   const Rotulo = grupo ? 'span' : 'label';
+  const variantesBloco = useVariantesBloco(bloco, variants);
   return (
     <motion.div
-      variants={variantesDoBloco(bloco, variants)}
+      variants={variantesBloco}
       className={className}
       {...(grupo ? { role: 'group', 'aria-labelledby': rotuloId, 'aria-describedby': temDesc ? descId : undefined } : {})}
     >

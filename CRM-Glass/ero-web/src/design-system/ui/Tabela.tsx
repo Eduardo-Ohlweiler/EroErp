@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '../../shared/util/utils';
 import { Button } from './Button';
 import { Skeleton } from './Skeleton';
-import { variantesDoBloco, type PropsBloco } from './bloco';
+import { useVariantesBloco, type PropsBloco } from './bloco';
 
 export type ColunaTabela<T> = {
   chave: string;
@@ -131,8 +131,9 @@ export function Tabela<T>({
     });
   }
 
+  const variantesBloco = useVariantesBloco(bloco, variants);
   return (
-    <motion.div variants={variantesDoBloco(bloco, variants)} className={cn('glass-solid overflow-hidden', className)}>
+    <motion.div variants={variantesBloco} className={cn('glass-solid overflow-hidden', className)}>
       <div className="overflow-auto" style={alturaMax ? { maxHeight: alturaMax } : undefined}>
         <table className="tabela w-full text-sm border-collapse" aria-busy={carregando || undefined}>
           <caption className="sr-only">{rotulo}</caption>

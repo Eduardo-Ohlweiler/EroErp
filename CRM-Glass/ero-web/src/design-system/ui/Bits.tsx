@@ -1,7 +1,7 @@
 import { forwardRef, useId, type ComponentType, type InputHTMLAttributes, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { TrendingDown, TrendingUp } from 'lucide-react';
-import { spring } from '../../motion/tokens';
+import { dados, ease, spring } from '../../motion/tokens';
 import { cn, hash } from '../../shared/util/utils';
 import { CampoForm } from './CampoForm';
 
@@ -230,7 +230,7 @@ export function Field({ label, error, hint, children }: { label: string; error?:
 }
 
 /* ---------------- Barra de progresso ---------------- */
-export function Progress({ value, color, delay = 0.2, className }: { value: number; color?: string; delay?: number; className?: string }) {
+export function Progress({ value, color, delay = dados.barra.atraso, className }: { value: number; color?: string; delay?: number; className?: string }) {
   return (
     <div className={cn('h-1.5 rounded-full bg-[var(--track)] overflow-hidden', className)}>
       <motion.div
@@ -238,7 +238,7 @@ export function Progress({ value, color, delay = 0.2, className }: { value: numb
         style={color ? { background: color } : undefined}
         initial={{ scaleX: 0 }}
         animate={{ scaleX: Math.min(1, Math.max(0, value / 100)) }}
-        transition={{ duration: 1, delay, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: dados.barra.duracao, delay, ease: ease.out }}
       />
     </div>
   );

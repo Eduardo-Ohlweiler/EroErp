@@ -271,6 +271,16 @@
   pointer-events: none;
   background: var(--bg);
 }
+/* Camada de um fundo (motion/cena/LiveBackground.tsx): a nova esmaece por cima da antiga. */
+.live-bg-camada {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+/* Fundo vivo é translúcido (orbs sobre transparente): a camada leva a cor de base para cobrir a anterior. */
+.live-bg-camada-viva {
+  background: var(--bg);
+}
 .live-bg .base {
   position: absolute;
   inset: 0;
@@ -476,7 +486,7 @@
 }
 
 /*
- * Troca de tema com fundo de cena: esmaecimento cruzado da página inteira (Topbar.tsx).
+ * Troca de tema com fundo de cena: esmaecimento cruzado da página inteira (motion/cena/trocarTema.ts).
  * plus-lighter soma as duas capturas, então o meio do esmaecimento não perde opacidade.
  */
 html.vt-cena::view-transition-old(root),
@@ -537,7 +547,7 @@ html.vt-cena::view-transition-image-pair(root) {
     inset: 0;
     background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
     transform: translateX(-100%);
-    animation: skeleton-brilho 1.6s ease-in-out infinite;
+    animation: skeleton-brilho var(--mov-esqueleto) ease-in-out infinite; /* duração em motion/tokens.ts (esqueleto.brilho) */
   }
 
   /* QR code: placa clara legível nos dois temas. */

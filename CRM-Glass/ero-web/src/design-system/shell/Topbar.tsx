@@ -1,7 +1,9 @@
-import { forwardRef, useEffect, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
+import { forwardRef, useEffect, useMemo, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
-import { ease } from '../../motion/tokens';
+import { blocoReduzido, cascaBarra, tituloTela } from '../../motion/tokens';
+import { useAtrasoMontagem } from '../../motion/coreografia/contexto';
+import { useReduzirMovimento } from '../../motion/reduzir';
 import { cn } from '../../shared/util/utils';
 
 export type TopbarProps = {
@@ -22,6 +24,10 @@ export type TopbarProps = {
  */
 export function Topbar({ titulo, contratante, onBuscar, textoBusca = 'Buscar telas…', direita }: TopbarProps) {
   const [now, setNow] = useState(() => new Date());
+  // Segunda parte da casca a montar (depois do menu) e a penúltima a sair (motion/tokens.ts, casca).
+  const reduzir = useReduzirMovimento();
+  const atraso = useAtrasoMontagem();
+  const variants = useMemo(() => (reduzir ? blocoReduzido : cascaBarra(atraso)), [reduzir, atraso]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 15000);
@@ -30,9 +36,10 @@ export function Topbar({ titulo, contratante, onBuscar, textoBusca = 'Buscar tel
 
   return (
     <motion.header
-      initial={{ y: -28, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.7, ease: ease.out, delay: 0.05 }}
+      variants={variants}
+      initial="hidden"
+      animate="show"
+      exit="exit"
       className="glass sticky top-4 z-30 h-16 rounded-[22px] px-2.5 flex items-center gap-2"
     >
       {contratante}
@@ -42,10 +49,10 @@ export function Topbar({ titulo, contratante, onBuscar, textoBusca = 'Buscar tel
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
             key={titulo}
-            initial={{ y: 16, opacity: 0, filter: 'blur(4px)' }}
-            animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-            exit={{ y: -16, opacity: 0, filter: 'blur(4px)' }}
-            transition={{ duration: 0.35, ease: ease.out }}
+            variants={reduzir ? blocoReduzido : tituloTela}
+            initial="hidden"
+            animate="show"
+            exit="exit"
             className="chip h-8 px-3 rounded-full text-xs font-medium flex items-center whitespace-nowrap"
           >
             {titulo}

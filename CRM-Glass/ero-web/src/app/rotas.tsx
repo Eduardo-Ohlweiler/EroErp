@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Link, type RouteObject } from 'react-router';
+import { createBrowserRouter, Link, Navigate, type RouteObject } from 'react-router';
 import { Splash } from '../design-system/ui/Splash';
 
 /** Catálogo do design system: só em desenvolvimento (fica fora do build de produção). */
@@ -32,6 +32,28 @@ if (DesignSystem) {
         <DesignSystem />
       </Suspense>
     ),
+  });
+
+  /*
+   * Demonstração da montagem em blocos (motion-designer), com a forma do app real:
+   * raiz (login ↔ casca) → casca (menu, barra, RotaAnimada) → telas.
+   */
+  const demo = () => import('../design-system/catalogo/DemoMovimento');
+  rotas.push({
+    path: '/design-system/movimento',
+    lazy: async () => ({ Component: (await demo()).DemoRaiz }),
+    children: [
+      { index: true, element: <Navigate to="login" replace /> },
+      { path: 'login', lazy: async () => ({ Component: (await demo()).DemoLogin }) },
+      {
+        lazy: async () => ({ Component: (await demo()).DemoCasca }),
+        children: [
+          { path: 'inicio', lazy: async () => ({ Component: (await demo()).DemoInicio }) },
+          { path: 'usuarios', lazy: async () => ({ Component: (await demo()).DemoLista }) },
+          { path: 'usuarios/:id', lazy: async () => ({ Component: (await demo()).DemoDetalhe }) },
+        ],
+      },
+    ],
   });
 }
 

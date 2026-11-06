@@ -119,4 +119,371 @@ export const cena = {
   /** Esmaecimento da interface na troca, em segundos. */
   esmaecerInterface: 0.9,
   esmaecerEase: ease.inOut,
+  /**
+   * Troca de tema sem cena (fundo vivo): revelação circular a partir do último toque/clique
+   * (ex.: o cartão Escuro/Claro da Configuração). Clique mais antigo que `memoria` (s) → centro da tela.
+   */
+  revelacao: { duracao: 0.7, ease: ease.out, memoria: 1.5 },
+  /** Troca de contratante com cena nova: espera as fotos carregarem até este limite (s) antes da sequência. */
+  esperaFotos: 1.2,
+};
+
+/* =====================================================================================
+ * Fundo vivo: troca de fundo (contratante novo, prévia da Configuração) em esmaecimento cruzado.
+ * A camada nova entra por cima; a antiga só esmaece depois, para nunca aparecer um quadro vazio
+ * enquanto as fotos da cena carregam (a própria cena ainda surge em `cena.surgir`).
+ * ===================================================================================== */
+export const fundo = {
+  entrada: 0.9,
+  saida: 0.4,
+  atrasoSaida: 0.9,
+};
+/** Camada de fundo (LiveBackground): a nova entra por cima, a antiga esmaece depois. Só opacidade. */
+export const camadaFundo: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: fundo.entrada, ease: ease.inOut } },
+  exit: { opacity: 0, transition: { duration: fundo.saida, delay: fundo.atrasoSaida, ease: ease.inOut } },
+};
+
+/* =====================================================================================
+ * Montagem e desmontagem em blocos (DIRECAO-VISUAL, seção 6).
+ * A tela só orquestra; os blocos são os próprios componentes (GlassCard, PageHeader, CampoForm,
+ * Tabela, BarraAcoes), que animam opacidade e transform em si mesmos. Nada de `filter` em
+ * elemento com backdrop-filter e nada de opacidade em contêiner que tenha vidro dentro.
+ * ===================================================================================== */
+export const montagem = {
+  /** um bloco encaixando: mola (y e escala); referência para durações derivadas (s) */
+  entrada: 0.5,
+  /** opacidade do bloco entrando (mais curta que o encaixe, para o conteúdo ficar legível cedo) */
+  opacidade: 0.32,
+  /** um bloco saindo (s) */
+  saida: 0.22,
+  /** intervalo entre blocos na entrada (s): 40–60 ms */
+  passo: 0.05,
+  /** intervalo entre blocos na saída (s), de baixo para cima */
+  passoSaida: 0.03,
+  /** a partir deste bloco o resto entra (ou sai) junto: a tela fica utilizável sem esperar a cascata */
+  limiteBlocos: 8,
+  /** espera antes do primeiro bloco (s) */
+  inicio: 0.02,
+  /** movimento reduzido: só esmaece, sem cascata, nesta duração (s) */
+  reduzida: 0.15,
+  /** de onde o bloco sobe (px) e a escala com que começa */
+  distancia: 18,
+  escala: 0.97,
+  /** deslocamento do contêiner na navegação em profundidade (px): entra da direita, sai pela esquerda */
+  deslize: { entrada: 56, saida: 40 },
+  /** a troca de tema em vídeo espera a tela parar de montar (sem fantasma na View Transition), até este limite (s) */
+  esperaTema: 2.5,
+  /** quanto tempo sem nenhuma montagem conta como "parada" (s); cobre o quadro entre a saída e a entrada */
+  folgaTema: 0.1,
+};
+
+/** Mola do encaixe dos blocos: firme, sem quicar (peça encaixando, não bola). */
+export const encaixe: Transition = { type: 'spring', stiffness: 420, damping: 34, mass: 0.8 };
+
+/** Ritmo de uma coreografia: como os blocos se sucedem. */
+export type Ritmo = {
+  passo: number;
+  passoSaida: number;
+  limiteBlocos: number;
+  inicio: number;
+};
+
+/** Ordem dos blocos: `documento` = de cima para baixo; `reversa` = de baixo para cima; `junto` = todos de uma vez. */
+export type Ordem = 'documento' | 'reversa' | 'junto';
+
+/** Atraso de cada filho (i de n, na ordem do documento). Depois de `limite` blocos, o resto vai junto. */
+export const atrasoDoBloco =
+  (ordem: Ordem, passo: number, limite: number, base = 0) =>
+  (i: number, total: number) => {
+    if (ordem === 'junto') return base;
+    const pos = ordem === 'documento' ? i : total - 1 - i;
+    return base + Math.min(pos, limite) * passo;
+  };
+
+/**
+ * Variantes de um contêiner que só orquestra (não anima nada em si).
+ * Entrada em ordem de documento; saída em ordem reversa, e o contêiner termina depois dos filhos.
+ * `atraso` soma um tempo antes do primeiro bloco (ex.: o conteúdo espera o menu e a barra da casca).
+ */
+export function orquestrar(
+  ritmo: Ritmo,
+  { atraso = 0, entrada = 'documento', saida = 'reversa' }: { atraso?: number; entrada?: Ordem; saida?: Ordem } = {},
+): Variants {
+  return {
+    hidden: {},
+    show: { transition: { delayChildren: atrasoDoBloco(entrada, ritmo.passo, ritmo.limiteBlocos, atraso + ritmo.inicio) } },
+    exit: {
+      transition: {
+        when: 'afterChildren',
+        staggerDirection: -1,
+        delayChildren: atrasoDoBloco(saida, ritmo.passoSaida, ritmo.limiteBlocos),
+      },
+    },
+  };
+}
+
+/** Tela: só orquestra a montagem dos blocos (ritmo padrão). */
+export const tela: Variants = orquestrar(montagem);
+/** Tela com movimento reduzido: sem cascata; os blocos esmaecem juntos. */
+export const telaReduzida: Variants = { hidden: {}, show: {}, exit: { transition: { when: 'afterChildren' } } };
+
+/** Bloco: o próprio cartão ou componente encaixando (opacidade, y e escala nele mesmo). */
+export const bloco: Variants = {
+  hidden: { opacity: 0, y: montagem.distancia, scale: montagem.escala },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { ...encaixe, opacity: { duration: montagem.opacidade, ease: ease.out } },
+  },
+  /** desencaixa ao contrário de como entrou: desce um pouco, encolhe e some */
+  exit: {
+    opacity: 0,
+    y: montagem.distancia * 0.6,
+    scale: montagem.escala,
+    transition: { duration: montagem.saida, ease: ease.inOut },
+  },
+};
+
+/** Bloco curto (formulários longos, etapas e linhas de tabela): só sobe um pouco, sem escala. */
+export const blocoCurto: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: montagem.entrada * 0.7, ease: ease.out } },
+  exit: { opacity: 0, y: 4, transition: { duration: montagem.saida * 0.8, ease: ease.inOut } },
+};
+
+/** Bloco com movimento reduzido: só esmaece. */
+export const blocoReduzido: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: montagem.reduzida, ease: 'linear' } },
+  exit: { opacity: 0, transition: { duration: montagem.reduzida, ease: 'linear' } },
+};
+
+/**
+ * Texto puro (títulos sem vidro): entra com um leve desfoque que termina em `filter: none`.
+ * Só em elemento sem backdrop-filter e de tamanho moderado.
+ */
+export const blocoTexto: Variants = {
+  hidden: { opacity: 0, y: montagem.distancia, filter: 'blur(8px)' },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transitionEnd: { filter: 'none' },
+    transition: {
+      ...encaixe,
+      opacity: { duration: montagem.opacidade * 1.4, ease: ease.out },
+      filter: { duration: montagem.entrada, ease: ease.out },
+    },
+  },
+  exit: { opacity: 0, y: montagem.distancia * 0.6, filter: 'blur(6px)', transition: { duration: montagem.saida, ease: ease.inOut } },
+};
+
+/**
+ * Contêiner da rota (RotaAnimada): só transform, conforme a direção (`custom`):
+ *  0 → troca de módulo (os blocos fazem tudo) · 1 → mais fundo (entra da direita) · −1 → voltando (entra da esquerda).
+ * Opacidade nunca aqui: o backdrop-filter dos cartões precisa funcionar desde o primeiro quadro.
+ */
+export const rota: Variants = {
+  hidden: (dir: number = 0) => ({ x: montagem.deslize.entrada * dir }),
+  show: { x: 0, transition: { duration: 0.5, ease: ease.out } },
+  exit: (dir: number = 0) => ({
+    x: -montagem.deslize.saida * dir,
+    transition: { duration: montagem.saida + montagem.limiteBlocos * montagem.passoSaida, ease: ease.inOut },
+  }),
+};
+export const rotaReduzida: Variants = { hidden: { x: 0 }, show: { x: 0 }, exit: { x: 0 } };
+
+/**
+ * Casca do app: menu lateral → barra superior → conteúdo. Ao sair (logout, troca de contratante),
+ * o inverso: conteúdo, barra, menu. `atraso` empurra a entrada inteira (coreografia `contexto`).
+ */
+export const casca = {
+  /** entrada do menu e da barra (s) — a mesma do protótipo */
+  entrada: 0.7,
+  /** atraso da barra em relação ao menu (s) */
+  atrasoBarra: 0.08,
+  /** atraso do primeiro bloco do conteúdo quando a casca acabou de montar (s) */
+  atrasoConteudo: 0.22,
+  /** na saída: o conteúdo vai primeiro, depois a barra, depois o menu (s) */
+  saidaBarra: 0.16,
+  saidaMenu: 0.24,
+};
+
+export function cascaMenu(atraso = 0): Variants {
+  return {
+    hidden: { x: -48, opacity: 0 },
+    show: { x: 0, opacity: 1, transition: { duration: casca.entrada, ease: ease.out, delay: atraso } },
+    exit: { x: -36, opacity: 0, transition: { duration: montagem.saida, ease: ease.inOut, delay: casca.saidaMenu } },
+  };
+}
+export function cascaBarra(atraso = 0): Variants {
+  return {
+    hidden: { y: -28, opacity: 0 },
+    show: { y: 0, opacity: 1, transition: { duration: casca.entrada, ease: ease.out, delay: atraso + casca.atrasoBarra } },
+    exit: { y: -20, opacity: 0, transition: { duration: montagem.saida, ease: ease.inOut, delay: casca.saidaBarra } },
+  };
+}
+
+/* ---------------- Microanimações e dados ---------------- */
+/** Título da tela na barra superior (chip sem vidro: pode desfocar; termina em filter none). */
+export const tituloTela: Variants = {
+  hidden: { y: 16, opacity: 0, filter: 'blur(4px)' },
+  show: { y: 0, opacity: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none' }, transition: { duration: 0.35, ease: ease.out } },
+  exit: { y: -16, opacity: 0, filter: 'blur(4px)', transition: { duration: 0.35, ease: ease.out } },
+};
+/** Saída rápida de dicas e menus pequenos (s). */
+export const micro = { saidaRapida: 0.12 };
+/** Dados vivos: contagem dos KPIs e barra de progresso crescendo (só na primeira exibição). */
+export const dados = {
+  contagem: { duracao: 1.3, atraso: 0.15 },
+  barra: { duracao: 1, atraso: 0.2 },
+};
+/** Brilho do esqueleto de carregamento (s por passada). Vai para o CSS como --mov-esqueleto. */
+export const esqueleto = { brilho: 1.6 };
+
+/** Durações usadas no CSS (index.css lê as variáveis; nada de número solto lá). Chamado no main.tsx. */
+export function aplicarVariaveisDeMovimento(root: HTMLElement = document.documentElement) {
+  root.style.setProperty('--mov-esqueleto', `${esqueleto.brilho}s`);
+}
+/* =====================================================================================
+ * Coreografias por tela. Cada tela declara a sua: <Tela coreografia="inicio">.
+ * `modo` é o do AnimatePresence que troca a tela: 'wait' (sai inteira, depois a outra monta);
+ * 'sync' fica previsto para morph de elemento compartilhado (layoutId) entre telas.
+ * ===================================================================================== */
+export type NomeCoreografia = 'login' | 'inicio' | 'padrao' | 'formulario' | 'etapa' | 'contexto';
+
+export type Coreografia = {
+  ritmo: Ritmo;
+  ordem: { entrada: Ordem; saida: Ordem };
+  modo: 'wait' | 'sync';
+  /** atraso antes do primeiro bloco (s), somado ao herdado (casca recém-montada, troca de contratante) */
+  atraso: number;
+  /** variantes do contêiner com um atraso antes do primeiro bloco (a <Tela> chama com o atraso total) */
+  tela: (atraso: number) => Variants;
+  /** variantes: `tela` (sem atraso), `bloco` (padrão dos blocos) e partes nomeadas da coreografia */
+  variantes: { tela: Variants; bloco: Variants } & Record<string, Variants>;
+};
+
+const ritmoPadrao: Ritmo = montagem;
+/** Login: ritmo mais lento entre as partes (esfera, vitrine, cartão); sai em ~0,8 s. */
+const ritmoLogin: Ritmo = { passo: 0.07, passoSaida: 0.14, limiteBlocos: 6, inicio: 0.05 };
+const ritmoVitrine: Ritmo = { passo: 0.035, passoSaida: 0.05, limiteBlocos: 6, inicio: 0 };
+const ritmoFormulario: Ritmo = { passo: 0.035, passoSaida: 0.02, limiteBlocos: 10, inicio: 0.02 };
+const ritmoEtapa: Ritmo = { passo: 0.04, passoSaida: 0.025, limiteBlocos: 8, inicio: 0.04 };
+const ritmoContexto: Ritmo = { passo: 0.05, passoSaida: 0.04, limiteBlocos: 8, inicio: 0.02 };
+
+/** Tempos do login (s). */
+export const login = {
+  /** o cartão começa a subir depois da esfera e da vitrine */
+  atrasoCartao: 0.25,
+  /** os campos da primeira etapa esperam o cartão subir (TrocaEtapa atrasoInicial) */
+  atrasoCampos: 0.4,
+  /** na saída, o cartão espera os campos começarem a sair (de baixo para cima) */
+  saidaCartao: 0.15,
+};
+
+/** Contêiner da etapa: desliza na direção (`custom`) e orquestra os campos. */
+function variantesEtapa(atraso = 0): Variants {
+  return {
+    hidden: (dir: number = 1) => ({ x: 28 * dir }),
+    show: {
+      x: 0,
+      transition: { ...encaixe, delayChildren: atrasoDoBloco('documento', ritmoEtapa.passo, ritmoEtapa.limiteBlocos, atraso + ritmoEtapa.inicio) },
+    },
+    exit: (dir: number = 1) => ({
+      x: -20 * dir,
+      transition: {
+        duration: montagem.saida,
+        ease: ease.inOut,
+        delayChildren: atrasoDoBloco('reversa', ritmoEtapa.passoSaida, ritmoEtapa.limiteBlocos),
+      },
+    }),
+  };
+}
+
+/** Coreografia que só orquestra blocos com um ritmo e uma ordem. */
+function simples(ritmo: Ritmo, ordem: { entrada: Ordem; saida: Ordem }, atraso: number, partes: Record<string, Variants> & { bloco: Variants }): Coreografia {
+  const tela = (a: number) => orquestrar(ritmo, { atraso: a, entrada: ordem.entrada, saida: ordem.saida });
+  return { ritmo, ordem, modo: 'wait', atraso, tela, variantes: { ...partes, tela: tela(0) } };
+}
+
+const reversa = { entrada: 'documento', saida: 'reversa' } as const;
+
+export const coreografias: Record<NomeCoreografia, Coreografia> = {
+  /**
+   * Login. Monta: a esfera de partículas cresce, a vitrine (marca, título, chips) entra em cascata,
+   * o cartão sobe e os campos encaixam. Desmonta: campos de baixo para cima, título do cartão, cartão,
+   * chips e título da vitrine; por último a esfera encolhe e some.
+   * Filhos da <Tela coreografia="login"> na ordem: esfera → vitrine → cartão.
+   */
+  login: simples(ritmoLogin, reversa, 0, {
+    bloco,
+    esfera: {
+      hidden: { opacity: 0, scale: 0.85 },
+      show: { opacity: 1, scale: 1, transition: { duration: 1.6, ease: ease.out } },
+      exit: { opacity: 0, scale: 0.55, transition: { duration: 0.5, ease: ease.inOut } },
+    },
+    /** grupo da esquerda (marca, título, chips): orquestra os seus blocos */
+    vitrine: orquestrar(ritmoVitrine),
+    /** título grande da vitrine (texto puro: entra desfocando) */
+    titulo: blocoTexto,
+    /** cartão de vidro do formulário: entra como no protótipo; os campos vêm pela TrocaEtapa */
+    cartao: {
+      hidden: { opacity: 0, y: 30, scale: 0.96 },
+      show: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        transition: {
+          duration: 0.9,
+          ease: ease.out,
+          delay: login.atrasoCartao,
+          delayChildren: atrasoDoBloco('documento', montagem.passo, montagem.limiteBlocos, login.atrasoCartao + montagem.inicio),
+        },
+      },
+      exit: {
+        opacity: 0,
+        y: 24,
+        scale: 0.96,
+        transition: {
+          when: 'afterChildren',
+          delay: login.saidaCartao,
+          duration: montagem.saida,
+          ease: ease.inOut,
+          delayChildren: atrasoDoBloco('reversa', montagem.passoSaida, montagem.limiteBlocos, login.saidaCartao),
+        },
+      },
+    },
+  }),
+  /**
+   * Início: a casca traz menu e barra (casca.atrasoConteudo); os blocos do painel encaixam em cascata.
+   * KPIs com CountUp, linha que se desenha e barras que crescem ficam dentro dos blocos.
+   */
+  inicio: simples(ritmoPadrao, reversa, 0, { bloco, menu: cascaMenu(), barra: cascaBarra() }),
+  /** Qualquer tela de lista ou detalhe. */
+  padrao: simples(ritmoPadrao, reversa, 0, { bloco }),
+  /** Formulários longos: movimento curto e funcional, cascata rápida, saída de uma vez. */
+  formulario: simples(ritmoFormulario, { entrada: 'documento', saida: 'junto' }, 0, { bloco: blocoCurto }),
+  /**
+   * Etapa dentro de um cartão (login: credenciais → código → trocar senha). O contêiner desliza na direção
+   * (`custom`: 1 avança, −1 volta) e os campos encaixam; ao sair, os campos vão de baixo para cima.
+   * Uso: <TrocaEtapa etapa={…} direcao={…}>.
+   */
+  etapa: {
+    ritmo: ritmoEtapa,
+    ordem: reversa,
+    modo: 'wait',
+    atraso: 0,
+    tela: variantesEtapa,
+    variantes: { tela: variantesEtapa(), bloco: blocoCurto },
+  },
+  /**
+   * Troca de contexto (superadmin entra ou sai de um contratante): a casca inteira se desfaz, o fundo
+   * esmaece para o do contratante (LiveBackground) e a casca nova monta depois de uma pausa curta.
+   * Uso: <TrocaDeArea chave={`casca:${tenantId}`} coreografia="contexto">.
+   */
+  contexto: simples(ritmoContexto, reversa, 0.15, { bloco }),
 };

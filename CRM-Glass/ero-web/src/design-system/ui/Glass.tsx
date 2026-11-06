@@ -2,7 +2,7 @@ import { forwardRef, type ReactNode } from 'react';
 import { motion, type HTMLMotionProps } from 'motion/react';
 import { spring } from '../../motion/tokens';
 import { cn } from '../../shared/util/utils';
-import { variantesDoBloco, type PropsBloco } from './bloco';
+import { useVariantesBloco, type PropsBloco } from './bloco';
 
 type Level = 'subtle' | 'default' | 'solid';
 const levelClass: Record<Level, string> = {
@@ -28,10 +28,11 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(function Gla
   { level = 'default', hover = false, padded = true, bloco = true, variants, className, children, ...rest },
   ref,
 ) {
+  const variantesBloco = useVariantesBloco(bloco, variants);
   return (
     <motion.div
       ref={ref}
-      variants={variantesDoBloco(bloco, variants)}
+      variants={variantesBloco}
       whileHover={hover ? { y: -4 } : undefined}
       transition={spring.soft}
       className={cn(levelClass[level], hover && 'glass-hover', padded && 'p-5', className)}
@@ -71,8 +72,9 @@ export function PageHeader({
   bloco = true,
   variants,
 }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode } & PropsBloco) {
+  const variantesBloco = useVariantesBloco(bloco, variants);
   return (
-    <motion.div variants={variantesDoBloco(bloco, variants)} className="flex flex-wrap items-end justify-between gap-4 mb-6">
+    <motion.div variants={variantesBloco} className="flex flex-wrap items-end justify-between gap-4 mb-6">
       <div>
         <h1 className="text-[26px] md:text-[30px] font-semibold tracking-tight leading-tight">{title}</h1>
         {subtitle && <p className="text-sm text-muted mt-1">{subtitle}</p>}
@@ -92,9 +94,10 @@ export function BarraAcoes({
   bloco = true,
   variants,
 }: { children: ReactNode; alinhar?: keyof typeof alinhamento; className?: string } & PropsBloco) {
+  const variantesBloco = useVariantesBloco(bloco, variants);
   return (
     <motion.div
-      variants={variantesDoBloco(bloco, variants)}
+      variants={variantesBloco}
       className={cn('flex flex-wrap items-center gap-2', alinhamento[alinhar], className)}
     >
       {children}
