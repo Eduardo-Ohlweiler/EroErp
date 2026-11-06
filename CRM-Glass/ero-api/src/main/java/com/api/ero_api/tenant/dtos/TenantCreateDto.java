@@ -5,7 +5,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /** Novo contratante + o primeiro administrador dele. */
@@ -30,9 +29,9 @@ public record TenantCreateDto(
         @NotNull(message = "Informe se exige verificação em duas etapas")
         Boolean exige2fa,
 
-        @Schema(description = "Cor de destaque", example = "violeta")
-        @Pattern(regexp = "violeta|azul|laranja|esmeralda|rosa|ambar", message = "Cor de destaque inválida")
-        String corDestaque,
+        @Schema(description = "Aparência inicial (vazio = padrão do sistema)")
+        @Valid
+        AparenciaDto aparencia,
 
         @Schema(description = "Primeiro administrador do contratante")
         @NotNull(message = "Administrador é obrigatório")

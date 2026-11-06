@@ -1,9 +1,11 @@
 package com.api.ero_api.usuario.repository;
 
 import com.api.ero_api.compartilhado.entity.SqlNativoRevisado;
+import com.api.ero_api.usuario.dtos.UsuarioSelectDto;
 import com.api.ero_api.usuario.entity.Usuario;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,6 +47,17 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
             ORDER BY u.nome
             """)
     List<Usuario> buscarParaSelecao();
+
+    /**
+     * Nomes de vários usuários numa consulta só (trilha de auditoria). Respeita o
+     * tenant: dentro de um contratante, quem é de fora (inclusive o superadmin) não aparece.
+     */
+    @Query("""
+            SELECT new com.api.ero_api.usuario.dtos.UsuarioSelectDto(u.id, u.nome)
+            FROM Usuario u
+            WHERE u.id IN :ids
+            """)
+    List<UsuarioSelectDto> buscarNomesPorIds(@Param("ids") Collection<UUID> ids);
 
     @Query("""
             SELECT COUNT(u) > 0 FROM Usuario u

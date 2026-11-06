@@ -16,6 +16,7 @@ public record UsuarioResponseDto(
         @Schema(description = "Precisa trocar a senha no próximo acesso") boolean exigirTrocaSenha,
         @Schema(description = "Verificação em duas etapas ligada") boolean doisFatoresAtivo,
         Instant ultimoLoginEm,
+        @Schema(description = "Conta bloqueada por excesso de tentativas até este instante (no passado = já liberou)") Instant bloqueadoAte,
         Instant createdAt,
         Instant updatedAt,
         UUID createdBy,

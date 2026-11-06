@@ -53,6 +53,29 @@ pode chamar (combos `/selecao`, catálogo, `/tenants/atual`, sessões) usam
 `@PreAuthorize("hasAuthority('ACESSO_LIBERADO')")`. Não use `isAuthenticated()`
 fora de `/api/auth/*`.
 
+## Telas sem grupo (presas ao papel)
+
+Algumas telas **não têm grupo de liberação de propósito**. Elas ficam presas ao
+papel no controller e não aparecem em `GET /api/permissoes/catalogo`:
+
+| Tela | Rotas | Quem | Por quê |
+|---|---|---|---|
+| Contratantes | `GET/POST /api/tenants`, `GET/PUT /api/tenants/{id}`, `PATCH /{id}/inativar` e `/ativar`, `GET /api/tenants/selecao` | `hasRole('SUPERADMIN')` | É a plataforma, não o contratante. |
+| Configuração do contratante (aparência e cena exclusiva) | `PUT /api/tenants/{id}/configuracao`, `GET /api/tenants/fundos` | `hasRole('SUPERADMIN')` | Idem. |
+| Minha conta (senha, 2FA, sessões) | `/api/auth/senha`, `/api/auth/2fa/*`, `/api/sessoes/*` | o próprio usuário | Cada um só mexe no que é seu. |
+
+Por que não um grupo: todo grupo é concedido automaticamente ao `ADMIN` do
+contratante (ver Papéis). Um grupo `CONTRATANTES` daria a qualquer administrador
+de cliente o poder de ver e alterar **outros** contratantes, ou de mudar a
+aparência que vale para todos: escalada de privilégio. Por isso essas rotas
+usam o papel. Nas escritas (criar, alterar, configurar, inativar, ativar), o
+service ainda exige a visão de plataforma (`exigirVisaoPlataforma`): o superadmin
+dentro de um contratante recebe 422. As leituras (`GET /api/tenants`, `/{id}`,
+`/selecao`, `/fundos`) só exigem o papel.
+
+No front, essas telas entram no menu pelo papel (`papel === 'SUPERADMIN'` e
+fora de um contratante), não por `telas`.
+
 ## Criando o grupo de uma tela nova
 
 1. Em `Tela`, declare as telas com o código usado no front (`pessoa-list`, `pessoa-form`).
@@ -72,6 +95,8 @@ front. Renomear exige migration.
 | `GET /api/permissoes/usuarios/{id}` | `USUARIOS_LER` |
 | `PUT /api/permissoes/usuarios/{id}` (substitui tudo; manda a `version` do GET, 409 se outra pessoa alterou antes) | `USUARIOS_LIBERAR_ACESSO` |
 | `PATCH /api/usuarios/{id}/redefinir-senha`, `/redefinir-2fa` e `/desbloquear` | `USUARIOS_ESCREVER` **e** papel ADMIN/SUPERADMIN (nunca em si mesmo) |
+| `GET /api/sessoes`, `PATCH /api/sessoes/{id}/encerrar`, `PATCH /api/sessoes/encerrar-outras` | `ACESSO_LIBERADO` (só as próprias sessões) |
+| `GET /api/auditoria/eventos` | `AUDITORIA_LER` |
 
 O `PUT` de permissões exige só `USUARIOS_LIBERAR_ACESSO` (sem `_ESCREVER`) **de propósito**:
 um gerente pode distribuir acesso sem poder editar cadastro. A regra que segura

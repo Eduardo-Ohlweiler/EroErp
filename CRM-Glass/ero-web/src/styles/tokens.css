@@ -1,0 +1,263 @@
+/*
+ * Tokens do design system glass.
+ * Regra: nenhum componente usa cor, sombra ou desfoque literal — tudo sai daqui.
+ * Tema: [data-theme="dark" | "light"]   Destaque: [data-accent="..."]
+ * Os seletores não dependem de :root para permitir pré-visualizar um tema dentro de outro.
+ */
+
+:root {
+  --radius-xl: 24px;
+  /* valor opaco usado só em máscaras CSS (não aparece como cor) */
+  --mask-on: #000;
+  --blur: 22px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------- Tema escuro (padrão) ---------- */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #07070d;
+  --fg: #f4f4f9;
+  --fg-muted: rgb(244 244 249 / 0.68);
+  --fg-subtle: rgb(244 244 249 / 0.46);
+  --line: rgb(255 255 255 / 0.08);
+  --chip: rgb(255 255 255 / 0.06);
+  --chip-hover: rgb(255 255 255 / 0.11);
+  --track: rgb(255 255 255 / 0.08);
+  --input-bg: rgb(255 255 255 / 0.04);
+  --input-bg-focus: rgb(255 255 255 / 0.07);
+  --seg-active: rgb(255 255 255 / 0.14);
+
+  --glass-subtle: rgb(255 255 255 / 0.012);
+  --glass: rgb(255 255 255 / 0.025);
+  --glass-solid: rgb(17 17 27 / 0.46);
+  --glass-border: rgb(255 255 255 / 0.07);
+  --glass-border-hover: rgb(255 255 255 / 0.22);
+  --glass-sheen: rgb(255 255 255 / 0.1);
+  --glass-highlight: rgb(255 255 255 / 0.2);
+  /* borda de luz em degradê (vidro pegando luz no canto de cima) */
+  --glass-edge-strong: rgb(255 255 255 / 0.46);
+  --glass-edge-soft: rgb(255 255 255 / 0.08);
+  --glass-saturate: 190%;
+  --glass-shadow: 0 24px 60px -28px rgb(0 0 0 / 0.75), 0 2px 10px -4px rgb(0 0 0 / 0.4);
+
+  --tooltip-bg: rgb(22 22 34 / 0.94);
+  --overlay: rgb(3 3 8 / 0.5);
+  --bar-from: rgb(255 255 255 / 0.2);
+  --bar-to: rgb(255 255 255 / 0.03);
+  --orb-opacity: 0.5;
+  --noise-opacity: 0.06;
+  --vignette: rgb(0 0 0 / 0.45);
+
+  --success: #34d399;
+  --danger: #fb7185;
+  --warning: #fbbf24;
+  --info: #60a5fa;
+  --accent-text: color-mix(in srgb, var(--accent) 62%, white);
+}
+
+/* ---------- Tema claro ---------- */
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: #e9ecf4;
+  --fg: #12131b;
+  --fg-muted: rgb(18 19 27 / 0.66);
+  --fg-subtle: rgb(18 19 27 / 0.5);
+  --line: rgb(18 19 27 / 0.08);
+  --chip: rgb(18 19 27 / 0.045);
+  --chip-hover: rgb(18 19 27 / 0.085);
+  --track: rgb(18 19 27 / 0.07);
+  --input-bg: rgb(255 255 255 / 0.55);
+  --input-bg-focus: rgb(255 255 255 / 0.85);
+  --seg-active: rgb(255 255 255 / 0.95);
+
+  --glass-subtle: rgb(255 255 255 / 0.1);
+  --glass: rgb(255 255 255 / 0.2);
+  --glass-solid: rgb(255 255 255 / 0.5);
+  --glass-border: rgb(255 255 255 / 0.55);
+  --glass-border-hover: rgb(255 255 255 / 1);
+  --glass-sheen: rgb(255 255 255 / 0.55);
+  --glass-highlight: rgb(255 255 255 / 0.95);
+  --glass-edge-strong: rgb(255 255 255 / 1);
+  --glass-edge-soft: rgb(255 255 255 / 0.35);
+  --glass-saturate: 180%;
+  --glass-shadow: 0 22px 50px -28px rgb(35 45 90 / 0.35), 0 1px 3px rgb(35 45 90 / 0.08);
+
+  --tooltip-bg: rgb(18 19 27 / 0.9);
+  --overlay: rgb(200 205 222 / 0.45);
+  --bar-from: rgb(18 19 27 / 0.14);
+  --bar-to: rgb(18 19 27 / 0.03);
+  --orb-opacity: 0.42;
+  --noise-opacity: 0.04;
+  --vignette: transparent;
+
+  /* Estados no claro: tons escuros (Tailwind 800), para texto pequeno passar de 4,5:1 até sobre a tinta
+   * de 12 % no vidro sólido em cima do orb mais forte. */
+  --success: #065f46;
+  --danger: #9f1239;
+  --warning: #7c3d06;
+  --info: #1e40af;
+  /* texto de destaque no claro: tom escuro escolhido por destaque (--accent-ink), nunca a cor pura */
+  --accent-text: var(--accent-ink);
+}
+/* Elemento com data-accent próprio dentro do tema claro: recalcula o texto de destaque com o tom dele. */
+[data-theme='light'] [data-accent] {
+  --accent-text: var(--accent-ink);
+}
+
+/* ---------- Vidro denso: fundos de cena com cores fortes (cenas.ts, vidro: 'denso') ---------- */
+[data-vidro='denso'][data-theme='dark'],
+[data-vidro='denso'] [data-theme='dark'] {
+  --glass-subtle: rgb(10 10 18 / 0.24);
+  --glass: rgb(10 10 18 / 0.36);
+  --glass-solid: rgb(14 14 24 / 0.64);
+}
+[data-vidro='denso'][data-theme='light'],
+[data-vidro='denso'] [data-theme='light'] {
+  --glass-subtle: rgb(255 255 255 / 0.32);
+  --glass: rgb(255 255 255 / 0.46);
+  --glass-solid: rgb(255 255 255 / 0.7);
+}
+
+/* ---------- Cores de destaque (trocáveis por empresa cliente) ---------- */
+:root,
+[data-accent='violeta'] {
+  --accent: #8b5cf6;
+  --accent-2: #3b82f6;
+  --accent-3: #d946ef;
+  --on-accent: #ffffff;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #5b21b6;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #7c3aed;
+  --accent-2-strong: #2563eb;
+}
+[data-accent='azul'] {
+  --accent: #3b82f6;
+  --accent-2: #06b6d4;
+  --accent-3: #6366f1;
+  --on-accent: #ffffff;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #1e40af;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #2563eb;
+  --accent-2-strong: #0369a1;
+}
+[data-accent='laranja'] {
+  --accent: #f97316;
+  --accent-2: #f59e0b;
+  --accent-3: #ef4444;
+  --on-accent: #1a1405;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #9a3412;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #f97316;
+  --accent-2-strong: #f59e0b;
+}
+[data-accent='esmeralda'] {
+  --accent: #10b981;
+  --accent-2: #0ea5e9;
+  --accent-3: #84cc16;
+  --on-accent: #04120c;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #065f46;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #10b981;
+  --accent-2-strong: #0ea5e9;
+}
+[data-accent='rosa'] {
+  --accent: #ec4899;
+  --accent-2: #8b5cf6;
+  --accent-3: #f43f5e;
+  --on-accent: #ffffff;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #9d174d;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #be185d;
+  --accent-2-strong: #7c3aed;
+}
+[data-accent='ambar'] {
+  --accent: #f5b301;
+  --accent-2: #f97316;
+  --accent-3: #facc15;
+  --on-accent: #1a1405;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #845500;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #f5b301;
+  --accent-2-strong: #f97316;
+}
+:root,
+[data-accent] {
+  --accent-glow: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+/* Anel de foco: o texto de destaque do tema (claro: tom escuro; escuro: tom claro), ≥ 3:1 nos dois. */
+:root,
+[data-theme],
+[data-accent] {
+  --focus-ring: var(--accent-text);
+}
+
+/* ---------- Fundo de cena (foto que acende/apaga com o tema) ----------
+ * Valem nos dois temas: a cena passa de noite para dia durante a troca.
+ * O shader lê estas cores na inicialização (SceneShader.ts) — nada de cor literal no GLSL.
+ */
+:root {
+  --scene-blur: 3px;
+  /* tinta por cima da foto para garantir contraste do vidro e do texto */
+  --scene-tint-noite: rgb(7 7 13 / 0.28);
+  --scene-tint-dia: rgb(233 236 244 / 0.3);
+  /* reforço durante a troca de tema, enquanto a foto ainda mostra o tema anterior */
+  --scene-tint-noite-forte: rgb(7 7 13 / 0.75);
+  --scene-tint-dia-forte: rgb(233 236 244 / 0.7);
+  /* gradação de cor (multiplicadores; branco = sem mudança) */
+  --scene-grade-noite: rgb(236 242 255);
+  --scene-grade-dia: rgb(255 253 249);
+  /* luz quente do amanhecer e do entardecer */
+  --scene-aurora: rgb(255 178 122);
+  /* brilho (bloom) das luminárias e das luzes da cidade */
+  --scene-bloom: rgb(255 246 226);
+  --scene-bloom-cidade: rgb(255 204 140);
+}
+
+/* ---------- Componentes do ero-web (Slider, Tabs, Tabela, Skeleton, QR, Dialogo) ----------
+ * Blocos separados de propósito: o escuro vem antes do claro, como acima.
+ */
+:root,
+[data-theme='dark'] {
+  /* botão deslizante do Slider */
+  --knob: #ffffff;
+  --knob-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(0 0 0 / 0.08);
+  /* pílula ativa de Tabs e Etapas */
+  --pill-shadow: 0 1px 8px -2px rgb(0 0 0 / 0.3);
+  /* cabeçalho fixo da Tabela: quase opaco para as linhas não aparecerem por baixo ao rolar */
+  --table-head: rgb(15 15 24 / 0.88);
+  --table-row-hover: rgb(255 255 255 / 0.035);
+  --skeleton: rgb(255 255 255 / 0.07);
+  --skeleton-shine: rgb(255 255 255 / 0.09);
+  /* fundo atrás de diálogos sem desfoque (máx. 2 camadas de backdrop-filter numa região) */
+  --overlay-dialogo: rgb(3 3 8 / 0.62);
+  /* QR code: placa clara e tinta escura nos dois temas (leitores de câmera precisam de contraste) */
+  --qr-plate: #ffffff;
+  --qr-ink: #0b0b12;
+  --qr-plate-border: rgb(255 255 255 / 0.5);
+  --qr-shadow: 0 18px 40px -20px rgb(0 0 0 / 0.7);
+  /* texto sobre gradientes e cores fortes que não seguem o destaque (avatar, contador do menu) */
+  --on-strong: #ffffff;
+}
+[data-theme='light'] {
+  --knob: #ffffff;
+  --knob-shadow: 0 2px 6px -1px rgb(35 45 90 / 0.3), 0 0 0 1px rgb(18 19 27 / 0.1);
+  --pill-shadow: 0 1px 8px -2px rgb(35 45 90 / 0.24);
+  --table-head: rgb(246 247 252 / 0.92);
+  --table-row-hover: rgb(18 19 27 / 0.03);
+  --skeleton: rgb(18 19 27 / 0.07);
+  --skeleton-shine: rgb(255 255 255 / 0.65);
+  --overlay-dialogo: rgb(200 205 222 / 0.62);
+  --qr-plate: #ffffff;
+  --qr-ink: #0b0b12;
+  --qr-plate-border: rgb(18 19 27 / 0.1);
+  --qr-shadow: 0 14px 30px -18px rgb(35 45 90 / 0.4);
+  --on-strong: #ffffff;
+}

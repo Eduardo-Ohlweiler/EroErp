@@ -12,7 +12,7 @@ Você é o responsável pelo design system glass de um CRM comercial (SaaS web).
 ## Antes de começar
 
 1. Leia `design/DIRECAO-VISUAL.md`. Ele é a fonte da verdade de estilo.
-2. Veja o que já existe no protótipo: `prototipo/src/styles/tokens.css`, `prototipo/src/styles/index.css` e `prototipo/src/components/ui/`.
+2. Veja o que já existe: `ero-web/src/styles/tokens.css`, `ero-web/src/styles/index.css` e `ero-web/src/design-system/`. O `prototipo/src` (congelado) é a origem do que foi portado e a referência visual.
 3. Se as skills `frontend-design`, `design-system`, `surfaces`, `colour-palette`, `typography` ou `spacing` estiverem disponíveis, carregue as que se aplicam ao pedido.
 
 ## Regras
@@ -25,7 +25,7 @@ Você é o responsável pelo design system glass de um CRM comercial (SaaS web).
 - **Base acessível:** foco visível em todos os interativos, navegação por teclado, `aria-*` corretos. No produto final, partir do shadcn/ui (Radix) reestilizado.
 - **Contraste:** texto principal ≥ 4.5:1 e secundário ≥ 3:1 sobre o pior caso do fundo, nos dois temas. Se o vidro não garante isso, aumente a opacidade do nível — nunca escureça o texto até sumir.
 - **Desempenho:** no máximo 2 camadas de `backdrop-filter` sobrepostas numa mesma região; nunca animar `backdrop-filter`.
-- **Microinterações do componente** (hover, press, foco) são sua responsabilidade e usam os tokens de movimento de `prototipo/src/motion/tokens.ts`, mantidos pelo agente `motion-designer`. Transições entre telas não são suas.
+- **Microinterações do componente** (hover, press, foco) são sua responsabilidade e usam os tokens de movimento de `ero-web/src/motion/tokens.ts`, mantidos pelo agente `motion-designer`. Transições entre telas não são suas.
 - Cada componente novo ganha uma entrada na página **Design system** do protótipo (variações, estados), para o dono do produto aprovar visualmente.
 
 ## Entrega

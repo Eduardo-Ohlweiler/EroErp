@@ -26,7 +26,7 @@ ero-api/src/main/java/com/api/ero_api/
     exception/          ApiException e filhas + GlobalExceptionHandler
     util/               LogSeguro, PaginacaoUtils, HashUtils
     web/                filtros HTTP (CorrelationId, limite de tamanho), ClienteRequisicao
-    config/             auditoria JPA, OpenAPI, seed do superadmin
+    config/             auditoria JPA, OpenAPI, seed do superadmin, agendamento (@EnableScheduling)
   seguranca/            infraestrutura de segurança (não é módulo de negócio)
     config/             SecurityConfig, CorsConfig, SegurancaProperties
     jwt/                JwtService, JwtAutenticacaoConverter
@@ -58,9 +58,42 @@ O módulo `usuario` é o **módulo-modelo**. Módulo novo = copiar a forma dele.
 | `controller/` | `UsuarioController.java` | `@RestController`, rota plural `/api/<recurso>`. Só recebe e devolve DTO. **Todo** método público com `@PreAuthorize` (ou `@PermitAll` justificado). Rota "de qualquer usuário" (combo, catálogo) usa `hasAuthority('ACESSO_LIBERADO')`, nunca `isAuthenticated()` (que deixaria passar quem ainda tem pendência). Exceção: `/api/auth/*`, que atende justamente quem tem pendência (trocar senha, configurar 2FA). Swagger `@Tag`/`@Operation`. Nenhuma regra: só delega. |
 | `util/` | validadores do módulo | Opcional. Ex.: validador de CPF/CNPJ, cálculo puro. |
 
+> **Entidade nunca sai da API (regra inviolável):** toda consulta que devolve informação
+> tem o seu `ResponseDto` (ou `SelectDto`/DTO próprio) e o mapper; nenhuma rota, tratador
+> de erro ou DTO devolve ou embute entidade (nem como campo, nem dentro de `PaginaDto` ou
+> lista). **Dentro de um DTO também nunca vai entidade:** se o DTO precisa trazer dados de
+> outra entidade, usa **outro DTO só com as informações necessárias** (ex.: `TenantSelectDto`
+> com id e nome dentro de `UsuarioResponseDto`), montado no mapper. O `ArquiteturaTest` reprova: `controllerNaoVeEntidadeNemRepository`,
+> `dtosNaoVeemEntidade` (nada em `dtos/` depende de `entity/`; enums de `enums/` podem) e
+> `respostaHttpNaoVeEntidade` (nenhuma classe com `@RestController`, `@Controller`,
+> `@RestControllerAdvice` ou `@ControllerAdvice`, em qualquer pacote, depende de `entity/`).
+
+### Exceção: nomes em lote projetados em `SelectDto`
+
+A regra é: repository devolve entidade e o mapper converte. **Única exceção:** buscar
+nomes ou rótulos de vários registros de uma vez, para enriquecer outra listagem (ex.: os
+nomes de usuário e de contratante na trilha de logs). Nesse caso o JPQL pode projetar
+direto no `SelectDto` do módulo:
+
+```java
+@Query("""
+        SELECT new com.api.ero_api.usuario.dtos.UsuarioSelectDto(u.id, u.nome)
+        FROM Usuario u
+        WHERE u.id IN :ids
+        """)
+List<UsuarioSelectDto> buscarNomesPorIds(@Param("ids") Collection<UUID> ids);
+```
+
+Por quê: carregar a entidade inteira só para ler o nome decifra os campos com
+`CriptoConverter` (o segredo TOTP do usuário) e traz colunas que ninguém vai usar. O
+service expõe isso como `buscarNomes(Collection<UUID>) → Map<UUID, String>` (um SELECT
+por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora desse caso
+(nomes ou rótulos em lote), tudo segue entidade + mapper.
+
 ### Quem pode usar o quê
 
 - Controller → service **do próprio módulo** (e DTOs/enums). **Nunca** repository, entity ou service de outro módulo (o ArchUnit barra).
+- DTO e tratador de erro (`@RestControllerAdvice`) **nunca** enxergam entity (o ArchUnit barra).
 - Service → repository **do próprio módulo** e services de outros módulos.
   Precisa de dado de outro módulo? Chame o service dele (`usuarioService.buscarEntidade(id)`).
 - Ninguém depende de controller.

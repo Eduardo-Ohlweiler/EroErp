@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/** Dados cadastrais. A aparência muda em PUT /api/tenants/{id}/configuracao. */
 @Schema(description = "Dados para alterar um contratante")
 public record TenantUpdateDto(
 
@@ -23,10 +23,6 @@ public record TenantUpdateDto(
 
         @NotNull(message = "Informe se exige verificação em duas etapas")
         Boolean exige2fa,
-
-        @NotBlank(message = "Cor de destaque é obrigatória")
-        @Pattern(regexp = "violeta|azul|laranja|esmeralda|rosa|ambar", message = "Cor de destaque inválida")
-        String corDestaque,
 
         @NotNull(message = "Versão é obrigatória")
         Long version) {

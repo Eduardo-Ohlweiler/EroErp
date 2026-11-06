@@ -58,7 +58,7 @@ class TenantIntegracaoTest extends IntegracaoTest {
         Sessao s = loginSuperadmin();
         String adminEmail = unico("admin") + "@teste.local";
         MvcTestResult r = post("/api/tenants", s.token(), Map.of(
-                "nome", unico("Seguro"), "exige2fa", true, "corDestaque", "esmeralda",
+                "nome", unico("Seguro"), "exige2fa", true,
                 "administrador", Map.of("nome", "Rita Alves", "email", adminEmail, "senha", SENHA_FORTE)));
         assertThat(status(r)).isEqualTo(201);
 
@@ -71,10 +71,10 @@ class TenantIntegracaoTest extends IntegracaoTest {
     @Test
     void validacaoRecusada() {
         Sessao s = loginSuperadmin();
-        MvcTestResult r = post("/api/tenants", s.token(), Map.of("nome", "", "corDestaque", "roxo-neon"));
+        MvcTestResult r = post("/api/tenants", s.token(), Map.of("nome", "", "aparencia", Map.of("corDestaque", "roxo-neon")));
         assertThat(status(r)).isEqualTo(400);
         assertThat(corpo(r).path("erros").valueStream().map(e -> e.path("campo").asString()))
-                .contains("nome", "corDestaque", "exige2fa", "administrador");
+                .contains("nome", "aparencia.corDestaque", "aparencia.temaPadrao", "exige2fa", "administrador");
 
         MvcTestResult cnpjInvalido = post("/api/tenants", s.token(), Map.of(
                 "nome", unico("Empresa"), "documento", "12.345.678/0001-00", "exige2fa", false,
@@ -106,7 +106,7 @@ class TenantIntegracaoTest extends IntegracaoTest {
         String id = t.path("id").asString();
         long versao = t.path("version").asLong();
         Map<String, Object> edicao = Map.of("nome", "Nome Novo", "documento", cnpj, "exige2fa", false,
-                "corDestaque", "rosa", "version", versao);
+                "version", versao);
         MvcTestResult alterado = put("/api/tenants/" + id, s.token(), edicao);
         assertThat(status(alterado)).isEqualTo(200);
         assertThat(corpo(alterado).path("version").asLong()).isEqualTo(versao + 1);

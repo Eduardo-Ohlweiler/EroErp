@@ -143,7 +143,6 @@ public abstract class IntegracaoTest {
         String adminEmail = unico("admin") + "@teste.local";
         MvcTestResult r = post("/api/tenants", superadmin.token(), Map.of(
                 "nome", nome,
-                "corDestaque", "azul",
                 "exige2fa", false,
                 "administrador", Map.of("nome", "Ana Lima", "email", adminEmail, "senha", SENHA_FORTE)));
         assertThat(status(r)).as("criar contratante").isEqualTo(201);

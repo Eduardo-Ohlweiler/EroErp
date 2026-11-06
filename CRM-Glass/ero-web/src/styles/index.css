@@ -1,0 +1,582 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@theme inline {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-text: var(--accent-text);
+  --color-on-accent: var(--on-accent);
+  --color-on-strong: var(--on-strong);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--chip-hover) transparent;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    /* --focus-ring: tom do destaque com contraste ≥ 3:1 nos dois temas (tokens.css) */
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* ---------- Vidro: três níveis ---------- */
+  .glass,
+  .glass-subtle,
+  .glass-solid {
+    position: relative;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--blur)) saturate(var(--glass-saturate));
+  }
+  /* Borda de luz em degradê: forte no canto de cima, some no meio, volta fraca embaixo. */
+  .glass::before,
+  .glass-subtle::before,
+  .glass-solid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      150deg,
+      var(--glass-edge-strong),
+      var(--glass-edge-soft) 28%,
+      transparent 55%,
+      var(--glass-edge-soft)
+    );
+    -webkit-mask:
+      linear-gradient(var(--mask-on) 0 0) content-box,
+      linear-gradient(var(--mask-on) 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(var(--mask-on) 0 0) content-box exclude,
+      linear-gradient(var(--mask-on) 0 0);
+    pointer-events: none;
+  }
+  .glass {
+    background: linear-gradient(155deg, var(--glass-sheen), transparent 42%), var(--glass);
+    box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--glass-shadow);
+  }
+  .glass-subtle {
+    background: linear-gradient(155deg, var(--glass-sheen), transparent 38%), var(--glass-subtle);
+    box-shadow: inset 0 1px 0 0 var(--glass-highlight);
+  }
+  .glass-solid {
+    background: var(--glass-solid);
+    box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--glass-shadow);
+    -webkit-backdrop-filter: blur(calc(var(--blur) * 1.5)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(calc(var(--blur) * 1.5)) saturate(var(--glass-saturate));
+  }
+  .glass-hover {
+    transition:
+      border-color 0.3s var(--ease-out),
+      box-shadow 0.3s var(--ease-out);
+  }
+  .glass-hover:hover {
+    border-color: var(--glass-border-hover);
+    box-shadow:
+      inset 0 1px 0 0 var(--glass-highlight),
+      0 30px 70px -32px var(--accent-glow),
+      var(--glass-shadow);
+  }
+  /* Sem backdrop-filter: para contêineres que têm vidro dentro (ex.: colunas do kanban). */
+  .glass-flat {
+    background: var(--glass-subtle);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+  }
+
+  .chip {
+    background: var(--chip);
+    border: 1px solid var(--line);
+  }
+  .tooltip {
+    background: var(--tooltip-bg);
+    color: #fff;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.5);
+  }
+
+  /* ---------- Destaque ---------- */
+  .accent-gradient {
+    /* versão "forte" do destaque: texto --on-accent ≥ 4,5:1 em todo o gradiente */
+    background-image: linear-gradient(135deg, var(--accent-strong), var(--accent-2-strong));
+    color: var(--on-accent);
+  }
+  .accent-gradient-v {
+    background-image: linear-gradient(180deg, var(--accent-2), var(--accent));
+  }
+  .accent-glow {
+    box-shadow:
+      0 10px 30px -8px var(--accent-glow),
+      inset 0 1px 0 rgb(255 255 255 / 0.28);
+  }
+  .text-gradient-accent {
+    background: linear-gradient(100deg, var(--fg) 10%, var(--accent-text) 55%, var(--accent-2) 95%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .bar-glass {
+    background: linear-gradient(180deg, var(--bar-from), var(--bar-to));
+    border: 1px solid var(--glass-border);
+  }
+
+  /* ---------- Botão com brilho que atravessa ---------- */
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .btn-shine::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.38) 50%, transparent 70%);
+    transform: translateX(-130%);
+    transition: transform 0.9s var(--ease-out);
+  }
+  .btn-shine:hover::after {
+    transform: translateX(130%);
+  }
+
+  /* ---------- Campos ---------- */
+  .input {
+    width: 100%;
+    height: 44px;
+    border-radius: 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--line);
+    color: var(--fg);
+    padding: 0 14px;
+    font-size: 14px;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s,
+      background 0.2s;
+  }
+  .input::placeholder {
+    color: var(--fg-subtle);
+  }
+  .input:hover {
+    border-color: var(--glass-border-hover);
+  }
+  .input:focus {
+    outline: none;
+    background: var(--input-bg-focus);
+    border-color: var(--focus-ring);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .input[aria-invalid='true'] {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 15%, transparent);
+  }
+  .kbd {
+    font-size: 11px;
+    line-height: 1;
+    padding: 4px 7px;
+    border-radius: 7px;
+    background: var(--chip);
+    border: 1px solid var(--line);
+    color: var(--fg-muted);
+  }
+
+  /* ---------- Kanban e agenda ---------- */
+  .col-over {
+    border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+    background: color-mix(in srgb, var(--accent) 9%, var(--glass-subtle));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .ev {
+    background: color-mix(in srgb, var(--ev) 20%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ev) 34%, transparent);
+    box-shadow: inset 3px 0 0 var(--ev);
+    transition: background 0.2s;
+  }
+  .ev:hover {
+    background: color-mix(in srgb, var(--ev) 32%, transparent);
+  }
+
+  .modal-overlay {
+    background: var(--overlay);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+}
+
+/* KPI em destaque: fora de camada para vencer as utilidades de cor de texto. */
+.kpi-featured {
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--accent) 80%, transparent),
+    color-mix(in srgb, var(--accent-2) 55%, transparent)
+  );
+  color: var(--on-accent);
+  border-color: rgb(255 255 255 / 0.24);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
+    0 28px 60px -26px var(--accent-glow);
+}
+.kpi-featured .text-muted,
+.kpi-featured .text-subtle {
+  color: color-mix(in srgb, var(--on-accent) 78%, transparent);
+}
+.kpi-featured .chip {
+  background: rgb(255 255 255 / 0.18);
+  border-color: rgb(255 255 255 / 0.25);
+}
+
+/* Navegadores sem backdrop-filter: vidro vira superfície opaca legível. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-subtle {
+    background: var(--glass-solid);
+  }
+}
+
+/* ---------- Fundo vivo ---------- */
+.live-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+}
+/* Camada de um fundo (motion/cena/LiveBackground.tsx): a nova esmaece por cima da antiga. */
+.live-bg-camada {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+/* Fundo vivo é translúcido (orbs sobre transparente): a camada leva a cor de base para cobrir a anterior. */
+.live-bg-camada-viva {
+  background: var(--bg);
+}
+.live-bg .base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1100px 700px at 12% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%),
+    radial-gradient(900px 700px at 100% 105%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 60%);
+}
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: var(--orb-opacity);
+  will-change: transform;
+}
+.orb-1 {
+  width: 46vw;
+  height: 46vw;
+  left: -10vw;
+  top: -14vw;
+  background: var(--accent);
+  animation: orb1 38s ease-in-out infinite alternate;
+}
+.orb-2 {
+  width: 40vw;
+  height: 40vw;
+  right: -12vw;
+  top: 12vh;
+  background: var(--accent-2);
+  animation: orb2 46s ease-in-out infinite alternate;
+}
+.orb-3 {
+  width: 32vw;
+  height: 32vw;
+  left: 32vw;
+  bottom: -16vw;
+  background: var(--accent-3);
+  opacity: calc(var(--orb-opacity) * 0.7);
+  animation: orb3 54s ease-in-out infinite alternate;
+}
+@keyframes orb1 {
+  50% {
+    transform: translate3d(14vw, 10vh, 0) scale(1.1);
+  }
+  100% {
+    transform: translate3d(5vw, 22vh, 0) scale(0.94);
+  }
+}
+@keyframes orb2 {
+  50% {
+    transform: translate3d(-16vw, 18vh, 0) scale(0.92);
+  }
+  100% {
+    transform: translate3d(-6vw, -6vh, 0) scale(1.08);
+  }
+}
+@keyframes orb3 {
+  50% {
+    transform: translate3d(-18vw, -12vh, 0) scale(1.12);
+  }
+  100% {
+    transform: translate3d(12vw, -20vh, 0) scale(1);
+  }
+}
+.aurora {
+  position: absolute;
+  inset: -25%;
+  background: conic-gradient(from 180deg at 50% 50%, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
+  filter: blur(120px);
+  opacity: calc(var(--orb-opacity) * 0.55);
+  animation: spin 70s linear infinite;
+}
+.aurora-2 {
+  inset: 10% -10% -40% 30%;
+  animation-duration: 90s;
+  animation-direction: reverse;
+  opacity: calc(var(--orb-opacity) * 0.35);
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.wave-1 {
+  animation: wave1 28s ease-in-out infinite alternate;
+}
+.wave-2 {
+  animation: wave2 34s ease-in-out infinite alternate;
+}
+@keyframes wave1 {
+  to {
+    transform: translate(-60px, 40px);
+  }
+}
+@keyframes wave2 {
+  to {
+    transform: translate(50px, -30px);
+  }
+}
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, transparent 45%, var(--vignette));
+}
+.noise {
+  position: absolute;
+  inset: 0;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* ---------- Fundo de cena (foto renderizada por shader) ---------- */
+.scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.scene-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* Sem WebGL 2: as duas fotos esmaecem uma sobre a outra. */
+.scene-img {
+  position: absolute;
+  inset: -2%;
+  width: 104%;
+  height: 104%;
+  object-fit: cover;
+  filter: blur(var(--scene-blur));
+  user-select: none;
+}
+.scene-img-dia {
+  opacity: var(--p, 0);
+}
+.scene-tinta {
+  position: absolute;
+  inset: 0;
+}
+.scene-tinta-noite {
+  background: var(--scene-tint-noite);
+  opacity: calc(1 - var(--tinta, 0));
+}
+.scene-tinta-dia {
+  background: var(--scene-tint-dia);
+  opacity: var(--tinta, 0);
+}
+/* Reforço enquanto a foto ainda está no estado do tema anterior (some quando a cena chega). */
+.scene-tinta-noite-forte {
+  background: var(--scene-tint-noite-forte);
+  opacity: calc((1 - var(--tinta, 0)) * var(--p, 0));
+}
+.scene-tinta-dia-forte {
+  background: var(--scene-tint-dia-forte);
+  opacity: calc(var(--tinta, 0) * (1 - var(--p, 0)));
+}
+
+.paused .orb,
+.paused .aurora,
+.paused .wave-1,
+.paused .wave-2 {
+  animation-play-state: paused;
+}
+
+/* ---------- Diversos ---------- */
+@keyframes wave-hand {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0deg);
+  }
+  10%,
+  30% {
+    transform: rotate(14deg);
+  }
+  20% {
+    transform: rotate(-8deg);
+  }
+  40% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+}
+.animate-wave-hand {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: wave-hand 2.4s ease-in-out 0.8s 1;
+}
+
+/* Troca de tema com revelação circular (View Transitions API). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/*
+ * Troca de tema com fundo de cena: esmaecimento cruzado da página inteira (motion/cena/trocarTema.ts).
+ * plus-lighter soma as duas capturas, então o meio do esmaecimento não perde opacidade.
+ */
+html.vt-cena::view-transition-old(root),
+html.vt-cena::view-transition-new(root) {
+  mix-blend-mode: plus-lighter;
+}
+html.vt-cena::view-transition-image-pair(root) {
+  isolation: isolate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb,
+  .aurora,
+  .wave-1,
+  .wave-2,
+  .animate-wave-hand {
+    animation: none;
+  }
+}
+
+/* ---------- ero-web: componentes novos ---------- */
+@layer components {
+  /* Diálogo (Radix): fundo sem desfoque — o próprio diálogo já é uma camada de vidro. */
+  .dialog-overlay {
+    background: var(--overlay-dialogo);
+  }
+  .pill-shadow {
+    box-shadow: var(--pill-shadow);
+  }
+
+  /* Tabela: cabeçalho fixo dentro da área rolável. */
+  .tabela thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--table-head);
+  }
+  .tabela tbody tr {
+    border-top: 1px solid var(--line);
+  }
+  .tabela tbody tr[data-clicavel] {
+    cursor: pointer;
+  }
+  .tabela tbody tr:hover {
+    background: var(--table-row-hover);
+  }
+
+  /* Esqueleto de carregamento com brilho que atravessa. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--skeleton);
+    border-radius: 8px;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+    transform: translateX(-100%);
+    animation: skeleton-brilho var(--mov-esqueleto) ease-in-out infinite; /* duração em motion/tokens.ts (esqueleto.brilho) */
+  }
+
+  /* QR code: placa clara legível nos dois temas. */
+  .qr-placa {
+    background: var(--qr-plate);
+    color: var(--qr-ink);
+    border: 1px solid var(--qr-plate-border);
+    box-shadow: var(--qr-shadow);
+  }
+
+  /* Slider (Radix) */
+  .slider-knob {
+    background: var(--knob);
+    box-shadow: var(--knob-shadow);
+  }
+}
+@keyframes skeleton-brilho {
+  to {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+/* Animações REDUZIDAS do contratante (AparenciaProvider põe data-movimento no <html>). */
+[data-movimento='reduzida'] .skeleton::after {
+  animation: none;
+}

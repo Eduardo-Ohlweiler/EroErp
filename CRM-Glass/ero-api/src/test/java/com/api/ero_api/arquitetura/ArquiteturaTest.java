@@ -34,6 +34,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -122,6 +124,29 @@ class ArquiteturaTest {
     static final ArchRule controllerNaoVeEntidadeNemRepository = noClasses()
             .that().resideInAPackage("..controller..")
             .should().dependOnClassesThat().resideInAnyPackage("..repository..", "..entity..");
+
+    /**
+     * Entidade nunca sai da API: DTO não embute entidade. Dado de outra entidade vai num
+     * DTO aninhado só com o necessário (ex.: {@code TenantSelectDto} dentro de
+     * {@code UsuarioResponseDto}), montado no mapper. Enums de {@code enums/} continuam permitidos.
+     */
+    @ArchTest
+    static final ArchRule dtosNaoVeemEntidade = noClasses()
+            .that().resideInAPackage("..dtos..")
+            .should().dependOnClassesThat().resideInAPackage("..entity..")
+            .because("DTO não embute entidade: use outro DTO com só o necessário, montado no mapper (docs/01)");
+
+    /**
+     * Entidade nunca sai da API: nenhuma classe que monta resposta HTTP (controller ou tratador
+     * de erro, em qualquer pacote) enxerga entidade. "Meta-anotada" cobre {@code @RestController}
+     * e {@code @RestControllerAdvice}, que são anotados com {@code @Controller} e {@code @ControllerAdvice}.
+     */
+    @ArchTest
+    static final ArchRule respostaHttpNaoVeEntidade = noClasses()
+            .that().areMetaAnnotatedWith(Controller.class)
+            .or().areMetaAnnotatedWith(ControllerAdvice.class)
+            .should().dependOnClassesThat().resideInAPackage("..entity..")
+            .because("entidade nunca sai da API: rota e tratador de erro devolvem só DTO (docs/01)");
 
     @ArchTest
     static final ArchRule controllerSoChamaServiceDoProprioModulo = classes()

@@ -53,12 +53,12 @@ Biblioteca: Motion (Framer Motion) com `AnimatePresence` e animações de layout
 - Tailwind CSS v4 (tokens em variáveis CSS) + shadcn/ui (Radix) como base de componentes acessíveis, reestilizados para glass
 - Motion (Framer Motion) para animações e transições de tela
 - lucide-react para ícones
-- TanStack Router (rotas com transição) e TanStack Query (dados)
+- React Router 7 (rotas; a tela que sai fica "congelada" até a saída terminar, base da montagem em blocos da seção 6) e TanStack Query (dados)
 - TanStack Table para listagens e cadastros
 - React Hook Form + Zod para formulários
 - Recharts para gráficos (estilizados com os tokens)
 - dnd-kit para o kanban
-- MSW para simular a API enquanto o backend (NestJS ou Spring Boot) não é decidido
+- MSW para simular a API enquanto o endpoint ainda não existe na ero-api (Spring Boot)
 
 > **No protótipo (`prototipo/`)** algumas peças foram simplificadas de propósito, porque o objetivo era só o visual: React Router no lugar do TanStack Router, gráficos em SVG próprio (com animação de desenho) no lugar do Recharts, arrastar do kanban feito com o próprio Motion, e dados fixos em memória no lugar de TanStack Query + MSW. Os tokens, o vidro e o movimento já seguem este documento.
 
@@ -70,3 +70,17 @@ Biblioteca: Motion (Framer Motion) com `AnimatePresence` e animações de layout
 - Futuro: outros módulos no mesmo shell (menu, barra superior, busca global)
 
 Todo cadastro segue o mesmo padrão de tela: listagem com busca e filtros → painel de detalhe → formulário em etapas. Fazer uma vez no design system e reutilizar.
+
+## 6. Norte para o futuro: experiência, não só funcionalidade
+
+Pedido do dono do produto (nov/2026), para guiar as decisões desde já. O detalhe de cada tela é definido quando ela for feita.
+
+- **Telas que se montam e se desmontam.** Ao entrar, a tela se constrói em blocos, como peças encaixando uma a uma, até chegar ao layout planejado. Ao sair, ela se desfaz. Exemplo principal: no login, os componentes da tela de login se desmontam, e a tela inicial vem se montando em blocos.
+- **Onde mais pesa:** login, kanban e as telas de entrada dos módulos. As outras telas seguem a mesma linguagem.
+- **Referências de nível:** sites premiados com 3D e motion graphics. Os links que o dono passou foram os vídeos "Tentei Recriar um Site Premiado 3D com GPT" (youtube.com/watch?v=7Kz1UpwYZnY) e "Crie Carrosséis VIRAIS com Motion Graphics" (youtube.com/watch?v=TZg-PgSxm3M).
+- **O que isso pede da base agora:**
+  - toda tela declara a sua coreografia de entrada e de saída;
+  - a troca de rota espera a saída terminar antes de montar a próxima tela;
+  - os blocos são os próprios cartões e componentes do design system, não uma camada à parte;
+  - as durações ficam em `motion/tokens.ts`.
+- **Limites que não mudam:** movimento reduzido continua respeitado (vira um fade). A montagem não pode atrasar o uso: o usuário consegue agir assim que o conteúdo aparece, sem esperar a animação inteira.

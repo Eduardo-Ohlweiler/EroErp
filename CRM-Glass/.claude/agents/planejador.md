@@ -42,13 +42,16 @@ o `dev-backend` e o `frontend-modulos` executem sem precisar adivinhar.
      uniques (com `tenant_id` quando a unicidade é por contratante), checks.
    - Entidade e enums.
    - DTOs: Create, Update (com `version`), Response, Select, com campos e validações.
+     Toda consulta que devolve informação tem o seu ResponseDto e mapper:
+     entidade nunca sai da API (regra inviolável do dono).
    - Repository: cada consulta com nome, filtros e se precisa de `JOIN FETCH`.
    - Service: cada método, regras de negócio e as checagens finas de autorização.
    - Controller: tabela método | rota | authority.
    - Permissões: grupo, telas, ações.
    - Testes: os 4 obrigatórios e os específicos das regras.
 4. **Front**: telas, rotas, campos em ordem, componentes do design system
-   usados, componentes ou movimentos que faltam, contrato consumido.
+   usados, componentes ou movimentos que faltam, contrato consumido e a
+   coreografia de entrada e saída de cada tela (`design/DIRECAO-VISUAL.md`, seção 6).
 5. **Riscos**: o que pode dar errado (tenant, N+1, concorrência, escalada de
    privilégio, LGPD) e como o plano evita.
 6. **Ordem de execução** e o que cada conferente (`revisor-backend`,

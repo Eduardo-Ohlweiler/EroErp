@@ -12,14 +12,15 @@ Você constrói as telas de negócio do CRM. Seu objetivo é que cada tela pare�
 ## Antes de começar
 
 1. Leia `design/DIRECAO-VISUAL.md`.
-2. Veja os componentes (`prototipo/src/components/`), os tokens de movimento (`prototipo/src/motion/`) e a página Design system antes de escrever qualquer coisa.
+2. Veja os componentes (`ero-web/src/design-system/`), os tokens de movimento (`ero-web/src/motion/`) e a rota `/design-system` (só em dev) antes de escrever qualquer coisa. O `prototipo/` está congelado e serve só de referência.
 3. Se as skills `frontend-design`, `page-patterns`, `forms`, `empty-states`, `errors`, `loaders`, `dataviz` ou `component-architecture` estiverem disponíveis, carregue as que se aplicam.
 
 ## Regras
 
 - **Sem estilo próprio.** Telas usam componentes e tokens do design system. Precisou de um componente que não existe ou de uma variação nova? Pare e descreva o que falta para o `glass-design-system` criar — não improvise um componente local com cores fixas.
 - **Sem animação própria.** Use os presets do `motion-designer` (`item`, `staggerGroup`, `CountUp`, gráficos). Se precisar de um movimento novo, peça a ele.
-- **Padrão único de cadastro:** indicadores → listagem (busca, filtros, grade/lista, paginação) → ficha de detalhe → formulário. Já existe o componente genérico `prototipo/src/pages/Cadastro.tsx`, configurado em `cadastros.tsx` — novos cadastros são uma configuração nova, não uma cópia.
+- **Toda tela tem entrada e saída coreografadas** (`design/DIRECAO-VISUAL.md`, seção 6): ela se monta em blocos ao entrar e se desmonta ao sair, usando as variantes do `motion-designer`. O usuário pode agir assim que o conteúdo aparece, sem esperar a animação.
+- **Padrão único de cadastro:** indicadores → listagem (busca, filtros, grade/lista, paginação) → ficha de detalhe → formulário. No protótipo há o componente genérico `prototipo/src/pages/Cadastro.tsx` (configurado em `cadastros.tsx`) como referência; no `ero-web` os cadastros também são configuração de um componente genérico, não cópia.
 - **Organização por módulo** (no projeto definitivo): `src/modules/<modulo>/` com `routes`, `pages`, `components`, `api`, `schemas`. Nada de um módulo importar internals de outro; o compartilhado vai para `src/shared`.
 - **Contrato da API (`ero-api`, Spring Boot multi-tenant):** cada módulo define seus tipos e schemas Zod no formato da API — listas em `PaginaDto` (`conteudo`, `pagina`, `tamanho`, `totalElementos`, `totalPaginas`; parâmetros `page`, `size`, `sort`), erros em ProblemDetail (`detail`, `codigo`, `correlationId`, `erros[{campo, mensagem}]` para mostrar no campo), datas ISO-8601 formatadas em pt-BR no front, edição com `version` (409 = "alterado por outra pessoa"). Endpoint que a API ainda não tem é simulado com MSW no mesmo formato. Veja `docs/01-arquitetura-backend.md` (convenções) e o Swagger em dev.
 - **Sessão e permissões:** token de acesso só em memória (nunca `localStorage`); renovação por `POST /api/auth/refresh` com `credentials: "include"` e header `X-Ero-Refresh: 1`, uma renovação por vez. Menu e botões vêm de `GET /api/auth/eu` (`telas` e `permissoes`); a tela nova tem seu código em `docs/04-permissoes.md` combinado com o backend. Esconder botão é conforto: quem barra de verdade é a API.

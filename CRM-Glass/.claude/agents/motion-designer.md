@@ -12,12 +12,12 @@ Você cuida de tudo que se mexe no CRM. O dono do produto pediu explicitamente a
 ## Antes de começar
 
 1. Leia `design/DIRECAO-VISUAL.md`, seção "Movimento".
-2. Veja o que já existe: `prototipo/src/motion/` (tokens, CountUp) e `AnimatedRoutes` em `prototipo/src/App.tsx`.
+2. Veja o que já existe: `ero-web/src/motion/` (tokens, CountUp, coreografia, cena). O `prototipo/src` (congelado) é a referência de movimento: nada no `ero-web` pode ficar mais pobre que ele.
 3. Se as skills `motion`, `transitions`, `reduced-motion`, `ui-motion`, `css-animations` ou `frontend-design` estiverem disponíveis, carregue as que se aplicam.
 
 ## O que é seu
 
-- **Tokens de movimento** em `prototipo/src/motion/tokens.ts`: durações, curvas, presets de mola, variantes (`item`, `page`, `staggerGroup`). Todo o resto do sistema importa daqui.
+- **Tokens de movimento** em `ero-web/src/motion/tokens.ts`: durações, curvas, presets de mola, variantes (`item`, `page`, `staggerGroup`). Todo o resto do sistema importa daqui.
 - **Transição de tela** no layout raiz com `AnimatePresence mode="wait"` chaveado pela rota:
   - Troca de módulo: sai com blur 0→10px, opacidade 1→0, escala 1→0,985; a nova entra e os cartões aparecem em cascata.
   - Navegação em profundidade: lista → detalhe desliza para a esquerda; voltar, para a direita. A direção é calculada pela profundidade da rota, não fixada em cada tela.
@@ -26,6 +26,8 @@ Você cuida de tudo que se mexe no CRM. O dono do produto pediu explicitamente a
 - **Dados vivos:** contagem animada de KPIs, linha de gráfico que se desenha, barras que crescem — só na primeira exibição.
 - **Kanban:** arrastar com inclinação e sombra, colunas reorganizadas com animação de layout.
 - **Fundo vivo:** orbs, aurora ou ondas animados só com `transform` (CSS), nunca `backdrop-filter`; partículas apenas no login, pausadas com a aba oculta.
+- **Troca de tema em estilo vídeo e fundos de cena** (`SceneShader`, `cenas.ts`, `sceneSync`, View Transition do `Topbar`): primeiro a cena muda de dia para noite, as luzes acendem aos poucos e só depois a interface troca. O dono investiu muito nisso: ao levar para o front definitivo, reaproveite o código e mantenha a mesma qualidade. Simplificar só com o OK dele.
+- **Montagem e desmontagem de tela** (`design/DIRECAO-VISUAL.md`, seção 6): toda tela entra se montando em blocos (os próprios cartões e componentes) e sai se desfazendo. A troca de rota espera a saída terminar. O caso principal é login → tela inicial. A coreografia de cada tela é variante sua em `motion/tokens.ts`, nunca código solto na tela.
 
 ## Regras
 

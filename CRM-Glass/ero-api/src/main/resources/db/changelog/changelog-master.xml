@@ -17,5 +17,6 @@
     <include file="changes/005-create-codigo-recuperacao.xml" relativeToChangelogFile="true"/>
     <include file="changes/006-create-evento-seguranca.xml" relativeToChangelogFile="true"/>
     <include file="changes/007-add-index-evento-seguranca-data.xml" relativeToChangelogFile="true"/>
+    <include file="changes/008-add-tenant-aparencia.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="008-add-tenant-aparencia" author="eduardo">
+        <comment>
+            Aparência fixa por contratante (vale para todos os usuários dele). Limites vêm do protótipo:
+            vidro 0 a 40 (padrão 12), foco do fundo 0 a 10 com passo 0,5 (padrão 3).
+            fundo e fundo_exclusivo ficam sem CHECK: o catálogo de cenas cresce (enum Fundo).
+        </comment>
+        <addColumn tableName="tenant">
+            <column name="tema_padrao" type="VARCHAR(10)" defaultValue="ESCURO"><constraints nullable="false"/></column>
+            <column name="fundo" type="VARCHAR(40)" defaultValue="ORBS"><constraints nullable="false"/></column>
+            <column name="fundo_animado" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="vidro_desfoque" type="INTEGER" defaultValueNumeric="12"><constraints nullable="false"/></column>
+            <column name="fundo_foco" type="NUMERIC(3,1)" defaultValueNumeric="3.0"><constraints nullable="false"/></column>
+            <column name="animacoes" type="VARCHAR(10)" defaultValue="COMPLETAS"><constraints nullable="false"/></column>
+            <!-- Cena exclusiva vinculada a este contratante: no máximo um dono por cena. -->
+            <column name="fundo_exclusivo" type="VARCHAR(40)"/>
+        </addColumn>
+        <sql>ALTER TABLE tenant ADD CONSTRAINT ck_tenant_tema_padrao CHECK (tema_padrao IN ('ESCURO', 'CLARO'))</sql>
+        <sql>ALTER TABLE tenant ADD CONSTRAINT ck_tenant_animacoes CHECK (animacoes IN ('COMPLETAS', 'REDUZIDAS'))</sql>
+        <sql>ALTER TABLE tenant ADD CONSTRAINT ck_tenant_vidro_desfoque CHECK (vidro_desfoque BETWEEN 0 AND 40)</sql>
+        <sql>ALTER TABLE tenant ADD CONSTRAINT ck_tenant_fundo_foco CHECK (fundo_foco BETWEEN 0 AND 10)</sql>
+        <createIndex tableName="tenant" indexName="uk_tenant_fundo_exclusivo" unique="true">
+            <column name="fundo_exclusivo"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

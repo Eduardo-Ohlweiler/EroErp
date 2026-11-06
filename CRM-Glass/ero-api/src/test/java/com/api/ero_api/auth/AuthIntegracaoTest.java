@@ -228,6 +228,37 @@ class AuthIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void euTrazSituacaoDoDoisFatoresEAparencia() {
+        Contratante c = novoContratante();
+        JsonNode antes = corpo(get("/api/auth/eu", c.admin().token()));
+        assertThat(antes.path("doisFatoresAtivo").asBoolean()).isFalse();
+        assertThat(antes.path("doisFatoresObrigatorio").asBoolean()).isFalse();
+        assertThat(antes.path("aparencia").path("temaPadrao").asString()).isNotBlank();
+        assertThat(antes.has("corDestaque")).as("cor agora vem dentro de aparencia").isFalse();
+
+        String segredo = corpo(post("/api/auth/2fa/configurar", c.admin().token(), Map.of())).path("segredo").asString();
+        assertThat(status(post("/api/auth/2fa/ativar", c.admin().token(),
+                Map.of("senha", SENHA_FORTE_2, "codigo", Totp.codigoEm(segredo, Instant.now()))))).isEqualTo(200);
+        assertThat(corpo(get("/api/auth/eu", c.admin().token())).path("doisFatoresAtivo").asBoolean())
+                .as("cache invalidado ao ligar").isTrue();
+
+        // Contratante que exige 2FA: obrigatório já aparece enquanto a pendência existe.
+        Sessao s = loginSuperadmin();
+        String adminEmail = unico("admin") + "@teste.local";
+        assertThat(status(post("/api/tenants", s.token(), Map.of(
+                "nome", unico("Seguro"), "exige2fa", true,
+                "administrador", Map.of("nome", "Rita Alves", "email", adminEmail, "senha", SENHA_FORTE))))).isEqualTo(201);
+        Sessao exigido = loginTrocandoSenha(adminEmail, SENHA_FORTE, SENHA_FORTE_2);
+        JsonNode eu = corpo(get("/api/auth/eu", exigido.token()));
+        assertThat(eu.path("pendencia").asString()).isEqualTo("CONFIGURAR_2FA");
+        assertThat(eu.path("doisFatoresObrigatorio").asBoolean()).isTrue();
+        assertThat(eu.path("doisFatoresAtivo").asBoolean()).isFalse();
+
+        JsonNode superadmin = corpo(get("/api/auth/eu", s.token()));
+        assertThat(superadmin.path("doisFatoresObrigatorio").asBoolean()).as("superadmin-exige-2fa desligado em teste").isFalse();
+    }
+
+    @Test
     void rotaInexistenteNaoVazaDetalhe() {
         Sessao s = loginSuperadmin();
         MvcTestResult r = get("/api/nao-existe", s.token());

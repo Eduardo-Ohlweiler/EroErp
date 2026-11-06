@@ -290,6 +290,25 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void bloqueadoAteApareceNaFichaESomeAoDesbloquear() {
+        Contratante c = novoContratante();
+        UsuarioCriado u = novoUsuario(c.admin());
+        String admin = c.admin().token();
+        assertThat(corpo(get("/api/usuarios/" + u.id(), admin)).path("bloqueadoAte").isNull()).isTrue();
+
+        for (int i = 0; i < 5; i++) {
+            tentarLogin(u.email(), "Senha-Errada-Total-" + i);
+        }
+        JsonNode bloqueado = corpo(get("/api/usuarios/" + u.id(), admin));
+        assertThat(java.time.Instant.parse(bloqueado.path("bloqueadoAte").asString())).isAfter(java.time.Instant.now());
+        JsonNode naLista = corpo(get("/api/usuarios?busca=" + u.email(), admin)).path("conteudo").get(0);
+        assertThat(naLista.path("bloqueadoAte").isNull()).as("lista também traz").isFalse();
+
+        assertThat(status(patch("/api/usuarios/" + u.id() + "/desbloquear", admin))).isEqualTo(204);
+        assertThat(corpo(get("/api/usuarios/" + u.id(), admin)).path("bloqueadoAte").isNull()).isTrue();
+    }
+
+    @Test
     void edicaoComVersaoAntigaDaConflito() {
         Contratante c = novoContratante();
         UsuarioCriado u = novoUsuario(c.admin());

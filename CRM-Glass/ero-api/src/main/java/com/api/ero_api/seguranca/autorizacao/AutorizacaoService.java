@@ -88,10 +88,11 @@ public class AutorizacaoService {
             throw invalido();
         }
 
+        boolean doisFatoresObrigatorio = tenantDoUsuario.isExige2fa() || (superadmin && superadminExige2fa);
         Pendencia pendencia = Pendencia.NENHUMA;
         if (usuario.isExigirTrocaSenha()) {
             pendencia = Pendencia.TROCAR_SENHA;
-        } else if (!usuario.isTotpAtivo() && (tenantDoUsuario.isExige2fa() || (superadmin && superadminExige2fa))) {
+        } else if (!usuario.isTotpAtivo() && doisFatoresObrigatorio) {
             pendencia = Pendencia.CONFIGURAR_2FA;
         }
         Set<String> authorities = pendencia == Pendencia.NENHUMA
@@ -99,7 +100,7 @@ public class AutorizacaoService {
                 : Set.of("PENDENCIA_" + pendencia.name());
 
         return new UsuarioAutenticado(usuario.getId(), tenantEfetivo, sessaoId, usuario.getNome(), usuario.getEmail(),
-                usuario.getPapel(), pendencia, authorities);
+                usuario.getPapel(), pendencia, usuario.isTotpAtivo(), doisFatoresObrigatorio, authorities);
     }
 
     private static InvalidBearerTokenException invalido() {

@@ -26,8 +26,41 @@ class SessaoIntegracaoTest extends IntegracaoTest {
         assertThat(status(get("/api/auth/eu", celular.token()))).as("celular caiu").isEqualTo(401);
         assertThat(status(get("/api/auth/eu", notebook.token()))).as("notebook continua").isEqualTo(200);
 
-        JsonNode eventos = corpo(get("/api/auditoria/eventos?tipo=SESSAO_ENCERRADA&usuarioId=" + u.id(), c.admin().token()));
+        JsonNode eventos = corpo(get("/api/auditoria/eventos?tipos=SESSAO_ENCERRADA&usuarioId=" + u.id(), c.admin().token()));
         assertThat(eventos.path("totalElementos").asLong()).isEqualTo(1);
+    }
+
+    @Test
+    void encerrarOutrasMantemAAtual() {
+        Contratante c = novoContratante();
+        UsuarioCriado u = novoUsuario(c.admin());
+        Sessao notebook = loginTrocandoSenha(u.email(), SENHA_FORTE, SENHA_FORTE_2);
+        Sessao celular = login(u.email(), SENHA_FORTE_2);
+        Sessao tablet = login(u.email(), SENHA_FORTE_2);
+        Sessao outroUsuario = c.admin();
+
+        assertThat(status(patch("/api/sessoes/encerrar-outras", notebook.token()))).isEqualTo(204);
+        assertThat(status(get("/api/auth/eu", celular.token()))).as("celular caiu").isEqualTo(401);
+        assertThat(status(get("/api/auth/eu", tablet.token()))).as("tablet caiu").isEqualTo(401);
+        assertThat(status(refresh(celular.refresh()))).as("nem renova").isEqualTo(401);
+        assertThat(status(get("/api/auth/eu", notebook.token()))).as("este navegador continua").isEqualTo(200);
+        assertThat(status(get("/api/auth/eu", outroUsuario.token()))).as("sessão de outra pessoa intacta").isEqualTo(200);
+
+        JsonNode sessoes = corpo(get("/api/sessoes", notebook.token()));
+        assertThat(sessoes.size()).isEqualTo(1);
+        assertThat(sessoes.get(0).path("atual").asBoolean()).isTrue();
+
+        JsonNode eventos = corpo(get("/api/auditoria/eventos?tipos=SESSAO_ENCERRADA&usuarioId=" + u.id(), c.admin().token()));
+        assertThat(eventos.path("totalElementos").asLong()).isEqualTo(1);
+        assertThat(eventos.path("conteudo").get(0).path("detalhe").asString()).isEqualTo("todas as outras");
+    }
+
+    @Test
+    void pendenteNaoEncerraOutras() {
+        Contratante c = novoContratante();
+        UsuarioCriado u = novoUsuario(c.admin());
+        Sessao pendente = login(u.email(), SENHA_FORTE);
+        assertThat(status(patch("/api/sessoes/encerrar-outras", pendente.token()))).isEqualTo(403);
     }
 
     @Test

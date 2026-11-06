@@ -28,6 +28,9 @@ subir os próprios privilégios. Você não altera arquivos.
    - O que acontece com o id de **outro contratante**? Tem que dar 404.
    - Um `USUARIO` consegue se promover, ou dar a outro algo que ele mesmo não tem?
    - Algum campo de entrada controla o que não deveria (dono, tenant, papel, status)?
+   - A resposta sai só por ResponseDto? Entidade saindo da API (rota, tratador
+     de erro ou DTO que embute entidade) é `bloqueia` (A01/A04: vaza hash de
+     senha, segredo TOTP, tenant e auditoria; regra inviolável do dono).
 3. Procure nos arquivos tocados: `nativeQuery`, `comoRoot`, `atribuirTenant`,
    `permitAll`, `PermitAll`, `log.`, `System.out`, `printStackTrace`, `getMessage()`
    em resposta, e literais com cara de segredo.
