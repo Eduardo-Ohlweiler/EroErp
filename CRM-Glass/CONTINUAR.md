@@ -101,7 +101,12 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
   - 7 migrations, Dockerfile e compose de dev.
   - 72 testes verdes: 21 de arquitetura (ArchUnit), integração com Postgres real (Testcontainers), TOTP e limite de corpo. Duas rodadas de revisão dos agentes `seguranca` e `revisor-backend`; achados bloqueantes corrigidos, pendências conhecidas em `docs/02` (seção "Pendências conhecidas").
   - Rodar: preview **`ero-api`** ou `ero-api/run-dev.cmd`. Swagger em `/swagger-ui.html`. Superadmin de dev em `ero-api/.env`.
-- **Protótipo** em `prototipo/` (detalhes no `prototipo/README.md`):
+- **Fatia 1 do front definitivo** (branch `timeero/front-fatia-1`):
+  - ero-api: aparência por contratante (migration 008: tema, destaque, fundo, vidro, foco, animações, cena exclusiva), `GET /api/tenants/fundos` e `PUT /api/tenants/{id}/configuracao` (superadmin), logs com filtros e retenção de 12 meses, `PATCH /api/sessoes/encerrar-outras`, status do 2FA no `/eu`. Regra inviolável: entidade nunca sai da API (ArchUnit). 92 testes verdes.
+  - `ero-web/`: base do front definitivo (Vite, React 19, React Router 7, TanStack Query), tokens e componentes glass com contraste AA nos dois temas, `AparenciaProvider` (sistema → contratante → prévia), cenas com shader, fundos vivos, troca de tema em vídeo ligada à aparência e coreografia de montar e desmontar em blocos (`motion/coreografia`). Catálogo e demonstração em `/design-system` (só dev).
+  - `docs/06-fundos-de-cena.md`: passo a passo para cena nova e cena exclusiva.
+  - Decisões do dono: aparência fixa por contratante (sem preferência do usuário; o botão de tema saiu da barra), só o superadmin configura, login sempre com a aparência padrão do sistema.
+- **Protótipo** em `prototipo/` (congelado; detalhes no `prototipo/README.md`):
   - login com esfera de partículas;
   - dashboard com números que contam, gráficos que se desenham, medidor, rosca e ranking;
   - funil kanban com arrastar e soltar, modal de detalhe e formulário de novo negócio com validação;
@@ -127,7 +132,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 2. **Fechar a identidade:** nome, cor de destaque oficial, logotipo. Atualizar `tokens.css` e a direção visual.
 3. **Conferir o que ficou sem verificar:** as telas da seção 4, o celular, e uma revisão com o agente `revisor-ui`.
 4. ~~Começar o backend~~ **Feito** (fundação, segurança, login, usuários e permissões).
-5. **Montar o front definitivo:** estrutura por módulos, shadcn/ui reestilizado, TanStack Router/Query/Table, React Hook Form + Zod, tela de login ligada à `ero-api` (refresh, 2FA, troca de senha) e menu a partir de `/api/auth/eu`.
+5. ~~Base do front definitivo~~ **Feito na fatia 1.** **Fatia 2:** as telas do `PLANO-FATIA-2.md` (login com 2FA e sessão em memória, casca com menu por permissão, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta), mais as pendências da seção 5 desse arquivo. Começar com `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
 6. **Definir as regras do papel ADMIN** (hoje recebe tudo do contratante; ver `docs/04-permissoes.md`).
 7. **Primeiros módulos de negócio pelo `/timeero`:** cadastro de pessoas/clientes, empresas/filiais, produtos, funil de negócios e agenda.
 8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup.

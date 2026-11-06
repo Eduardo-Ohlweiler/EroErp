@@ -3,7 +3,7 @@
 Produto comercial (SaaS web): CRM com visual glass, que vai crescer para agenda, cadastros (pessoas, filiais, produtos) e outros módulos. A direção visual está em `design/DIRECAO-VISUAL.md` e vale para tudo.
 
 Estado atual:
-- **Front:** o definitivo nasce em `ero-web/`, por fatias (a 1ª é login, casca, Minha conta e módulo administrativo). O `prototipo/` fica congelado como laboratório visual e referência de movimento.
+- **Front:** o definitivo está em `ero-web/`, por fatias (a 1ª entregou a base e o movimento; a 2ª, as telas do `PLANO-FATIA-2.md`). O `prototipo/` fica congelado como laboratório visual e referência de movimento.
 - **Backend:** fundação pronta em `ero-api/` (Java 25 + Spring Boot 4.1, PostgreSQL, multi-tenant). Já tem segurança OWASP, login com 2FA, contratantes, usuários e permissões.
 
 Onde paramos, decisões em aberto e próximos passos: `CONTINUAR.md`.
