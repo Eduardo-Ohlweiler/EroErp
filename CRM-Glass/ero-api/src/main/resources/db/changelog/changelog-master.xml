@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ordem de execução das migrations. Arquivo novo: changes/NNN-descricao.xml
+  (próximo número livre) e uma linha <include> no fim desta lista.
+  Migration já aplicada NUNCA é editada: crie outra.
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="changes/001-create-tenant.xml" relativeToChangelogFile="true"/>
+    <include file="changes/002-create-usuario.xml" relativeToChangelogFile="true"/>
+    <include file="changes/003-create-permissao.xml" relativeToChangelogFile="true"/>
+    <include file="changes/004-create-sessao.xml" relativeToChangelogFile="true"/>
+    <include file="changes/005-create-codigo-recuperacao.xml" relativeToChangelogFile="true"/>
+    <include file="changes/006-create-evento-seguranca.xml" relativeToChangelogFile="true"/>
+    <include file="changes/007-add-index-evento-seguranca-data.xml" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>

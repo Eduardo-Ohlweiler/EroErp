@@ -38,3 +38,6 @@ logo.svg
 
 # Socket local do JDK no Windows (ver run-dev.sh)
 ero-erp-api/.tmp/
+
+# Worktrees das sessões do Claude Code (cada um é um checkout inteiro)
+.claude/worktrees/

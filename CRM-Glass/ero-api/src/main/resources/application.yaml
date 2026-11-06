@@ -1,0 +1,84 @@
+# Configuração BASE = segura por padrão (vale para produção).
+# O perfil "dev" afrouxa só o necessário para desenvolver; nunca o contrário.
+# Perfil ativo vem do ambiente: SPRING_PROFILES_ACTIVE=dev|prod (não fixe aqui).
+
+spring:
+  application:
+    name: ero-api
+  docker:
+    compose:
+      enabled: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+  liquibase:
+    change-log: classpath:db/changelog/changelog-master.xml
+  servlet:
+    multipart:
+      # Sem upload por enquanto: multipart desligado para não aceitar corpo grande
+      # antes do LimiteTamanhoFilter. Rota de upload terá configuração própria.
+      enabled: false
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+  jackson:
+    default-property-inclusion: always
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+    include-exception: false
+  servlet:
+    session:
+      tracking-modes: []
+  tomcat:
+    max-http-form-post-size: 1MB
+    max-swallow-size: 2MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+app:
+  nome: CRM
+  seguranca:
+    jwt-segredo: ${APP_JWT_SEGREDO:}
+    cripto-chave: ${APP_CRIPTO_CHAVE:}
+    cors-origens: ${APP_CORS_ORIGENS:}
+    cookie-seguro: true
+  superadmin:
+    email: ${SUPERADMIN_EMAIL:}
+    senha: ${SUPERADMIN_SENHA:}
+    nome: ${SUPERADMIN_NOME:Superadmin}
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN

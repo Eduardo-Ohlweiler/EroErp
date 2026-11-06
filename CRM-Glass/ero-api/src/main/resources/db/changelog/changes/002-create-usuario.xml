@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="002-create-usuario" author="eduardo">
+        <createTable tableName="usuario">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_usuario"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_usuario_tenant" references="tenant(id)"/>
+            </column>
+            <column name="nome" type="VARCHAR(150)"><constraints nullable="false"/></column>
+            <column name="email" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="senha_hash" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="papel" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="exigir_troca_senha" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="senha_alterada_em" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="tentativas_falhas" type="INTEGER" defaultValueNumeric="0"><constraints nullable="false"/></column>
+            <column name="bloqueado_ate" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="ultimo_login_em" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="totp_segredo" type="VARCHAR(255)"/>
+            <column name="totp_ativo" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="totp_ultimo_passo" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <!-- E-mail único no sistema todo: o login não pergunta o contratante. -->
+        <createIndex tableName="usuario" indexName="uk_usuario_email" unique="true">
+            <column name="email"/>
+        </createIndex>
+        <createIndex tableName="usuario" indexName="ix_usuario_tenant_nome">
+            <column name="tenant_id"/>
+            <column name="nome"/>
+        </createIndex>
+        <sql>ALTER TABLE usuario ADD CONSTRAINT ck_usuario_papel CHECK (papel IN ('SUPERADMIN', 'ADMIN', 'USUARIO'))</sql>
+        <sql>ALTER TABLE usuario ADD CONSTRAINT ck_usuario_email_minusculo CHECK (email = lower(email))</sql>
+    </changeSet>
+
+</databaseChangeLog>

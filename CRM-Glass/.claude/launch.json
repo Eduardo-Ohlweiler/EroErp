@@ -6,6 +6,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "prototipo"],
       "port": 5180
+    },
+    {
+      "name": "ero-api",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "ero-api\\run-dev.cmd"],
+      "port": 8080,
+      "url": "http://localhost:8080"
     }
   ]
 }

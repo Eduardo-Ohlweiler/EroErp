@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="005-create-codigo-recuperacao" author="eduardo">
+        <comment>Códigos de recuperação do 2FA (só o SHA-256).</comment>
+        <createTable tableName="codigo_recuperacao">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_codigo_recuperacao"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_codigo_recuperacao_tenant" references="tenant(id)"/>
+            </column>
+            <column name="usuario_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_codigo_recuperacao_usuario" references="usuario(id)"/>
+            </column>
+            <column name="codigo_hash" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="usado_em" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="codigo_recuperacao" indexName="ix_codigo_recuperacao_usuario">
+            <column name="usuario_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

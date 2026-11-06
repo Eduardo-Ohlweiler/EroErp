@@ -1,0 +1,24 @@
+# Perfil de TESTE. Valores daqui só servem para os testes automatizados
+# (banco descartável do Testcontainers); nunca reutilize em outro ambiente.
+app:
+  seguranca:
+    jwt-segredo: UoNmekq9bdS1fX18ApCytLRC5y1y3QZUZu9DAIVDFRGGchybFzVLnvxofSBHxJjN
+    cripto-chave: EkktDdOJfAjvAwRgPNiq5u9D9Q3oB2vEMs21la87QZE=
+    cors-origens: http://localhost:5173
+    cookie-seguro: false
+    refresh-tolerancia: 0s
+    superadmin-exige-2fa: false
+  rate-limit:
+    login: 10000
+    dois-fatores: 10000
+    refresh: 10000
+    geral: 100000
+  superadmin:
+    email: superadmin@teste.local
+    senha: Orquidea-Lunar-Prisma-2026
+    nome: Superadmin Teste
+
+logging:
+  level:
+    root: WARN
+    com.api.ero_api: INFO

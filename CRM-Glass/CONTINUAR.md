@@ -1,13 +1,14 @@
 # Como continuar este projeto em outro computador
 
-Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 05/11/2026.
+Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 06/11/2026.
 
 ---
 
 ## 1. Antes de compactar
 
 - **Não inclua `prototipo/node_modules`.** São centenas de MB e são reinstalados com um comando. Se for compactar pelo Explorer, apague essa pasta antes ou compacte só o resto.
-- **Inclua a pasta `.claude`.** Ela tem os 4 agentes e a configuração do preview. No Windows ela aparece normalmente, mas confira que entrou no zip.
+- **Não inclua `ero-api/target`** (gerado pelo build) **nem `ero-api/.env`** (segredos de dev desta máquina; no outro computador, gere um novo a partir do `.env.example`).
+- **Inclua a pasta `.claude`.** Ela tem os 11 agentes, a skill `/timeero` e a configuração do preview. No Windows ela aparece normalmente, mas confira que entrou no zip.
 - Se existir `prototipo/dist`, pode deixar de fora (é gerada pelo build).
 
 O que precisa ir no zip:
@@ -17,10 +18,17 @@ CRM-Glass/
   CONTINUAR.md            este guia
   CLAUDE.md               instruções do projeto para o Claude
   design/DIRECAO-VISUAL.md
-  .claude/agents/*.md     os 4 agentes de front-end
-  .claude/launch.json     abre o protótipo no preview do app
+  docs/                   arquitetura, segurança, multi-tenant, permissões, banco
+  ero-api/                backend (sem target/ e sem .env)
+  .claude/agents/*.md     o time de agentes
+  .claude/skills/timeero/ orquestração do time (/timeero)
+  .claude/launch.json     abre o protótipo e a API no preview do app
+  .claude/settings.json   permissões do projeto (bloqueia push --force etc.)
   prototipo/              código do protótipo (sem node_modules)
 ```
+
+Para o backend, o outro computador precisa de **JDK 25** (com `JAVA_HOME`
+apontando para ele) e **Docker Desktop** ligado.
 
 ## 2. Preparar o outro computador
 
@@ -67,10 +75,14 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 | Cor de destaque | Configurável por empresa cliente; padrão violeta → azul |
 | Vidro | Três níveis: `glass-subtle`, `glass`, `glass-solid` (tabelas e formulários usam o mais opaco) |
 | Front-end | React + TypeScript + Vite + Tailwind CSS 4 + Motion (Framer Motion) + lucide-react |
-| Backend | Java + Spring Boot (versão a confirmar ao criar o projeto; recomendação: Java 25 LTS + Spring Boot 4) |
-| Banco | PostgreSQL |
-| Multiempresa | **Multi-tenant**: uma aplicação e um banco para todos os clientes, separados por empresa (decidido em 05/11/2026) |
-| Infraestrutura | Docker (Docker Compose) |
+| Backend | Java 25 + Spring Boot 4.1 + Maven, em `ero-api/`, pacote `com.api.ero_api` (06/11/2026) |
+| Arquitetura | Camadas por entidade: `entity/ repository/ dtos/ mapper/ service/ controller/`, mapper manual estático, módulo-modelo `usuario`; o ArchUnit garante a estrutura (`docs/01`) |
+| Banco | PostgreSQL 18, Liquibase, UUID v7 |
+| Multiempresa | **Multi-tenant** com `tenant_id` filtrado automaticamente pelo Hibernate (`@TenantId`). Funciona igual se cada contratante ganhar o próprio container, que é o caminho provável (`docs/03`) |
+| Segurança | OWASP Top 10 desde o início (`docs/02`) |
+| Login | Token de 15 min + refresh em cookie httpOnly com rotação; 2FA (TOTP) opcional, exigível pelo contratante |
+| Permissões | Superadmin (dono), ADMIN (regras a definir) e USUARIO com grupos de liberação LER/ESCREVER + ações extras, como no EroErp 2.0 (`docs/04`) |
+| Infraestrutura | Docker (Docker Compose); imagem da API pronta (`ero-api/Dockerfile`) |
 | Primeira entrega | Design system + protótipo navegável, **só visual, com dados fictícios** |
 
 ### Decisões em aberto
@@ -82,11 +94,13 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 ### O que está pronto
 
 - **Direção visual** em `design/DIRECAO-VISUAL.md`: análise das referências, níveis de vidro, regras de movimento, stack e módulos previstos.
-- **Time de 4 agentes** em `.claude/agents/`:
-  - `glass-design-system`: tokens, temas, componentes base;
-  - `motion-designer`: transições de tela e animações;
-  - `frontend-modulos`: telas de negócio;
-  - `revisor-ui`: revisão somente leitura.
+- **Time de 11 agentes** em `.claude/agents/` e o comando **`/timeero <pedido>`**, que orquestra pesquisa → plano → backend → front → revisões → QA (tabela no `CLAUDE.md`).
+- **Backend `ero-api`** (06/11/2026):
+  - Fundação: base com auditoria e lock otimista, erros em ProblemDetail, tenant automático, CORS, cabeçalhos de segurança, limite de requisições e criptografia de campos.
+  - Módulos `auth` (login, refresh com rotação, logout, troca de senha, 2FA com códigos de recuperação, superadmin "acessar contratante"), `tenant`, `usuario` (módulo-modelo), `permissao`, `sessao` e `auditoria`.
+  - 7 migrations, Dockerfile e compose de dev.
+  - 72 testes verdes: 21 de arquitetura (ArchUnit), integração com Postgres real (Testcontainers), TOTP e limite de corpo. Duas rodadas de revisão dos agentes `seguranca` e `revisor-backend`; achados bloqueantes corrigidos, pendências conhecidas em `docs/02` (seção "Pendências conhecidas").
+  - Rodar: preview **`ero-api`** ou `ero-api/run-dev.cmd`. Swagger em `/swagger-ui.html`. Superadmin de dev em `ero-api/.env`.
 - **Protótipo** em `prototipo/` (detalhes no `prototipo/README.md`):
   - login com esfera de partículas;
   - dashboard com números que contam, gráficos que se desenham, medidor, rosca e ranking;
@@ -112,5 +126,8 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 1. **Feedback visual:** navegar no protótipo e listar o que mudar (cores, densidade, fundo, intensidade do vidro, animações). A página **Aparência** ajuda a testar opções antes de decidir.
 2. **Fechar a identidade:** nome, cor de destaque oficial, logotipo. Atualizar `tokens.css` e a direção visual.
 3. **Conferir o que ficou sem verificar:** as telas da seção 4, o celular, e uma revisão com o agente `revisor-ui`.
-4. **Começar o backend** em Java + Spring Boot, PostgreSQL e Docker, já multi-tenant.
-5. **Montar o projeto definitivo:** estrutura por módulos, shadcn/ui reestilizado, TanStack Router/Query/Table, React Hook Form + Zod, MSW para simular a API e, depois, a API real com PostgreSQL.
+4. ~~Começar o backend~~ **Feito** (fundação, segurança, login, usuários e permissões).
+5. **Montar o front definitivo:** estrutura por módulos, shadcn/ui reestilizado, TanStack Router/Query/Table, React Hook Form + Zod, tela de login ligada à `ero-api` (refresh, 2FA, troca de senha) e menu a partir de `/api/auth/eu`.
+6. **Definir as regras do papel ADMIN** (hoje recebe tudo do contratante; ver `docs/04-permissoes.md`).
+7. **Primeiros módulos de negócio pelo `/timeero`:** cadastro de pessoas/clientes, empresas/filiais, produtos, funil de negócios e agenda.
+8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup.

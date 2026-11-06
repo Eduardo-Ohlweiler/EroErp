@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004-create-sessao-usuario" author="eduardo">
+        <comment>Sessões (um login = uma sessão). tenant_id aqui é informativo: a busca é pelo hash do refresh.</comment>
+        <createTable tableName="sessao_usuario">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_sessao_usuario"/></column>
+            <column name="usuario_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_sessao_usuario_usuario" references="usuario(id)"/>
+            </column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_sessao_usuario_tenant" references="tenant(id)"/>
+            </column>
+            <column name="tenant_atuacao_id" type="UUID">
+                <constraints foreignKeyName="fk_sessao_usuario_tenant_atuacao" references="tenant(id)"/>
+            </column>
+            <column name="ip" type="VARCHAR(64)"/>
+            <column name="user_agent" type="VARCHAR(300)"/>
+            <column name="expira_em" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="ultimo_uso_em" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="revogada_em" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="motivo_revogacao" type="VARCHAR(40)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="sessao_usuario" indexName="ix_sessao_usuario_usuario">
+            <column name="usuario_id"/>
+            <column name="revogada_em"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="004-create-refresh-token" author="eduardo">
+        <comment>Refresh tokens: só o SHA-256 é guardado.</comment>
+        <createTable tableName="refresh_token">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_refresh_token"/></column>
+            <column name="sessao_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_refresh_token_sessao" references="sessao_usuario(id)"/>
+            </column>
+            <column name="token_hash" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="expira_em" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="usado_em" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="refresh_token" indexName="uk_refresh_token_hash" unique="true">
+            <column name="token_hash"/>
+        </createIndex>
+        <createIndex tableName="refresh_token" indexName="ix_refresh_token_sessao">
+            <column name="sessao_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

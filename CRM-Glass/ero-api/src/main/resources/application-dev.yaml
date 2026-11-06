@@ -1,0 +1,37 @@
+# Desenvolvimento local: Postgres sobe sozinho pelo compose.yaml (precisa do Docker ligado).
+# Segredos de dev ficam no arquivo .env (copie de .env.example).
+
+spring:
+  config:
+    # Segredos locais de desenvolvimento (não versionado; modelo em .env.example).
+    # Só no perfil dev: em produção tudo vem de variável de ambiente.
+    import: optional:file:.env[.properties]
+  docker:
+    compose:
+      enabled: true
+      file: compose.yaml
+      lifecycle-management: start-only
+
+server:
+  # A prévia do app pode escolher outra porta se a 8080 estiver ocupada.
+  port: ${PORT:8080}
+
+app:
+  seguranca:
+    # Front local (Vite). HTTP em localhost: cookie sem "Secure".
+    cors-origens: ${APP_CORS_ORIGENS:http://localhost:5173,http://localhost:5180}
+    cookie-seguro: false
+    # Em produção o superadmin só entra com 2FA. Em dev fica opcional para agilizar.
+    superadmin-exige-2fa: false
+    # Swagger UI precisa carregar scripts/estilos da própria origem.
+    csp: "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'"
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+logging:
+  level:
+    com.api.ero_api: DEBUG

@@ -1,0 +1,16 @@
+# Banco de DESENVOLVIMENTO. Sobe sozinho com o perfil dev (spring-boot-docker-compose).
+# Senha fixa aqui é aceitável só porque a porta fica presa ao localhost.
+services:
+  postgres:
+    image: 'postgres:18'
+    environment:
+      POSTGRES_DB: ero_api
+      POSTGRES_USER: ero
+      POSTGRES_PASSWORD: ero_dev_local
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - ero_api_pg:/var/lib/postgresql
+
+volumes:
+  ero_api_pg:

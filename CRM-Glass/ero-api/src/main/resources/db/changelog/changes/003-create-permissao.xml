@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="003-create-usuario-liberacao" author="eduardo">
+        <comment>Grupos de liberação por usuário (enum GrupoLiberacao no código).</comment>
+        <createTable tableName="usuario_liberacao">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_usuario_liberacao"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_usuario_liberacao_tenant" references="tenant(id)"/>
+            </column>
+            <column name="usuario_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_usuario_liberacao_usuario" references="usuario(id)"/>
+            </column>
+            <column name="grupo" type="VARCHAR(60)"><constraints nullable="false"/></column>
+            <column name="nivel" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="usuario_liberacao" indexName="uk_usuario_liberacao_usuario_grupo" unique="true">
+            <column name="usuario_id"/>
+            <column name="grupo"/>
+        </createIndex>
+        <createIndex tableName="usuario_liberacao" indexName="ix_usuario_liberacao_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+        <sql>ALTER TABLE usuario_liberacao ADD CONSTRAINT ck_usuario_liberacao_nivel CHECK (nivel IN ('LER', 'ESCREVER'))</sql>
+    </changeSet>
+
+    <changeSet id="003-create-usuario-acao" author="eduardo">
+        <comment>Ações extras por usuário (enum Acao no código).</comment>
+        <createTable tableName="usuario_acao">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_usuario_acao"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_usuario_acao_tenant" references="tenant(id)"/>
+            </column>
+            <column name="usuario_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_usuario_acao_usuario" references="usuario(id)"/>
+            </column>
+            <column name="acao" type="VARCHAR(80)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="usuario_acao" indexName="uk_usuario_acao_usuario_acao" unique="true">
+            <column name="usuario_id"/>
+            <column name="acao"/>
+        </createIndex>
+        <createIndex tableName="usuario_acao" indexName="ix_usuario_acao_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

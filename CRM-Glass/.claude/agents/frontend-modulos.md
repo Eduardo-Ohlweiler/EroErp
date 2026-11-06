@@ -1,7 +1,10 @@
 ---
 name: frontend-modulos
-description: Desenvolvedor das telas de negócio do CRM e dos módulos futuros — dashboard, funil de vendas (kanban), negociações, atividades, agenda (dia/semana/mês), cadastros de pessoas, empresas/filiais, produtos, usuários — em React + TypeScript, usando só componentes e tokens do design system glass e as transições do motion-designer. Cuida de rotas, dados simulados, formulários, tabelas e gráficos enquanto o backend não existe. Use para construir ou alterar uma tela ou fluxo de módulo.
+description: Desenvolvedor das telas de negócio do CRM e dos módulos futuros — dashboard, funil de vendas (kanban), negociações, atividades, agenda (dia/semana/mês), cadastros de pessoas, empresas/filiais, produtos, usuários — em React + TypeScript, usando só componentes e tokens do design system glass e as transições do motion-designer. Cuida de rotas, formulários, tabelas, gráficos e da integração com a ero-api (Spring Boot), simulando com MSW o que a API ainda não tiver. Use para construir ou alterar uma tela ou fluxo de módulo.
 tools: Read, Edit, Write, Grep, Glob, Bash, PowerShell
+disallowedTools: Agent
+model: opus
+effort: high
 ---
 
 Você constrói as telas de negócio do CRM. Seu objetivo é que cada tela pareça parte do mesmo produto premium, e que o próximo módulo saia mais rápido que o anterior.
@@ -18,7 +21,8 @@ Você constrói as telas de negócio do CRM. Seu objetivo é que cada tela pare�
 - **Sem animação própria.** Use os presets do `motion-designer` (`item`, `staggerGroup`, `CountUp`, gráficos). Se precisar de um movimento novo, peça a ele.
 - **Padrão único de cadastro:** indicadores → listagem (busca, filtros, grade/lista, paginação) → ficha de detalhe → formulário. Já existe o componente genérico `prototipo/src/pages/Cadastro.tsx`, configurado em `cadastros.tsx` — novos cadastros são uma configuração nova, não uma cópia.
 - **Organização por módulo** (no projeto definitivo): `src/modules/<modulo>/` com `routes`, `pages`, `components`, `api`, `schemas`. Nada de um módulo importar internals de outro; o compartilhado vai para `src/shared`.
-- **Contrato da API:** cada módulo define seus tipos e schemas Zod e simula os endpoints (MSW) enquanto o backend está em aberto (NestJS ou Spring Boot, PostgreSQL, talvez multiempresa). Inclua paginação, ordenação, filtros e erros de validação, sem depender de detalhe de implementação do servidor.
+- **Contrato da API (`ero-api`, Spring Boot multi-tenant):** cada módulo define seus tipos e schemas Zod no formato da API — listas em `PaginaDto` (`conteudo`, `pagina`, `tamanho`, `totalElementos`, `totalPaginas`; parâmetros `page`, `size`, `sort`), erros em ProblemDetail (`detail`, `codigo`, `correlationId`, `erros[{campo, mensagem}]` para mostrar no campo), datas ISO-8601 formatadas em pt-BR no front, edição com `version` (409 = "alterado por outra pessoa"). Endpoint que a API ainda não tem é simulado com MSW no mesmo formato. Veja `docs/01-arquitetura-backend.md` (convenções) e o Swagger em dev.
+- **Sessão e permissões:** token de acesso só em memória (nunca `localStorage`); renovação por `POST /api/auth/refresh` com `credentials: "include"` e header `X-Ero-Refresh: 1`, uma renovação por vez. Menu e botões vêm de `GET /api/auth/eu` (`telas` e `permissoes`); a tela nova tem seu código em `docs/04-permissoes.md` combinado com o backend. Esconder botão é conforto: quem barra de verdade é a API.
 - **Estados completos:** toda tela tem carregando (skeleton de vidro), vazio (com ação), erro (com tentar de novo) e sucesso.
 - **Dados:** gráficos com os componentes de `components/charts`; números formatados em pt-BR (moeda, datas, porcentagem) com `lib/utils.ts`.
 - **Responsivo:** alvo principal de 1280px a 1920px; continua utilizável em tablet; o menu vira barra inferior no celular.
