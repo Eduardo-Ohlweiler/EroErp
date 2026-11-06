@@ -5,6 +5,7 @@ import { cena as tempos } from '../tokens';
 import type { Cena } from './cenas';
 import { MAX_LUZES, Renderizador, type Cores, type Quadro } from './SceneShader';
 import { registrarCena } from './sceneSync';
+import { pegarCanvas, quandoOcioso } from './canvasReserva';
 
 /*
  * Fundo de cena: roteiro da troca de tema. Um progresso p (0 = noite, 1 = dia) anda no tempo;
@@ -129,7 +130,8 @@ export function SceneBackground({ cena }: { cena: Cena }) {
   const { settings } = useSettings();
   const reduce = useReduce();
   const raiz = useRef<HTMLDivElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
+  /** Onde o canvas reservado (canvasReserva.ts) é encaixado. */
+  const lugarCanvas = useRef<HTMLDivElement>(null);
   const [webgl, setWebgl] = useState(() => Renderizador.suportado());
   /** Sobe quando o contexto WebGL é restaurado, para recriar o renderizador. */
   const [geracao, setGeracao] = useState(0);
@@ -266,66 +268,97 @@ export function SceneBackground({ cena }: { cena: Cena }) {
   // Renderizador: cria, carrega as fotos e desenha o estado atual.
   useLayoutEffect(() => {
     const el = raiz.current;
-    const cv = canvas.current;
+    const lugar = lugarCanvas.current;
     if (!el) return;
     el.style.setProperty('--p', String(s.current.p));
     el.style.setProperty('--tinta', String(s.current.p));
-    if (!webgl || !cv) {
+    if (!webgl || !lugar) {
       pronta.current.resolver(); // sem WebGL 2: as fotos esmaecem uma sobre a outra, nada a esperar
       return;
     }
-    const cores: Cores = {
-      gradeNoite: corDoToken(el, '--scene-grade-noite'),
-      gradeDia: corDoToken(el, '--scene-grade-dia'),
-      aurora: corDoToken(el, '--scene-aurora'),
-      bloom: corDoToken(el, '--scene-bloom'),
-      bloomCidade: corDoToken(el, '--scene-bloom-cidade'),
-    };
-    let rend: Renderizador;
-    try {
-      rend = new Renderizador(cv, cena, cores, {
-        grao: tempos.grao,
-        vinheta: tempos.vinheta,
-        agua: tempos.agua,
-        estrelas: tempos.estrelas,
-        neblina: tempos.neblina,
-      });
-    } catch {
-      setWebgl(false);
-      return;
-    }
-    cv.style.opacity = '0';
-    rend.redimensionar(s.current.pixels);
-    rend
-      .carregar()
-      .then((ok) => {
-        if (!ok) return;
-        s.current.rend = rend;
-        desenhar();
-        // Surge esmaecendo: nada de retângulo preto enquanto as fotos chegam.
-        cv.style.transition = `opacity ${tempos.surgir}s`;
-        cv.style.opacity = '1';
-        acordar();
-        pronta.current.resolver();
-      })
-      .catch(() => setWebgl(false));
-    const ro = new ResizeObserver(() => {
-      rend.redimensionar(s.current.pixels);
-      desenhar();
+    /*
+     * Diferença do protótipo: o renderizador nasce logo depois da primeira pintura, não dentro do commit.
+     * Criar o contexto WebGL e medir o canvas custavam ~180 ms no mesmo quadro em que a casca monta
+     * (login → Início, troca de contratante). O canvas vem da reserva (contexto já criado em tempo ocioso)
+     * e surge esmaecendo quando as fotos chegam, como antes.
+     */
+    let adotado: HTMLCanvasElement | null = null;
+    let rend: Renderizador | null = null;
+    let ro: ResizeObserver | null = null;
+    let espera: ReturnType<typeof setTimeout> | undefined;
+    let quadro = requestAnimationFrame(() => {
+      quadro = 0;
+      espera = setTimeout(iniciar, 0);
     });
-    ro.observe(cv);
     // Perda de contexto (suspensão, troca de GPU): recria quando o navegador devolver.
     const perdeu = (ev: Event) => {
       ev.preventDefault();
       s.current.rend = null;
     };
     const voltou = () => setGeracao((g) => g + 1);
-    cv.addEventListener('webglcontextlost', perdeu);
-    cv.addEventListener('webglcontextrestored', voltou);
+
+    function iniciar() {
+      if (!el || !lugar) return;
+      const cv = pegarCanvas((f) => quandoOcioso(f, tempos.aquecerGpu));
+      adotado = cv;
+      cv.className = 'scene-canvas';
+      cv.style.opacity = '0';
+      lugar.appendChild(cv);
+      cv.addEventListener('webglcontextlost', perdeu);
+      cv.addEventListener('webglcontextrestored', voltou);
+      const cores: Cores = {
+        gradeNoite: corDoToken(el, '--scene-grade-noite'),
+        gradeDia: corDoToken(el, '--scene-grade-dia'),
+        aurora: corDoToken(el, '--scene-aurora'),
+        bloom: corDoToken(el, '--scene-bloom'),
+        bloomCidade: corDoToken(el, '--scene-bloom-cidade'),
+      };
+      let novo: Renderizador;
+      try {
+        novo = new Renderizador(cv, cena, cores, {
+          grao: tempos.grao,
+          vinheta: tempos.vinheta,
+          agua: tempos.agua,
+          estrelas: tempos.estrelas,
+          neblina: tempos.neblina,
+        });
+      } catch {
+        setWebgl(false);
+        return;
+      }
+      rend = novo;
+      // Primeiro tamanho pelo ResizeObserver (logo abaixo), depois do layout do quadro: ler clientWidth aqui
+      // forçava um layout síncrono da casca que acabou de montar.
+      novo
+        .carregar()
+        .then((ok) => {
+          if (!ok) return;
+          s.current.rend = novo;
+          desenhar();
+          // Surge esmaecendo: nada de retângulo preto enquanto as fotos chegam.
+          cv.style.transition = `opacity ${tempos.surgir}s`;
+          cv.style.opacity = '1';
+          acordar();
+          pronta.current.resolver();
+        })
+        .catch(() => setWebgl(false));
+      ro = new ResizeObserver(() => {
+        novo.redimensionar(s.current.pixels);
+        desenhar();
+      });
+      ro.observe(cv);
+    }
+
     return () => {
-      ro.disconnect();
-      cv.removeEventListener('webglcontextlost', perdeu);
-      cv.removeEventListener('webglcontextrestored', voltou);
+      cancelAnimationFrame(quadro);
+      clearTimeout(espera);
+      if (adotado) {
+        adotado.removeEventListener('webglcontextlost', perdeu);
+        adotado.removeEventListener('webglcontextrestored', voltou);
+        adotado.remove(); // fora da página: destruir() libera o contexto
+      }
+      if (!rend) return;
+      ro?.disconnect();
       cancelAnimationFrame(s.current.raf);
       s.current.raf = 0;
       s.current.rend = null;
@@ -417,7 +450,7 @@ export function SceneBackground({ cena }: { cena: Cena }) {
   return (
     <div ref={raiz} className="scene" style={vars} aria-hidden>
       {webgl ? (
-        <canvas ref={canvas} className="scene-canvas" />
+        <div ref={lugarCanvas} className="contents" />
       ) : (
         <>
           <img className="scene-img" src={cena.noite} alt="" draggable={false} decoding="async" />

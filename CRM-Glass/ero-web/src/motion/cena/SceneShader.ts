@@ -1,4 +1,5 @@
 import { JANELAS_PADRAO, type Cena } from './cenas';
+import { ATRIBUTOS_CENA } from './canvasReserva';
 
 /**
  * Renderizador WebGL 2 do fundo de cena: uma foto de noite e uma de dia, alinhadas, misturadas
@@ -206,13 +207,15 @@ async function bitmap(url: string) {
   return createImageBitmap(await r.blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
 }
 
+/** Só envia para compilar: o resultado é conferido depois do link (ver Renderizador.preparar). */
 function compilar(gl: WebGL2RenderingContext, tipo: number, fonte: string) {
   const s = gl.createShader(tipo)!;
   gl.shaderSource(s, fonte);
   gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) ?? 'shader');
   return s;
 }
+
+const proximoQuadro = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
 export class Renderizador {
   private gl: WebGL2RenderingContext;
@@ -226,16 +229,13 @@ export class Renderizador {
   private buffer: WebGLBuffer | null = null;
 
   /** Testa uma vez por página e libera o contexto de teste (há limite de contextos por aba). */
+  /**
+   * Diferença do protótipo: não cria um contexto de teste (custava ~70 ms na primeira cena da página, bem no
+   * quadro em que a casca monta). Só confere a API; se o navegador tiver a API mas negar o contexto, o
+   * construtor falha e o SceneBackground cai nas duas fotos esmaecendo.
+   */
   static suportado() {
-    if (Renderizador.temSuporte === null) {
-      try {
-        const gl = document.createElement('canvas').getContext('webgl2');
-        Renderizador.temSuporte = !!gl;
-        gl?.getExtension('WEBGL_lose_context')?.loseContext();
-      } catch {
-        Renderizador.temSuporte = false;
-      }
-    }
+    if (Renderizador.temSuporte === null) Renderizador.temSuporte = typeof WebGL2RenderingContext !== 'undefined';
     return Renderizador.temSuporte;
   }
 
@@ -245,19 +245,45 @@ export class Renderizador {
     private cores: Cores,
     private ajustes: Ajustes,
   ) {
-    const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, premultipliedAlpha: false });
+    // Canvas reservado (canvasReserva.ts) já traz o contexto pronto, com os mesmos atributos.
+    const gl = canvas.getContext('webgl2', ATRIBUTOS_CENA);
     if (!gl) throw new Error('WebGL 2 indisponível');
     this.gl = gl;
+    /*
+     * Diferença do protótipo: a compilação do shader não trava o quadro. Com KHR_parallel_shader_compile o
+     * link roda em paralelo e só é conferido em `preparar()`, junto com a carga das fotos. Sem isso, a cena
+     * nova que nasce junto com a casca (login → Início, troca de contratante) parava um quadro inteiro.
+     */
+    this.paralelo = gl.getExtension('KHR_parallel_shader_compile');
     const prog = gl.createProgram()!;
-    const vs = compilar(gl, gl.VERTEX_SHADER, VERT);
-    const fs = compilar(gl, gl.FRAGMENT_SHADER, FRAG);
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
+    this.vs = compilar(gl, gl.VERTEX_SHADER, VERT);
+    this.fs = compilar(gl, gl.FRAGMENT_SHADER, FRAG);
+    gl.attachShader(prog, this.vs);
+    gl.attachShader(prog, this.fs);
     gl.linkProgram(prog);
-    gl.deleteShader(vs);
-    gl.deleteShader(fs);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog) ?? 'programa');
     this.prog = prog;
+  }
+
+  private paralelo: KHR_parallel_shader_compile | null;
+  private vs: WebGLShader | null;
+  private fs: WebGLShader | null;
+
+  /** Espera o link terminar (sem bloquear quando há compilação paralela) e liga o programa. */
+  private async preparar() {
+    const { gl, prog } = this;
+    if (this.paralelo) {
+      while (!this.destruido && !gl.isContextLost() && !gl.getProgramParameter(prog, this.paralelo.COMPLETION_STATUS_KHR)) {
+        await proximoQuadro();
+      }
+    }
+    if (this.destruido || gl.isContextLost()) return false;
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      const log = gl.getShaderInfoLog(this.fs!) || gl.getShaderInfoLog(this.vs!) || gl.getProgramInfoLog(prog);
+      throw new Error(log ?? 'programa');
+    }
+    gl.deleteShader(this.vs);
+    gl.deleteShader(this.fs);
+    this.vs = this.fs = null;
     gl.useProgram(prog);
 
     const buf = gl.createBuffer();
@@ -276,13 +302,17 @@ export class Renderizador {
     ]) {
       this.u[nome] = gl.getUniformLocation(prog, nome);
     }
+    return true;
   }
 
   async carregar() {
     const { gl, cena } = this;
-    const imagens = await Promise.all([bitmap(cena.dia), bitmap(cena.noite), bitmap(cena.mascaras)]);
+    const [imagens, ligado] = await Promise.all([
+      Promise.all([bitmap(cena.dia), bitmap(cena.noite), bitmap(cena.mascaras)]),
+      this.preparar(),
+    ]);
     // Desmontado durante a carga (StrictMode, troca de fundo): não toca no contexto, que pode já ser de outro.
-    if (this.destruido || gl.isContextLost()) {
+    if (!ligado || this.destruido || gl.isContextLost()) {
       imagens.forEach((img) => img.close());
       return false;
     }
@@ -390,6 +420,8 @@ export class Renderizador {
     if (!gl.isContextLost()) {
       this.texturas.forEach((t) => gl.deleteTexture(t));
       if (this.buffer) gl.deleteBuffer(this.buffer);
+      if (this.vs) gl.deleteShader(this.vs);
+      if (this.fs) gl.deleteShader(this.fs);
       gl.deleteProgram(this.prog);
     }
     this.texturas = [];

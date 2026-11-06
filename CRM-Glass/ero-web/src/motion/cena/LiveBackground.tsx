@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useReduce, useSettings } from '../../shared/aparencia/AparenciaProvider';
 import { cn } from '../../shared/util/utils';
-import { blocoReduzido, camadaFundo } from '../tokens';
+import { blocoReduzido, camadaFundo, cena as tempos } from '../tokens';
 import { SceneBackground } from './SceneBackground';
+import { quandoOcioso, reservarCanvas } from './canvasReserva';
 import { CENAS, CENAS_EXCLUSIVAS, type Cena } from './cenas';
+import { useFundoPausado } from './pausaFundo';
 
 /**
  * Fundo vivo: o vidro só fica bonito quando tem algo com cor e profundidade atrás.
@@ -19,6 +21,9 @@ export function LiveBackground() {
   const reduce = useReduce();
   const { fundo, cena } = useFundoResolvido(settings.fundo);
   const vidro = cena?.vidro;
+  // Canvas WebGL reservado em tempo ocioso (canvasReserva.ts): a cena do contratante nasce sem criar contexto
+  // no quadro em que a casca monta.
+  useEffect(() => quandoOcioso(reservarCanvas, tempos.aquecerGpu), []);
   useEffect(() => {
     // Cena com cores fortes pede cartões mais opacos (tokens.css, [data-vidro='denso']).
     const root = document.documentElement;
@@ -26,11 +31,18 @@ export function LiveBackground() {
     else delete root.dataset.vidro;
   }, [vidro]);
 
+  // Revelação circular do tema em andamento (trocarTema.ts): orbs, aurora e ondas param por baixo do clip-path.
+  const pausadoNaTroca = useFundoPausado();
+  // Fundo vivo usa o destaque (orbs, aurora, ondas): cada camada guarda o destaque com que nasceu e a troca
+  // de destaque vira esmaecimento cruzado, sem salto de cor num quadro. A cena não usa o destaque.
+  const chave = cena ? fundo : `${fundo}:${settings.accent}`;
+
   return (
-    <div className={cn('live-bg', (!settings.fundoAnimado || reduce) && 'paused')} aria-hidden>
+    <div className={cn('live-bg', (!settings.fundoAnimado || reduce || pausadoNaTroca) && 'paused')} aria-hidden>
       <AnimatePresence initial={false}>
         <motion.div
-          key={fundo}
+          key={chave}
+          data-accent={settings.accent}
           className={cn('live-bg-camada', !cena && 'live-bg-camada-viva')}
           variants={reduce ? blocoReduzido : camadaFundo}
           initial="hidden"

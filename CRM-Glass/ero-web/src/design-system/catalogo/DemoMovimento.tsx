@@ -79,12 +79,23 @@ export function DemoRaiz() {
     ultima.current = { area, coreografia: ultima.current.area.startsWith('casca') && area.startsWith('casca') ? 'contexto' : undefined };
   }
 
-  // Login usa o padrão do sistema; dentro, vale a aparência do contratante (aqui, como prévia).
+  /*
+   * Login usa o padrão do sistema; dentro, vale a aparência do contratante (aqui, como prévia; no app real,
+   * definirContratante). Ordem: a área que sai se desmonta inteira com a aparência que tinha, e só então
+   * (aoSairCompleto) entra a da área nova, que já monta com o destaque, o fundo e o tema dela.
+   */
+  const aplicarDaArea = (a: string) => {
+    if (a === 'login') limparPrevia();
+    else definirPrevia(CONTRATANTES[a.slice('casca:'.length) as IdContratante].aparencia);
+  };
+  const areaAtual = useRef(area);
+  areaAtual.current = area;
+  // Primeira montagem: não há área saindo, aplica direto. Ao sair da demonstração, volta ao padrão.
   useEffect(() => {
-    if (area === 'login') limparPrevia();
-    else definirPrevia(CONTRATANTES[contratante].aparencia);
-  }, [area, contratante, definirPrevia, limparPrevia]);
-  useEffect(() => () => limparPrevia(), [limparPrevia]);
+    aplicarDaArea(areaAtual.current);
+    return () => limparPrevia();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const trocar = () => {
     setContratante((c) => (c === 'a' ? 'b' : 'a'));
@@ -93,7 +104,7 @@ export function DemoRaiz() {
 
   return (
     <>
-      <TrocaDeArea chave={area} coreografia={ultima.current.coreografia}>
+      <TrocaDeArea chave={area} coreografia={ultima.current.coreografia} aoSairCompleto={() => aplicarDaArea(areaAtual.current)}>
         <DemoCtx.Provider value={{ contratante, trocar }}>{outlet}</DemoCtx.Provider>
       </TrocaDeArea>
       <MedidorFps />
@@ -135,16 +146,17 @@ export function DemoLogin() {
           <Bloco as="h1" variants={v.titulo} className="text-3xl lg:text-[46px] font-semibold tracking-tight leading-[1.08] max-w-xl text-gradient-accent">
             Telas que se montam em blocos.
           </Bloco>
-          <Bloco className="mt-6 flex flex-wrap gap-2">
+          {/* Chips de vidro: o grupo só orquestra; cada chip anima a opacidade nele mesmo (backdrop-filter intacto). */}
+          <Bloco orquestra variants={v.chips} className="mt-6 flex flex-wrap gap-2">
             {[
               { icon: Users, t: 'Multi-contratante' },
               { icon: CalendarDays, t: 'Agenda integrada' },
               { icon: ShieldCheck, t: 'Verificação em duas etapas' },
             ].map(({ icon: I, t }) => (
-              <span key={t} className="glass-subtle h-9 px-3.5 rounded-full inline-flex items-center gap-2 text-xs font-medium">
+              <Bloco as="span" key={t} className="glass-subtle h-9 px-3.5 rounded-full inline-flex items-center gap-2 text-xs font-medium">
                 <I className="size-3.5 text-accent-text" />
                 {t}
-              </span>
+              </Bloco>
             ))}
           </Bloco>
         </Bloco>
@@ -175,7 +187,7 @@ export function DemoLogin() {
               ) : (
                 <>
                   <CampoForm rotulo="Código do aplicativo" grupo dica="Qualquer código serve na demonstração.">
-                    {(ids) => <OtpInput valor={codigo} onChange={setCodigo} autoFocus {...ids} />}
+                    {(ids) => <OtpInput valor={codigo} onChange={setCodigo} autoFocus semGrupo {...ids} />}
                   </CampoForm>
                   <BarraAcoes alinhar="entre" className="pt-2">
                     <Button type="button" variant="ghost" onClick={() => ir('credenciais', -1)}>

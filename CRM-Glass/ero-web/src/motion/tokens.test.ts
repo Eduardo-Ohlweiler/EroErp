@@ -36,6 +36,13 @@ describe('ritmo dos blocos', () => {
     }
   });
 
+  it('a saída de uma tela comum não segura o usuário: cabe em 0,3 s (o protótipo saía em 0,22 s)', () => {
+    for (const nome of ['inicio', 'padrao', 'formulario', 'etapa'] as const) {
+      const { ritmo } = coreografias[nome];
+      expect(ritmo.limiteSaida * ritmo.passoSaida + montagem.saida).toBeLessThanOrEqual(0.3);
+    }
+  });
+
   it('nenhum bloco padrão anima filter (o vidro tem backdrop-filter)', () => {
     for (const c of Object.values(coreografias)) {
       for (const rotulo of ['hidden', 'show', 'exit']) {

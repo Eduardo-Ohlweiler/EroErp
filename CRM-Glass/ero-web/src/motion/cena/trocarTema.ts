@@ -3,6 +3,7 @@ import type { Theme, TrocarTema } from '../../shared/aparencia/AparenciaProvider
 import { cena } from '../tokens';
 import { aguardarTelaParada } from '../coreografia/andamento';
 import { cenaAtiva, cenaPronta, pedirCena } from './sceneSync';
+import { pausarFundo } from './pausaFundo';
 
 /*
  * Troca de tema em estilo vídeo. É a lógica do ThemeToggle do protótipo (prototipo/src/components/layout/Topbar.tsx),
@@ -88,8 +89,13 @@ async function trocarComRevelacao(novo: Theme, aplicar: (t: Theme) => void) {
   if (minha !== vez) return;
   const { x, y } = origemDaRevelacao();
   const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  // O fundo vivo para durante a revelação: a imagem nova é ao vivo e os orbs desfocados se mexendo por baixo
+  // do clip-path custam quadros. Para dentro da captura (sem salto: só congela onde está) e volta no fim.
   const t = doc.startViewTransition(() => {
-    flushSync(() => aplicar(novo));
+    flushSync(() => {
+      pausarFundo(true);
+      aplicar(novo);
+    });
     document.documentElement.dataset.theme = novo;
   });
   t.ready
@@ -102,8 +108,13 @@ async function trocarComRevelacao(novo: Theme, aplicar: (t: Theme) => void) {
     .catch(() => {
       /* transição abortada (aba oculta, troca seguida): o tema já foi trocado */
     });
+  const esta = ++revelacao;
   await t.finished.catch(() => {});
+  if (esta === revelacao) pausarFundo(false); // só a revelação mais recente solta o fundo
 }
+
+/** Revelações circulares em andamento: a última a terminar solta a pausa do fundo. */
+let revelacao = 0;
 
 /** Ponto de extensão do AparenciaProvider: <AparenciaProvider trocarTema={trocarTema}>. */
 export const trocarTema: TrocarTema = async ({ novo, aplicar, reduzir }) => {

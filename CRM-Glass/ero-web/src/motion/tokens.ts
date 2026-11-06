@@ -126,6 +126,8 @@ export const cena = {
   revelacao: { duracao: 0.7, ease: ease.out, memoria: 1.5 },
   /** Troca de contratante com cena nova: espera as fotos carregarem até este limite (s) antes da sequência. */
   esperaFotos: 1.2,
+  /** O canvas WebGL reservado (canvasReserva.ts) é criado em tempo ocioso; sem tempo ocioso, no máximo após isto (s). */
+  aquecerGpu: 1.5,
 };
 
 /* =====================================================================================
@@ -156,14 +158,19 @@ export const montagem = {
   entrada: 0.5,
   /** opacidade do bloco entrando (mais curta que o encaixe, para o conteúdo ficar legível cedo) */
   opacidade: 0.32,
-  /** um bloco saindo (s) */
-  saida: 0.22,
+  /**
+   * um bloco saindo (s). A saída inteira de uma tela comum fica em ~0,24 s (saida + limiteSaida × passoSaida),
+   * perto dos 0,22 s do protótipo: a próxima tela só monta depois (modo 'wait'), então a saída não pode segurar o usuário.
+   */
+  saida: 0.18,
   /** intervalo entre blocos na entrada (s): 40–60 ms */
   passo: 0.05,
   /** intervalo entre blocos na saída (s), de baixo para cima */
-  passoSaida: 0.03,
-  /** a partir deste bloco o resto entra (ou sai) junto: a tela fica utilizável sem esperar a cascata */
+  passoSaida: 0.015,
+  /** a partir deste bloco o resto entra junto: a tela fica utilizável sem esperar a cascata */
   limiteBlocos: 8,
+  /** na saída a cascata é curta: a partir deste bloco o resto sai junto */
+  limiteSaida: 4,
   /** espera antes do primeiro bloco (s) */
   inicio: 0.02,
   /** movimento reduzido: só esmaece, sem cascata, nesta duração (s) */
@@ -187,6 +194,7 @@ export type Ritmo = {
   passo: number;
   passoSaida: number;
   limiteBlocos: number;
+  limiteSaida: number;
   inicio: number;
 };
 
@@ -218,7 +226,7 @@ export function orquestrar(
       transition: {
         when: 'afterChildren',
         staggerDirection: -1,
-        delayChildren: atrasoDoBloco(saida, ritmo.passoSaida, ritmo.limiteBlocos),
+        delayChildren: atrasoDoBloco(saida, ritmo.passoSaida, ritmo.limiteSaida),
       },
     },
   };
@@ -291,7 +299,7 @@ export const rota: Variants = {
   show: { x: 0, transition: { duration: 0.5, ease: ease.out } },
   exit: (dir: number = 0) => ({
     x: -montagem.deslize.saida * dir,
-    transition: { duration: montagem.saida + montagem.limiteBlocos * montagem.passoSaida, ease: ease.inOut },
+    transition: { duration: montagem.saida + montagem.limiteSaida * montagem.passoSaida, ease: ease.inOut },
   }),
 };
 export const rotaReduzida: Variants = { hidden: { x: 0 }, show: { x: 0 }, exit: { x: 0 } };
@@ -348,7 +356,8 @@ export const esqueleto = { brilho: 1.6 };
 export function aplicarVariaveisDeMovimento(root: HTMLElement = document.documentElement) {
   root.style.setProperty('--mov-esqueleto', `${esqueleto.brilho}s`);
 }
-/* =====================================================================================
+
+/* =====================================================================================
  * Coreografias por tela. Cada tela declara a sua: <Tela coreografia="inicio">.
  * `modo` é o do AnimatePresence que troca a tela: 'wait' (sai inteira, depois a outra monta);
  * 'sync' fica previsto para morph de elemento compartilhado (layoutId) entre telas.
@@ -369,11 +378,14 @@ export type Coreografia = {
 
 const ritmoPadrao: Ritmo = montagem;
 /** Login: ritmo mais lento entre as partes (esfera, vitrine, cartão); sai em ~0,8 s. */
-const ritmoLogin: Ritmo = { passo: 0.07, passoSaida: 0.14, limiteBlocos: 6, inicio: 0.05 };
-const ritmoVitrine: Ritmo = { passo: 0.035, passoSaida: 0.05, limiteBlocos: 6, inicio: 0 };
-const ritmoFormulario: Ritmo = { passo: 0.035, passoSaida: 0.02, limiteBlocos: 10, inicio: 0.02 };
-const ritmoEtapa: Ritmo = { passo: 0.04, passoSaida: 0.025, limiteBlocos: 8, inicio: 0.04 };
-const ritmoContexto: Ritmo = { passo: 0.05, passoSaida: 0.04, limiteBlocos: 8, inicio: 0.02 };
+const ritmoLogin: Ritmo = { passo: 0.07, passoSaida: 0.14, limiteBlocos: 6, limiteSaida: 6, inicio: 0.05 };
+const ritmoVitrine: Ritmo = { passo: 0.035, passoSaida: 0.05, limiteBlocos: 6, limiteSaida: 6, inicio: 0 };
+/** Chips de vidro da vitrine: o grupo só orquestra; cada chip anima a opacidade em si (nunca no grupo). */
+const ritmoChips: Ritmo = { passo: 0.04, passoSaida: 0.03, limiteBlocos: 6, limiteSaida: 6, inicio: 0 };
+const ritmoFormulario: Ritmo = { passo: 0.035, passoSaida: 0.015, limiteBlocos: 10, limiteSaida: 4, inicio: 0.02 };
+const ritmoEtapa: Ritmo = { passo: 0.04, passoSaida: 0.015, limiteBlocos: 8, limiteSaida: 4, inicio: 0.04 };
+/** Troca de contratante: momento raro, a casca inteira se desfaz com um pouco mais de cascata. */
+const ritmoContexto: Ritmo = { passo: 0.05, passoSaida: 0.03, limiteBlocos: 8, limiteSaida: 6, inicio: 0.02 };
 
 /** Tempos do login (s). */
 export const login = {
@@ -398,7 +410,7 @@ function variantesEtapa(atraso = 0): Variants {
       transition: {
         duration: montagem.saida,
         ease: ease.inOut,
-        delayChildren: atrasoDoBloco('reversa', ritmoEtapa.passoSaida, ritmoEtapa.limiteBlocos),
+        delayChildren: atrasoDoBloco('reversa', ritmoEtapa.passoSaida, ritmoEtapa.limiteSaida),
       },
     }),
   };
@@ -428,6 +440,8 @@ export const coreografias: Record<NomeCoreografia, Coreografia> = {
     },
     /** grupo da esquerda (marca, título, chips): orquestra os seus blocos */
     vitrine: orquestrar(ritmoVitrine),
+    /** grupo dos chips de vidro: <Bloco orquestra variants={v.chips}>, cada chip um <Bloco> */
+    chips: orquestrar(ritmoChips),
     /** título grande da vitrine (texto puro: entra desfocando) */
     titulo: blocoTexto,
     /** cartão de vidro do formulário: entra como no protótipo; os campos vêm pela TrocaEtapa */
@@ -453,7 +467,7 @@ export const coreografias: Record<NomeCoreografia, Coreografia> = {
           delay: login.saidaCartao,
           duration: montagem.saida,
           ease: ease.inOut,
-          delayChildren: atrasoDoBloco('reversa', montagem.passoSaida, montagem.limiteBlocos, login.saidaCartao),
+          delayChildren: atrasoDoBloco('reversa', montagem.passoSaida, montagem.limiteSaida, login.saidaCartao),
         },
       },
     },

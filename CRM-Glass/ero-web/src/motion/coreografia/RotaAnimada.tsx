@@ -1,5 +1,5 @@
-import { useRef, type ReactNode } from 'react';
-import { useLocation, useOutlet, type Location } from 'react-router';
+import { useContext, useRef, type ContextType, type ReactNode } from 'react';
+import { UNSAFE_LocationContext, useLocation, useOutlet, type Location } from 'react-router';
 import { AnimatePresence, motion, useIsPresent } from 'motion/react';
 import { useReduzirMovimento } from '../reduzir';
 import { coreografias, rota, rotaReduzida, type NomeCoreografia } from '../tokens';
@@ -13,10 +13,22 @@ import { AtrasoMontagem, useAtrasoMontagem } from './contexto';
  */
 export function Congelado({ children }: { children: ReactNode }) {
   const presente = useIsPresent();
-  const guardado = useRef(children);
-  if (presente) guardado.current = children;
-  return <>{guardado.current}</>;
+  const local = useContext(UNSAFE_LocationContext);
+  const guardado = useRef({ children, local });
+  if (presente) guardado.current = { children, local };
+  return <LocalCongelado local={guardado.current.local}>{guardado.current.children}</LocalCongelado>;
 }
+
+/**
+ * Entrega aos de dentro a localização do roteador com que a tela (ou área) estava enquanto presente.
+ * Sem isso, quem sai lê a URL nova: o indicador do menu (layoutId) pulava de item dentro da casca que saía
+ * e a presença dele nunca liberava a remoção (a troca de contratante a partir de outra tela ficava presa).
+ */
+export function LocalCongelado({ local, children }: { local: LocationContextObject; children: ReactNode }) {
+  return <UNSAFE_LocationContext.Provider value={local}>{children}</UNSAFE_LocationContext.Provider>;
+}
+
+type LocationContextObject = ContextType<typeof UNSAFE_LocationContext>;
 
 /**
  * Direção pela profundidade da rota, como o AnimatedRoutes do protótipo:
