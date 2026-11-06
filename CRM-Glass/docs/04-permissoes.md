@@ -68,8 +68,10 @@ Por que não um grupo: todo grupo é concedido automaticamente ao `ADMIN` do
 contratante (ver Papéis). Um grupo `CONTRATANTES` daria a qualquer administrador
 de cliente o poder de ver e alterar **outros** contratantes, ou de mudar a
 aparência que vale para todos: escalada de privilégio. Por isso essas rotas
-usam o papel, e o service ainda exige a visão de plataforma
-(`exigirVisaoPlataforma`): o superadmin dentro de um contratante recebe 422.
+usam o papel. Nas escritas (criar, alterar, configurar, inativar, ativar), o
+service ainda exige a visão de plataforma (`exigirVisaoPlataforma`): o superadmin
+dentro de um contratante recebe 422. As leituras (`GET /api/tenants`, `/{id}`,
+`/selecao`, `/fundos`) só exigem o papel.
 
 No front, essas telas entram no menu pelo papel (`papel === 'SUPERADMIN'` e
 fora de um contratante), não por `telas`.

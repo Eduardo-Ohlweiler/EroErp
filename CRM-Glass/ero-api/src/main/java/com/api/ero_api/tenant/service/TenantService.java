@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -45,6 +46,7 @@ public class TenantService {
 
     private static final Set<String> ORDENAVEIS = Set.of("nome", "createdAt");
     private static final String MSG_CENA_DE_OUTRO = "Esta cena exclusiva já pertence a outro contratante.";
+    private static final String UK_FUNDO_EXCLUSIVO = "uk_tenant_fundo_exclusivo";
 
     private final TenantRepository repository;
     private final UsuarioService usuarioService;
@@ -167,7 +169,11 @@ public class TenantService {
             repository.saveAndFlush(t);
         } catch (DataIntegrityViolationException e) {
             // Dois superadmins vinculando a mesma cena ao mesmo tempo: o índice único segura.
-            throw new ConflitoException(MSG_CENA_DE_OUTRO);
+            // Outra violação segue para o tratamento global (409 genérico).
+            if (violou(e, UK_FUNDO_EXCLUSIVO)) {
+                throw new ConflitoException(MSG_CENA_DE_OUTRO);
+            }
+            throw e;
         }
         eventos.registrar(TipoEventoSeguranca.TENANT_ALTERADO, null, t.getId(), "configuração");
         return TenantMapper.toResponseDto(t);
@@ -226,6 +232,16 @@ public class TenantService {
         if (t.getFundo().exclusiva() && t.getFundo() != exclusivo) {
             throw new RegraNegocioException("Este fundo não está disponível para este contratante.");
         }
+    }
+
+    /** A violação veio da constraint indicada? (o Hibernate extrai o nome da mensagem do Postgres) */
+    private static boolean violou(DataIntegrityViolationException e, String constraint) {
+        for (Throwable c = e; c != null; c = c.getCause()) {
+            if (c instanceof ConstraintViolationException cve && constraint.equalsIgnoreCase(cve.getConstraintName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void exigirVersao(Tenant t, Long versaoVista) {

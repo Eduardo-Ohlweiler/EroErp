@@ -66,10 +66,15 @@ class TenantAparenciaIntegracaoTest extends IntegracaoTest {
         Contratante c = novoContratante();
         Sessao s = loginSuperadmin();
 
-        MvcTestResult r = configurar(s, c.id(), aparencia("esmeralda", "CLARO", "CIDADE", true, 30, new BigDecimal("6"), "REDUZIDAS"),
-                versao(s, c.id()));
+        long versao = versao(s, c.id());
+        Map<String, Object> ap = aparencia("esmeralda", "CLARO", "CIDADE", true, 30, new BigDecimal("6"), "REDUZIDAS");
+        MvcTestResult r = configurar(s, c.id(), ap, versao);
         assertThat(status(r)).isEqualTo(200);
         assertThat(corpo(r).path("aparencia").path("fundoFoco").decimalValue()).isEqualByComparingTo("6.0");
+        long versaoNova = corpo(r).path("version").asLong();
+        assertThat(versaoNova).as("resposta já traz a versão nova").isEqualTo(versao + 1);
+        // A versão devolvida serve para salvar de novo sem 409 falso.
+        assertThat(status(configurar(s, c.id(), ap, versaoNova))).isEqualTo(200);
 
         JsonNode eu = corpo(get("/api/auth/eu", c.admin().token())).path("aparencia");
         assertThat(eu.path("corDestaque").asString()).isEqualTo("esmeralda");
