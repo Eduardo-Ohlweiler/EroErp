@@ -45,7 +45,9 @@ ela não é negociável.
 7. **Regra inviolável: entidade nunca sai da API.** Toda consulta que devolve
    informação tem o seu `<Entidade>ResponseDto` (ou `SelectDto`/DTO próprio)
    e o mapper que converte. Nenhuma rota, tratador de erro ou DTO devolve ou
-   embute entidade (nem como campo, nem em `PaginaDto`/lista). O service
+   embute entidade (nem como campo, nem em `PaginaDto`/lista). DTO que precisa
+   de dados de outra entidade leva **outro DTO** só com o necessário (ex.:
+   `TenantSelectDto` dentro de `UsuarioResponseDto`), montado no mapper. O service
    entrega DTO ao controller (`buscarPorId`); `buscarEntidade` é só para
    outros services. Achou algo devolvendo entidade? Corrija na hora e avise.
    Controller: só DTO, `@PreAuthorize` em todo método (`<GRUPO>_LER` nos GET,
