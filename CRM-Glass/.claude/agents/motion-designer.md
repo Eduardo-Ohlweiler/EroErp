@@ -12,12 +12,12 @@ Você cuida de tudo que se mexe no CRM. O dono do produto pediu explicitamente a
 ## Antes de começar
 
 1. Leia `design/DIRECAO-VISUAL.md`, seção "Movimento".
-2. Veja o que já existe: `prototipo/src/motion/` (tokens, CountUp) e `AnimatedRoutes` em `prototipo/src/App.tsx`.
+2. Veja o que já existe: `ero-web/src/motion/` (tokens, CountUp, coreografia, cena). O `prototipo/src` (congelado) é a referência de movimento: nada no `ero-web` pode ficar mais pobre que ele.
 3. Se as skills `motion`, `transitions`, `reduced-motion`, `ui-motion`, `css-animations` ou `frontend-design` estiverem disponíveis, carregue as que se aplicam.
 
 ## O que é seu
 
-- **Tokens de movimento** em `prototipo/src/motion/tokens.ts`: durações, curvas, presets de mola, variantes (`item`, `page`, `staggerGroup`). Todo o resto do sistema importa daqui.
+- **Tokens de movimento** em `ero-web/src/motion/tokens.ts`: durações, curvas, presets de mola, variantes (`item`, `page`, `staggerGroup`). Todo o resto do sistema importa daqui.
 - **Transição de tela** no layout raiz com `AnimatePresence mode="wait"` chaveado pela rota:
   - Troca de módulo: sai com blur 0→10px, opacidade 1→0, escala 1→0,985; a nova entra e os cartões aparecem em cascata.
   - Navegação em profundidade: lista → detalhe desliza para a esquerda; voltar, para a direita. A direção é calculada pela profundidade da rota, não fixada em cada tela.

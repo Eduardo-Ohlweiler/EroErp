@@ -53,7 +53,7 @@ Biblioteca: Motion (Framer Motion) com `AnimatePresence` e animações de layout
 - Tailwind CSS v4 (tokens em variáveis CSS) + shadcn/ui (Radix) como base de componentes acessíveis, reestilizados para glass
 - Motion (Framer Motion) para animações e transições de tela
 - lucide-react para ícones
-- TanStack Router (rotas com transição) e TanStack Query (dados)
+- React Router 7 (rotas; a tela que sai fica "congelada" até a saída terminar, base da montagem em blocos da seção 6) e TanStack Query (dados)
 - TanStack Table para listagens e cadastros
 - React Hook Form + Zod para formulários
 - Recharts para gráficos (estilizados com os tokens)
