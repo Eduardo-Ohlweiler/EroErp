@@ -1,0 +1,175 @@
+import { useEffect, useId, useRef, useState, type ComponentType } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
+import { CornerDownLeft, Search } from 'lucide-react';
+import { spring } from '../../motion/tokens';
+import { cn, norm } from '../../shared/util/utils';
+import { Avatar } from '../ui/Bits';
+
+export type Comando = {
+  grupo: string;
+  rotulo: string;
+  dica?: string;
+  icone?: ComponentType<{ className?: string }>;
+  /** mostra um avatar com as iniciais no lugar do ícone */
+  avatar?: string;
+  executar: () => void;
+};
+
+export type CommandPaletteProps = {
+  aberto: boolean;
+  onAbertoChange: (aberto: boolean | ((atual: boolean) => boolean)) => void;
+  /** telas liberadas e ações (a casca monta a lista a partir do menu) */
+  comandos: Comando[];
+  placeholder?: string;
+};
+
+/** Busca global (Ctrl/⌘ + K): telas liberadas e ações rápidas. */
+export function CommandPalette({ aberto: open, onAbertoChange: setOpen, comandos, placeholder = 'O que você procura?' }: CommandPaletteProps) {
+  const [q, setQ] = useState('');
+  const [idx, setIdx] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const base = useId();
+  const listaId = `${base}-lista`;
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setOpen((o) => !o);
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [setOpen]);
+
+  useEffect(() => {
+    if (open) {
+      setQ('');
+      setIdx(0);
+      setTimeout(() => inputRef.current?.focus(), 30);
+    }
+  }, [open]);
+
+  const list = comandos.filter((c) => norm(`${c.rotulo} ${c.dica ?? ''}`).includes(norm(q))).slice(0, 10);
+  const run = (c?: Comando) => {
+    if (!c) return;
+    setOpen(false);
+    c.executar();
+  };
+
+  function onKey(e: React.KeyboardEvent) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setIdx((i) => Math.min(list.length - 1, i + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setIdx((i) => Math.max(0, i - 1));
+    } else if (e.key === 'Enter') {
+      run(list[idx]);
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  }
+
+  let lastGroup = '';
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <div key="cmdk" className="fixed inset-0 z-[90] flex justify-center items-start pt-[14vh] px-4">
+          <motion.div
+            className="absolute inset-0 modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setOpen(false)}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Busca global"
+            initial={{ opacity: 0, y: -16, scale: 0.96, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }}
+            exit={{ opacity: 0, y: -10, scale: 0.97, transition: { duration: 0.15 } }}
+            transition={spring.soft}
+            className="glass-solid relative w-full max-w-[600px] rounded-[26px] overflow-hidden"
+          >
+            <div className="flex items-center gap-3 px-5 h-16 border-b border-line">
+              <Search className="size-5 text-subtle" aria-hidden />
+              <input
+                ref={inputRef}
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setIdx(0);
+                }}
+                onKeyDown={onKey}
+                placeholder={placeholder}
+                className="flex-1 bg-transparent outline-none text-[15px] placeholder:text-subtle"
+                aria-label="Buscar"
+                role="combobox"
+                aria-expanded="true"
+                aria-controls={listaId}
+                aria-autocomplete="list"
+                aria-activedescendant={list[idx] ? `${base}-op-${idx}` : undefined}
+              />
+              <span className="kbd">Esc</span>
+            </div>
+            <div id={listaId} role="listbox" aria-label="Resultados" className="max-h-[56vh] overflow-y-auto p-2">
+              {list.length === 0 && <div className="py-10 text-center text-sm text-muted">Nada encontrado para “{q}”.</div>}
+              {list.map((c, i) => {
+                const header = c.grupo !== lastGroup;
+                lastGroup = c.grupo;
+                const Icon = c.icone;
+                return (
+                  <div key={`${c.grupo}-${c.rotulo}`} role="presentation">
+                    {header && (
+                      <div role="presentation" className="px-3 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-subtle">
+                        {c.grupo}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      id={`${base}-op-${i}`}
+                      role="option"
+                      aria-selected={i === idx}
+                      tabIndex={-1}
+                      onMouseEnter={() => setIdx(i)}
+                      onClick={() => run(c)}
+                      className={cn('relative w-full flex items-center gap-3 px-3 h-12 rounded-xl text-left text-sm', i === idx ? 'text-fg' : 'text-muted')}
+                    >
+                      {i === idx && (
+                        <motion.span layoutId="cmdk-active" transition={spring.snappy} className="absolute inset-0 rounded-xl bg-[var(--chip-hover)]" />
+                      )}
+                      <span className="relative shrink-0">
+                        {c.avatar ? (
+                          <Avatar name={c.avatar} size={30} />
+                        ) : (
+                          <span className="size-[30px] rounded-lg chip grid place-items-center">{Icon && <Icon className="size-4" />}</span>
+                        )}
+                      </span>
+                      <span className="relative flex-1 min-w-0">
+                        <span className="block font-medium truncate">{c.rotulo}</span>
+                        {c.dica && <span className="block text-[11px] text-subtle truncate">{c.dica}</span>}
+                      </span>
+                      {i === idx && <CornerDownLeft className="relative size-4 text-subtle" aria-hidden />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-4 px-5 h-11 border-t border-line text-[11px] text-subtle">
+              <span>
+                <span className="kbd">↑</span> <span className="kbd">↓</span> navegar
+              </span>
+              <span>
+                <span className="kbd">Enter</span> abrir
+              </span>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
+}

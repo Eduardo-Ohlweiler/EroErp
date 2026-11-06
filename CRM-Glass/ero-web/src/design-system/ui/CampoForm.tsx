@@ -1,0 +1,91 @@
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { cn } from '../../shared/util/utils';
+import { variantesDoBloco, type PropsBloco } from './bloco';
+
+/** Atributos que ligam o controle ao rótulo, à dica e ao erro. */
+export type IdsCampo = { id: string; 'aria-describedby'?: string; 'aria-invalid'?: true };
+
+export type CampoFormProps = PropsBloco & {
+  rotulo: ReactNode;
+  erro?: string;
+  dica?: ReactNode;
+  /** id do controle; sem ele, um id é gerado */
+  id?: string;
+  /** marca visual de obrigatório (o `required` continua no controle) */
+  obrigatorio?: boolean;
+  /** controle composto (Segmented, OtpInput, grupo de opções): rótulo vira legenda de um role=group */
+  grupo?: boolean;
+  /** ação ao lado do rótulo (ex.: "Gerar", "Copiar") */
+  acao?: ReactNode;
+  className?: string;
+  /**
+   * O controle. Um único elemento recebe `id`, `aria-describedby` e `aria-invalid` automaticamente;
+   * use a forma de função quando o controle precisar repassar esses atributos.
+   */
+  children: ReactNode | ((ids: IdsCampo) => ReactNode);
+};
+
+/**
+ * Campo de formulário: rótulo em cima, controle, dica ou erro embaixo.
+ * É um bloco da montagem da tela (campos entram em cascata quando o pai orquestra).
+ */
+export function CampoForm({ rotulo, erro, dica, id, obrigatorio, grupo, acao, className, children, bloco = true, variants }: CampoFormProps) {
+  const auto = useId();
+  const campoId = id ?? `campo-${auto}`;
+  const rotuloId = `${campoId}-rotulo`;
+  const descId = `${campoId}-desc`;
+  const temDesc = !!erro || !!dica;
+  const ids: IdsCampo = {
+    id: campoId,
+    ...(temDesc ? { 'aria-describedby': descId } : {}),
+    ...(erro ? { 'aria-invalid': true as const } : {}),
+  };
+
+  let controle: ReactNode;
+  if (typeof children === 'function') controle = children(ids);
+  else if (isValidElement(children)) {
+    const el = children as ReactElement<Record<string, unknown>>;
+    controle = cloneElement(el, { ...ids, id: (el.props.id as string | undefined) ?? campoId });
+  } else controle = children;
+
+  const Rotulo = grupo ? 'span' : 'label';
+  return (
+    <motion.div
+      variants={variantesDoBloco(bloco, variants)}
+      className={className}
+      {...(grupo ? { role: 'group', 'aria-labelledby': rotuloId, 'aria-describedby': temDesc ? descId : undefined } : {})}
+    >
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <Rotulo id={rotuloId} {...(grupo ? {} : { htmlFor: campoId })} className="block text-xs font-medium text-muted">
+          {rotulo}
+          {obrigatorio && (
+            <span className="text-danger ml-0.5" aria-hidden>
+              *
+            </span>
+          )}
+        </Rotulo>
+        {acao}
+      </div>
+      {controle}
+      <AnimatePresence initial={false}>
+        {erro ? (
+          <motion.span
+            key="e"
+            id={descId}
+            initial={{ opacity: 0, height: 0, y: -4 }}
+            animate={{ opacity: 1, height: 'auto', y: 0 }}
+            exit={{ opacity: 0, height: 0 }}
+            className="block text-xs text-danger mt-1.5"
+          >
+            {erro}
+          </motion.span>
+        ) : dica ? (
+          <span id={descId} className={cn('block text-[11px] text-subtle mt-1.5')}>
+            {dica}
+          </span>
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
