@@ -29,6 +29,9 @@ correto?
    consulta sem índice adequado (confira a migration), paginação sem lista branca.
 4. **Contrato**: rotas e verbos da convenção, `PaginaDto`, códigos HTTP certos,
    mensagens em pt-BR, ResponseDto com auditoria e `version`.
+   **Entidade saindo da API é sempre `bloqueia`** (regra inviolável do dono):
+   rota, `@RestControllerAdvice` ou DTO que devolve ou embute entidade, ou
+   consulta sem o seu ResponseDto/mapper.
 5. **Testes que entregam**: os 4 obrigatórios existem e afirmam algo que
    quebraria se o código estivesse errado. Teste que só verifica `200` sem olhar
    o corpo é fraco.

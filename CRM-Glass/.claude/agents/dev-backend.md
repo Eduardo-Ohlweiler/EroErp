@@ -42,7 +42,13 @@ ela não é negociável.
 5. DTO: `record`, Bean Validation em pt-BR, limite de tamanho em todo String,
    tipo objeto (`Boolean`) com `@NotNull` em vez de primitivo. Update traz `version`.
 6. Mapper: `final`, métodos `static`, sem regra de negócio.
-7. Controller: só DTO, `@PreAuthorize` em todo método (`<GRUPO>_LER` nos GET,
+7. **Regra inviolável: entidade nunca sai da API.** Toda consulta que devolve
+   informação tem o seu `<Entidade>ResponseDto` (ou `SelectDto`/DTO próprio)
+   e o mapper que converte. Nenhuma rota, tratador de erro ou DTO devolve ou
+   embute entidade (nem como campo, nem em `PaginaDto`/lista). O service
+   entrega DTO ao controller (`buscarPorId`); `buscarEntidade` é só para
+   outros services. Achou algo devolvendo entidade? Corrija na hora e avise.
+   Controller: só DTO, `@PreAuthorize` em todo método (`<GRUPO>_LER` nos GET,
    `<GRUPO>_ESCREVER` no resto), sem regra. Sem DELETE físico de cadastro: use
    `PATCH /{id}/inativar`.
 8. Migration Liquibase nova; nunca editar uma já aplicada.
