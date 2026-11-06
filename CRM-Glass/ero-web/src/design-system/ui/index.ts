@@ -18,6 +18,7 @@ export * from './Alerta';
 export * from './Skeleton';
 export * from './Estados';
 export * from './Dialogo';
+export * from './Gaveta';
 export * from './Splash';
 export * from './AvisoContexto';
 export * from './EditorAparencia';

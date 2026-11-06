@@ -11,6 +11,8 @@ export type OtpInputProps = {
   tamanho?: number;
   /** nome do grupo para leitores de tela */
   rotulo?: string;
+  /** dentro de um CampoForm com `grupo`: o grupo e o nome já vêm de lá, não cria outro role=group */
+  semGrupo?: boolean;
   invalido?: boolean;
   desabilitado?: boolean;
   autoFocus?: boolean;
@@ -31,6 +33,7 @@ export function OtpInput({
   onCompleto,
   tamanho = 6,
   rotulo = 'Código de verificação',
+  semGrupo,
   invalido,
   desabilitado,
   autoFocus,
@@ -101,7 +104,10 @@ export function OtpInput({
   };
 
   return (
-    <div role="group" aria-label={rotulo} aria-describedby={aria['aria-describedby']} className="flex gap-2 sm:gap-2.5">
+    <div
+      {...(semGrupo ? {} : { role: 'group', 'aria-label': rotulo, 'aria-describedby': aria['aria-describedby'] })}
+      className="flex gap-2 sm:gap-2.5"
+    >
       {Array.from({ length: tamanho }, (_, i) => {
         const d = digitos[i] ?? '';
         return (

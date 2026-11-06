@@ -20,6 +20,7 @@ import {
   ConteudoAba,
   Delta,
   Dialogo,
+  Gaveta,
   EditorAparencia,
   EstadoErro,
   EstadoVazio,
@@ -103,6 +104,7 @@ export default function DesignSystem() {
   const [pagina, setPagina] = useState(0);
   const [usuario, setUsuario] = useState<string | null>(null);
   const [dialogo, setDialogo] = useState(false);
+  const [gaveta, setGaveta] = useState(false);
   const [confirmar, setConfirmar] = useState<null | 'normal' | 'perigo'>(null);
   const [splash, setSplash] = useState(false);
   const [aviso, setAviso] = useState(true);
@@ -365,10 +367,10 @@ export default function DesignSystem() {
             <Secao titulo="Código de verificação (OtpInput)" subtitulo="6 dígitos · aceita colar · one-time-code">
               <div className="space-y-5">
                 <CampoForm rotulo="Código do app autenticador" grupo dica={otp.length === 6 ? `Completo: ${otp}` : 'Digite ou cole o código'}>
-                  {(ids) => <OtpInput {...ids} valor={otp} onChange={setOtp} onCompleto={(v) => toast({ title: `Código ${v} completo`, tone: 'success' })} />}
+                  {(ids) => <OtpInput {...ids} semGrupo valor={otp} onChange={setOtp} onCompleto={(v) => toast({ title: `Código ${v} completo`, tone: 'success' })} />}
                 </CampoForm>
                 <CampoForm rotulo="Código inválido" grupo erro="Código incorreto. Tente de novo.">
-                  {(ids) => <OtpInput {...ids} valor="123" onChange={() => {}} />}
+                  {(ids) => <OtpInput {...ids} semGrupo valor="123" onChange={() => {}} />}
                 </CampoForm>
               </div>
             </Secao>
@@ -524,6 +526,7 @@ export default function DesignSystem() {
             <Secao titulo="Diálogos e toasts" subtitulo="Dialogo e ConfirmDialog (Radix: foco preso, Esc, aria-modal) · Toast com ação">
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => setDialogo(true)}>Abrir diálogo</Button>
+                <Button onClick={() => setGaveta(true)}>Abrir gaveta</Button>
                 <Button onClick={() => setConfirmar('normal')}>Confirmar</Button>
                 <Button variant="danger" onClick={() => setConfirmar('perigo')}>
                   Confirmar (perigo)
@@ -655,6 +658,37 @@ export default function DesignSystem() {
           <Input readOnly value="Vidro-Azul-7391-Lago" className="font-mono" />
         </CampoForm>
       </Dialogo>
+      <Gaveta
+        aberto={gaveta}
+        onAbertoChange={setGaveta}
+        titulo="Filtros dos logs"
+        descricao="Gaveta lateral (Radix): foco preso, Esc fecha, foco volta ao botão."
+        rodape={
+          <>
+            <Button onClick={() => setGaveta(false)}>Limpar</Button>
+            <Button variant="primary" onClick={() => setGaveta(false)}>
+              Aplicar
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <CampoForm rotulo="Usuário" bloco={false}>
+            <Input icon={UserRound} placeholder="Nome ou e-mail" />
+          </CampoForm>
+          <CampoForm rotulo="Período" grupo bloco={false}>
+            <Segmented
+              options={[
+                { value: '24h', label: '24 h' },
+                { value: '7d', label: '7 dias' },
+                { value: '30d', label: '30 dias' },
+              ]}
+              value="7d"
+              onChange={() => {}}
+            />
+          </CampoForm>
+        </div>
+      </Gaveta>
       <ConfirmDialog
         aberto={confirmar !== null}
         onAbertoChange={(v) => !v && setConfirmar(null)}

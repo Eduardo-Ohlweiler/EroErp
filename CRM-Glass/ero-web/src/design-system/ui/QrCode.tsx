@@ -5,7 +5,7 @@ import { cn } from '../../shared/util/utils';
 export type QrCodeProps = {
   /** conteúdo (ex.: a `uri` otpauth:// devolvida por /api/auth/2fa/configurar) */
   valor: string;
-  /** lado do desenho em px (sem a margem da placa) */
+  /** lado total em px, já com a zona de silêncio de 4 módulos */
   tamanho?: number;
   /** descrição para leitores de tela */
   rotulo?: string;
@@ -17,7 +17,10 @@ export type QrCodeProps = {
  * Sempre numa placa clara com tinta escura, nos dois temas: é o que as câmeras leem melhor.
  * Desenhado em SVG com React (sem innerHTML).
  */
-export function QrCode({ valor, tamanho = 192, rotulo = 'QR code', className }: QrCodeProps) {
+/** Zona de silêncio exigida pela norma do QR code, em módulos. */
+const MARGEM = 4;
+
+export function QrCode({ valor, tamanho = 216, rotulo = 'QR code', className }: QrCodeProps) {
   const desenho = useMemo(() => {
     try {
       const qr = QRCode.create(valor, { errorCorrectionLevel: 'M' });
@@ -35,14 +38,15 @@ export function QrCode({ valor, tamanho = 192, rotulo = 'QR code', className }: 
   }, [valor]);
 
   return (
-    <div className={cn('qr-placa inline-grid place-items-center rounded-2xl p-3', className)}>
+    // Zona de silêncio de 4 módulos (norma do QR) fica no próprio viewBox, proporcional ao tamanho.
+    <div className={cn('qr-placa inline-grid place-items-center rounded-2xl', className)}>
       {desenho ? (
         <svg
           role="img"
           aria-label={rotulo}
           width={tamanho}
           height={tamanho}
-          viewBox={`0 0 ${desenho.n} ${desenho.n}`}
+          viewBox={`${-MARGEM} ${-MARGEM} ${desenho.n + MARGEM * 2} ${desenho.n + MARGEM * 2}`}
           shapeRendering="crispEdges"
         >
           <path d={desenho.d} fill="currentColor" />

@@ -53,6 +53,11 @@ export function MenuUsuario({ nome, email, papel, contexto, onMinhaConta, onSair
     else if (e.key === 'ArrowUp') ir(i - 1);
     else if (e.key === 'Home') ir(0);
     else if (e.key === 'End') ir(bs.length - 1);
+    else if (e.key === 'Tab') {
+      // padrão menu-button: Tab/Shift+Tab fecham o menu e o Radix devolve o foco ao avatar
+      e.preventDefault();
+      setAberto(false);
+    }
   };
 
   return (
@@ -72,6 +77,8 @@ export function MenuUsuario({ nome, email, papel, contexto, onMinhaConta, onSair
               asChild
               align="end"
               sideOffset={10}
+              // o Radix marca o conteúdo como dialog; aqui o papel é do role=menu de dentro
+              role="presentation"
               onOpenAutoFocus={(e) => {
                 e.preventDefault();
                 botoes()[0]?.focus();
@@ -104,6 +111,7 @@ export function MenuUsuario({ nome, email, papel, contexto, onMinhaConta, onSair
                       key={rotulo}
                       type="button"
                       role="menuitem"
+                      tabIndex={-1}
                       onClick={() => {
                         setAberto(false);
                         onSelecionar();

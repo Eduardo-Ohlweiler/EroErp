@@ -117,6 +117,11 @@ export function Combobox({
 
   const ativoId = aberto && filtradas[ativo] ? `${base}-op-${ativo}` : undefined;
 
+  // A opção ativa (setas) fica sempre visível na lista rolável.
+  useEffect(() => {
+    if (ativoId) document.getElementById(ativoId)?.scrollIntoView({ block: 'nearest' });
+  }, [ativoId]);
+
   return (
     <RadixPopover.Root open={aberto} onOpenChange={(v) => (v ? abrir() : setAberto(false))}>
       <RadixPopover.Anchor asChild>
@@ -127,7 +132,7 @@ export function Combobox({
             id={id}
             role="combobox"
             aria-expanded={aberto}
-            aria-controls={listaId}
+            aria-controls={aberto ? listaId : undefined}
             aria-autocomplete="list"
             aria-activedescendant={ativoId}
             aria-label={rotulo}

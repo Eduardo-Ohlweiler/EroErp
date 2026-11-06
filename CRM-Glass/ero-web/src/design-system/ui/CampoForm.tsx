@@ -1,5 +1,6 @@
 import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { spring } from '../../motion/tokens';
 import { cn } from '../../shared/util/utils';
 import { useVariantesBloco, type PropsBloco } from './bloco';
 
@@ -18,6 +19,11 @@ export type CampoFormProps = PropsBloco & {
   grupo?: boolean;
   /** ação ao lado do rótulo (ex.: "Gerar", "Copiar") */
   acao?: ReactNode;
+  /**
+   * Reserva a linha da dica/erro mesmo vazia (padrão true): o erro aparece sem empurrar o formulário
+   * e sem animar altura. Use false em campos soltos (filtros, diálogos de um campo só).
+   */
+  reservarErro?: boolean;
   className?: string;
   /**
    * O controle. Um único elemento recebe `id`, `aria-describedby` e `aria-invalid` automaticamente;
@@ -30,7 +36,7 @@ export type CampoFormProps = PropsBloco & {
  * Campo de formulário: rótulo em cima, controle, dica ou erro embaixo.
  * É um bloco da montagem da tela (campos entram em cascata quando o pai orquestra).
  */
-export function CampoForm({ rotulo, erro, dica, id, obrigatorio, grupo, acao, className, children, bloco = true, variants }: CampoFormProps) {
+export function CampoForm({ rotulo, erro, dica, id, obrigatorio, grupo, acao, reservarErro = true, className, children, bloco = true, variants }: CampoFormProps) {
   const auto = useId();
   const campoId = id ?? `campo-${auto}`;
   const rotuloId = `${campoId}-rotulo`;
@@ -69,24 +75,38 @@ export function CampoForm({ rotulo, erro, dica, id, obrigatorio, grupo, acao, cl
         {acao}
       </div>
       {controle}
-      <AnimatePresence initial={false}>
-        {erro ? (
-          <motion.span
-            key="e"
-            id={descId}
-            initial={{ opacity: 0, height: 0, y: -4 }}
-            animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0 }}
-            className="block text-xs text-danger mt-1.5"
-          >
-            {erro}
-          </motion.span>
-        ) : dica ? (
-          <span id={descId} className={cn('block text-[11px] text-subtle mt-1.5')}>
-            {dica}
-          </span>
-        ) : null}
-      </AnimatePresence>
+      {(temDesc || reservarErro) && (
+        <div className="relative mt-1.5 min-h-4">
+          {/* Só opacidade e y (nada de altura): a linha já está reservada. */}
+          <AnimatePresence initial={false} mode="popLayout">
+            {erro ? (
+              <motion.span
+                key="erro"
+                id={descId}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -2 }}
+                transition={spring.snappy}
+                className="block text-xs text-danger"
+              >
+                {erro}
+              </motion.span>
+            ) : dica ? (
+              <motion.span
+                key="dica"
+                id={descId}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={spring.snappy}
+                className="block text-[11px] leading-4 text-subtle"
+              >
+                {dica}
+              </motion.span>
+            ) : null}
+          </AnimatePresence>
+        </div>
+      )}
     </motion.div>
   );
 }

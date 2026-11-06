@@ -92,11 +92,18 @@
   --noise-opacity: 0.04;
   --vignette: transparent;
 
-  --success: #059669;
-  --danger: #e11d48;
-  --warning: #d97706;
-  --info: #2563eb;
-  --accent-text: color-mix(in srgb, var(--accent) 78%, black);
+  /* Estados no claro: tons escuros (Tailwind 800), para texto pequeno passar de 4,5:1 até sobre a tinta
+   * de 12 % no vidro sólido em cima do orb mais forte. */
+  --success: #065f46;
+  --danger: #9f1239;
+  --warning: #7c3d06;
+  --info: #1e40af;
+  /* texto de destaque no claro: tom escuro escolhido por destaque (--accent-ink), nunca a cor pura */
+  --accent-text: var(--accent-ink);
+}
+/* Elemento com data-accent próprio dentro do tema claro: recalcula o texto de destaque com o tom dele. */
+[data-theme='light'] [data-accent] {
+  --accent-text: var(--accent-ink);
 }
 
 /* ---------- Vidro denso: fundos de cena com cores fortes (cenas.ts, vidro: 'denso') ---------- */
@@ -120,40 +127,76 @@
   --accent-2: #3b82f6;
   --accent-3: #d946ef;
   --on-accent: #ffffff;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #5b21b6;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #7c3aed;
+  --accent-2-strong: #2563eb;
 }
 [data-accent='azul'] {
   --accent: #3b82f6;
   --accent-2: #06b6d4;
   --accent-3: #6366f1;
   --on-accent: #ffffff;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #1e40af;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #2563eb;
+  --accent-2-strong: #0369a1;
 }
 [data-accent='laranja'] {
   --accent: #f97316;
   --accent-2: #f59e0b;
   --accent-3: #ef4444;
-  --on-accent: #ffffff;
+  --on-accent: #1a1405;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #9a3412;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #f97316;
+  --accent-2-strong: #f59e0b;
 }
 [data-accent='esmeralda'] {
   --accent: #10b981;
   --accent-2: #0ea5e9;
   --accent-3: #84cc16;
-  --on-accent: #ffffff;
+  --on-accent: #04120c;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #065f46;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #10b981;
+  --accent-2-strong: #0ea5e9;
 }
 [data-accent='rosa'] {
   --accent: #ec4899;
   --accent-2: #8b5cf6;
   --accent-3: #f43f5e;
   --on-accent: #ffffff;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #9d174d;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #be185d;
+  --accent-2-strong: #7c3aed;
 }
 [data-accent='ambar'] {
   --accent: #f5b301;
   --accent-2: #f97316;
   --accent-3: #facc15;
   --on-accent: #1a1405;
+  /* texto de destaque no tema claro (≥ 4,5:1 sobre vidro e etiqueta) */
+  --accent-ink: #845500;
+  /* gradiente de botões e pílulas com texto --on-accent (≥ 4,5:1 em todo o gradiente) */
+  --accent-strong: #f5b301;
+  --accent-2-strong: #f97316;
 }
 :root,
 [data-accent] {
   --accent-glow: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+/* Anel de foco: o texto de destaque do tema (claro: tom escuro; escuro: tom claro), ≥ 3:1 nos dois. */
+:root,
+[data-theme],
+[data-accent] {
+  --focus-ring: var(--accent-text);
 }
 
 /* ---------- Fundo de cena (foto que acende/apaga com o tema) ----------
