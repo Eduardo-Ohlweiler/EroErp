@@ -1,5 +1,6 @@
 package com.api.ero_api.tenant.dtos;
 
+import com.api.ero_api.tenant.enums.Fundo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
@@ -12,7 +13,8 @@ public record TenantResponseDto(
         String email,
         boolean ativo,
         boolean exige2fa,
-        String corDestaque,
+        AparenciaDto aparencia,
+        @Schema(description = "Cena exclusiva vinculada (vazio = nenhuma)") Fundo fundoExclusivo,
         Instant createdAt,
         Instant updatedAt,
         UUID createdBy,

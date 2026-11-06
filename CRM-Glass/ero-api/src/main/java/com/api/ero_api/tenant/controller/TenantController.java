@@ -1,7 +1,9 @@
 package com.api.ero_api.tenant.controller;
 
 import com.api.ero_api.compartilhado.dtos.PaginaDto;
+import com.api.ero_api.tenant.dtos.FundoCatalogoDto;
 import com.api.ero_api.tenant.dtos.TenantAtualDto;
+import com.api.ero_api.tenant.dtos.TenantConfiguracaoUpdateDto;
 import com.api.ero_api.tenant.dtos.TenantCreateDto;
 import com.api.ero_api.tenant.dtos.TenantResponseDto;
 import com.api.ero_api.tenant.dtos.TenantSelectDto;
@@ -41,7 +43,7 @@ public class TenantController {
 
     @GetMapping("/atual")
     @PreAuthorize("hasAuthority('ACESSO_LIBERADO')")
-    @Operation(summary = "Contratante em que estou atuando (nome e cor)")
+    @Operation(summary = "Contratante em que estou atuando (nome e aparência)")
     public TenantAtualDto atual() {
         return service.atual();
     }
@@ -62,6 +64,13 @@ public class TenantController {
         return service.buscarParaSelecao();
     }
 
+    @GetMapping("/fundos")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    @Operation(summary = "Fundos que o contratante pode usar (comuns, exclusivas livres e a exclusiva dele)")
+    public List<FundoCatalogoDto> fundos(@RequestParam(required = false) UUID tenantId) {
+        return service.listarFundos(tenantId);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
     @Operation(summary = "Busca um contratante")
@@ -78,9 +87,16 @@ public class TenantController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
-    @Operation(summary = "Altera um contratante")
+    @Operation(summary = "Altera os dados cadastrais de um contratante")
     public TenantResponseDto atualizar(@PathVariable UUID id, @Valid @RequestBody TenantUpdateDto dto) {
         return service.atualizar(id, dto);
+    }
+
+    @PutMapping("/{id}/configuracao")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    @Operation(summary = "Altera a aparência e a cena exclusiva de um contratante")
+    public TenantResponseDto configurar(@PathVariable UUID id, @Valid @RequestBody TenantConfiguracaoUpdateDto dto) {
+        return service.configurar(id, dto);
     }
 
     @PatchMapping("/{id}/inativar")

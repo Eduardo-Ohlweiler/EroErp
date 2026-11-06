@@ -26,7 +26,7 @@ ero-api/src/main/java/com/api/ero_api/
     exception/          ApiException e filhas + GlobalExceptionHandler
     util/               LogSeguro, PaginacaoUtils, HashUtils
     web/                filtros HTTP (CorrelationId, limite de tamanho), ClienteRequisicao
-    config/             auditoria JPA, OpenAPI, seed do superadmin
+    config/             auditoria JPA, OpenAPI, seed do superadmin, agendamento (@EnableScheduling)
   seguranca/            infraestrutura de segurança (não é módulo de negócio)
     config/             SecurityConfig, CorsConfig, SegurancaProperties
     jwt/                JwtService, JwtAutenticacaoConverter

@@ -32,6 +32,14 @@ public class SessaoController {
         return service.listarMinhas();
     }
 
+    @PatchMapping("/encerrar-outras")
+    @PreAuthorize("hasAuthority('ACESSO_LIBERADO')")
+    @Operation(summary = "Encerra todas as minhas sessões, menos a deste navegador")
+    public ResponseEntity<Void> encerrarOutras() {
+        service.encerrarOutras();
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}/encerrar")
     @PreAuthorize("hasAuthority('ACESSO_LIBERADO')")
     @Operation(summary = "Encerra uma das minhas sessões")

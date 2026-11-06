@@ -10,19 +10,27 @@ import com.api.ero_api.compartilhado.util.PaginacaoUtils;
 import com.api.ero_api.seguranca.SecurityUtils;
 import com.api.ero_api.seguranca.autorizacao.AutorizacaoCache;
 import com.api.ero_api.seguranca.tenant.TenantContext;
+import com.api.ero_api.tenant.dtos.FundoCatalogoDto;
 import com.api.ero_api.tenant.dtos.TenantAtualDto;
+import com.api.ero_api.tenant.dtos.TenantConfiguracaoUpdateDto;
 import com.api.ero_api.tenant.dtos.TenantCreateDto;
 import com.api.ero_api.tenant.dtos.TenantResponseDto;
 import com.api.ero_api.tenant.dtos.TenantSelectDto;
 import com.api.ero_api.tenant.dtos.TenantUpdateDto;
 import com.api.ero_api.tenant.entity.Tenant;
+import com.api.ero_api.tenant.enums.Fundo;
 import com.api.ero_api.tenant.mapper.TenantMapper;
 import com.api.ero_api.tenant.repository.TenantRepository;
 import com.api.ero_api.tenant.util.DocumentoValidator;
 import com.api.ero_api.usuario.service.UsuarioService;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -36,6 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TenantService {
 
     private static final Set<String> ORDENAVEIS = Set.of("nome", "createdAt");
+    private static final String MSG_CENA_DE_OUTRO = "Esta cena exclusiva já pertence a outro contratante.";
 
     private final TenantRepository repository;
     private final UsuarioService usuarioService;
@@ -78,10 +87,38 @@ public class TenantService {
                 .orElseThrow(() -> new NaoEncontradoException("Contratante não encontrado."));
     }
 
-    /** Contratante em que o usuário logado está atuando (nome e cor para o front). */
+    /** Contratante em que o usuário logado está atuando (nome e aparência para o front). */
     @Transactional(readOnly = true)
     public TenantAtualDto atual() {
         return TenantMapper.toAtualDto(buscarEntidade(SecurityUtils.getTenantIdLogado()));
+    }
+
+    /**
+     * Nomes de vários contratantes numa consulta só (trilha de auditoria da plataforma).
+     * Id que não existe simplesmente não aparece no mapa.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, String> buscarNomes(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return repository.buscarNomesPorIds(ids).stream()
+                .collect(Collectors.toMap(TenantSelectDto::id, TenantSelectDto::nome));
+    }
+
+    /**
+     * Fundos que o contratante pode escolher: os comuns, as cenas exclusivas ainda
+     * sem dono e a exclusiva que já é dele. Sem {@code tenantId} (contratante novo),
+     * só os comuns e as exclusivas livres.
+     */
+    @Transactional(readOnly = true)
+    public List<FundoCatalogoDto> listarFundos(UUID tenantId) {
+        UUID ignorar = tenantId == null ? TenantContext.NENHUM : buscarContratante(tenantId).getId();
+        Set<Fundo> emUso = Set.copyOf(repository.buscarFundosExclusivosEmUso(ignorar));
+        return Arrays.stream(Fundo.values())
+                .filter(f -> !f.exclusiva() || !emUso.contains(f))
+                .map(TenantMapper::toFundoCatalogoDto)
+                .toList();
     }
 
     @Transactional
@@ -89,6 +126,7 @@ public class TenantService {
         exigirVisaoPlataforma();
         Tenant t = TenantMapper.toEntity(dto);
         validarDocumento(t.getDocumento(), null);
+        validarFundos(t, null);
         repository.saveAndFlush(t);
         usuarioService.criarAdminInicial(t.getId(), dto.administrador().nome(), dto.administrador().email(),
                 dto.administrador().senha());
@@ -97,19 +135,41 @@ public class TenantService {
         return TenantMapper.toResponseDto(t);
     }
 
+    /** Só os dados cadastrais. A aparência muda em {@link #configurar}. */
     @Transactional
     public TenantResponseDto atualizar(UUID id, TenantUpdateDto dto) {
         exigirVisaoPlataforma();
         Tenant t = buscarContratante(id);
-        if (!t.getVersion().equals(dto.version())) {
-            throw new ConflitoException("Este contratante foi alterado por outra pessoa. Recarregue e tente de novo.");
-        }
+        exigirVersao(t, dto.version());
         String documento = DocumentoValidator.normalizar(dto.documento());
         validarDocumento(documento, t.getId());
         TenantMapper.atualizarEntidade(t, dto);
         repository.saveAndFlush(t);
         cache.invalidarTudo();
         eventos.registrar(TipoEventoSeguranca.TENANT_ALTERADO, null, t.getId(), null);
+        return TenantMapper.toResponseDto(t);
+    }
+
+    /**
+     * Aparência e cena exclusiva do contratante (tela Configuração). Vale para todos
+     * os usuários dele no próximo {@code /api/auth/eu} ou renovação de sessão.
+     * Não mexe no cache de autorização: ele não guarda aparência.
+     */
+    @Transactional
+    public TenantResponseDto configurar(UUID id, TenantConfiguracaoUpdateDto dto) {
+        exigirVisaoPlataforma();
+        Tenant t = buscarContratante(id);
+        exigirVersao(t, dto.version());
+        TenantMapper.aplicarAparencia(t, dto.aparencia());
+        t.setFundoExclusivo(dto.fundoExclusivo());
+        validarFundos(t, t.getId());
+        try {
+            repository.saveAndFlush(t);
+        } catch (DataIntegrityViolationException e) {
+            // Dois superadmins vinculando a mesma cena ao mesmo tempo: o índice único segura.
+            throw new ConflitoException(MSG_CENA_DE_OUTRO);
+        }
+        eventos.registrar(TipoEventoSeguranca.TENANT_ALTERADO, null, t.getId(), "configuração");
         return TenantMapper.toResponseDto(t);
     }
 
@@ -147,6 +207,30 @@ public class TenantService {
         }
         if (documento != null && repository.existeDocumento(documento, ignorarId == null ? TenantContext.NENHUM : ignorarId)) {
             throw new ConflitoException("Já existe um contratante com este documento.");
+        }
+    }
+
+    /**
+     * Cena exclusiva: só cena marcada como exclusiva, e com um dono só. O fundo em
+     * uso só pode ser exclusivo se for a cena exclusiva do próprio contratante.
+     */
+    private void validarFundos(Tenant t, UUID ignorarId) {
+        Fundo exclusivo = t.getFundoExclusivo();
+        if (exclusivo != null && !exclusivo.exclusiva()) {
+            throw new RegraNegocioException("Esta cena não é exclusiva.");
+        }
+        if (exclusivo != null
+                && repository.existeFundoExclusivo(exclusivo, ignorarId == null ? TenantContext.NENHUM : ignorarId)) {
+            throw new ConflitoException(MSG_CENA_DE_OUTRO);
+        }
+        if (t.getFundo().exclusiva() && t.getFundo() != exclusivo) {
+            throw new RegraNegocioException("Este fundo não está disponível para este contratante.");
+        }
+    }
+
+    private static void exigirVersao(Tenant t, Long versaoVista) {
+        if (!t.getVersion().equals(versaoVista)) {
+            throw new ConflitoException("Este contratante foi alterado por outra pessoa. Recarregue e tente de novo.");
         }
     }
 

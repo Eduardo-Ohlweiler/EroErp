@@ -63,6 +63,10 @@ public class SessaoService {
     public record SessaoCriada(UUID sessaoId, String refreshToken, Instant expiraEm) {
     }
 
+    /** Quanto a limpeza diária apagou. */
+    public record Limpeza(int sessoes, int refreshTokens) {
+    }
+
     public sealed interface ResultadoRenovacao {
         record Renovada(SessaoUsuario sessao, String refreshToken, Instant expiraEm) implements ResultadoRenovacao {
         }
@@ -179,6 +183,30 @@ public class SessaoService {
         s.revogar(MotivoRevogacao.ENCERRADA_PELO_USUARIO, Instant.now());
         cache.invalidarSessao(sessaoId);
         eventos.registrar(TipoEventoSeguranca.SESSAO_ENCERRADA, eu.usuarioId(), s.getTenantId(), null);
+    }
+
+    /**
+     * "Encerrar todas as outras": derruba todas as minhas sessões menos a deste
+     * navegador (ex.: esqueci logado num computador emprestado).
+     */
+    @Transactional
+    public void encerrarOutras() {
+        UsuarioAutenticado eu = SecurityUtils.exigirUsuario();
+        SessaoUsuario atual = sessaoRepository.buscarPorId(eu.sessaoId())
+                .orElseThrow(() -> new NaoEncontradoException("Sessão não encontrada."));
+        revogarTodasDoUsuario(eu.usuarioId(), MotivoRevogacao.ENCERRADA_PELO_USUARIO, atual.getId());
+        eventos.registrar(TipoEventoSeguranca.SESSAO_ENCERRADA, eu.usuarioId(), atual.getTenantId(), "todas as outras");
+    }
+
+    /**
+     * Apaga sessões vencidas e os refresh tokens delas (chamado pela limpeza diária,
+     * sem usuário logado). Sessão vencida não renova mais, então não há o que proteger.
+     */
+    @Transactional
+    public Limpeza apagarExpiradas(Instant agora) {
+        int tokens = refreshRepository.apagarExpirados(agora);
+        int sessoes = sessaoRepository.apagarExpiradas(agora);
+        return new Limpeza(sessoes, tokens);
     }
 
     private String novoRefresh(SessaoUsuario sessao) {

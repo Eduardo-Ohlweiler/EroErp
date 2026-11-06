@@ -12,6 +12,9 @@ import java.util.UUID;
  * @param tenantId    tenant em que o usuário está atuando agora (o superadmin pode
  *                    escolher um contratante; ROOT = visão de plataforma)
  * @param pendencia   algo que o usuário precisa resolver antes de usar o sistema
+ * @param doisFatoresAtivo       verificação em duas etapas ligada
+ * @param doisFatoresObrigatorio o contratante (ou a plataforma, para o superadmin) exige 2FA:
+ *                               a tela "Minha conta" esconde o "Desligar"
  * @param authorities o que ele pode fazer (ROLE_*, GRUPO_LER, GRUPO_ESCREVER, ações)
  */
 public record UsuarioAutenticado(
@@ -22,6 +25,8 @@ public record UsuarioAutenticado(
         String email,
         Papel papel,
         Pendencia pendencia,
+        boolean doisFatoresAtivo,
+        boolean doisFatoresObrigatorio,
         Set<String> authorities) {
 
     /**
