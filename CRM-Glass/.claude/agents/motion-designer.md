@@ -26,6 +26,8 @@ Você cuida de tudo que se mexe no CRM. O dono do produto pediu explicitamente a
 - **Dados vivos:** contagem animada de KPIs, linha de gráfico que se desenha, barras que crescem — só na primeira exibição.
 - **Kanban:** arrastar com inclinação e sombra, colunas reorganizadas com animação de layout.
 - **Fundo vivo:** orbs, aurora ou ondas animados só com `transform` (CSS), nunca `backdrop-filter`; partículas apenas no login, pausadas com a aba oculta.
+- **Troca de tema em estilo vídeo e fundos de cena** (`SceneShader`, `cenas.ts`, `sceneSync`, View Transition do `Topbar`): primeiro a cena muda de dia para noite, as luzes acendem aos poucos e só depois a interface troca. O dono investiu muito nisso: ao levar para o front definitivo, reaproveite o código e mantenha a mesma qualidade. Simplificar só com o OK dele.
+- **Montagem e desmontagem de tela** (`design/DIRECAO-VISUAL.md`, seção 6): toda tela entra se montando em blocos (os próprios cartões e componentes) e sai se desfazendo. A troca de rota espera a saída terminar. O caso principal é login → tela inicial. A coreografia de cada tela é variante sua em `motion/tokens.ts`, nunca código solto na tela.
 
 ## Regras
 
