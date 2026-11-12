@@ -35,7 +35,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
  *
  * <ul>
  *   <li>API sem sessão no servidor: cada requisição traz o JWT (Authorization: Bearer).</li>
- *   <li>Rotas públicas: só login, 2FA, refresh, logout e health. Todo o resto exige
+ *   <li>Rotas públicas: só login, 2FA (verificar e reenviar), refresh, logout e health. Todo o resto exige
  *       login E {@code @PreAuthorize} no controller (o ArquiteturaTest garante).</li>
  *   <li>CSRF desligado porque o token vai em header, não em cookie. A única rota que
  *       usa cookie (refresh/logout) exige SameSite=Strict + header X-Ero-Refresh.</li>
@@ -49,7 +49,8 @@ public class SecurityConfig {
 
     /** Rotas que não leem o Authorization (um token vencido não pode impedir login/logout). */
     private static final Set<String> ROTAS_PUBLICAS = Set.of(
-            "/api/auth/login", "/api/auth/2fa/verificar", "/api/auth/refresh", "/api/auth/logout");
+            "/api/auth/login", "/api/auth/2fa/verificar", "/api/auth/2fa/reenviar", "/api/auth/refresh",
+            "/api/auth/logout");
 
     @Bean
     SecurityFilterChain api(HttpSecurity http,

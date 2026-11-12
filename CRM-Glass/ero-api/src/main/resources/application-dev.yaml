@@ -21,8 +21,6 @@ app:
     # Front local (Vite). HTTP em localhost: cookie sem "Secure".
     cors-origens: ${APP_CORS_ORIGENS:http://localhost:5173,http://localhost:5180}
     cookie-seguro: false
-    # Em produção o superadmin só entra com 2FA. Em dev fica opcional para agilizar.
-    superadmin-exige-2fa: false
     # Swagger UI precisa carregar scripts/estilos da própria origem.
     csp: "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'"
 

@@ -142,8 +142,6 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
         assertThat(status(put("/api/usuarios/" + simples.id(), a.token(), Map.of(
                 "nome", "Bruno Rocha", "email", unico("atacante") + "@teste.local", "papel", "USUARIO", "version", versaoSimples0))))
                 .as("trocar o e-mail de login de um colega, mesmo com acesso menor").isEqualTo(403);
-        assertThat(status(patch("/api/usuarios/" + simples.id() + "/redefinir-2fa", a.token())))
-                .as("resetar 2FA de colega").isEqualTo(403);
         assertThat(status(patch("/api/usuarios/" + simples.id() + "/desbloquear", a.token())))
                 .as("desbloquear colega").isEqualTo(403);
         assertThat(status(patch("/api/usuarios/" + poderoso.id() + "/inativar", a.token())))
@@ -234,7 +232,7 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
                 Map.of("novaSenha", "Nova-Temporaria-2026")))).isEqualTo(204);
 
         assertThat(status(get("/api/auth/eu", s.token()))).as("sessão antiga caiu").isEqualTo(401);
-        Sessao nova = login(u.email(), "Nova-Temporaria-2026");
+        Sessao nova = loginComCodigo(u.email(), "Nova-Temporaria-2026");
         assertThat(nova.corpo().path("usuario").path("pendencia").asString()).isEqualTo("TROCAR_SENHA");
     }
 
@@ -259,12 +257,120 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
-    void redefinir2faDeOutroContratanteDa404() {
+    void desbloquearEAtivarDeOutroContratanteDa404() {
         Contratante a = novoContratante();
         Contratante b = novoContratante();
         UsuarioCriado deA = novoUsuario(a.admin());
-        assertThat(status(patch("/api/usuarios/" + deA.id() + "/redefinir-2fa", b.admin().token()))).isEqualTo(404);
         assertThat(status(patch("/api/usuarios/" + deA.id() + "/desbloquear", b.admin().token()))).isEqualTo(404);
+        assertThat(status(patch("/api/usuarios/" + deA.id() + "/ativar", b.admin().token()))).isEqualTo(404);
+    }
+
+    // ------------------------------------------------------------ limite de usuários do contratante
+
+    @Test
+    void limite_adminCriaAteOLimiteEInativarLiberaVaga() {
+        Contratante c = novoContratante(3);
+        String admin = c.admin().token();
+        UsuarioCriado primeiro = novoUsuario(c.admin());
+        novoUsuario(c.admin());
+
+        MvcTestResult cheio = post("/api/usuarios", admin, novoUsuarioBody("USUARIO"));
+        assertThat(status(cheio)).as("admin inicial + 2 = 3 de 3").isEqualTo(422);
+        assertThat(corpo(cheio).path("detail").asString())
+                .isEqualTo("Este contratante já usa 3 de 3 usuários. Fale com o suporte para ampliar.");
+
+        assertThat(status(patch("/api/usuarios/" + primeiro.id() + "/inativar", admin))).isEqualTo(204);
+        assertThat(status(post("/api/usuarios", admin, novoUsuarioBody("ADMIN")))).as("vaga liberada").isEqualTo(201);
+        assertThat(status(post("/api/usuarios", admin, novoUsuarioBody("USUARIO")))).isEqualTo(422);
+    }
+
+    @Test
+    void limite_reativarExigeVaga() {
+        Contratante c = novoContratante(2);
+        String admin = c.admin().token();
+        UsuarioCriado u = novoUsuario(c.admin());
+        assertThat(status(patch("/api/usuarios/" + u.id() + "/inativar", admin))).isEqualTo(204);
+        UsuarioCriado outro = novoUsuario(c.admin());
+
+        MvcTestResult reativar = patch("/api/usuarios/" + u.id() + "/ativar", admin);
+        assertThat(status(reativar)).isEqualTo(422);
+        assertThat(corpo(reativar).path("detail").asString())
+                .isEqualTo("Este contratante já usa 2 de 2 usuários. Fale com o suporte para ampliar.");
+        assertThat(corpo(get("/api/usuarios/" + u.id(), admin)).path("ativo").asBoolean()).isFalse();
+        assertThat(status(patch("/api/usuarios/" + outro.id() + "/ativar", admin)))
+                .as("quem já está ativo não ocupa outra vaga").isEqualTo(204);
+
+        assertThat(status(patch("/api/usuarios/" + outro.id() + "/inativar", admin))).isEqualTo(204);
+        assertThat(status(patch("/api/usuarios/" + u.id() + "/ativar", admin))).isEqualTo(204);
+    }
+
+    /**
+     * Duplo clique em "Ativar" com a última vaga: o segundo pedido espera o primeiro
+     * (linha do usuário travada), já o lê ativo e responde 204 sem pedir outra vaga.
+     */
+    @Test
+    void limite_duploCliqueEmAtivarNaUltimaVagaDaDuasVezes204() throws Exception {
+        Contratante c = novoContratante(2);
+        String admin = c.admin().token();
+        UsuarioCriado u = novoUsuario(c.admin());
+        for (int rodada = 0; rodada < 5; rodada++) {
+            assertThat(status(patch("/api/usuarios/" + u.id() + "/inativar", admin))).isEqualTo(204);
+            java.util.concurrent.CyclicBarrier largada = new java.util.concurrent.CyclicBarrier(2);
+            java.util.concurrent.Callable<Integer> clique = () -> {
+                largada.await();
+                return status(patch("/api/usuarios/" + u.id() + "/ativar", admin));
+            };
+            try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+                var primeiro = pool.submit(clique);
+                var segundo = pool.submit(clique);
+                assertThat(List.of(primeiro.get(), segundo.get())).as("rodada %d", rodada).containsOnly(204);
+            }
+            assertThat(corpo(get("/api/usuarios/" + u.id(), admin)).path("ativo").asBoolean()).isTrue();
+        }
+    }
+
+    @Test
+    void limite_reduzidoAbaixoDoUsoEAceitoESoTravaCriarEReativar() {
+        Contratante c = novoContratante(3);
+        String admin = c.admin().token();
+        UsuarioCriado u1 = novoUsuario(c.admin());
+        UsuarioCriado u2 = novoUsuario(c.admin());
+        Sessao s = loginSuperadmin();
+        JsonNode t = corpo(get("/api/tenants/" + c.id(), s.token()));
+        MvcTestResult reduzido = put("/api/tenants/" + c.id(), s.token(), Map.of(
+                "nome", t.path("nome").asString(), "limiteUsuarios", 1, "version", t.path("version").asLong()));
+        assertThat(status(reduzido)).isEqualTo(200);
+        assertThat(corpo(reduzido).path("usuariosAtivos").asLong()).isEqualTo(3);
+
+        assertThat(status(get("/api/usuarios", admin))).as("ninguém é desligado").isEqualTo(200);
+        assertThat(loginComCodigo(u1.email(), SENHA_FORTE).token()).as("quem já existe continua entrando").isNotBlank();
+        MvcTestResult criar = post("/api/usuarios", admin, novoUsuarioBody("USUARIO"));
+        assertThat(status(criar)).isEqualTo(422);
+        assertThat(corpo(criar).path("detail").asString())
+                .isEqualTo("Este contratante já usa 3 de 1 usuários. Fale com o suporte para ampliar.");
+
+        assertThat(status(patch("/api/usuarios/" + u2.id() + "/inativar", admin))).isEqualTo(204);
+        assertThat(status(patch("/api/usuarios/" + u2.id() + "/ativar", admin))).as("2 de 1").isEqualTo(422);
+    }
+
+    @Test
+    void limite_isolamentoEntreContratantes() {
+        Contratante cheio = novoContratante(1);
+        Contratante folgado = novoContratante(5);
+        novoUsuario(folgado.admin());
+        novoUsuario(folgado.admin());
+
+        assertThat(status(post("/api/usuarios", cheio.admin().token(), novoUsuarioBody("USUARIO"))))
+                .as("os usuários do outro contratante não contam aqui, mas o admin inicial sim").isEqualTo(422);
+        assertThat(corpo(post("/api/usuarios", cheio.admin().token(), novoUsuarioBody("USUARIO"))).path("detail").asString())
+                .contains("1 de 1");
+        assertThat(status(post("/api/usuarios", folgado.admin().token(), novoUsuarioBody("USUARIO")))).isEqualTo(201);
+
+        // Superadmin atuando dentro do contratante cheio também respeita o limite dele.
+        Sessao s = loginSuperadmin();
+        String dentro = corpo(post("/api/auth/superadmin/acessar/" + cheio.id(), s.token(), Map.of()))
+                .path("tokenAcesso").asString();
+        assertThat(status(post("/api/usuarios", dentro, novoUsuarioBody("USUARIO")))).isEqualTo(422);
     }
 
     @Test
@@ -274,7 +380,7 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
         String admin = c.admin().token();
         long versao = corpo(get("/api/usuarios/" + u.id(), admin)).path("version").asLong();
 
-        login(u.email(), SENHA_FORTE);
+        loginComCodigo(u.email(), SENHA_FORTE);
         tentarLogin(u.email(), "Senha-Errada-Total-1");
         assertThat(corpo(get("/api/usuarios/" + u.id(), admin)).path("version").asLong())
                 .as("login e erro de senha não mexem na versão do cadastro").isEqualTo(versao);

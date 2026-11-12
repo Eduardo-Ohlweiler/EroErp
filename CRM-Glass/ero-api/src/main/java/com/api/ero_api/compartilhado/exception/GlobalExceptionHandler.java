@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
@@ -39,7 +40,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ProblemDetail> negocio(ApiException ex, HttpServletRequest req) {
-        return resposta(ex.getStatus(), ex.getCodigo(), ex.getMessage(), req, null);
+        ResponseEntity<ProblemDetail> r = resposta(ex.getStatus(), ex.getCodigo(), ex.getMessage(), req, null);
+        if (ex instanceof MuitasRequisicoesException m && m.getSegundosParaTentar() != null) {
+            return ResponseEntity.status(r.getStatusCode())
+                    .header(HttpHeaders.RETRY_AFTER, String.valueOf(m.getSegundosParaTentar()))
+                    .body(r.getBody());
+        }
+        return r;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

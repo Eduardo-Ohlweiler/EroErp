@@ -37,3 +37,19 @@ export function useSize<T extends HTMLElement>() {
   }, []);
   return [ref, size] as const;
 }
+
+const dataExtenso = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+/** "quarta-feira, 11 de novembro de 2026" */
+export const fmtDataExtenso = (d: Date) => dataExtenso.format(d);
+
+/** Saudação pela hora local: Bom dia (5h–11h), Boa tarde (12h–17h), Boa noite (18h–4h). */
+export function saudacao(d: Date) {
+  const h = d.getHours();
+  if (h >= 5 && h < 12) return 'Bom dia';
+  if (h >= 12 && h < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
+/** "Ana Paula Ribeiro" → "Ana" */
+export const primeiroNome = (nome: string) => nome.trim().split(/\s+/)[0] ?? '';

@@ -11,15 +11,19 @@ export type TopbarProps = {
   titulo: string;
   /** chip do contratante (ChipContratante) */
   contratante?: ReactNode;
-  /** abre a busca (CommandPalette) */
-  onBuscar: () => void;
+  /** abre a busca (CommandPalette). Sem ele, a barra não mostra o botão de busca nem a dica do Ctrl K. */
+  onBuscar?: () => void;
   textoBusca?: string;
-  /** canto direito: MenuUsuario */
+  /**
+   * Canto direito: MenuUsuario. Visível em todas as larguras (no celular é ali que fica o Sair).
+   * Sem `tamanho`, o MenuUsuario já usa avatar de 36 px abaixo de 640 px e de 44 px a partir daí.
+   */
   direita?: ReactNode;
 };
 
 /**
- * Barra superior: contratante, título da tela, busca (Ctrl K), relógio e menu do usuário.
+ * Barra superior: contratante, título da tela, busca (Ctrl K, opcional), relógio e menu do usuário.
+ * O menu do usuário aparece em todas as larguras: no celular é o único caminho visível para o Sair.
  * Sem botão de tema (a aparência é do contratante), sem "Novo" e sem sino nesta fase.
  */
 export function Topbar({ titulo, contratante, onBuscar, textoBusca = 'Buscar telas…', direita }: TopbarProps) {
@@ -60,27 +64,30 @@ export function Topbar({ titulo, contratante, onBuscar, textoBusca = 'Buscar tel
         </AnimatePresence>
       </div>
 
-      <button
-        type="button"
-        onClick={onBuscar}
-        aria-keyshortcuts="Control+K"
-        className="chip mx-auto h-11 w-full max-w-[440px] min-w-0 rounded-2xl flex items-center gap-2.5 px-3.5 text-sm text-subtle hover:bg-[var(--chip-hover)] hover:text-muted transition-colors"
-      >
-        <Search className="size-4 shrink-0" aria-hidden />
-        <span className="truncate">{textoBusca}</span>
-        <span className="ml-auto kbd hidden md:inline" aria-hidden>
-          Ctrl K
-        </span>
-      </button>
+      {onBuscar && (
+        <button
+          type="button"
+          onClick={onBuscar}
+          aria-keyshortcuts="Control+K"
+          className="chip mx-auto h-11 w-full max-w-[440px] min-w-0 rounded-2xl flex items-center gap-2.5 px-3.5 text-sm text-subtle hover:bg-[var(--chip-hover)] hover:text-muted transition-colors"
+        >
+          <Search className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">{textoBusca}</span>
+          <span className="ml-auto kbd hidden md:inline" aria-hidden>
+            Ctrl K
+          </span>
+        </button>
+      )}
 
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* sem busca, o ml-auto segura o relógio e o avatar no canto direito */}
+      <div className={cn('flex items-center gap-1.5 shrink-0', !onBuscar && 'ml-auto')}>
         <div className="chip h-11 px-3 rounded-2xl hidden xl:flex flex-col justify-center leading-tight text-right">
           <span className="text-[13px] font-semibold tabular-nums">
             {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </span>
           <span className="text-[10px] text-subtle">{now.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
         </div>
-        {direita && <span className="hidden sm:inline-flex">{direita}</span>}
+        {direita && <span className="inline-flex">{direita}</span>}
       </div>
     </motion.header>
   );

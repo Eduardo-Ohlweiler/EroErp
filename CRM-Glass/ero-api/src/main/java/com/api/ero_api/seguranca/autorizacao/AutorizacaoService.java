@@ -2,7 +2,6 @@ package com.api.ero_api.seguranca.autorizacao;
 
 import com.api.ero_api.compartilhado.exception.NaoEncontradoException;
 import com.api.ero_api.permissao.service.CalculoPermissaoService;
-import com.api.ero_api.seguranca.config.SegurancaProperties;
 import com.api.ero_api.seguranca.UsuarioAutenticado;
 import com.api.ero_api.seguranca.UsuarioAutenticado.Pendencia;
 import com.api.ero_api.seguranca.tenant.TenantContext;
@@ -36,18 +35,16 @@ public class AutorizacaoService {
     private final TenantService tenantService;
     private final SessaoService sessaoService;
     private final CalculoPermissaoService calculoPermissao;
-    private final boolean superadminExige2fa;
     private final AutorizacaoCache cache;
     private final TransactionTemplate leitura;
 
     public AutorizacaoService(UsuarioService usuarioService, TenantService tenantService, SessaoService sessaoService,
-                              CalculoPermissaoService calculoPermissao, AutorizacaoCache cache, SegurancaProperties props,
+                              CalculoPermissaoService calculoPermissao, AutorizacaoCache cache,
                               PlatformTransactionManager transactionManager) {
         this.usuarioService = usuarioService;
         this.tenantService = tenantService;
         this.sessaoService = sessaoService;
         this.calculoPermissao = calculoPermissao;
-        this.superadminExige2fa = props.superadminExige2fa();
         this.cache = cache;
         this.leitura = new TransactionTemplate(transactionManager);
         this.leitura.setReadOnly(true);
@@ -88,19 +85,13 @@ public class AutorizacaoService {
             throw invalido();
         }
 
-        boolean doisFatoresObrigatorio = tenantDoUsuario.isExige2fa() || (superadmin && superadminExige2fa);
-        Pendencia pendencia = Pendencia.NENHUMA;
-        if (usuario.isExigirTrocaSenha()) {
-            pendencia = Pendencia.TROCAR_SENHA;
-        } else if (!usuario.isTotpAtivo() && doisFatoresObrigatorio) {
-            pendencia = Pendencia.CONFIGURAR_2FA;
-        }
+        Pendencia pendencia = usuario.isExigirTrocaSenha() ? Pendencia.TROCAR_SENHA : Pendencia.NENHUMA;
         Set<String> authorities = pendencia == Pendencia.NENHUMA
                 ? calculoPermissao.calcular(usuario)
                 : Set.of("PENDENCIA_" + pendencia.name());
 
         return new UsuarioAutenticado(usuario.getId(), tenantEfetivo, sessaoId, usuario.getNome(), usuario.getEmail(),
-                usuario.getPapel(), pendencia, usuario.isTotpAtivo(), doisFatoresObrigatorio, authorities);
+                usuario.getPapel(), pendencia, authorities);
     }
 
     private static InvalidBearerTokenException invalido() {

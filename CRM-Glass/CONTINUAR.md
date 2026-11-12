@@ -1,6 +1,6 @@
 # Como continuar este projeto em outro computador
 
-Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 06/11/2026.
+Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 11/11/2026.
 
 ---
 
@@ -80,8 +80,8 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 | Banco | PostgreSQL 18, Liquibase, UUID v7 |
 | Multiempresa | **Multi-tenant** com `tenant_id` filtrado automaticamente pelo Hibernate (`@TenantId`). Funciona igual se cada contratante ganhar o próprio container, que é o caminho provável (`docs/03`) |
 | Segurança | OWASP Top 10 desde o início (`docs/02`) |
-| Login | Token de 15 min + refresh em cookie httpOnly com rotação; 2FA (TOTP) opcional, exigível pelo contratante |
-| Permissões | Superadmin (dono), ADMIN (regras a definir) e USUARIO com grupos de liberação LER/ESCREVER + ações extras, como no EroErp 2.0 (`docs/04`) |
+| Login | Token de 15 min + refresh em cookie httpOnly com rotação; **código de 6 dígitos por e-mail em todo login, para todos** (11/11/2026; saiu o TOTP). E-mail pelo Gmail com senha de app (`ero-api/.env`) |
+| Permissões | Superadmin (dono), ADMIN (regras a definir) e USUARIO com grupos de liberação LER/ESCREVER + ações extras, como no EroErp 2.0 (`docs/04`). Limite de usuários ativos por contratante, definido pelo superadmin (`docs/03`) |
 | Infraestrutura | Docker (Docker Compose); imagem da API pronta (`ero-api/Dockerfile`) |
 | Primeira entrega | Design system + protótipo navegável, **só visual, com dados fictícios** |
 
@@ -101,6 +101,11 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
   - 7 migrations, Dockerfile e compose de dev.
   - 72 testes verdes: 21 de arquitetura (ArchUnit), integração com Postgres real (Testcontainers), TOTP e limite de corpo. Duas rodadas de revisão dos agentes `seguranca` e `revisor-backend`; achados bloqueantes corrigidos, pendências conhecidas em `docs/02` (seção "Pendências conhecidas").
   - Rodar: preview **`ero-api`** ou `ero-api/run-dev.cmd`. Swagger em `/swagger-ui.html`. Superadmin de dev em `ero-api/.env`.
+- **Login real com código por e-mail + limite de usuários** (11/11/2026, na `main`, sem commit):
+  - ero-api: migration 009 (tabela `codigo_verificacao`, `tenant.limite_usuarios` com padrão 5 ou os ativos para os contratantes que já existiam; saem as colunas do TOTP, `codigo_recuperacao` e `tenant.exige_2fa`). Todo login: senha certa → código de 6 dígitos por e-mail (vale 10 min do 1º envio, uso único, reenvio do mesmo código a cada 60 s, no máximo 5 envios) → sessão. `POST /api/auth/2fa/reenviar` novo; saíram `/2fa/configurar|ativar|desativar` e `PATCH /usuarios/{id}/redefinir-2fa`. `EmailService` em `compartilhado/email/` (SMTP; Gmail por padrão, Mailpit por variável).
+  - Limite de usuários ativos por contratante (`limiteUsuarios` obrigatório na criação, editável; `usuariosAtivos` na resposta). Criar e reativar exigem vaga (422); inativar libera; limite abaixo do uso só trava criar e reativar.
+  - 101 testes verdes (23 de arquitetura).
+  - **Para o login funcionar no dev:** preencher `MAIL_USUARIO`, `MAIL_SENHA_APP` e `MAIL_REMETENTE_NOME` no `ero-api/.env` (passo a passo no `.env.example`). Sem isso o login responde 503.
 - **Fatia 1 do front definitivo** (branch `timeero/front-fatia-1`):
   - ero-api: aparência por contratante (migration 008: tema, destaque, fundo, vidro, foco, animações, cena exclusiva), `GET /api/tenants/fundos` e `PUT /api/tenants/{id}/configuracao` (superadmin), logs com filtros e retenção de 12 meses, `PATCH /api/sessoes/encerrar-outras`, status do 2FA no `/eu`. Regra inviolável: entidade nunca sai da API (ArchUnit). 92 testes verdes.
   - `ero-web/`: base do front definitivo (Vite, React 19, React Router 7, TanStack Query), tokens e componentes glass com contraste AA nos dois temas, `AparenciaProvider` (sistema → contratante → prévia), cenas com shader, fundos vivos, troca de tema em vídeo ligada à aparência e coreografia de montar e desmontar em blocos (`motion/coreografia`). Catálogo e demonstração em `/design-system` (só dev).
@@ -132,7 +137,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 2. **Fechar a identidade:** nome, cor de destaque oficial, logotipo. Atualizar `tokens.css` e a direção visual.
 3. **Conferir o que ficou sem verificar:** as telas da seção 4, o celular, e uma revisão com o agente `revisor-ui`.
 4. ~~Começar o backend~~ **Feito** (fundação, segurança, login, usuários e permissões).
-5. ~~Base do front definitivo~~ **Feito na fatia 1.** **Fatia 2:** as telas do `PLANO-FATIA-2.md` (login com 2FA e sessão em memória, casca com menu por permissão, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta), mais as pendências da seção 5 desse arquivo. Começar com `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
+5. ~~Base do front definitivo~~ **Feito na fatia 1.** **Fatia 2:** as telas do `PLANO-FATIA-2.md` (login com código por e-mail e sessão em memória, casca com menu por permissão, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta), mais as pendências da seção 5 desse arquivo. Começar com `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
 6. **Definir as regras do papel ADMIN** (hoje recebe tudo do contratante; ver `docs/04-permissoes.md`).
 7. **Primeiros módulos de negócio pelo `/timeero`:** cadastro de pessoas/clientes, empresas/filiais, produtos, funil de negócios e agenda.
 8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup.

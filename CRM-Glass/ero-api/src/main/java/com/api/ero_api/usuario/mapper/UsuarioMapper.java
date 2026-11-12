@@ -24,7 +24,6 @@ public final class UsuarioMapper {
                 u.getPapel(),
                 u.isAtivo(),
                 u.isExigirTrocaSenha(),
-                u.isTotpAtivo(),
                 u.getUltimoLoginEm(),
                 u.getBloqueadoAte(),
                 u.getCreatedAt(),

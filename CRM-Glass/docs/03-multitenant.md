@@ -27,9 +27,9 @@ tenant como parâmetro.
 
 Só onde ainda não se sabe o tenant, ou onde a plataforma age sobre um contratante:
 
-- **Login, 2FA, refresh e logout** (`AuthService`): o e-mail ou o cookie ainda não dizem o tenant.
+- **Login, código por e-mail (verificar e reenviar), refresh e logout** (`AuthService`, `CodigoVerificacaoService`): o e-mail, o desafio ou o cookie ainda não dizem o tenant. O código é buscado só pelo `jti` do desafio assinado. A limpeza diária dos códigos vencidos ou usados (`CodigoVerificacaoService.limparVencidos`) também roda em ROOT, porque a tabela é de contratante.
 - **Montar o usuário da requisição** (`AutorizacaoService`): sempre pelo id do token assinado.
-- **Operações do próprio usuário** (trocar senha, 2FA): funcionam até para o superadmin dentro de um contratante.
+- **Operações do próprio usuário** (trocar senha): funcionam até para o superadmin dentro de um contratante.
 - **Seed do superadmin.**
 - **Superadmin na visão de plataforma** (token com tenant ROOT): cria e altera contratantes e o primeiro admin, com `atribuirTenant` explícito.
 
@@ -70,13 +70,38 @@ Onde a aparência aparece:
 
 | Rota | Quem | Entrada / saída |
 |---|---|---|
-| `GET /api/auth/eu` e o `usuario` de login, 2FA, refresh, `superadmin/acessar` e `superadmin/sair` | logado (até com pendência) | `UsuarioLogadoDto.aparencia` = aparência do contratante **em que está atuando** (Plataforma usa o padrão). Também traz `doisFatoresAtivo` e `doisFatoresObrigatorio`. |
-| `GET /api/tenants/atual` | `ACESSO_LIBERADO` | `{ id, nome, exige2fa, aparencia }` |
-| `GET /api/tenants`, `GET /api/tenants/{id}` | `hasRole('SUPERADMIN')` | `TenantResponseDto` com `aparencia` e `fundoExclusivo` |
-| `POST /api/tenants` | `hasRole('SUPERADMIN')` | `aparencia` opcional (ausente = padrão) |
-| `PUT /api/tenants/{id}` | `hasRole('SUPERADMIN')` | só cadastrais: `{ nome, documento, email, exige2fa, version }` |
+| `GET /api/auth/eu` e o `usuario` de login, 2FA, refresh, `superadmin/acessar` e `superadmin/sair` | logado (até com pendência) | `UsuarioLogadoDto.aparencia` = aparência do contratante **em que está atuando** (Plataforma usa o padrão). |
+| `GET /api/tenants/atual` | `ACESSO_LIBERADO` | `{ id, nome, aparencia }` |
+| `GET /api/tenants`, `GET /api/tenants/{id}` | `hasRole('SUPERADMIN')`, na visão de plataforma (422 dentro de contratante) | `TenantResponseDto` com `aparencia`, `fundoExclusivo`, `limiteUsuarios` e `usuariosAtivos` |
+| `POST /api/tenants` | `hasRole('SUPERADMIN')` | `limiteUsuarios` obrigatório (1 a 10000); `aparencia` opcional (ausente = padrão) |
+| `PUT /api/tenants/{id}` | `hasRole('SUPERADMIN')` | só cadastrais: `{ nome, documento, email, limiteUsuarios, version }` |
 | `PUT /api/tenants/{id}/configuracao` | `hasRole('SUPERADMIN')`, na visão de plataforma | `{ aparencia, fundoExclusivo, version }` → `TenantResponseDto`. 400 com `erros[].campo` = `aparencia.vidroDesfoque` etc.; 409 versão antiga ou cena exclusiva de outro; 422 superadmin dentro de contratante, cena comum como exclusiva ou fundo exclusivo que não é o dele; 404 para a Plataforma. |
 | `GET /api/tenants/fundos?tenantId=` | `hasRole('SUPERADMIN')` | `[{ codigo, rotulo, tipo, exclusiva }]`: comuns + exclusivas livres + a exclusiva do próprio `tenantId` |
+
+## Limite de usuários por contratante
+
+`tenant.limite_usuarios` é definido pelo superadmin na contratação (obrigatório, 1 a
+10000, editável no `PUT /api/tenants/{id}`). A Plataforma tem limite nulo (sem limite) e é a
+única: o banco recusa nulo em outro contratante (`ck_tenant_limite_usuarios_obrigatorio`).
+Na migration 009, os contratantes que já existiam receberam o maior entre 5 e os ativos deles.
+
+- Só usuários **ativos** contam; o administrador inicial conta; o superadmin nunca conta.
+  Limite 5 = administrador inicial + 4.
+- Criar (`POST /api/usuarios`) e reativar (`PATCH /api/usuarios/{id}/ativar` de um inativo)
+  exigem vaga. Sem vaga: **422** `"Este contratante já usa X de N usuários. Fale com o suporte para ampliar."`
+  Vale também para o superadmin atuando dentro do contratante.
+- Inativar libera a vaga, sem checagem.
+- Baixar o limite abaixo do uso é aceito ("5 de 3"): ninguém é desligado, só criar e
+  reativar ficam travados. O evento `TENANT_ALTERADO` guarda `limite de usuários 5 -> 3`.
+- Concorrência: o `UsuarioService` trava a linha do contratante
+  (`LimiteUsuariosService.travarELerLimite`, `SELECT ... FOR UPDATE`) antes de contar
+  (`UsuarioRepository.contarAtivos`, filtro automático de tenant). Dois cadastros ao
+  mesmo tempo não ocupam a mesma última vaga. Reativar trava antes a linha do usuário: no
+  duplo clique em "Ativar", o segundo pedido já o lê ativo e responde 204 sem pedir vaga.
+- `TenantResponseDto.usuariosAtivos` vem de uma contagem agrupada por contratante
+  (`contarAtivosPorTenant`, JPQL). Por isso lista e ficha de contratantes só respondem na
+  visão de plataforma: dentro de um contratante o filtro automático só deixaria contar o
+  dele, e os outros viriam com 0.
 
 ## Trilha de segurança (tela Logs)
 

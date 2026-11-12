@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
-@TestPropertySource(properties = "app.rate-limit.login=3")
+@TestPropertySource(properties = {"app.rate-limit.login=3", "app.rate-limit.dois-fatores=3"})
 class RateLimitIntegracaoTest extends IntegracaoTest {
 
     @Test
@@ -19,5 +19,16 @@ class RateLimitIntegracaoTest extends IntegracaoTest {
         assertThat(status(r)).isEqualTo(429);
         assertThat(r.getResponse().getHeader("Retry-After")).isNotBlank();
         assertThat(corpo(r).path("codigo").asString()).isEqualTo("MUITAS_REQUISICOES");
+    }
+
+    @Test
+    void verificarEReenviarCodigoDividemOMesmoBalde() {
+        assertThat(status(verificarCodigo("desafio.invalido.x", "123456"))).isEqualTo(401);
+        assertThat(status(reenviarCodigo("desafio.invalido.x"))).isEqualTo(422);
+        assertThat(status(verificarCodigo("desafio.invalido.x", "123456"))).isEqualTo(401);
+
+        MvcTestResult r = reenviarCodigo("desafio.invalido.x");
+        assertThat(status(r)).isEqualTo(429);
+        assertThat(r.getResponse().getHeader("Retry-After")).isNotBlank();
     }
 }

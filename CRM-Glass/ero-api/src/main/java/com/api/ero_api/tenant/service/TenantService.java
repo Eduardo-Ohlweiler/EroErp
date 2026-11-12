@@ -27,11 +27,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -39,7 +41,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Contratantes. Tudo aqui é da plataforma (superadmin), exceto {@link #atual()}.
- * As escritas exigem o superadmin na visão de plataforma (fora de um contratante).
+ * As escritas, a lista e a ficha exigem o superadmin na visão de plataforma (fora
+ * de um contratante), porque trazem a contagem de usuários ativos de cada um.
  */
 @Service
 public class TenantService {
@@ -61,15 +64,22 @@ public class TenantService {
         this.eventos = eventos;
     }
 
+    /**
+     * Só na visão de plataforma: dentro de um contratante o filtro automático deixaria
+     * contar só os usuários dele, e os outros viriam com {@code usuariosAtivos} 0.
+     */
     @Transactional(readOnly = true)
     public PaginaDto<TenantResponseDto> listar(String busca, Boolean ativo, Pageable pageable) {
+        exigirVisaoPlataforma();
         Pageable pagina = PaginacaoUtils.validar(pageable, ORDENAVEIS, Sort.by("nome"));
         String termo = busca == null || busca.isBlank() ? null : busca.trim();
         // Documento é gravado sem máscara: "12.345.678/0001-90" precisa achar "12345678000190".
         String normalizado = DocumentoValidator.normalizar(termo);
         String digitos = normalizado == null || normalizado.isEmpty() ? null : normalizado;
-        return PaginaDto.de(repository.buscarComFiltros(TenantContext.ROOT, termo, digitos, ativo, pagina),
-                TenantMapper::toResponseDto);
+        Page<Tenant> encontrados = repository.buscarComFiltros(TenantContext.ROOT, termo, digitos, ativo, pagina);
+        Map<UUID, Long> ativos = usuarioService.contarAtivosPorContratante(
+                encontrados.getContent().stream().map(Tenant::getId).toList());
+        return PaginaDto.de(encontrados, t -> TenantMapper.toResponseDto(t, ativos.getOrDefault(t.getId(), 0L)));
     }
 
     @Transactional(readOnly = true)
@@ -77,9 +87,11 @@ public class TenantService {
         return repository.buscarParaSelecao(TenantContext.ROOT).stream().map(TenantMapper::toSelectDto).toList();
     }
 
+    /** Só na visão de plataforma, pelo mesmo motivo de {@link #listar}. */
     @Transactional(readOnly = true)
     public TenantResponseDto buscarPorId(UUID id) {
-        return TenantMapper.toResponseDto(buscarEntidade(id));
+        exigirVisaoPlataforma();
+        return toResponseDto(buscarEntidade(id));
     }
 
     /** Para outros services (login, autorização). Inclui a Plataforma. */
@@ -134,7 +146,7 @@ public class TenantService {
                 dto.administrador().senha());
         // usuarioId = afetado (nenhum); quem fez fica em created_by do evento.
         eventos.registrar(TipoEventoSeguranca.TENANT_CRIADO, null, t.getId(), t.getNome());
-        return TenantMapper.toResponseDto(t);
+        return toResponseDto(t);
     }
 
     /** Só os dados cadastrais. A aparência muda em {@link #configurar}. */
@@ -145,11 +157,15 @@ public class TenantService {
         exigirVersao(t, dto.version());
         String documento = DocumentoValidator.normalizar(dto.documento());
         validarDocumento(documento, t.getId());
+        Integer limiteAnterior = t.getLimiteUsuarios();
         TenantMapper.atualizarEntidade(t, dto);
         repository.saveAndFlush(t);
         cache.invalidarTudo();
-        eventos.registrar(TipoEventoSeguranca.TENANT_ALTERADO, null, t.getId(), null);
-        return TenantMapper.toResponseDto(t);
+        // Limite abaixo do uso atual é aceito: ninguém é desligado, só criar e reativar ficam travados.
+        eventos.registrar(TipoEventoSeguranca.TENANT_ALTERADO, null, t.getId(),
+                Objects.equals(limiteAnterior, t.getLimiteUsuarios()) ? null
+                        : "limite de usuários " + limiteAnterior + " -> " + t.getLimiteUsuarios());
+        return toResponseDto(t);
     }
 
     /**
@@ -176,7 +192,7 @@ public class TenantService {
             throw e;
         }
         eventos.registrar(TipoEventoSeguranca.TENANT_ALTERADO, null, t.getId(), "configuração");
-        return TenantMapper.toResponseDto(t);
+        return toResponseDto(t);
     }
 
     @Transactional
@@ -242,6 +258,12 @@ public class TenantService {
             }
         }
         return false;
+    }
+
+    /** Resposta com a contagem de usuários ativos (o limite aparece ao lado do uso). */
+    private TenantResponseDto toResponseDto(Tenant t) {
+        long ativos = usuarioService.contarAtivosPorContratante(List.of(t.getId())).getOrDefault(t.getId(), 0L);
+        return TenantMapper.toResponseDto(t, ativos);
     }
 
     private static void exigirVersao(Tenant t, Long versaoVista) {

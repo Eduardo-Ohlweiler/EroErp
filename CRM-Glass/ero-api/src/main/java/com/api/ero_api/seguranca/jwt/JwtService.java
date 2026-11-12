@@ -28,8 +28,8 @@ import org.springframework.stereotype.Service;
  * <ul>
  *   <li>{@code acesso}: 15 min, vai no header Authorization. Claims: sub (usuário),
  *       tid (tenant de atuação), sid (sessão).</li>
- *   <li>{@code desafio-2fa}: 5 min, só serve para trocar senha correta + código
- *       2FA por uma sessão.</li>
+ *   <li>{@code desafio-2fa}: 10 min, só serve para trocar senha correta + código
+ *       enviado por e-mail por uma sessão. O {@code jti} é o do código (uso único).</li>
  * </ul>
  * O token não carrega permissões: elas são lidas do banco a cada requisição.
  */
@@ -75,15 +75,18 @@ public class JwtService {
         return new TokenEmitido(codificar(claims), expira);
     }
 
-    public TokenEmitido emitirDesafio2fa(UUID usuarioId) {
+    /**
+     * Desafio da segunda etapa do login. O {@code jti} aponta para a linha do código
+     * enviado por e-mail e a validade é a mesma do código (contada do 1º envio).
+     */
+    public TokenEmitido emitirDesafio2fa(UUID usuarioId, UUID jti, Instant expira) {
         Instant agora = Instant.now();
-        Instant expira = agora.plus(props.desafio2fa());
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(EMISSOR)
                 .subject(usuarioId.toString())
                 .issuedAt(agora)
                 .expiresAt(expira)
-                .id(UUID.randomUUID().toString())
+                .id(jti.toString())
                 .claim(CLAIM_TIPO, TIPO_DESAFIO)
                 .build();
         return new TokenEmitido(codificar(claims), expira);

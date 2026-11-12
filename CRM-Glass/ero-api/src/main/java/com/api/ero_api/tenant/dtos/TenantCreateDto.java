@@ -3,6 +3,8 @@ package com.api.ero_api.tenant.dtos;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -25,9 +27,11 @@ public record TenantCreateDto(
         @Size(max = 255, message = "E-mail deve ter no máximo 255 caracteres")
         String email,
 
-        @Schema(description = "Exigir verificação em duas etapas de todos os usuários")
-        @NotNull(message = "Informe se exige verificação em duas etapas")
-        Boolean exige2fa,
+        @Schema(description = "Quantos usuários ativos o contratante pode ter (o administrador inicial conta)", example = "5")
+        @NotNull(message = "Limite de usuários é obrigatório")
+        @Min(value = 1, message = "Limite de usuários deve ser pelo menos 1")
+        @Max(value = 10000, message = "Limite de usuários deve ser no máximo 10000")
+        Integer limiteUsuarios,
 
         @Schema(description = "Aparência inicial (vazio = padrão do sistema)")
         @Valid

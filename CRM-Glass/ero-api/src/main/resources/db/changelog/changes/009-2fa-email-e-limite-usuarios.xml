@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="009-2fa-email-e-limite-usuarios" author="eduardo">
+        <comment>
+            A verificação em duas etapas passa a ser só por código enviado por e-mail, para todos os usuários.
+            Sai o TOTP (segredo, passo e códigos de recuperação) e o "exige 2FA" do contratante.
+            O código fica cifrado (AES-GCM, CriptoConverter) e não em hash porque o "reenviar" manda o mesmo código.
+            Entra o limite de usuários ativos por contratante (1 a 10000; nulo = sem limite, só a Plataforma).
+        </comment>
+        <createTable tableName="codigo_verificacao">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_codigo_verificacao"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_codigo_verificacao_tenant" references="tenant(id)"/>
+            </column>
+            <column name="usuario_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_codigo_verificacao_usuario" references="usuario(id)"/>
+            </column>
+            <!-- jti do desafio JWT: liga o token que o front guarda a esta linha. -->
+            <column name="desafio_jti" type="UUID"><constraints nullable="false"/></column>
+            <column name="codigo" type="VARCHAR(100)"><constraints nullable="false"/></column>
+            <column name="expira_em" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="ultimo_envio_em" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="envios" type="INTEGER" defaultValueNumeric="1"><constraints nullable="false"/></column>
+            <column name="usado_em" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="codigo_verificacao" indexName="uk_codigo_verificacao_desafio_jti" unique="true">
+            <column name="desafio_jti"/>
+        </createIndex>
+        <createIndex tableName="codigo_verificacao" indexName="ix_codigo_verificacao_usuario">
+            <column name="usuario_id"/>
+        </createIndex>
+        <sql>ALTER TABLE codigo_verificacao ADD CONSTRAINT ck_codigo_verificacao_envios CHECK (envios >= 1)</sql>
+
+        <addColumn tableName="tenant">
+            <column name="limite_usuarios" type="INTEGER"/>
+        </addColumn>
+        <!--
+            Contratantes que já existem: limite = usuários ativos (sem o superadmin), no mínimo 5.
+            Ninguém fica acima do limite por causa da migration. Nulo ("sem limite") só na Plataforma.
+        -->
+        <sql>
+            UPDATE tenant t
+            SET limite_usuarios = LEAST(10000, GREATEST(5, (
+                SELECT COUNT(*) FROM usuario u
+                WHERE u.tenant_id = t.id AND u.ativo AND u.papel &lt;&gt; 'SUPERADMIN')))
+            WHERE t.id &lt;&gt; '00000000-0000-0000-0000-000000000000'
+        </sql>
+        <sql>ALTER TABLE tenant ADD CONSTRAINT ck_tenant_limite_usuarios CHECK (limite_usuarios > 0 AND limite_usuarios &lt;= 10000)</sql>
+        <sql>
+            ALTER TABLE tenant ADD CONSTRAINT ck_tenant_limite_usuarios_obrigatorio
+            CHECK (limite_usuarios IS NOT NULL OR id = '00000000-0000-0000-0000-000000000000')
+        </sql>
+
+        <dropColumn tableName="usuario" columnName="totp_segredo"/>
+        <dropColumn tableName="usuario" columnName="totp_ativo"/>
+        <dropColumn tableName="usuario" columnName="totp_ultimo_passo"/>
+        <dropTable tableName="codigo_recuperacao"/>
+        <dropColumn tableName="tenant" columnName="exige_2fa"/>
+
+        <!--
+            Valores de enum que deixaram de existir com o TOTP. Nunca houve produção com eles;
+            isto só evita que um banco de dev/QA antigo quebre ao ler a trilha ou as sessões.
+        -->
+        <sql>DELETE FROM evento_seguranca WHERE tipo IN ('DOIS_FATORES_ATIVADO', 'DOIS_FATORES_DESATIVADO', 'DOIS_FATORES_REDEFINIDO', 'CODIGO_RECUPERACAO_USADO')</sql>
+        <sql>UPDATE sessao_usuario SET motivo_revogacao = 'ENCERRADA_PELO_USUARIO' WHERE motivo_revogacao = 'DOIS_FATORES_ALTERADO'</sql>
+    </changeSet>
+
+</databaseChangeLog>

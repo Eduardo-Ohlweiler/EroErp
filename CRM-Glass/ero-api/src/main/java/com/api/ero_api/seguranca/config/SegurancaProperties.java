@@ -16,15 +16,16 @@ import org.springframework.validation.annotation.Validated;
  * @param criptoChave       chave AES-256 dos campos cifrados, base64, 32 bytes (APP_CRIPTO_CHAVE)
  * @param tokenAcesso       vida do token de acesso
  * @param sessao            vida máxima da sessão (refresh) sem novo login
- * @param desafio2fa        tempo para digitar o código 2FA depois da senha
+ * @param desafio2fa        validade do código enviado por e-mail (e do desafio), contada do 1º envio
  * @param cookieSeguro      cookie de refresh só em HTTPS (desligar só em dev)
  * @param csp               Content-Security-Policy devolvida pela API
  * @param corsOrigens       origens do front que podem chamar a API
- * @param loginMaxTentativas erros de senha seguidos antes de bloquear a conta
+ * @param loginMaxTentativas erros de senha ou de código seguidos antes de bloquear a conta
  * @param loginBloqueio     quanto tempo a conta fica bloqueada
  * @param refreshTolerancia reuso de refresh dentro deste tempo é tratado como
  *                          corrida entre abas (recusa sem derrubar a sessão)
- * @param superadminExige2fa superadmin só usa o sistema com 2FA ligado (desligue só em dev/teste)
+ * @param codigoReenvioIntervalo tempo mínimo entre dois envios do mesmo código
+ * @param codigoMaxEnvios   envios do mesmo código (o 1º + reenvios) antes de exigir login de novo
  */
 @Validated
 @ConfigurationProperties("app.seguranca")
@@ -33,12 +34,13 @@ public record SegurancaProperties(
         @NotBlank String criptoChave,
         @DefaultValue("15m") Duration tokenAcesso,
         @DefaultValue("7d") Duration sessao,
-        @DefaultValue("5m") Duration desafio2fa,
+        @DefaultValue("10m") Duration desafio2fa,
         @DefaultValue("true") boolean cookieSeguro,
         @DefaultValue("default-src 'none'; frame-ancestors 'none'") String csp,
         @DefaultValue List<String> corsOrigens,
         @DefaultValue("5") @Min(1) int loginMaxTentativas,
         @DefaultValue("15m") Duration loginBloqueio,
         @DefaultValue("10s") Duration refreshTolerancia,
-        @DefaultValue("true") boolean superadminExige2fa) {
+        @DefaultValue("60s") Duration codigoReenvioIntervalo,
+        @DefaultValue("5") @Min(1) int codigoMaxEnvios) {
 }

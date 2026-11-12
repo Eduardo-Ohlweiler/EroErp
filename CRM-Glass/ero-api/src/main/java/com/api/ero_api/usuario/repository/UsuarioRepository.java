@@ -65,6 +65,32 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
             """)
     boolean existeSuperadmin();
 
+    /**
+     * Usuários ativos do contratante atual (filtro automático de tenant), para o
+     * limite de usuários. O superadmin nunca conta.
+     */
+    @Query("""
+            SELECT COUNT(u) FROM Usuario u
+            WHERE u.ativo = true
+              AND u.papel <> com.api.ero_api.usuario.enums.Papel.SUPERADMIN
+            """)
+    long contarAtivos();
+
+    /**
+     * Usuários ativos de vários contratantes numa consulta só (tela de contratantes
+     * do superadmin, visão de plataforma). Linhas {@code [tenantId, quantidade]}.
+     * Continua JPQL: fora do contexto ROOT o filtro automático só deixa contar o
+     * próprio contratante.
+     */
+    @Query("""
+            SELECT u.tenantId, COUNT(u) FROM Usuario u
+            WHERE u.tenantId IN :tenantIds
+              AND u.ativo = true
+              AND u.papel <> com.api.ero_api.usuario.enums.Papel.SUPERADMIN
+            GROUP BY u.tenantId
+            """)
+    List<Object[]> contarAtivosPorTenant(@Param("tenantIds") Collection<UUID> tenantIds);
+
     // ------------------------------------------------------------ login (contexto ROOT)
 
     /**
@@ -110,14 +136,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
             WHERE u.id = :id
             """)
     int regravarHashSenha(@Param("id") UUID id, @Param("hash") String hash);
-
-    @Modifying
-    @Query("""
-            UPDATE Usuario u
-            SET u.totpUltimoPasso = :passo
-            WHERE u.id = :id
-            """)
-    int registrarPassoTotp(@Param("id") UUID id, @Param("passo") long passo);
 
     /**
      * Registra que algo do usuário mudou fora da tabela dele (ex.: permissões):

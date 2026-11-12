@@ -6,6 +6,8 @@
 >
 > A seção 1 (backend) fica como referência do contrato já implementado. Para a API de movimento que as telas usam (`Tela`, `Bloco`, `RotaAnimada`, `TrocaDeArea`, `TrocaEtapa`, `coreografias`, `trocarTema`), veja `ero-web/src/motion/` e o modelo completo em `ero-web/src/design-system/catalogo/DemoMovimento.tsx`. Os componentes estão no catálogo `/design-system` (só em dev).
 > Para começar: `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
+>
+> **Mudança de 11/11/2026 — o 2FA virou código por e-mail.** Tudo o que este plano fala de app autenticador (TOTP), QR code, códigos de recuperação, `AssistenteDoisFatores`, `CodigosRecuperacao`, pendência `CONFIGURAR_2FA`, "Exigir 2FA" no contratante (`exige2fa`), `doisFatoresAtivo`/`doisFatoresObrigatorio` no `/eu`, a aba "Verificação em duas etapas" da Minha conta e o "Redefinir 2FA" do usuário **foi removido**. Agora todo login (todos os usuários, sempre) pede um código de 6 dígitos enviado por e-mail: vale 10 min, uso único, "Reenviar" manda o mesmo código (60 s entre envios, no máximo 5). Rota nova `POST /api/auth/2fa/reenviar {desafio}`. O contratante ganhou `limiteUsuarios` (obrigatório na criação) e a resposta traz `usuariosAtivos`. Contrato atualizado em `docs/02`, `docs/03` e `docs/04`; o plano desta mudança está em `.claude/plans/silly-skipping-dolphin.md` (pasta do usuário).
 
 Projeto: `CRM-Glass/` (repo git na pasta pai EroErp).
 Escopo: login, casca do app, Minha conta e módulo administrativo (Logs, Contratantes, Usuários, Configuração do contratante). As telas de negócio do protótipo (dashboard de vendas, funil, negociações, agenda, cadastros de pessoas/produtos) ficam FORA.

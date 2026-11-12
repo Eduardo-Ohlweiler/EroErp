@@ -3,6 +3,7 @@ package com.api.ero_api.tenant.repository;
 import com.api.ero_api.tenant.dtos.TenantSelectDto;
 import com.api.ero_api.tenant.entity.Tenant;
 import com.api.ero_api.tenant.enums.Fundo;
+import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -21,6 +23,14 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
             WHERE t.id = :id
             """)
     Optional<Tenant> buscarPorId(@Param("id") UUID id);
+
+    /** Trava a linha do contratante (limite de usuários: a última vaga não é ocupada duas vezes). */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT t FROM Tenant t
+            WHERE t.id = :id
+            """)
+    Optional<Tenant> buscarPorIdComBloqueio(@Param("id") UUID id);
 
     @Query("""
             SELECT t FROM Tenant t

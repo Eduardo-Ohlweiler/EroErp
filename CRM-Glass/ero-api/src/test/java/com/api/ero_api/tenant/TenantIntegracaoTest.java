@@ -43,6 +43,33 @@ class TenantIntegracaoTest extends IntegracaoTest {
         assertThat(corpo(sair).path("usuario").path("superadminAtuando").asBoolean()).isFalse();
     }
 
+    /**
+     * Lista e ficha trazem os usuários ativos de cada contratante. Dentro de um
+     * contratante o filtro automático só deixaria contar os dele (os outros viriam com
+     * 0), então essas leituras são da visão de plataforma, como as escritas.
+     */
+    @Test
+    void listaEFichaSoNaVisaoDePlataformaComOsAtivosDeCadaUm() {
+        Contratante x = novoContratante();
+        Contratante y = novoContratante();
+        novoUsuario(y.admin());
+        Sessao s = loginSuperadmin();
+        String nomeY = corpo(get("/api/tenants/" + y.id(), s.token())).path("nome").asString();
+
+        String dentroDeX = corpo(post("/api/auth/superadmin/acessar/" + x.id(), s.token(), Map.of()))
+                .path("tokenAcesso").asString();
+        MvcTestResult lista = get("/api/tenants?busca=" + nomeY, dentroDeX);
+        assertThat(status(lista)).isEqualTo(422);
+        assertThat(corpo(lista).path("detail").asString()).isEqualTo("Saia do contratante para gerenciar contratantes.");
+        assertThat(status(get("/api/tenants/" + y.id(), dentroDeX))).isEqualTo(422);
+        assertThat(status(get("/api/tenants/" + x.id(), dentroDeX))).as("nem o próprio").isEqualTo(422);
+
+        String naPlataforma = corpo(post("/api/auth/superadmin/sair", dentroDeX, Map.of())).path("tokenAcesso").asString();
+        JsonNode naLista = corpo(get("/api/tenants?busca=" + nomeY, naPlataforma)).path("conteudo").get(0);
+        assertThat(naLista.path("usuariosAtivos").asLong()).as("admin inicial + 1").isEqualTo(2);
+        assertThat(corpo(get("/api/tenants/" + y.id(), naPlataforma)).path("usuariosAtivos").asLong()).isEqualTo(2);
+    }
+
     @Test
     void contratanteInativoNaoEntra() {
         Contratante c = novoContratante();
@@ -54,18 +81,28 @@ class TenantIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
-    void contratanteQueExige2faBloqueiaAteConfigurar() {
+    void limiteDeUsuariosVemNaRespostaComOsAtivosEOAdminInicialConta() {
+        Contratante c = novoContratante(3);
+        novoUsuario(c.admin());
         Sessao s = loginSuperadmin();
-        String adminEmail = unico("admin") + "@teste.local";
-        MvcTestResult r = post("/api/tenants", s.token(), Map.of(
-                "nome", unico("Seguro"), "exige2fa", true,
-                "administrador", Map.of("nome", "Rita Alves", "email", adminEmail, "senha", SENHA_FORTE)));
-        assertThat(status(r)).isEqualTo(201);
 
-        Sessao admin = loginTrocandoSenha(adminEmail, SENHA_FORTE, SENHA_FORTE_2);
-        JsonNode eu = corpo(get("/api/auth/eu", admin.token()));
-        assertThat(eu.path("pendencia").asString()).isEqualTo("CONFIGURAR_2FA");
-        assertThat(status(get("/api/usuarios", admin.token()))).isEqualTo(403);
+        JsonNode t = corpo(get("/api/tenants/" + c.id(), s.token()));
+        assertThat(t.path("limiteUsuarios").asInt()).isEqualTo(3);
+        assertThat(t.path("usuariosAtivos").asLong()).as("admin inicial + 1, sem o superadmin").isEqualTo(2);
+        assertThat(t.has("exige2fa")).isFalse();
+
+        JsonNode naLista = corpo(get("/api/tenants?busca=" + t.path("nome").asString(), s.token())).path("conteudo").get(0);
+        assertThat(naLista.path("usuariosAtivos").asLong()).isEqualTo(2);
+        assertThat(naLista.path("limiteUsuarios").asInt()).isEqualTo(3);
+
+        // O superadmin muda o limite; o evento guarda de quanto para quanto.
+        MvcTestResult alterado = put("/api/tenants/" + c.id(), s.token(), Map.of(
+                "nome", t.path("nome").asString(), "limiteUsuarios", 10, "version", t.path("version").asLong()));
+        assertThat(status(alterado)).isEqualTo(200);
+        assertThat(corpo(alterado).path("limiteUsuarios").asInt()).isEqualTo(10);
+        JsonNode evento = corpo(get("/api/auditoria/eventos?tipos=TENANT_ALTERADO&tenantId=" + c.id(), s.token()))
+                .path("conteudo").get(0);
+        assertThat(evento.path("detalhe").asString()).isEqualTo("limite de usuários 3 -> 10");
     }
 
     @Test
@@ -74,10 +111,17 @@ class TenantIntegracaoTest extends IntegracaoTest {
         MvcTestResult r = post("/api/tenants", s.token(), Map.of("nome", "", "aparencia", Map.of("corDestaque", "roxo-neon")));
         assertThat(status(r)).isEqualTo(400);
         assertThat(corpo(r).path("erros").valueStream().map(e -> e.path("campo").asString()))
-                .contains("nome", "aparencia.corDestaque", "aparencia.temaPadrao", "exige2fa", "administrador");
+                .contains("nome", "aparencia.corDestaque", "aparencia.temaPadrao", "limiteUsuarios", "administrador");
+
+        MvcTestResult limiteZero = post("/api/tenants", s.token(), Map.of(
+                "nome", unico("Empresa"), "limiteUsuarios", 0,
+                "administrador", Map.of("nome", "Rita Alves", "email", unico("a") + "@teste.local", "senha", SENHA_FORTE)));
+        assertThat(status(limiteZero)).isEqualTo(400);
+        assertThat(corpo(limiteZero).path("erros").get(0).path("mensagem").asString())
+                .isEqualTo("Limite de usuários deve ser pelo menos 1");
 
         MvcTestResult cnpjInvalido = post("/api/tenants", s.token(), Map.of(
-                "nome", unico("Empresa"), "documento", "12.345.678/0001-00", "exige2fa", false,
+                "nome", unico("Empresa"), "documento", "12.345.678/0001-00", "limiteUsuarios", LIMITE_PADRAO,
                 "administrador", Map.of("nome", "Rita Alves", "email", unico("a") + "@teste.local", "senha", SENHA_FORTE)));
         assertThat(status(cnpjInvalido)).isEqualTo(422);
     }
@@ -89,14 +133,14 @@ class TenantIntegracaoTest extends IntegracaoTest {
         String mascarado = cnpj.substring(0, 2) + "." + cnpj.substring(2, 5) + "." + cnpj.substring(5, 8) + "/"
                 + cnpj.substring(8, 12) + "-" + cnpj.substring(12);
         MvcTestResult criado = post("/api/tenants", s.token(), Map.of(
-                "nome", unico("Empresa"), "documento", mascarado, "exige2fa", false,
+                "nome", unico("Empresa"), "documento", mascarado, "limiteUsuarios", LIMITE_PADRAO,
                 "administrador", Map.of("nome", "Rita Alves", "email", unico("a") + "@teste.local", "senha", SENHA_FORTE)));
         assertThat(status(criado)).isEqualTo(201);
         JsonNode t = corpo(criado);
         assertThat(t.path("documento").asString()).isEqualTo(cnpj);
 
         MvcTestResult duplicado = post("/api/tenants", s.token(), Map.of(
-                "nome", unico("Outra"), "documento", cnpj, "exige2fa", false,
+                "nome", unico("Outra"), "documento", cnpj, "limiteUsuarios", LIMITE_PADRAO,
                 "administrador", Map.of("nome", "Rita Alves", "email", unico("a") + "@teste.local", "senha", SENHA_FORTE)));
         assertThat(status(duplicado)).isEqualTo(409);
 
@@ -105,7 +149,7 @@ class TenantIntegracaoTest extends IntegracaoTest {
 
         String id = t.path("id").asString();
         long versao = t.path("version").asLong();
-        Map<String, Object> edicao = Map.of("nome", "Nome Novo", "documento", cnpj, "exige2fa", false,
+        Map<String, Object> edicao = Map.of("nome", "Nome Novo", "documento", cnpj, "limiteUsuarios", LIMITE_PADRAO,
                 "version", versao);
         MvcTestResult alterado = put("/api/tenants/" + id, s.token(), edicao);
         assertThat(status(alterado)).isEqualTo(200);
@@ -118,13 +162,13 @@ class TenantIntegracaoTest extends IntegracaoTest {
         Sessao s = loginSuperadmin();
         // Exemplo do novo formato da Receita (12 posições alfanuméricas + 2 dígitos).
         MvcTestResult alfa = post("/api/tenants", s.token(), Map.of(
-                "nome", unico("Alfa"), "documento", "12.abc.345/01de-35", "exige2fa", false,
+                "nome", unico("Alfa"), "documento", "12.abc.345/01de-35", "limiteUsuarios", LIMITE_PADRAO,
                 "administrador", Map.of("nome", "Rita Alves", "email", unico("a") + "@teste.local", "senha", SENHA_FORTE)));
         assertThat(status(alfa)).isEqualTo(201);
         assertThat(corpo(alfa).path("documento").asString()).isEqualTo("12ABC34501DE35");
 
         MvcTestResult na = post("/api/tenants", s.token(), Map.of(
-                "nome", unico("Sem"), "documento", "N/A", "exige2fa", false,
+                "nome", unico("Sem"), "documento", "N/A", "limiteUsuarios", LIMITE_PADRAO,
                 "administrador", Map.of("nome", "Rita Alves", "email", unico("a") + "@teste.local", "senha", SENHA_FORTE)));
         assertThat(status(na)).isEqualTo(422);
     }

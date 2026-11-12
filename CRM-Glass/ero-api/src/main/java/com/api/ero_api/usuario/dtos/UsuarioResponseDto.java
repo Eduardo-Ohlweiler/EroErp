@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Usuário como a API devolve. Nunca expõe hash de senha nem segredo 2FA. */
+/** Usuário como a API devolve. Nunca expõe hash de senha nem código de verificação. */
 @Schema(description = "Usuário")
 public record UsuarioResponseDto(
         UUID id,
@@ -14,7 +14,6 @@ public record UsuarioResponseDto(
         Papel papel,
         boolean ativo,
         @Schema(description = "Precisa trocar a senha no próximo acesso") boolean exigirTrocaSenha,
-        @Schema(description = "Verificação em duas etapas ligada") boolean doisFatoresAtivo,
         Instant ultimoLoginEm,
         @Schema(description = "Conta bloqueada por excesso de tentativas até este instante (no passado = já liberou)") Instant bloqueadoAte,
         Instant createdAt,

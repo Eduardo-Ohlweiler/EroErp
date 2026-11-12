@@ -19,8 +19,6 @@ public record UsuarioLogadoDto(
         @Schema(description = "Aparência do contratante em que está atuando") AparenciaDto aparencia,
         @Schema(description = "Superadmin dentro de um contratante") boolean superadminAtuando,
         @Schema(description = "O que precisa resolver antes de usar o sistema") Pendencia pendencia,
-        @Schema(description = "Verificação em duas etapas ligada") boolean doisFatoresAtivo,
-        @Schema(description = "2FA exigido: não pode ser desligado") boolean doisFatoresObrigatorio,
         @Schema(description = "Authorities: USUARIOS_LER, USUARIOS_ESCREVER, ações...") List<String> permissoes,
         @Schema(description = "Telas liberadas (códigos do front)") List<String> telas) {
 }

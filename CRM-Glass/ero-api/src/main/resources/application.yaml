@@ -35,6 +35,23 @@ spring:
   threads:
     virtual:
       enabled: true
+  # E-mail (código do login). Padrão: Gmail com senha de app, STARTTLS obrigatório.
+  # Para outro servidor (ex.: Mailpit local sem TLS) troque pelas variáveis MAIL_* (ver .env.example).
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORTA:587}
+    username: ${MAIL_USUARIO:}
+    password: ${MAIL_SENHA_APP:}
+    default-encoding: UTF-8
+    properties:
+      "[mail.smtp.auth]": ${MAIL_SMTP_AUTH:true}
+      "[mail.smtp.starttls.enable]": ${MAIL_STARTTLS:true}
+      "[mail.smtp.starttls.required]": ${MAIL_STARTTLS:true}
+      "[mail.smtp.connectiontimeout]": 10000
+      "[mail.smtp.timeout]": 10000
+      "[mail.smtp.writetimeout]": 10000
+      # Message-ID com o domínio do remetente, e não com o IP interno da máquina.
+      "[mail.from]": ${app.email.remetente:}
 
 server:
   error:
@@ -59,6 +76,10 @@ management:
       show-details: never
       probes:
         enabled: true
+  health:
+    # O health não testa o SMTP: e-mail fora do ar não pode derrubar a API inteira.
+    mail:
+      enabled: false
 
 springdoc:
   api-docs:
@@ -67,12 +88,15 @@ springdoc:
     enabled: false
 
 app:
-  nome: CRM
   seguranca:
     jwt-segredo: ${APP_JWT_SEGREDO:}
     cripto-chave: ${APP_CRIPTO_CHAVE:}
     cors-origens: ${APP_CORS_ORIGENS:}
     cookie-seguro: true
+  email:
+    # Endereço do "De:". No Gmail precisa ser a própria conta (MAIL_USUARIO).
+    remetente: ${MAIL_REMETENTE:${MAIL_USUARIO:}}
+    remetente-nome: ${MAIL_REMETENTE_NOME:CRM Glass}
   superadmin:
     email: ${SUPERADMIN_EMAIL:}
     senha: ${SUPERADMIN_SENHA:}

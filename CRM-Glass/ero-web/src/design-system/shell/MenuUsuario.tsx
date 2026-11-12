@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentType, type KeyboardEvent } from 'react';
+import { useRef, useState, useSyncExternalStore, type ComponentType, type KeyboardEvent } from 'react';
 import * as RadixPopover from '@radix-ui/react-popover';
 import { AnimatePresence, motion } from 'motion/react';
 import { LogOut, UserRound } from 'lucide-react';
@@ -20,23 +20,43 @@ export type MenuUsuarioProps = {
   papel?: string;
   /** ex.: nome do contratante em que está */
   contexto?: string;
-  onMinhaConta: () => void;
+  /** sem ele, o item "Minha conta" não aparece (enquanto a tela não existe) */
+  onMinhaConta?: () => void;
   onSair: () => void;
   /** itens extras entre "Minha conta" e "Sair" */
   itens?: ItemMenuUsuario[];
-  /** lado do avatar em px (a Topbar usa 44) */
+  /**
+   * Lado do avatar em px. Sem ele, acompanha a Topbar: 36 abaixo de 640 px (cabe em 320 px junto com o
+   * contratante e a busca) e 44 a partir daí.
+   */
   tamanho?: number;
 };
+
+/** Mesmo corte do `sm:` do Tailwind (40rem). */
+const LARGO = '(min-width: 40rem)';
+const assinarLargura = (avisar: () => void) => {
+  const mq = window.matchMedia(LARGO);
+  mq.addEventListener('change', avisar);
+  return () => mq.removeEventListener('change', avisar);
+};
+const telaLarga = () => window.matchMedia(LARGO).matches;
+
+/** Avatar da barra: 36 px no celular, 44 px do `sm` para cima (lido na hora, sem pular no primeiro quadro). */
+function useTamanhoBarra() {
+  return useSyncExternalStore(assinarLargura, telaLarga, () => true) ? 44 : 36;
+}
 
 /**
  * Avatar da barra superior com menu (Minha conta, Sair).
  * Padrão menu-button: setas, Home/End, Esc devolve o foco ao avatar.
  */
-export function MenuUsuario({ nome, email, papel, contexto, onMinhaConta, onSair, itens = [], tamanho = 44 }: MenuUsuarioProps) {
+export function MenuUsuario({ nome, email, papel, contexto, onMinhaConta, onSair, itens = [], tamanho }: MenuUsuarioProps) {
   const [aberto, setAberto] = useState(false);
+  const tamanhoBarra = useTamanhoBarra();
+  const lado = tamanho ?? tamanhoBarra;
   const lista = useRef<HTMLDivElement>(null);
   const todos: ItemMenuUsuario[] = [
-    { rotulo: 'Minha conta', icone: UserRound, onSelecionar: onMinhaConta },
+    ...(onMinhaConta ? [{ rotulo: 'Minha conta', icone: UserRound, onSelecionar: onMinhaConta }] : []),
     ...itens,
     { rotulo: 'Sair', icone: LogOut, onSelecionar: onSair, perigo: true },
   ];
@@ -67,7 +87,7 @@ export function MenuUsuario({ nome, email, papel, contexto, onMinhaConta, onSair
         aria-label={`Menu de ${nome}`}
         className="rounded-full shrink-0 transition-transform hover:scale-[1.04]"
       >
-        <Avatar name={nome} size={tamanho} />
+        <Avatar name={nome} size={lado} />
       </RadixPopover.Trigger>
       <AnimatePresence>
         {aberto && (

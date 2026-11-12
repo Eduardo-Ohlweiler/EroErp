@@ -2,11 +2,11 @@ package com.api.ero_api.usuario.service;
 
 import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import com.api.ero_api.auditoria.service.EventoSegurancaService;
-import com.api.ero_api.auth.service.DoisFatoresLimpezaService;
 import com.api.ero_api.compartilhado.dtos.PaginaDto;
 import com.api.ero_api.compartilhado.exception.AcessoNegadoException;
 import com.api.ero_api.compartilhado.exception.ConflitoException;
 import com.api.ero_api.compartilhado.exception.NaoEncontradoException;
+import com.api.ero_api.compartilhado.exception.RegraNegocioException;
 import com.api.ero_api.compartilhado.util.PaginacaoUtils;
 import com.api.ero_api.permissao.service.CalculoPermissaoService;
 import com.api.ero_api.seguranca.SecurityUtils;
@@ -16,6 +16,7 @@ import com.api.ero_api.seguranca.senha.SenhaService;
 import com.api.ero_api.seguranca.tenant.TenantContext;
 import com.api.ero_api.sessao.enums.MotivoRevogacao;
 import com.api.ero_api.sessao.service.SessaoService;
+import com.api.ero_api.tenant.service.LimiteUsuariosService;
 import com.api.ero_api.usuario.dtos.UsuarioCreateDto;
 import com.api.ero_api.usuario.dtos.UsuarioRedefinirSenhaDto;
 import com.api.ero_api.usuario.dtos.UsuarioResponseDto;
@@ -60,19 +61,19 @@ public class UsuarioService {
     private final SenhaService senhaService;
     private final SessaoService sessaoService;
     private final CalculoPermissaoService calculoPermissao;
-    private final DoisFatoresLimpezaService doisFatoresLimpeza;
+    private final LimiteUsuariosService limiteUsuarios;
     private final AutorizacaoCache cache;
     private final EventoSegurancaService eventos;
 
     public UsuarioService(UsuarioRepository repository, SenhaService senhaService, SessaoService sessaoService,
-                          CalculoPermissaoService calculoPermissao, DoisFatoresLimpezaService doisFatoresLimpeza,
+                          CalculoPermissaoService calculoPermissao, LimiteUsuariosService limiteUsuarios,
                           AutorizacaoCache cache,
                           EventoSegurancaService eventos) {
         this.repository = repository;
         this.senhaService = senhaService;
         this.sessaoService = sessaoService;
         this.calculoPermissao = calculoPermissao;
-        this.doisFatoresLimpeza = doisFatoresLimpeza;
+        this.limiteUsuarios = limiteUsuarios;
         this.cache = cache;
         this.eventos = eventos;
     }
@@ -131,6 +132,19 @@ public class UsuarioService {
         return repository.existeSuperadmin();
     }
 
+    /**
+     * Usuários ativos (sem o superadmin) por contratante, para a tela de contratantes.
+     * Contratante sem nenhum ativo não aparece no mapa (= 0).
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, Long> contarAtivosPorContratante(Collection<UUID> tenantIds) {
+        if (tenantIds.isEmpty()) {
+            return Map.of();
+        }
+        return repository.contarAtivosPorTenant(tenantIds).stream()
+                .collect(Collectors.toMap(linha -> (UUID) linha[0], linha -> (Long) linha[1]));
+    }
+
     // ---------------------------------------------------------------- escrita
 
     @Transactional
@@ -142,6 +156,7 @@ public class UsuarioService {
         senhaService.validarPolitica(dto.senha(), u.getEmail(), u.getNome());
         u.setSenhaHash(senhaService.gerarHash(dto.senha()));
         u.setSenhaAlteradaEm(Instant.now());
+        exigirVaga(tenantId);
         repository.saveAndFlush(u);
         eventos.registrar(TipoEventoSeguranca.USUARIO_CRIADO, u.getId(), tenantId, "papel=" + u.getPapel());
         return UsuarioMapper.toResponseDto(u);
@@ -190,14 +205,23 @@ public class UsuarioService {
         eventos.registrar(TipoEventoSeguranca.USUARIO_INATIVADO, u.getId(), u.getTenantId(), null);
     }
 
+    /**
+     * Reativar ocupa de novo uma vaga do limite de usuários do contratante. A linha
+     * do usuário é travada antes de ler: no duplo clique em "Ativar", o segundo
+     * espera o primeiro, já o lê ativo e não faz nada (sem pedir outra vaga).
+     */
     @Transactional
     public void ativar(UUID id) {
-        SecurityUtils.exigirTenantSelecionado();
-        Usuario u = buscarEntidade(id);
+        UUID tenantId = SecurityUtils.exigirTenantSelecionado();
+        Usuario u = buscarEntidadeComBloqueio(id);
         garantirPodeAlterar(u);
         if (u.getId().equals(SecurityUtils.getUsuarioIdLogado())) {
             throw new AcessoNegadoException("Você não pode reativar a si mesmo.");
         }
+        if (u.isAtivo()) {
+            return;
+        }
+        exigirVaga(tenantId);
         u.setAtivo(true);
         cache.invalidarUsuario(u.getId());
         eventos.registrar(TipoEventoSeguranca.USUARIO_ATIVADO, u.getId(), u.getTenantId(), null);
@@ -237,6 +261,7 @@ public class UsuarioService {
         }
         senhaService.validarPolitica(dto.novaSenha(), u.getEmail(), u.getNome());
         u.setSenhaHash(senhaService.gerarHash(dto.novaSenha()));
+        // Também derruba o código de login pendente: o auth recusa código anterior a esta data.
         u.setSenhaAlteradaEm(Instant.now());
         u.setExigirTrocaSenha(true);
         repository.atualizarTentativas(u.getId(), 0, null);
@@ -245,28 +270,10 @@ public class UsuarioService {
     }
 
     /**
-     * Administrador limpa o 2FA de outro usuário (celular perdido, conta sequestrada).
-     * Usuário de outro contratante = 404. Derruba as sessões do alvo; no próximo
-     * login ele configura de novo (se for exigido).
-     */
-    @Transactional
-    public void redefinirDoisFatores(UUID id) {
-        SecurityUtils.exigirTenantSelecionado();
-        UsuarioAutenticado eu = SecurityUtils.exigirUsuario();
-        exigirAdministrador(eu, "Só administradores podem redefinir a verificação em duas etapas.");
-        Usuario u = buscarEntidade(id);
-        garantirPodeAlterar(u);
-        if (u.getId().equals(eu.usuarioId())) {
-            throw new AcessoNegadoException("Para a sua própria conta use \"Desativar verificação em duas etapas\".");
-        }
-        doisFatoresLimpeza.desligar(u);
-        sessaoService.revogarTodasDoUsuario(u.getId(), MotivoRevogacao.DOIS_FATORES_ALTERADO, null);
-        eventos.registrar(TipoEventoSeguranca.DOIS_FATORES_REDEFINIDO, u.getId(), u.getTenantId(), null);
-    }
-
-    /**
      * Primeiro administrador de um contratante novo. Chamado pelo TenantService
      * em contexto ROOT (superadmin), por isso atribui o tenant explicitamente.
+     * Ocupa a 1ª vaga do limite, sem checar: o contratante acabou de nascer e o
+     * limite é no mínimo 1 (e em ROOT a contagem enxergaria todos os contratantes).
      */
     @Transactional
     public Usuario criarAdminInicial(UUID tenantId, String nome, String email, String senha) {
@@ -320,12 +327,34 @@ public class UsuarioService {
         repository.regravarHashSenha(id, hash);
     }
 
-    @Transactional
-    public void registrarPassoTotp(UUID id, long passo) {
-        repository.registrarPassoTotp(id, passo);
+    // ---------------------------------------------------------------- regras
+
+    /**
+     * {@link #buscarEntidade} com a linha travada até o fim da transação. A trava vem
+     * antes da leitura, então o estado lido já é o gravado por quem a segurava.
+     */
+    private Usuario buscarEntidadeComBloqueio(UUID id) {
+        repository.buscarPorIdComBloqueio(id);
+        return buscarEntidade(id);
     }
 
-    // ---------------------------------------------------------------- regras
+    /**
+     * Limite de usuários ativos do contratante (definido pelo superadmin). Trava a
+     * linha do contratante antes de contar, para dois cadastros simultâneos não
+     * ocuparem a mesma última vaga. Se o limite foi reduzido abaixo do uso, nada é
+     * desligado: só criar e reativar ficam travados.
+     */
+    private void exigirVaga(UUID tenantId) {
+        Integer limite = limiteUsuarios.travarELerLimite(tenantId);
+        if (limite == null) {
+            return;
+        }
+        long ativos = repository.contarAtivos();
+        if (ativos >= limite) {
+            throw new RegraNegocioException("Este contratante já usa " + ativos + " de " + limite
+                    + " usuários. Fale com o suporte para ampliar.");
+        }
+    }
 
     private Usuario criarComPapel(UUID tenantId, Papel papel, String nome, String email, String senha,
                                   boolean exigirTroca) {

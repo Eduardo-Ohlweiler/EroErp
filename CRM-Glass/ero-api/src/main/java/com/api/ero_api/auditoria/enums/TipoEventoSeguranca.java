@@ -1,6 +1,10 @@
 package com.api.ero_api.auditoria.enums;
 
-/** O que fica registrado na trilha de segurança (OWASP A09). */
+/**
+ * O que fica registrado na trilha de segurança (OWASP A09).
+ * A coluna não tem CHECK: valor novo não precisa de migration (e eventos antigos
+ * de tipos que deixaram de existir não são gravados de novo).
+ */
 public enum TipoEventoSeguranca {
     LOGIN_SUCESSO,
     LOGIN_FALHA,
@@ -11,11 +15,14 @@ public enum TipoEventoSeguranca {
     REFRESH_REUTILIZADO,
     SENHA_ALTERADA,
     SENHA_REDEFINIDA,
-    DOIS_FATORES_ATIVADO,
-    DOIS_FATORES_DESATIVADO,
-    DOIS_FATORES_REDEFINIDO,
+    /** Código errado, vencido ou já usado na segunda etapa do login. */
     DOIS_FATORES_FALHA,
-    CODIGO_RECUPERACAO_USADO,
+    /** Código do login enviado por e-mail (1º envio). */
+    CODIGO_ENVIADO,
+    /** Mesmo código reenviado a pedido do usuário. */
+    CODIGO_REENVIADO,
+    /** O servidor de e-mail recusou ou não respondeu (o login respondeu 503). */
+    EMAIL_FALHA_ENVIO,
     USUARIO_CRIADO,
     USUARIO_ALTERADO,
     USUARIO_INATIVADO,

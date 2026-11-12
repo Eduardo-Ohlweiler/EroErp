@@ -351,10 +351,17 @@ export const dados = {
 };
 /** Brilho do esqueleto de carregamento (s por passada). Vai para o CSS como --mov-esqueleto. */
 export const esqueleto = { brilho: 1.6 };
+/**
+ * Indicador de carregando (Button carregando): uma volta do ícone (s) e, com movimento reduzido,
+ * um ciclo da pulsação leve de opacidade no lugar da rotação (s). Vão para o CSS como --mov-giro e --mov-pulso.
+ */
+export const carregando = { giro: 0.9, pulso: 1.8 };
 
 /** Durações usadas no CSS (index.css lê as variáveis; nada de número solto lá). Chamado no main.tsx. */
 export function aplicarVariaveisDeMovimento(root: HTMLElement = document.documentElement) {
   root.style.setProperty('--mov-esqueleto', `${esqueleto.brilho}s`);
+  root.style.setProperty('--mov-giro', `${carregando.giro}s`);
+  root.style.setProperty('--mov-pulso', `${carregando.pulso}s`);
 }
 
 /* =====================================================================================

@@ -11,6 +11,10 @@
   --mask-on: #000;
   --blur: 22px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* indicador de carregando com movimento reduzido: opacidade mínima da pulsação leve (o ícone nunca some).
+   * 0,8 mantém o ícone ≥ 3:1 (WCAG 1.4.11) no vale da pulsação. Pior caso: ghost (texto muted) no tema claro,
+   * 3,4:1 a 3,8:1 (com 0,7 cairia para 2,8:1); primary violeta 3,9:1; primary âmbar 4,8:1; danger claro 4,6:1. */
+  --carregando-pulso-min: 0.8;
 }
 
 /* ---------- Tema escuro (padrão) ---------- */

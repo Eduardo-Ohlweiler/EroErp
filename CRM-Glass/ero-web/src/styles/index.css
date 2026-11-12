@@ -552,6 +552,16 @@ html.vt-cena::view-transition-image-pair(root) {
     animation: skeleton-brilho var(--mov-esqueleto) ease-in-out infinite; /* duração em motion/tokens.ts (esqueleto.brilho) */
   }
 
+  /* Indicador de carregando (Button carregando). Gira; com movimento reduzido só pulsa a opacidade, de leve.
+   * Durações em motion/tokens.ts (carregando.giro / carregando.pulso). O Button escolhe a classe pelo
+   * useReduzirMovimento (sistema ou animações REDUZIDAS do contratante); as regras no fim do arquivo são a rede de segurança. */
+  .carregando-giro {
+    animation: spin var(--mov-giro) linear infinite;
+  }
+  .carregando-pulso {
+    animation: carregando-pulso var(--mov-pulso) ease-in-out infinite;
+  }
+
   /* QR code: placa clara legível nos dois temas. */
   .qr-placa {
     background: var(--qr-plate);
@@ -579,4 +589,17 @@ html.vt-cena::view-transition-image-pair(root) {
 /* Animações REDUZIDAS do contratante (AparenciaProvider põe data-movimento no <html>). */
 [data-movimento='reduzida'] .skeleton::after {
   animation: none;
+}
+@keyframes carregando-pulso {
+  50% {
+    opacity: var(--carregando-pulso-min);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .carregando-giro {
+    animation: carregando-pulso var(--mov-pulso) ease-in-out infinite;
+  }
+}
+[data-movimento='reduzida'] .carregando-giro {
+  animation: carregando-pulso var(--mov-pulso) ease-in-out infinite;
 }

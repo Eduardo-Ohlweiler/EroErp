@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * Limites por IP por minuto ({@code app.rate-limit.*}).
  *
  * @param login  tentativas de login
- * @param doisFatores tentativas de código 2FA
+ * @param doisFatores tentativas de código 2FA e pedidos de reenvio (balde único)
  * @param refresh renovações de sessão
  * @param geral  qualquer outra rota da API
  */

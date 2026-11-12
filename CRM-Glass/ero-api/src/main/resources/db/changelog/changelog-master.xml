@@ -18,5 +18,6 @@
     <include file="changes/006-create-evento-seguranca.xml" relativeToChangelogFile="true"/>
     <include file="changes/007-add-index-evento-seguranca-data.xml" relativeToChangelogFile="true"/>
     <include file="changes/008-add-tenant-aparencia.xml" relativeToChangelogFile="true"/>
+    <include file="changes/009-2fa-email-e-limite-usuarios.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

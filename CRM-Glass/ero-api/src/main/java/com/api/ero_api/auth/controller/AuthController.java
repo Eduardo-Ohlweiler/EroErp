@@ -1,17 +1,14 @@
 package com.api.ero_api.auth.controller;
 
 import com.api.ero_api.auth.dtos.AutenticacaoRespostaDto;
-import com.api.ero_api.auth.dtos.CodigosRecuperacaoDto;
-import com.api.ero_api.auth.dtos.DoisFatoresAtivarDto;
-import com.api.ero_api.auth.dtos.DoisFatoresConfiguracaoDto;
-import com.api.ero_api.auth.dtos.DoisFatoresDesativarDto;
+import com.api.ero_api.auth.dtos.CodigoEnviadoDto;
+import com.api.ero_api.auth.dtos.DoisFatoresReenviarDto;
 import com.api.ero_api.auth.dtos.DoisFatoresVerificarDto;
 import com.api.ero_api.auth.dtos.LoginDto;
 import com.api.ero_api.auth.dtos.TrocarSenhaDto;
 import com.api.ero_api.auth.dtos.UsuarioLogadoDto;
 import com.api.ero_api.auth.service.AuthService;
 import com.api.ero_api.auth.service.AuthService.Resultado;
-import com.api.ero_api.auth.service.DoisFatoresService;
 import com.api.ero_api.auth.util.RefreshCookie;
 import com.api.ero_api.compartilhado.exception.AcessoNegadoException;
 import com.api.ero_api.seguranca.config.SegurancaProperties;
@@ -36,39 +33,44 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Autenticação. As 4 rotas públicas ({@code @PermitAll}) têm limite de
+ * Autenticação. As 5 rotas públicas ({@code @PermitAll}) têm limite de
  * requisições próprio (RateLimitFilter). O refresh token só trafega em cookie.
  */
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Autenticação", description = "Login, sessão, senha e verificação em duas etapas")
+@Tag(name = "Autenticação", description = "Login com código por e-mail, sessão e senha")
 public class AuthController {
 
     /** Header obrigatório no refresh/logout: formulário de outro site não consegue enviar (anti-CSRF). */
     public static final String HEADER_ANTI_CSRF = "X-Ero-Refresh";
 
     private final AuthService authService;
-    private final DoisFatoresService doisFatoresService;
     private final boolean cookieSeguro;
 
-    public AuthController(AuthService authService, DoisFatoresService doisFatoresService, SegurancaProperties props) {
+    public AuthController(AuthService authService, SegurancaProperties props) {
         this.authService = authService;
-        this.doisFatoresService = doisFatoresService;
         this.cookieSeguro = props.cookieSeguro();
     }
 
     @PostMapping("/login")
     @PermitAll
-    @Operation(summary = "Entra com e-mail e senha (pode pedir o código 2FA em seguida)")
+    @Operation(summary = "Entra com e-mail e senha: envia o código por e-mail e devolve o desafio")
     public ResponseEntity<AutenticacaoRespostaDto> login(@Valid @RequestBody LoginDto dto) {
         return responder(authService.login(dto));
     }
 
     @PostMapping("/2fa/verificar")
     @PermitAll
-    @Operation(summary = "Segunda etapa do login: código do app ou de recuperação")
+    @Operation(summary = "Segunda etapa do login: desafio + código recebido por e-mail")
     public ResponseEntity<AutenticacaoRespostaDto> verificarDoisFatores(@Valid @RequestBody DoisFatoresVerificarDto dto) {
         return responder(authService.verificarDoisFatores(dto));
+    }
+
+    @PostMapping("/2fa/reenviar")
+    @PermitAll
+    @Operation(summary = "Reenvia o mesmo código por e-mail (não estende a validade)")
+    public CodigoEnviadoDto reenviarCodigo(@Valid @RequestBody DoisFatoresReenviarDto dto) {
+        return authService.reenviarCodigo(dto);
     }
 
     @PostMapping("/refresh")
@@ -106,28 +108,6 @@ public class AuthController {
     @Operation(summary = "Troca a minha senha (encerra as outras sessões)")
     public ResponseEntity<Void> trocarSenha(@Valid @RequestBody TrocarSenhaDto dto) {
         authService.trocarSenha(dto);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/2fa/configurar")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Gera o QR code para o app autenticador")
-    public DoisFatoresConfiguracaoDto configurarDoisFatores() {
-        return doisFatoresService.configurar();
-    }
-
-    @PostMapping("/2fa/ativar")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Confirma senha e primeiro código e liga a verificação em duas etapas")
-    public CodigosRecuperacaoDto ativarDoisFatores(@Valid @RequestBody DoisFatoresAtivarDto dto) {
-        return doisFatoresService.ativar(dto);
-    }
-
-    @PostMapping("/2fa/desativar")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Desliga a verificação em duas etapas (pede senha e código)")
-    public ResponseEntity<Void> desativarDoisFatores(@Valid @RequestBody DoisFatoresDesativarDto dto) {
-        doisFatoresService.desativar(dto);
         return ResponseEntity.noContent().build();
     }
 

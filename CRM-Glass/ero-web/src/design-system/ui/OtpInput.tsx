@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, type ClipboardEvent, type CSSProperties, type KeyboardEvent } from 'react';
 import { motion } from 'motion/react';
 import { spring } from '../../motion/tokens';
 import { cn } from '../../shared/util/utils';
@@ -106,7 +106,13 @@ export function OtpInput({
   return (
     <div
       {...(semGrupo ? {} : { role: 'group', 'aria-label': rotulo, 'aria-describedby': aria['aria-describedby'] })}
-      className="flex gap-2 sm:gap-2.5"
+      // Casas fluidas: dividem a largura que houver, até a medida cheia (44 px; 48 px a partir de sm).
+      // Em 320 px cabem dentro do cartão sem cortar a última (WCAG 1.4.10); a partir de 360 px ficam como antes.
+      className={cn(
+        'grid w-full max-w-max gap-1.5 min-[360px]:gap-2 sm:gap-2.5',
+        'grid-cols-[repeat(var(--otp-casas),minmax(0,2.75rem))] sm:grid-cols-[repeat(var(--otp-casas),minmax(0,3rem))]',
+      )}
+      style={{ '--otp-casas': tamanho } as CSSProperties}
     >
       {Array.from({ length: tamanho }, (_, i) => {
         const d = digitos[i] ?? '';
@@ -132,7 +138,7 @@ export function OtpInput({
             animate={d ? { scale: [0.92, 1] } : { scale: 1 }}
             transition={spring.bouncy}
             className={cn(
-              'input !w-11 sm:!w-12 !h-14 !px-0 text-center text-xl font-semibold tabular-nums',
+              'input !w-full min-w-0 !h-14 !px-0 text-center text-xl font-semibold tabular-nums',
               d && 'border-[color-mix(in_srgb,var(--accent)_45%,transparent)]',
             )}
           />

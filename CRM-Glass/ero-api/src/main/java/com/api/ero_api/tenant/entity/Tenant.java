@@ -45,9 +45,13 @@ public class Tenant extends BaseEntity {
     @Column(name = "ativo", nullable = false)
     private boolean ativo = true;
 
-    /** Obriga todos os usuários a configurar a verificação em duas etapas. */
-    @Column(name = "exige_2fa", nullable = false)
-    private boolean exige2fa;
+    /**
+     * Quantos usuários ATIVOS o contratante pode ter (o administrador inicial conta;
+     * o superadmin não). Definido pelo superadmin na contratação. {@code null} = sem
+     * limite (só a Plataforma). Abaixo do uso atual, só trava criar e reativar.
+     */
+    @Column(name = "limite_usuarios")
+    private Integer limiteUsuarios;
 
     /** Cor de destaque da interface (ver tokens do front). */
     @Column(name = "cor_destaque", nullable = false, length = 20)

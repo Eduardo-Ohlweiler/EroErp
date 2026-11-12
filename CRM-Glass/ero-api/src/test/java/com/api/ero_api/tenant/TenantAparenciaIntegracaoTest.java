@@ -85,7 +85,7 @@ class TenantAparenciaIntegracaoTest extends IntegracaoTest {
 
         JsonNode atual = corpo(get("/api/tenants/atual", c.admin().token()));
         assertThat(atual.path("aparencia").path("fundo").asString()).isEqualTo("CIDADE");
-        assertThat(atual.path("exige2fa").asBoolean()).isFalse();
+        assertThat(atual.has("exige2fa")).as("2FA é sempre por e-mail, não é mais opção do contratante").isFalse();
 
         // A renovação de sessão também leva a aparência.
         JsonNode renovado = corpo(refresh(c.admin().refresh()));
@@ -156,7 +156,7 @@ class TenantAparenciaIntegracaoTest extends IntegracaoTest {
         assertThat(status(get("/api/tenants/fundos", s.token()))).isEqualTo(200);
 
         UsuarioCriado u = novoUsuario(c.admin());
-        Sessao pendente = login(u.email(), SENHA_FORTE);
+        Sessao pendente = loginComCodigo(u.email(), SENHA_FORTE);
         assertThat(status(get("/api/tenants/atual", pendente.token()))).as("com pendência").isEqualTo(403);
         JsonNode euPendente = corpo(get("/api/auth/eu", pendente.token()));
         assertThat(euPendente.path("pendencia").asString()).isEqualTo("TROCAR_SENHA");
@@ -180,7 +180,7 @@ class TenantAparenciaIntegracaoTest extends IntegracaoTest {
 
         JsonNode t = corpo(get("/api/tenants/" + c.id(), s.token()));
         MvcTestResult cadastro = put("/api/tenants/" + c.id(), s.token(), Map.of(
-                "nome", t.path("nome").asString(), "exige2fa", false, "version", t.path("version").asLong()));
+                "nome", t.path("nome").asString(), "limiteUsuarios", LIMITE_PADRAO, "version", t.path("version").asLong()));
         assertThat(status(cadastro)).isEqualTo(200);
         assertThat(corpo(cadastro).path("aparencia").path("fundo").asString()).as("PUT cadastral preserva a aparência")
                 .isEqualTo("ONDAS");
@@ -245,7 +245,7 @@ class TenantAparenciaIntegracaoTest extends IntegracaoTest {
     private MvcTestResult criar(Sessao s, Map<String, Object> aparencia) {
         Map<String, Object> corpo = new LinkedHashMap<>();
         corpo.put("nome", unico("Empresa"));
-        corpo.put("exige2fa", false);
+        corpo.put("limiteUsuarios", LIMITE_PADRAO);
         if (aparencia != null) {
             corpo.put("aparencia", aparencia);
         }

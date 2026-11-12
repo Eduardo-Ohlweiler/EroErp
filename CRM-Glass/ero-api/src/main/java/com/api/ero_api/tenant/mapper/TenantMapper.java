@@ -18,14 +18,15 @@ public final class TenantMapper {
     private TenantMapper() {
     }
 
-    public static TenantResponseDto toResponseDto(Tenant t) {
+    public static TenantResponseDto toResponseDto(Tenant t, long usuariosAtivos) {
         return new TenantResponseDto(
                 t.getId(),
                 t.getNome(),
                 t.getDocumento(),
                 t.getEmail(),
                 t.isAtivo(),
-                t.isExige2fa(),
+                t.getLimiteUsuarios(),
+                usuariosAtivos,
                 toAparenciaDto(t),
                 t.getFundoExclusivo(),
                 t.getCreatedAt(),
@@ -40,7 +41,7 @@ public final class TenantMapper {
     }
 
     public static TenantAtualDto toAtualDto(Tenant t) {
-        return new TenantAtualDto(t.getId(), t.getNome(), t.isExige2fa(), toAparenciaDto(t));
+        return new TenantAtualDto(t.getId(), t.getNome(), toAparenciaDto(t));
     }
 
     public static AparenciaDto toAparenciaDto(Tenant t) {
@@ -79,7 +80,7 @@ public final class TenantMapper {
         t.setNome(dto.nome().trim());
         t.setDocumento(DocumentoValidator.normalizar(dto.documento()));
         t.setEmail(minusculo(dto.email()));
-        t.setExige2fa(dto.exige2fa());
+        t.setLimiteUsuarios(dto.limiteUsuarios());
         aplicarAparencia(t, dto.aparencia() == null ? aparenciaPadrao() : dto.aparencia());
         t.setAtivo(true);
         return t;
@@ -90,7 +91,7 @@ public final class TenantMapper {
         t.setNome(dto.nome().trim());
         t.setDocumento(DocumentoValidator.normalizar(dto.documento()));
         t.setEmail(minusculo(dto.email()));
-        t.setExige2fa(dto.exige2fa());
+        t.setLimiteUsuarios(dto.limiteUsuarios());
     }
 
     private static String minusculo(String valor) {

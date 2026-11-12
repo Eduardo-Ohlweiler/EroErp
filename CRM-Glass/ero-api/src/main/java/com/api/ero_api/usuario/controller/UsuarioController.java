@@ -71,7 +71,7 @@ public class UsuarioController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('USUARIOS_ESCREVER')")
-    @Operation(summary = "Cadastra um usuário (senha temporária)")
+    @Operation(summary = "Cadastra um usuário (senha temporária; ocupa uma vaga do limite do contratante)")
     public ResponseEntity<UsuarioResponseDto> criar(@Valid @RequestBody UsuarioCreateDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.criar(dto));
     }
@@ -93,7 +93,7 @@ public class UsuarioController {
 
     @PatchMapping("/{id}/ativar")
     @PreAuthorize("hasAuthority('USUARIOS_ESCREVER')")
-    @Operation(summary = "Reativa um usuário")
+    @Operation(summary = "Reativa um usuário (ocupa uma vaga do limite do contratante)")
     public ResponseEntity<Void> ativar(@PathVariable UUID id) {
         service.ativar(id);
         return ResponseEntity.noContent().build();
@@ -112,14 +112,6 @@ public class UsuarioController {
     @Operation(summary = "Define uma senha temporária para o usuário (só administradores)")
     public ResponseEntity<Void> redefinirSenha(@PathVariable UUID id, @Valid @RequestBody UsuarioRedefinirSenhaDto dto) {
         service.redefinirSenha(id, dto);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/{id}/redefinir-2fa")
-    @PreAuthorize("hasAuthority('USUARIOS_ESCREVER')")
-    @Operation(summary = "Desliga a verificação em duas etapas do usuário (só administradores)")
-    public ResponseEntity<Void> redefinirDoisFatores(@PathVariable UUID id) {
-        service.redefinirDoisFatores(id);
         return ResponseEntity.noContent().build();
     }
 }

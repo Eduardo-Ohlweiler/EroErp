@@ -5,7 +5,7 @@
 | Papel | O que pode |
 |---|---|
 | `SUPERADMIN` | Dono da plataforma (o Eduardo). Tudo, inclusive contratantes. Só existe pelo seed, nunca pela API. |
-| `ADMIN` | Administrador do contratante. **Provisório:** recebe todos os grupos e ações do contratante. As regras específicas serão definidas pelo dono do produto. |
+| `ADMIN` | Administrador do contratante. **Provisório:** recebe todos os grupos e ações do contratante. As regras específicas serão definidas pelo dono do produto. Cria usuários até o **limite de usuários ativos** do contratante, que só o superadmin muda (ver `03-multitenant.md`). |
 | `USUARIO` | Só o que estiver liberado nos grupos. |
 
 ## Grupos de liberação (`permissao.enums.GrupoLiberacao`)
@@ -42,9 +42,9 @@ esconder botões) e `telas` (para montar o menu).
 - Usuário comum com `USUARIOS_LIBERAR_ACESSO` só concede o que ele mesmo tem.
 - Uma ação só pode ser concedida se o grupo dela estiver liberado.
 - ADMIN e SUPERADMIN não têm lista de liberações (já têm tudo).
-- Só ADMIN ou SUPERADMIN **redefinem a senha, trocam o e-mail ou resetam o 2FA** de outra pessoa (fazer isso é tomar a conta dela).
+- Só ADMIN ou SUPERADMIN **redefinem a senha ou trocam o e-mail** de outra pessoa (fazer isso é tomar a conta dela; o e-mail também é para onde vai o código do login).
 - Usuário comum só altera ou inativa colega cujo acesso esteja **contido** no dele.
-- Usuário com **pendência** (senha temporária, ou 2FA exigido e ainda não configurado) não recebe nenhuma permissão, nem `ACESSO_LIBERADO`, até resolver. Ele só alcança `/api/auth/eu`, `/senha` e `/2fa/*`.
+- Usuário com **pendência** (hoje só a senha temporária: `TROCAR_SENHA`) não recebe nenhuma permissão, nem `ACESSO_LIBERADO`, até resolver. Ele só alcança `/api/auth/eu` e `/api/auth/senha`. O código por e-mail não é pendência: é a segunda etapa do login, antes de existir sessão.
 
 ## `ACESSO_LIBERADO`
 
@@ -62,16 +62,17 @@ papel no controller e não aparecem em `GET /api/permissoes/catalogo`:
 |---|---|---|---|
 | Contratantes | `GET/POST /api/tenants`, `GET/PUT /api/tenants/{id}`, `PATCH /{id}/inativar` e `/ativar`, `GET /api/tenants/selecao` | `hasRole('SUPERADMIN')` | É a plataforma, não o contratante. |
 | Configuração do contratante (aparência e cena exclusiva) | `PUT /api/tenants/{id}/configuracao`, `GET /api/tenants/fundos` | `hasRole('SUPERADMIN')` | Idem. |
-| Minha conta (senha, 2FA, sessões) | `/api/auth/senha`, `/api/auth/2fa/*`, `/api/sessoes/*` | o próprio usuário | Cada um só mexe no que é seu. |
+| Minha conta (senha, sessões) | `/api/auth/senha`, `/api/sessoes/*` | o próprio usuário | Cada um só mexe no que é seu. |
 
 Por que não um grupo: todo grupo é concedido automaticamente ao `ADMIN` do
 contratante (ver Papéis). Um grupo `CONTRATANTES` daria a qualquer administrador
 de cliente o poder de ver e alterar **outros** contratantes, ou de mudar a
 aparência que vale para todos: escalada de privilégio. Por isso essas rotas
-usam o papel. Nas escritas (criar, alterar, configurar, inativar, ativar), o
-service ainda exige a visão de plataforma (`exigirVisaoPlataforma`): o superadmin
-dentro de um contratante recebe 422. As leituras (`GET /api/tenants`, `/{id}`,
-`/selecao`, `/fundos`) só exigem o papel.
+usam o papel. Nas escritas (criar, alterar, configurar, inativar, ativar) e na
+lista e ficha (`GET /api/tenants`, `/{id}`, que trazem os usuários ativos de cada
+contratante), o service ainda exige a visão de plataforma (`exigirVisaoPlataforma`):
+o superadmin dentro de um contratante recebe 422. `/selecao` e `/fundos` só exigem
+o papel.
 
 No front, essas telas entram no menu pelo papel (`papel === 'SUPERADMIN'` e
 fora de um contratante), não por `telas`.
@@ -94,7 +95,7 @@ front. Renomear exige migration.
 | `GET /api/permissoes/catalogo` | `ACESSO_LIBERADO` |
 | `GET /api/permissoes/usuarios/{id}` | `USUARIOS_LER` |
 | `PUT /api/permissoes/usuarios/{id}` (substitui tudo; manda a `version` do GET, 409 se outra pessoa alterou antes) | `USUARIOS_LIBERAR_ACESSO` |
-| `PATCH /api/usuarios/{id}/redefinir-senha`, `/redefinir-2fa` e `/desbloquear` | `USUARIOS_ESCREVER` **e** papel ADMIN/SUPERADMIN (nunca em si mesmo) |
+| `PATCH /api/usuarios/{id}/redefinir-senha` e `/desbloquear` | `USUARIOS_ESCREVER` **e** papel ADMIN/SUPERADMIN (nunca em si mesmo). O `redefinir-2fa` saiu: não há app autenticador para resetar; quem perdeu o acesso ao e-mail tem o e-mail trocado pelo administrador. |
 | `GET /api/sessoes`, `PATCH /api/sessoes/{id}/encerrar`, `PATCH /api/sessoes/encerrar-outras` | `ACESSO_LIBERADO` (só as próprias sessões) |
 | `GET /api/auditoria/eventos` | `AUDITORIA_LER` |
 

@@ -14,7 +14,7 @@ class SessaoIntegracaoTest extends IntegracaoTest {
         Contratante c = novoContratante();
         UsuarioCriado u = novoUsuario(c.admin());
         Sessao notebook = loginTrocandoSenha(u.email(), SENHA_FORTE, SENHA_FORTE_2);
-        Sessao celular = login(u.email(), SENHA_FORTE_2);
+        Sessao celular = loginComCodigo(u.email(), SENHA_FORTE_2);
 
         JsonNode sessoes = corpo(get("/api/sessoes", notebook.token()));
         assertThat(sessoes.size()).isEqualTo(2);
@@ -35,8 +35,8 @@ class SessaoIntegracaoTest extends IntegracaoTest {
         Contratante c = novoContratante();
         UsuarioCriado u = novoUsuario(c.admin());
         Sessao notebook = loginTrocandoSenha(u.email(), SENHA_FORTE, SENHA_FORTE_2);
-        Sessao celular = login(u.email(), SENHA_FORTE_2);
-        Sessao tablet = login(u.email(), SENHA_FORTE_2);
+        Sessao celular = loginComCodigo(u.email(), SENHA_FORTE_2);
+        Sessao tablet = loginComCodigo(u.email(), SENHA_FORTE_2);
         Sessao outroUsuario = c.admin();
 
         assertThat(status(patch("/api/sessoes/encerrar-outras", notebook.token()))).isEqualTo(204);
@@ -59,7 +59,7 @@ class SessaoIntegracaoTest extends IntegracaoTest {
     void pendenteNaoEncerraOutras() {
         Contratante c = novoContratante();
         UsuarioCriado u = novoUsuario(c.admin());
-        Sessao pendente = login(u.email(), SENHA_FORTE);
+        Sessao pendente = loginComCodigo(u.email(), SENHA_FORTE);
         assertThat(status(patch("/api/sessoes/encerrar-outras", pendente.token()))).isEqualTo(403);
     }
 
@@ -91,7 +91,7 @@ class SessaoIntegracaoTest extends IntegracaoTest {
     void pendenteNaoListaSessoes() {
         Contratante c = novoContratante();
         UsuarioCriado u = novoUsuario(c.admin());
-        Sessao pendente = login(u.email(), SENHA_FORTE);
+        Sessao pendente = loginComCodigo(u.email(), SENHA_FORTE);
         assertThat(status(get("/api/sessoes", pendente.token()))).isEqualTo(403);
     }
 }

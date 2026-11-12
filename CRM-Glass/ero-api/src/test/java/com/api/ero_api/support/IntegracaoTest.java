@@ -30,7 +30,7 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, CaixaDeEmailFake.class})
 public abstract class IntegracaoTest {
 
     protected static final String SUPERADMIN_EMAIL = "superadmin@teste.local";
@@ -38,9 +38,15 @@ public abstract class IntegracaoTest {
     /** Senha que passa na política, para usuários de teste. */
     protected static final String SENHA_FORTE = "Girassol#Verde#2026";
     protected static final String SENHA_FORTE_2 = "Cachoeira#Funda#2027";
+    /** Limite de usuários dos contratantes de teste quando o teste não é sobre o limite. */
+    protected static final int LIMITE_PADRAO = 50;
 
     @Autowired
     protected MockMvcTester mvc;
+
+    /** Todos os e-mails enviados nos testes (códigos do login). */
+    @Autowired
+    protected CaixaDeEmailFake caixa;
 
     @Autowired
     protected JsonMapper json;
@@ -111,24 +117,45 @@ public abstract class IntegracaoTest {
 
     // ------------------------------------------------------------ cenários
 
+    /** Só a 1ª etapa (e-mail e senha). Com a senha certa devolve 200 com o desafio e manda o código. */
     protected MvcTestResult tentarLogin(String email, String senha) {
         return post("/api/auth/login", null, Map.of("email", email, "senha", senha));
     }
 
-    protected Sessao login(String email, String senha) {
+    /** 1ª etapa já aprovada: devolve o desafio (o código está na {@link #caixa}). */
+    protected String desafio(String email, String senha) {
         MvcTestResult r = tentarLogin(email, senha);
         assertThat(status(r)).as("login de %s", email).isEqualTo(200);
+        JsonNode c = corpo(r);
+        assertThat(c.path("requerDoisFatores").asBoolean()).as("todo login pede o código").isTrue();
+        assertThat(cookieRefresh(r)).as("sem sessão antes do código").isNull();
+        return c.path("desafioDoisFatores").asString();
+    }
+
+    protected MvcTestResult verificarCodigo(String desafio, String codigo) {
+        return post("/api/auth/2fa/verificar", null, Map.of("desafio", desafio, "codigo", codigo));
+    }
+
+    protected MvcTestResult reenviarCodigo(String desafio) {
+        return post("/api/auth/2fa/reenviar", null, Map.of("desafio", desafio));
+    }
+
+    /** Login completo: e-mail e senha, código lido da caixa de e-mail falsa e sessão aberta. */
+    protected Sessao loginComCodigo(String email, String senha) {
+        String desafio = desafio(email, senha);
+        MvcTestResult r = verificarCodigo(desafio, caixa.ultimoCodigoPara(email));
+        assertThat(status(r)).as("código de %s", email).isEqualTo(200);
         JsonNode c = corpo(r);
         return new Sessao(c.path("tokenAcesso").asString(), cookieRefresh(r), c);
     }
 
     protected Sessao loginSuperadmin() {
-        return login(SUPERADMIN_EMAIL, SUPERADMIN_SENHA);
+        return loginComCodigo(SUPERADMIN_EMAIL, SUPERADMIN_SENHA);
     }
 
     /** Login com senha temporária + troca para {@code novaSenha}. Devolve a sessão já liberada. */
     protected Sessao loginTrocandoSenha(String email, String senhaTemporaria, String novaSenha) {
-        Sessao s = login(email, senhaTemporaria);
+        Sessao s = loginComCodigo(email, senhaTemporaria);
         assertThat(s.corpo().path("usuario").path("pendencia").asString()).isEqualTo("TROCAR_SENHA");
         MvcTestResult troca = put("/api/auth/senha", s.token(),
                 Map.of("senhaAtual", senhaTemporaria, "novaSenha", novaSenha));
@@ -136,14 +163,19 @@ public abstract class IntegracaoTest {
         return s;
     }
 
-    /** Cria contratante pelo superadmin e devolve a sessão do administrador dele. */
+    /** Cria contratante pelo superadmin (limite folgado de usuários) e devolve a sessão do administrador dele. */
     protected Contratante novoContratante() {
+        return novoContratante(LIMITE_PADRAO);
+    }
+
+    /** Idem, com o limite de usuários ativos indicado (o administrador inicial conta). */
+    protected Contratante novoContratante(int limiteUsuarios) {
         Sessao superadmin = loginSuperadmin();
         String nome = unico("Empresa");
         String adminEmail = unico("admin") + "@teste.local";
         MvcTestResult r = post("/api/tenants", superadmin.token(), Map.of(
                 "nome", nome,
-                "exige2fa", false,
+                "limiteUsuarios", limiteUsuarios,
                 "administrador", Map.of("nome", "Ana Lima", "email", adminEmail, "senha", SENHA_FORTE)));
         assertThat(status(r)).as("criar contratante").isEqualTo(201);
         UUID id = UUID.fromString(corpo(r).path("id").asString());

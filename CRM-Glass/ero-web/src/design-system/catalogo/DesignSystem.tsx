@@ -114,6 +114,8 @@ export default function DesignSystem() {
   const [editor, setEditor] = useState<AparenciaApi>(() => paraApi(alvo));
   const [previaAoVivo, setPreviaAoVivo] = useState(false);
   const [replay, setReplay] = useState(0);
+  const [carregandoDemo, setCarregandoDemo] = useState(true);
+  const [entrandoDemo, setEntrandoDemo] = useState(false);
   const chipRef = useRef<HTMLButtonElement>(null);
 
   const colunas: ColunaTabela<UsuarioDemo>[] = [
@@ -276,7 +278,7 @@ export default function DesignSystem() {
             </Secao>
 
             {/* ---------- Ações ---------- */}
-            <Secao titulo="Botões" subtitulo="primary, glass, ghost, danger · tamanhos · desabilitado">
+            <Secao titulo="Botões" subtitulo="primary, glass, ghost, danger · tamanhos · desabilitado · carregando">
               <div className="flex flex-wrap gap-2 items-center">
                 <Button variant="primary">
                   <Plus className="size-4" /> Novo usuário
@@ -296,6 +298,56 @@ export default function DesignSystem() {
                 <Button size="lg" variant="primary">
                   Grande
                 </Button>
+              </div>
+
+              {/* Carregando: mesma largura, aria-disabled + aria-busy (sem disabled: o foco fica no botão), sem esmaecer;
+                  com movimento reduzido o ícone só pulsa de leve, sem passar de 0,8 de opacidade (≥ 3:1). */}
+              <div className="mt-5 pt-4 border-t border-line">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                  <div>
+                    <div className="text-sm font-semibold">Carregando</div>
+                    <div className="text-xs text-subtle">
+                      carregando · textoCarregando · a largura não muda ao alternar · continua focável (aria-disabled), o clique e o submit ficam barrados
+                    </div>
+                  </div>
+                  <Toggle checked={carregandoDemo} onChange={setCarregandoDemo} label="Simular carregando" />
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Button variant="primary" carregando={carregandoDemo} textoCarregando="Salvando…">
+                    <Plus className="size-4" /> Salvar
+                  </Button>
+                  <Button carregando={carregandoDemo}>Atualizar</Button>
+                  <Button variant="ghost" carregando={carregandoDemo}>
+                    Descartar
+                  </Button>
+                  <Button variant="danger" carregando={carregandoDemo} textoCarregando="Inativando…">
+                    <Trash2 className="size-4" /> Inativar
+                  </Button>
+                  <Button size="icon" aria-label="Buscar" carregando={carregandoDemo}>
+                    <Search className="size-4" />
+                  </Button>
+                  <Button size="sm" carregando={carregandoDemo}>
+                    Pequeno
+                  </Button>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-2 mt-3">
+                  <Button
+                    size="lg"
+                    variant="primary"
+                    className="w-full"
+                    carregando={entrandoDemo}
+                    textoCarregando="Entrando…"
+                    onClick={() => {
+                      setEntrandoDemo(true);
+                      window.setTimeout(() => setEntrandoDemo(false), 2500);
+                    }}
+                  >
+                    Entrar (Enter ou clique)
+                  </Button>
+                  <Button size="lg" className="w-full" carregando={carregandoDemo}>
+                    Largura total, sem texto
+                  </Button>
+                </div>
               </div>
             </Secao>
 
@@ -364,7 +416,7 @@ export default function DesignSystem() {
               </BarraAcoes>
             </Secao>
 
-            <Secao titulo="Código de verificação (OtpInput)" subtitulo="6 dígitos · aceita colar · one-time-code">
+            <Secao titulo="Código de verificação (OtpInput)" subtitulo="6 dígitos · aceita colar · one-time-code · casas fluidas">
               <div className="space-y-5">
                 <CampoForm rotulo="Código do app autenticador" grupo dica={otp.length === 6 ? `Completo: ${otp}` : 'Digite ou cole o código'}>
                   {(ids) => <OtpInput {...ids} semGrupo valor={otp} onChange={setOtp} onCompleto={(v) => toast({ title: `Código ${v} completo`, tone: 'success' })} />}
@@ -372,6 +424,12 @@ export default function DesignSystem() {
                 <CampoForm rotulo="Código inválido" grupo erro="Código incorreto. Tente de novo.">
                   {(ids) => <OtpInput {...ids} semGrupo valor="123" onChange={() => {}} />}
                 </CampoForm>
+                {/* Largura útil do cartão de login num celular de 320 px: as casas encolhem e a última não é cortada. */}
+                <div className="w-[264px] max-w-full rounded-lg outline-1 outline-dashed outline-line outline-offset-4">
+                  <CampoForm rotulo="Estreito (264 px, celular de 320 px)" grupo dica="As casas dividem a largura; nada é cortado">
+                    {(ids) => <OtpInput {...ids} semGrupo valor="482" onChange={() => {}} />}
+                  </CampoForm>
+                </div>
               </div>
             </Secao>
 
@@ -590,6 +648,15 @@ export default function DesignSystem() {
                   />
                 }
               />
+              {/* Sem onBuscar: sem botão de busca e sem a dica do Ctrl K; o avatar continua no canto direito. */}
+              <div className="mt-4">
+                <div className="text-xs text-subtle mb-2">Sem busca (sem onBuscar) · avatar sem tamanho: 36 px abaixo de 640 px, 44 px acima</div>
+                <Topbar
+                  titulo="Minha conta"
+                  contratante={<ChipContratante nome="Plataforma" detalhe="Superadmin" />}
+                  direita={<MenuUsuario nome="Ana Ribeiro" email="ana@demo.com.br" papel="Superadmin" onSair={() => toast({ title: 'Sair', tone: 'info' })} />}
+                />
+              </div>
               <div className="flex flex-wrap items-center gap-3 mt-4">
                 <ChipContratante nome="Plataforma" detalhe="Sem troca (não clicável)" />
                 <MenuUsuario nome="Bruno Carvalho" onMinhaConta={() => {}} onSair={() => {}} tamanho={36} />

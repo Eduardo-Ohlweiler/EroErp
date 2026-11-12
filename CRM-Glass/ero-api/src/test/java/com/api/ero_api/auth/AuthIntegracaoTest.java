@@ -2,22 +2,23 @@ package com.api.ero_api.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.api.ero_api.auth.util.Totp;
 import com.api.ero_api.support.IntegracaoTest;
-import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import tools.jackson.databind.JsonNode;
 
+/** Login, sessão e senha. O código por e-mail tem os testes próprios em CodigoVerificacaoIntegracaoTest. */
 class AuthIntegracaoTest extends IntegracaoTest {
 
     @Test
-    void loginDoSuperadminDevolveTokenECookieHttpOnly() {
-        MvcTestResult r = tentarLogin(SUPERADMIN_EMAIL, SUPERADMIN_SENHA);
+    void loginDoSuperadminTambemPedeCodigoEDepoisDevolveTokenECookieHttpOnly() {
+        String desafio = desafio(SUPERADMIN_EMAIL, SUPERADMIN_SENHA);
 
+        MvcTestResult r = verificarCodigo(desafio, caixa.ultimoCodigoPara(SUPERADMIN_EMAIL));
         assertThat(status(r)).isEqualTo(200);
         JsonNode c = corpo(r);
+        assertThat(c.path("requerDoisFatores").asBoolean()).isFalse();
         assertThat(c.path("tokenAcesso").asString()).isNotBlank();
         assertThat(c.path("usuario").path("papel").asString()).isEqualTo("SUPERADMIN");
         assertThat(c.has("refreshToken")).as("refresh nunca vai no corpo").isFalse();
@@ -30,7 +31,8 @@ class AuthIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
-    void senhaErradaEEmailInexistenteDaoAMesmaMensagem() {
+    void senhaErradaEEmailInexistenteDaoAMesmaMensagemENaoMandamEmail() {
+        long antes = caixa.quantosPara(SUPERADMIN_EMAIL);
         MvcTestResult senhaErrada = tentarLogin(SUPERADMIN_EMAIL, "Senha-Errada-Total-1");
         MvcTestResult emailInexistente = tentarLogin("ninguem@teste.local", "Senha-Errada-Total-1");
 
@@ -39,6 +41,7 @@ class AuthIntegracaoTest extends IntegracaoTest {
         assertThat(corpo(senhaErrada).path("detail").asString())
                 .isEqualTo(corpo(emailInexistente).path("detail").asString())
                 .isEqualTo("E-mail ou senha inválidos.");
+        assertThat(caixa.quantosPara(SUPERADMIN_EMAIL)).as("código só depois da senha certa").isEqualTo(antes);
     }
 
     @Test
@@ -50,6 +53,7 @@ class AuthIntegracaoTest extends IntegracaoTest {
             assertThat(status(tentarLogin(u.email(), "Senha-Errada-Total-" + i))).isEqualTo(401);
         }
         assertThat(status(tentarLogin(u.email(), SENHA_FORTE))).as("bloqueada").isEqualTo(401);
+        assertThat(caixa.quantosPara(u.email())).as("bloqueada não recebe código").isZero();
     }
 
     @Test
@@ -101,7 +105,7 @@ class AuthIntegracaoTest extends IntegracaoTest {
         Contratante c = novoContratante();
         UsuarioCriado u = novoUsuario(c.admin());
 
-        Sessao s = login(u.email(), SENHA_FORTE);
+        Sessao s = loginComCodigo(u.email(), SENHA_FORTE);
         assertThat(s.corpo().path("usuario").path("pendencia").asString()).isEqualTo("TROCAR_SENHA");
         assertThat(status(get("/api/usuarios/selecao", s.token()))).as("pendente não vê dados").isEqualTo(403);
         assertThat(status(get("/api/sessoes", s.token()))).isEqualTo(403);
@@ -114,81 +118,6 @@ class AuthIntegracaoTest extends IntegracaoTest {
         MvcTestResult troca = put("/api/auth/senha", s.token(), Map.of("senhaAtual", SENHA_FORTE, "novaSenha", SENHA_FORTE_2));
         assertThat(status(troca)).isEqualTo(204);
         assertThat(corpo(get("/api/auth/eu", s.token())).path("pendencia").asString()).isEqualTo("NENHUMA");
-    }
-
-    @Test
-    void doisFatoresCompleto() {
-        Contratante c = novoContratante();
-        Sessao admin = c.admin();
-
-        JsonNode config = corpo(post("/api/auth/2fa/configurar", admin.token(), Map.of()));
-        String segredo = config.path("segredo").asString();
-        assertThat(config.path("uri").asString()).startsWith("otpauth://totp/");
-
-        assertThat(status(post("/api/auth/2fa/ativar", admin.token(),
-                Map.of("senha", SENHA_FORTE_2, "codigo", "000000")))).as("código errado").isEqualTo(422);
-        assertThat(status(post("/api/auth/2fa/ativar", admin.token(),
-                Map.of("senha", "Senha-Errada-Total-1", "codigo", Totp.codigoEm(segredo, Instant.now())))))
-                .as("ativar exige a senha").isEqualTo(422);
-        MvcTestResult ativar = post("/api/auth/2fa/ativar", admin.token(),
-                Map.of("senha", SENHA_FORTE_2, "codigo", Totp.codigoEm(segredo, Instant.now())));
-        assertThat(status(ativar)).isEqualTo(200);
-        JsonNode codigos = corpo(ativar).path("codigos");
-        assertThat(codigos.size()).isEqualTo(10);
-
-        // Login agora pede a segunda etapa.
-        MvcTestResult etapa1 = tentarLogin(c.adminEmail(), SENHA_FORTE_2);
-        assertThat(status(etapa1)).isEqualTo(200);
-        JsonNode e1 = corpo(etapa1);
-        assertThat(e1.path("requerDoisFatores").asBoolean()).isTrue();
-        assertThat(e1.path("tokenAcesso").isNull()).isTrue();
-        assertThat(cookieRefresh(etapa1)).as("sem sessão antes do código").isNull();
-        String desafio = e1.path("desafioDoisFatores").asString();
-
-        assertThat(status(post("/api/auth/2fa/verificar", null, Map.of("desafio", desafio, "codigo", "123123"))))
-                .isEqualTo(401);
-
-        // Código de recuperação funciona uma única vez.
-        String recuperacao = codigos.get(0).asString();
-        MvcTestResult etapa2 = post("/api/auth/2fa/verificar", null, Map.of("desafio", desafio, "codigo", recuperacao));
-        assertThat(status(etapa2)).isEqualTo(200);
-        assertThat(corpo(etapa2).path("tokenAcesso").asString()).isNotBlank();
-        assertThat(status(post("/api/auth/2fa/verificar", null, Map.of("desafio", desafio, "codigo", recuperacao))))
-                .isEqualTo(401);
-
-        // Código do app (próximo passo de 30 s, porque o atual já foi usado na ativação).
-        String proximo = Totp.codigoEm(segredo, Instant.now().plusSeconds(30));
-        MvcTestResult comApp = post("/api/auth/2fa/verificar", null, Map.of("desafio", desafio, "codigo", proximo));
-        assertThat(status(comApp)).isEqualTo(200);
-        String token = corpo(comApp).path("tokenAcesso").asString();
-
-        // Desligar pede senha + código, derruba as outras sessões e o login volta a ser só com senha.
-        MvcTestResult outraAba = post("/api/auth/2fa/verificar", null,
-                Map.of("desafio", desafio, "codigo", codigos.get(2).asString()));
-        String tokenOutraSessao = corpo(outraAba).path("tokenAcesso").asString();
-        assertThat(status(post("/api/auth/2fa/desativar", token,
-                Map.of("senha", SENHA_FORTE_2, "codigo", "000000")))).isEqualTo(422);
-        assertThat(status(post("/api/auth/2fa/desativar", token,
-                Map.of("senha", SENHA_FORTE_2, "codigo", codigos.get(1).asString())))).isEqualTo(204);
-        assertThat(status(get("/api/auth/eu", tokenOutraSessao))).as("outra sessão caiu").isEqualTo(401);
-        assertThat(status(get("/api/auth/eu", token))).as("a atual continua").isEqualTo(200);
-        assertThat(corpo(tentarLogin(c.adminEmail(), SENHA_FORTE_2)).path("requerDoisFatores").asBoolean()).isFalse();
-    }
-
-    @Test
-    void adminRedefineO2faDeQuemPerdeuOCelular() {
-        Contratante c = novoContratante();
-        UsuarioCriado u = novoUsuario(c.admin());
-        Sessao s = loginTrocandoSenha(u.email(), SENHA_FORTE, SENHA_FORTE_2);
-        String segredo = corpo(post("/api/auth/2fa/configurar", s.token(), Map.of())).path("segredo").asString();
-        assertThat(status(post("/api/auth/2fa/ativar", s.token(),
-                Map.of("senha", SENHA_FORTE_2, "codigo", Totp.codigoEm(segredo, Instant.now()))))).isEqualTo(200);
-        assertThat(corpo(tentarLogin(u.email(), SENHA_FORTE_2)).path("requerDoisFatores").asBoolean()).isTrue();
-
-        assertThat(status(patch("/api/usuarios/" + u.id() + "/redefinir-2fa", c.admin().token()))).isEqualTo(204);
-
-        assertThat(status(get("/api/auth/eu", s.token()))).as("sessões do usuário caíram").isEqualTo(401);
-        assertThat(corpo(tentarLogin(u.email(), SENHA_FORTE_2)).path("requerDoisFatores").asBoolean()).isFalse();
     }
 
     @Test
@@ -228,34 +157,24 @@ class AuthIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
-    void euTrazSituacaoDoDoisFatoresEAparencia() {
+    void euTrazAparenciaESemCamposDoAppAutenticador() {
         Contratante c = novoContratante();
-        JsonNode antes = corpo(get("/api/auth/eu", c.admin().token()));
-        assertThat(antes.path("doisFatoresAtivo").asBoolean()).isFalse();
-        assertThat(antes.path("doisFatoresObrigatorio").asBoolean()).isFalse();
-        assertThat(antes.path("aparencia").path("temaPadrao").asString()).isNotBlank();
-        assertThat(antes.has("corDestaque")).as("cor agora vem dentro de aparencia").isFalse();
+        JsonNode eu = corpo(get("/api/auth/eu", c.admin().token()));
+        assertThat(eu.path("pendencia").asString()).isEqualTo("NENHUMA");
+        assertThat(eu.path("aparencia").path("temaPadrao").asString()).isNotBlank();
+        assertThat(eu.has("corDestaque")).as("cor agora vem dentro de aparencia").isFalse();
+        assertThat(eu.has("doisFatoresAtivo")).as("2FA é sempre por e-mail: não há o que ligar").isFalse();
+        assertThat(eu.has("doisFatoresObrigatorio")).isFalse();
 
-        String segredo = corpo(post("/api/auth/2fa/configurar", c.admin().token(), Map.of())).path("segredo").asString();
-        assertThat(status(post("/api/auth/2fa/ativar", c.admin().token(),
-                Map.of("senha", SENHA_FORTE_2, "codigo", Totp.codigoEm(segredo, Instant.now()))))).isEqualTo(200);
-        assertThat(corpo(get("/api/auth/eu", c.admin().token())).path("doisFatoresAtivo").asBoolean())
-                .as("cache invalidado ao ligar").isTrue();
-
-        // Contratante que exige 2FA: obrigatório já aparece enquanto a pendência existe.
         Sessao s = loginSuperadmin();
-        String adminEmail = unico("admin") + "@teste.local";
-        assertThat(status(post("/api/tenants", s.token(), Map.of(
-                "nome", unico("Seguro"), "exige2fa", true,
-                "administrador", Map.of("nome", "Rita Alves", "email", adminEmail, "senha", SENHA_FORTE))))).isEqualTo(201);
-        Sessao exigido = loginTrocandoSenha(adminEmail, SENHA_FORTE, SENHA_FORTE_2);
-        JsonNode eu = corpo(get("/api/auth/eu", exigido.token()));
-        assertThat(eu.path("pendencia").asString()).isEqualTo("CONFIGURAR_2FA");
-        assertThat(eu.path("doisFatoresObrigatorio").asBoolean()).isTrue();
-        assertThat(eu.path("doisFatoresAtivo").asBoolean()).isFalse();
+        assertThat(corpo(get("/api/auth/eu", s.token())).path("pendencia").asString())
+                .as("superadmin não tem pendência de configurar nada").isEqualTo("NENHUMA");
 
-        JsonNode superadmin = corpo(get("/api/auth/eu", s.token()));
-        assertThat(superadmin.path("doisFatoresObrigatorio").asBoolean()).as("superadmin-exige-2fa desligado em teste").isFalse();
+        // As rotas do app autenticador deixaram de existir.
+        assertThat(status(post("/api/auth/2fa/configurar", c.admin().token(), Map.of()))).isEqualTo(404);
+        assertThat(status(post("/api/auth/2fa/ativar", c.admin().token(), Map.of("senha", "x", "codigo", "1")))).isEqualTo(404);
+        String adminId = c.admin().corpo().path("usuario").path("id").asString();
+        assertThat(status(patch("/api/usuarios/" + adminId + "/redefinir-2fa", s.token()))).isEqualTo(404);
     }
 
     @Test

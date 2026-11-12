@@ -7,12 +7,14 @@ app:
     cors-origens: http://localhost:5173
     cookie-seguro: false
     refresh-tolerancia: 0s
-    superadmin-exige-2fa: false
   rate-limit:
     login: 10000
     dois-fatores: 10000
     refresh: 10000
     geral: 100000
+  # Os e-mails não saem: a CaixaDeEmailFake substitui o JavaMailSender e guarda as mensagens.
+  email:
+    remetente: nao-responda@teste.local
   superadmin:
     email: superadmin@teste.local
     senha: Orquidea-Lunar-Prisma-2026

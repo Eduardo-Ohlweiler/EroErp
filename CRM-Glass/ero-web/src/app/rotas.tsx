@@ -1,28 +1,33 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Link, Navigate, type RouteObject } from 'react-router';
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { Splash } from '../design-system/ui/Splash';
+import { rotasAuth } from '../modules/auth/routes';
+import { rotasInicio } from '../modules/inicio/routes';
+import { CascaProtegida } from './casca/Casca';
+import { Raiz } from './Raiz';
 
 /** Catálogo do design system: só em desenvolvimento (fica fora do build de produção). */
 const DesignSystem = import.meta.env.DEV ? lazy(() => import('../design-system/catalogo/DesignSystem')) : null;
 
-/** Provisório até o frontend-modulos montar as rotas de verdade (app/rotas.tsx). */
-function Provisorio() {
-  return (
-    <main className="min-h-screen grid place-items-center p-6">
-      <div className="glass-solid p-8 max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight">CRM Glass</h1>
-        <p className="text-sm text-muted mt-2">Base do front pronta. As telas chegam na próxima etapa.</p>
-        {import.meta.env.DEV && (
-          <Link to="/design-system" className="inline-block mt-5 text-sm font-semibold text-accent-text underline underline-offset-4">
-            Abrir o design system
-          </Link>
-        )}
-      </div>
-    </main>
-  );
-}
-
-const rotas: RouteObject[] = [{ path: '/', element: <Provisorio /> }];
+/*
+ * Raiz (sessão + TrocaDeArea)
+ *   /login                 área de login (pública)
+ *   casca protegida        sem sessão → /login?voltar=<rota>; troca de senha pendente → /login
+ *     /                    Início
+ *     *                    → Início
+ */
+const rotas: RouteObject[] = [
+  {
+    element: <Raiz />,
+    children: [
+      ...rotasAuth,
+      {
+        element: <CascaProtegida />,
+        children: [...rotasInicio, { path: '*', element: <Navigate to="/" replace /> }],
+      },
+    ],
+  },
+];
 
 if (DesignSystem) {
   rotas.push({

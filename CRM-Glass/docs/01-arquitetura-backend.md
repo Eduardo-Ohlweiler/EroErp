@@ -26,6 +26,7 @@ ero-api/src/main/java/com/api/ero_api/
     exception/          ApiException e filhas + GlobalExceptionHandler
     util/               LogSeguro, PaginacaoUtils, HashUtils
     web/                filtros HTTP (CorrelationId, limite de tamanho), ClienteRequisicao
+    email/              EmailService (SMTP, modelos em resources/templates/email/)
     config/             auditoria JPA, OpenAPI, seed do superadmin, agendamento (@EnableScheduling)
   seguranca/            infraestrutura de segurança (não é módulo de negócio)
     config/             SecurityConfig, CorsConfig, SegurancaProperties
@@ -55,7 +56,7 @@ O módulo `usuario` é o **módulo-modelo**. Módulo novo = copiar a forma dele.
 | `dtos/` | `UsuarioCreateDto`, `UsuarioUpdateDto`, `UsuarioResponseDto`, `UsuarioSelectDto` | Sempre `record` e sempre com sufixo `Dto`. Bean Validation com mensagem em pt-BR e `@Schema`. **Nunca** `tenantId`, `id` nem auditoria na entrada. O UpdateDto traz `version`. DTO com senha sobrescreve `toString()`. Em DTO de entrada, use tipo objeto (`Boolean`, `Integer`) com `@NotNull`, nunca primitivo: o Jackson 3 recusa campo primitivo ausente com erro genérico, sem dizer qual campo. |
 | `mapper/` | `UsuarioMapper.java` | Classe `final` com construtor privado e métodos `static`: `toResponseDto`, `toSelectDto`, `toEntity(CreateDto)`, `atualizarEntidade(entity, UpdateDto)`. Sem Spring e sem regra de negócio. |
 | `service/` | `UsuarioService.java` | `@Service`, injeção pelo construtor. `@Transactional(readOnly = true)` em leitura e `@Transactional` em escrita. `buscarEntidade(id)` para outros services; `buscarPorId(id)` devolve DTO para o controller. Escreveu e vai devolver o DTO: **`saveAndFlush`** antes de mapear (senão a resposta sai com a `version` antiga e o próximo PUT dá 409 falso). Regras de negócio e autorização fina ficam aqui. Erros com exceção tipada. |
-| `controller/` | `UsuarioController.java` | `@RestController`, rota plural `/api/<recurso>`. Só recebe e devolve DTO. **Todo** método público com `@PreAuthorize` (ou `@PermitAll` justificado). Rota "de qualquer usuário" (combo, catálogo) usa `hasAuthority('ACESSO_LIBERADO')`, nunca `isAuthenticated()` (que deixaria passar quem ainda tem pendência). Exceção: `/api/auth/*`, que atende justamente quem tem pendência (trocar senha, configurar 2FA). Swagger `@Tag`/`@Operation`. Nenhuma regra: só delega. |
+| `controller/` | `UsuarioController.java` | `@RestController`, rota plural `/api/<recurso>`. Só recebe e devolve DTO. **Todo** método público com `@PreAuthorize` (ou `@PermitAll` justificado). Rota "de qualquer usuário" (combo, catálogo) usa `hasAuthority('ACESSO_LIBERADO')`, nunca `isAuthenticated()` (que deixaria passar quem ainda tem pendência). Exceção: `/api/auth/*`, que atende justamente quem tem pendência (trocar a senha temporária). Swagger `@Tag`/`@Operation`. Nenhuma regra: só delega. |
 | `util/` | validadores do módulo | Opcional. Ex.: validador de CPF/CNPJ, cálculo puro. |
 
 > **Entidade nunca sai da API (regra inviolável):** toda consulta que devolve informação
@@ -85,7 +86,7 @@ List<UsuarioSelectDto> buscarNomesPorIds(@Param("ids") Collection<UUID> ids);
 ```
 
 Por quê: carregar a entidade inteira só para ler o nome decifra os campos com
-`CriptoConverter` (o segredo TOTP do usuário) e traz colunas que ninguém vai usar. O
+`CriptoConverter` (quando a entidade tem campo cifrado) e traz colunas que ninguém vai usar. O
 service expõe isso como `buscarNomes(Collection<UUID>) → Map<UUID, String>` (um SELECT
 por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora desse caso
 (nomes ou rótulos em lote), tudo segue entidade + mapper.
@@ -137,11 +138,14 @@ por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora
 |---|---|---|
 | validação de DTO | 400 | `VALIDACAO` |
 | `AutenticacaoException` / token inválido | 401 | `NAO_AUTENTICADO` |
+| `/2fa/verificar`: desafio vencido, código vencido, já usado, substituído por login novo ou anterior à última troca de senha (voltar para a senha) | 401 | `DESAFIO_EXPIRADO` |
+| `/2fa/verificar`: código errado, ou conta bloqueada/inativa/contratante inativo, sem dizer qual (pode digitar de novo) | 401 | `CODIGO_INVALIDO` |
 | `AcessoNegadoException` / sem permissão | 403 | `ACESSO_NEGADO` |
 | `NaoEncontradoException` (também quando é de outro tenant) | 404 | `NAO_ENCONTRADO` |
 | `ConflitoException` / versão desatualizada / duplicidade | 409 | `CONFLITO` |
 | `RegraNegocioException` | 422 | `REGRA_NEGOCIO` |
-| limite de requisições | 429 | `MUITAS_REQUISICOES` |
+| limite de requisições (com `Retry-After`) | 429 | `MUITAS_REQUISICOES` |
+| `ServicoIndisponivelException` (ex.: e-mail não saiu) | 503 | `SERVICO_INDISPONIVEL` |
 | inesperado | 500 | `ERRO_INTERNO` (texto genérico + correlationId; detalhe só no log) |
 
 ## Auditoria de registro

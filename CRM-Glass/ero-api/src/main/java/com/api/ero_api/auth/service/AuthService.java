@@ -3,13 +3,18 @@ package com.api.ero_api.auth.service;
 import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import com.api.ero_api.auditoria.service.EventoSegurancaService;
 import com.api.ero_api.auth.dtos.AutenticacaoRespostaDto;
+import com.api.ero_api.auth.dtos.CodigoEnviadoDto;
+import com.api.ero_api.auth.dtos.DoisFatoresReenviarDto;
 import com.api.ero_api.auth.dtos.DoisFatoresVerificarDto;
 import com.api.ero_api.auth.dtos.LoginDto;
 import com.api.ero_api.auth.dtos.TrocarSenhaDto;
 import com.api.ero_api.auth.dtos.UsuarioLogadoDto;
 import com.api.ero_api.auth.mapper.AuthMapper;
+import com.api.ero_api.auth.service.CodigoVerificacaoService.Desafio;
+import com.api.ero_api.auth.service.CodigoVerificacaoService.Emitido;
 import com.api.ero_api.compartilhado.exception.AutenticacaoException;
 import com.api.ero_api.compartilhado.exception.RegraNegocioException;
+import com.api.ero_api.compartilhado.exception.ServicoIndisponivelException;
 import com.api.ero_api.compartilhado.util.LogSeguro;
 import com.api.ero_api.seguranca.SecurityUtils;
 import com.api.ero_api.seguranca.UsuarioAutenticado;
@@ -33,14 +38,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Login, 2FA no login, renovação, logout, troca da própria senha e o
+ * Login (senha + código enviado por e-mail), renovação, logout, troca da própria senha e o
  * "acessar contratante" do superadmin.
  *
  * <p>Por que não usa {@code @Transactional}: estes fluxos começam SEM tenant
@@ -57,12 +61,16 @@ public class AuthService {
 
     private static final String MSG_LOGIN = "E-mail ou senha inválidos.";
     private static final String MSG_SESSAO = "Sessão inválida ou expirada. Faça login de novo.";
+    private static final String MSG_DESAFIO_EXPIRADO = "O tempo para digitar o código acabou. Entre de novo.";
+    /** Códigos do 401 da 2ª etapa: o front volta para a senha ou deixa digitar de novo. */
+    private static final String COD_DESAFIO_EXPIRADO = "DESAFIO_EXPIRADO";
+    private static final String COD_CODIGO_INVALIDO = "CODIGO_INVALIDO";
 
     private final UsuarioService usuarioService;
     private final TenantService tenantService;
     private final SessaoService sessaoService;
     private final AutorizacaoService autorizacaoService;
-    private final DoisFatoresService doisFatoresService;
+    private final CodigoVerificacaoService codigos;
     private final SenhaService senhaService;
     private final JwtService jwtService;
     private final EventoSegurancaService eventos;
@@ -71,14 +79,14 @@ public class AuthService {
     private final String hashFalso;
 
     public AuthService(UsuarioService usuarioService, TenantService tenantService, SessaoService sessaoService,
-                       AutorizacaoService autorizacaoService, DoisFatoresService doisFatoresService,
+                       AutorizacaoService autorizacaoService, CodigoVerificacaoService codigos,
                        SenhaService senhaService, JwtService jwtService, EventoSegurancaService eventos,
                        SegurancaProperties props, PlatformTransactionManager transactionManager) {
         this.usuarioService = usuarioService;
         this.tenantService = tenantService;
         this.sessaoService = sessaoService;
         this.autorizacaoService = autorizacaoService;
-        this.doisFatoresService = doisFatoresService;
+        this.codigos = codigos;
         this.senhaService = senhaService;
         this.jwtService = jwtService;
         this.eventos = eventos;
@@ -93,10 +101,14 @@ public class AuthService {
     }
 
     private sealed interface Verificacao {
-        record Ok(UUID usuarioId, boolean doisFatores) implements Verificacao {
+        record Ok(UUID usuarioId) implements Verificacao {
         }
 
         record Falha(UUID usuarioId, UUID tenantId, boolean bloqueou) implements Verificacao {
+        }
+
+        /** Código vencido, já usado ou trocado por um login mais novo: não conta como erro. */
+        record Expirado(UUID usuarioId, UUID tenantId) implements Verificacao {
         }
     }
 
@@ -105,48 +117,70 @@ public class AuthService {
 
     // ---------------------------------------------------------------- login
 
+    /**
+     * Primeira etapa. Senha certa e conta ativa: envia o código por e-mail e devolve
+     * só o desafio (nenhuma sessão ainda). Todos os usuários passam pelo código.
+     * Sem e-mail configurado, responde 503 antes de olhar a senha (igual para todos).
+     */
     public Resultado login(LoginDto dto) {
+        if (!codigos.envioConfigurado()) {
+            throw new ServicoIndisponivelException(CodigoVerificacaoService.MSG_ENVIO_FALHOU);
+        }
         Instant agora = Instant.now();
         Verificacao v = rootContandoFalha(() -> verificarSenha(dto.email(), dto.senha(), agora));
         if (v instanceof Verificacao.Falha f) {
             registrarFalha(TipoEventoSeguranca.LOGIN_FALHA, f, "email=" + LogSeguro.email(dto.email()));
             throw new AutenticacaoException(MSG_LOGIN);
         }
-        Verificacao.Ok ok = (Verificacao.Ok) v;
-        if (ok.doisFatores()) {
-            String desafio = jwtService.emitirDesafio2fa(ok.usuarioId()).token();
-            return new Resultado(AutenticacaoRespostaDto.desafio(desafio), null, null);
-        }
-        return abrirSessao(ok.usuarioId());
+        Emitido emitido = codigos.emitir(((Verificacao.Ok) v).usuarioId());
+        return new Resultado(AutenticacaoRespostaDto.desafio(emitido.desafio(), emitido.codigo()), null, null);
     }
 
+    /**
+     * Segunda etapa: desafio + código do e-mail. Código errado conta no mesmo
+     * contador da senha (5 erros bloqueiam a conta). Certo: o código é gasto (uso
+     * único) e a sessão é aberta.
+     */
     public Resultado verificarDoisFatores(DoisFatoresVerificarDto dto) {
-        UUID usuarioId;
-        try {
-            usuarioId = UUID.fromString(jwtService.validarDesafio(dto.desafio()).getSubject());
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new AutenticacaoException("O tempo para digitar o código acabou. Faça login de novo.");
-        }
+        Desafio desafio = codigos.lerDesafio(dto.desafio())
+                .orElseThrow(() -> new AutenticacaoException(COD_DESAFIO_EXPIRADO, MSG_DESAFIO_EXPIRADO));
         Instant agora = Instant.now();
         Verificacao v = rootContandoFalha(() -> {
-            Optional<Usuario> encontrado = usuarioService.buscarComBloqueio(usuarioId);
+            Optional<Usuario> encontrado = usuarioService.buscarComBloqueio(desafio.usuarioId());
             if (encontrado.isEmpty()) {
-                return new Verificacao.Falha(usuarioId, null, false);
+                return new Verificacao.Falha(desafio.usuarioId(), null, false);
             }
             Usuario u = encontrado.get();
-            if (u.bloqueadoEm(agora) || !u.isAtivo() || !u.isTotpAtivo()) {
+            // Inativado (usuário ou contratante) entre a senha e o código: não entra.
+            if (u.bloqueadoEm(agora) || !u.isAtivo() || !contratanteAtivo(u)) {
                 return new Verificacao.Falha(u.getId(), u.getTenantId(), false);
             }
-            if (!doisFatoresService.validarCodigoLogin(u, dto.codigo(), agora)) {
-                return registrarErro(u, agora);
-            }
-            return new Verificacao.Ok(u.getId(), true);
+            return switch (codigos.validar(desafio, u, dto.codigo(), agora)) {
+                case OK -> new Verificacao.Ok(u.getId());
+                case CODIGO_ERRADO -> registrarErro(u, agora);
+                case EXPIRADO -> new Verificacao.Expirado(u.getId(), u.getTenantId());
+            };
         });
-        if (v instanceof Verificacao.Falha f) {
-            registrarFalha(TipoEventoSeguranca.DOIS_FATORES_FALHA, f, null);
-            throw new AutenticacaoException("Código inválido.");
+        switch (v) {
+            case Verificacao.Ok ok -> {
+                return abrirSessao(ok.usuarioId());
+            }
+            case Verificacao.Expirado x -> {
+                eventos.registrarIndependente(TipoEventoSeguranca.DOIS_FATORES_FALHA, x.usuarioId(), x.tenantId(),
+                        "código vencido, já usado ou substituído");
+                throw new AutenticacaoException(COD_DESAFIO_EXPIRADO, MSG_DESAFIO_EXPIRADO);
+            }
+            case Verificacao.Falha f -> {
+                registrarFalha(TipoEventoSeguranca.DOIS_FATORES_FALHA, f, null);
+                // Mesma resposta para código errado, conta bloqueada ou inativa: não revela o estado da conta.
+                throw new AutenticacaoException(COD_CODIGO_INVALIDO, "Código inválido.");
+            }
         }
-        return abrirSessao(usuarioId);
+    }
+
+    /** Reenvia o mesmo código do desafio (ver regras em CodigoVerificacaoService.reenviar). */
+    public CodigoEnviadoDto reenviarCodigo(DoisFatoresReenviarDto dto) {
+        return codigos.reenviar(dto.desafio());
     }
 
     // ---------------------------------------------------------------- sessão
@@ -213,6 +247,7 @@ public class AuthService {
                 throw new RegraNegocioException("A nova senha precisa ser diferente da atual.");
             }
             u.setSenhaHash(senhaService.gerarHash(dto.novaSenha()));
+            // Também derruba o código de login pendente (ver CodigoVerificacao.valeEm).
             u.setSenhaAlteradaEm(agora);
             u.setExigirTrocaSenha(false);
             usuarioService.atualizarTentativas(u.getId(), 0, null);
@@ -276,14 +311,18 @@ public class AuthService {
         if (senhaService.precisaAtualizarHash(u.getSenhaHash())) {
             usuarioService.regravarHashSenha(u.getId(), senhaService.gerarHash(senha));
         }
-        return new Verificacao.Ok(u.getId(), u.isTotpAtivo());
+        return new Verificacao.Ok(u.getId());
     }
 
-    /** Conta o erro (linha já travada); ao chegar no limite, bloqueia a conta por um tempo. */
+    /**
+     * Conta o erro (linha já travada); ao chegar no limite, bloqueia a conta por um
+     * tempo e apaga o código pendente (o desbloqueio não devolve chutes a ele).
+     */
     private Verificacao.Falha registrarErro(Usuario u, Instant agora) {
         int tentativas = u.getTentativasFalhas() + 1;
         if (tentativas >= props.loginMaxTentativas()) {
             usuarioService.atualizarTentativas(u.getId(), 0, agora.plus(props.loginBloqueio()));
+            codigos.invalidarDoUsuario(u.getId());
             return new Verificacao.Falha(u.getId(), u.getTenantId(), true);
         }
         usuarioService.atualizarTentativas(u.getId(), tentativas, null);
