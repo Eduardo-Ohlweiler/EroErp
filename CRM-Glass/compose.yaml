@@ -1,0 +1,4 @@
+# Atalho: `docker compose up` na pasta CRM-Glass sobe o ambiente de dev/demonstração.
+# Tudo está em deploy/dev/compose.yaml.
+include:
+  - deploy/dev/compose.yaml

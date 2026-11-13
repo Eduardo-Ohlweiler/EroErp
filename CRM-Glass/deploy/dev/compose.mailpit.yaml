@@ -1,0 +1,19 @@
+# Override opcional: a API manda os códigos de login para o Mailpit (nada sai de verdade).
+# Subir:  docker compose -f compose.yaml -f deploy/dev/compose.mailpit.yaml up -d
+# Voltar ao Gmail:  docker compose up -d   (recria a api)
+# Caixa de entrada: http://localhost:8025
+services:
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "127.0.0.1:${MAILPIT_PORTA:-8025}:8025"
+      - "127.0.0.1:${SMTP_PORTA:-1025}:1025"
+  api:
+    depends_on:
+      - mailpit
+    environment:
+      MAIL_HOST: mailpit
+      MAIL_PORTA: "1025"
+      MAIL_SMTP_AUTH: "false"
+      MAIL_STARTTLS: "false"
+      MAIL_REMETENTE: crm@teste.local

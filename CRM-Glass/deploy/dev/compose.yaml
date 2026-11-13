@@ -1,0 +1,72 @@
+# Ambiente LOCAL de desenvolvimento/demonstração. NÃO é produção.
+# Sobe: postgres + api + web (Mailpit é opcional) (nginx). Ver CONTINUAR.md, "Rodar tudo com Docker".
+# Segredos vêm de ero-api/.env (fora do git). Nada de segredo neste arquivo.
+name: crm-glass-dev
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ero_api
+      POSTGRES_USER: ero
+      POSTGRES_PASSWORD: ero_dev_local   # só dev; porta presa ao localhost
+    ports:
+      - "127.0.0.1:${PG_PORTA:-5433}:5432"
+    volumes:
+      - ero_api_pg:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ero -d ero_api"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ../../ero-api
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ../../ero-api/.env
+    # `environment:` vence `env_file:`.
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ero_api
+      SPRING_DATASOURCE_USERNAME: ero
+      SPRING_DATASOURCE_PASSWORD: ero_dev_local
+      APP_CORS_ORIGENS: http://localhost:${WEB_PORTA:-5173},http://127.0.0.1:${WEB_PORTA:-5173}
+      APP_PROXY_HEADERS: native
+      # E-mail: padrão = Gmail do ero-api/.env. Para Mailpit, ver compose.mailpit.yaml.
+    ports:
+      - "127.0.0.1:${API_PORTA:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /actuator/health HTTP/1.0\r\n\r\n\" >&3 && grep -q UP <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
+  web:
+    build:
+      context: ../../ero-web
+      dockerfile: ../deploy/dev/web.Dockerfile
+      additional_contexts:
+        conf: .
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORTA:-5173}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  ero_api_pg:
+    # Banco de dev já existente (criado pelo ero-api/compose.yaml). Não rode junto com o run-dev.cmd.
+    external: true
+    name: ero-api_ero_api_pg

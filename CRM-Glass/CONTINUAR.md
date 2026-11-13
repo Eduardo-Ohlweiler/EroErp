@@ -141,3 +141,21 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 6. **Definir as regras do papel ADMIN** (hoje recebe tudo do contratante; ver `docs/04-permissoes.md`).
 7. **Primeiros módulos de negócio pelo `/timeero`:** cadastro de pessoas/clientes, empresas/filiais, produtos, funil de negócios e agenda.
 8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup.
+
+---
+
+## Rodar tudo com Docker (dev/demonstração)
+
+Na pasta `CRM-Glass`: sobe banco, API e front (nginx) de uma vez. Arquivos em `deploy/dev/`.
+
+```
+docker compose up --build -d     # sobe (use --build quando mudar código)
+docker compose logs -f api       # acompanhar a API
+docker compose down              # derruba (o banco fica no volume)
+```
+
+- App: http://localhost:5173 (o `/api` passa pelo nginx, mesma origem) | API/Swagger: http://localhost:8080/swagger-ui.html
+- Segredos e superadmin vêm de `ero-api/.env`. O código do login sai pelo **Gmail** do `.env` (padrão).
+- **Testar sem mandar e-mail:** `docker compose -f compose.yaml -f deploy/dev/compose.mailpit.yaml up -d` e ler os códigos em http://localhost:8025. Para voltar ao Gmail: `docker compose up -d`.
+- O banco usa o volume existente `ero-api_ero_api_pg`. **Não rode junto com o `run-dev.cmd`/preview da API** (mesmo volume, mesma porta 5433). Se o container `ero-api-postgres-1` estiver de pé: `docker compose -f ero-api/compose.yaml stop`.
+- Portas mudam por variável: `WEB_PORTA`, `API_PORTA`, `PG_PORTA`, `MAILPIT_PORTA`, `SMTP_PORTA`.
