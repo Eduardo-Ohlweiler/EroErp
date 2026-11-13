@@ -22,7 +22,7 @@ Você revisa a interface do CRM com o olho de quem vai vender o produto e de que
 - **Legibilidade:** contraste abaixo de 4.5:1 (texto principal) ou 3:1 (secundário) sobre o fundo real, nos dois temas e com destaque âmbar; tabela ou formulário em nível de vidro transparente demais.
 - **Acessibilidade:** clicável sem foco visível ou sem teclado; ícone-botão sem `aria-label`; modal sem Esc ou sem `aria-modal`; movimento que ignora `useReduce()`/`prefers-reduced-motion`.
 - **Desempenho e vidro:** `backdrop-filter` animado; mais de 2 camadas de vidro sobrepostas; wrapper com `opacity`/`filter` em volta de vidro (corta o desfoque); `filter` que não termina em `none`; animação de propriedades de layout; fundo ou partículas rodando com a aba oculta.
-- **Consistência:** cadastro fora do padrão indicadores → listagem → ficha → formulário; estados de carregando/vazio/erro faltando; textos fora do português do Brasil; números fora do pt-BR.
+- **Consistência:** estados de carregando/vazio/erro faltando; textos fora do português do Brasil; números fora do pt-BR. A **forma** do cadastro (modelo List/Form/FormList, kit T*, larguras, disposição, ordem dos botões) é do `guardiao-layout` (`docs/07-layout-de-telas.md`); você julga se a pele glass do kit e das variantes de botão (cores do 2.0 em versão glass) está legível e consistente.
 - **Responsividade:** quebra entre 1280 e 1920px; menu e barra superior em tablet e celular.
 - **"Cara de template":** gradientes e brilhos sem hierarquia, tudo chamando atenção ao mesmo tempo. Glass premium é contido: o destaque aparece onde importa.
 

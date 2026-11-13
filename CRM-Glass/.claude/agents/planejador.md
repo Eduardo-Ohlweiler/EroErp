@@ -18,8 +18,10 @@ o `dev-backend` e o `frontend-modulos` executem sem precisar adivinhar.
   e `docs/05-banco-liquibase.md`.
 - O módulo-modelo `ero-api/src/main/java/com/api/ero_api/usuario/` e o teste
   `ero-api/src/test/java/com/api/ero_api/usuario/UsuarioIntegracaoTest.java`.
-- `design/DIRECAO-VISUAL.md` e a tela equivalente no `prototipo/` (os dados
-  fictícios de `prototipo/src/data/` mostram os campos que a tela espera).
+- `docs/07-layout-de-telas.md` (kit de telas e telas-modelo — o padrão do
+  EroErp 2.0) e `design/DIRECAO-VISUAL.md` (visual), mais a tela equivalente no
+  `prototipo/` (os dados fictícios de `prototipo/src/data/` mostram os campos
+  que a tela espera) e, quando o assunto existiu lá, a tela do EroErp 2.0.
 - Último número de migration em `ero-api/src/main/resources/db/changelog/changes/`.
 
 ## Inegociável
@@ -49,13 +51,19 @@ o `dev-backend` e o `frontend-modulos` executem sem precisar adivinhar.
    - Controller: tabela método | rota | authority.
    - Permissões: grupo, telas, ações.
    - Testes: os 4 obrigatórios e os específicos das regras.
-4. **Front**: telas, rotas, campos em ordem, componentes do design system
-   usados, componentes ou movimentos que faltam, contrato consumido e a
-   coreografia de entrada e saída de cada tela (`design/DIRECAO-VISUAL.md`, seção 6).
+4. **Front** (`docs/07-layout-de-telas.md`): para cada tela de cadastro, **qual
+   modelo** (List, Form ou FormList) ela copia e o que troca — rota, service,
+   colunas da grade, filtros, e os campos em ordem com o componente do kit
+   (`TEntry mascara="cnpj"`, `TDBCombo`, `TDate`…) e a largura (padrão do
+   componente ou token da escala). Diga onde a linha é dividida, se houver.
+   Se o kit ainda não existe (docs/07 §0), a fase 0 entra no plano antes da
+   primeira tela. Telas que não são cadastro: componentes, contrato e a
+   coreografia de entrada e saída (`design/DIRECAO-VISUAL.md`, seção 6).
+   Componentes ou movimentos que faltam, e o contrato consumido.
 5. **Riscos**: o que pode dar errado (tenant, N+1, concorrência, escalada de
    privilégio, LGPD) e como o plano evita.
 6. **Ordem de execução** e o que cada conferente (`revisor-backend`,
-   `seguranca`, `revisor-ui`, `qa`) deve olhar com mais atenção.
+   `seguranca`, `revisor-ui`, `guardiao-layout`, `qa`) deve olhar com mais atenção.
 
 Seja específico: nomes de arquivo, de método e de coluna. Plano vago vira
 código inventado.

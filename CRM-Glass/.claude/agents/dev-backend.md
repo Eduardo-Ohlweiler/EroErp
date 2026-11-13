@@ -41,6 +41,11 @@ ela não é negociável.
    e `deleteById`. `CAST(:p AS string)` em todo String opcional dentro de função SQL.
 5. DTO: `record`, Bean Validation em pt-BR, limite de tamanho em todo String,
    tipo objeto (`Boolean`) com `@NotNull` em vez de primitivo. Update traz `version`.
+   Guarda de entrada com piso **e** teto (`@Size`, `@Min`/`@Max`), e `grep` do
+   mesmo campo em todos os DTOs que o recebem. `ResponseDto` de cadastro publica
+   a auditoria com nome: `criadoPorNome`, `createdAt`, `alteradoPorNome`,
+   `updatedAt` — é o que o `TAuditoria` da tela lê (`docs/07-layout-de-telas.md`
+   §3.2). O nome é resolvido em lote no service (sem N+1) e montado no mapper.
 6. Mapper: `final`, métodos `static`, sem regra de negócio.
 7. **Regra inviolável: entidade nunca sai da API.** Toda consulta que devolve
    informação tem o seu `<Entidade>ResponseDto` (ou `SelectDto`/DTO próprio)
@@ -72,6 +77,11 @@ Se o plano pedir algo que fere essas regras, **pare e devolva a pergunta**. Não
   que passa antes e depois da correção não protege nada: reintroduza o defeito
   e veja o teste falhar.
 - Dados de teste únicos (`unico("...")`): o banco é compartilhado entre os testes.
+- Mudou assinatura pública → `./mvnw clean verify`. A compilação incremental
+  pode responder sucesso com o projeto quebrado.
+- Listagem com filtros pensada para a tela List do docs/07: os filtros chegam
+  como parâmetros opcionais (consulta só ao clicar Buscar), paginação em
+  `PaginaDto`, e `/selecao` (`SelectDto` com id e nome) para os `TDBCombo`.
 - Ao terminar, faça `grep` de cada método público novo. Se ele só aparece na
   declaração, ninguém o usa.
 - Atualize `docs/` e o `CLAUDE.md` quando a entrega mudar o que está escrito lá.

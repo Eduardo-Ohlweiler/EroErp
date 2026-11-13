@@ -40,6 +40,11 @@ aprovado.** Se o Eduardo não estiver respondendo, pare aqui e deixe o plano esc
    Lembre no prompt: **seguir obrigatoriamente `docs/01` e o módulo `usuario`**,
    e o `./mvnw verify` precisa ficar verde.
 2. Front, depois do backend (o front tipa o que o back entregou):
+   - Tela de cadastro e o kit de telas ainda não existe (`docs/07-layout-de-telas.md`
+     §0)? Primeiro a **fase 0**: o `glass-design-system` constrói o kit (ver a
+     skill `padronizar-layout`).
+   - Lembre no prompt do `frontend-modulos`: **toda tela de cadastro é cópia do
+     modelo List, Form ou FormList do docs/07, só com o kit T***.
    - Se o `frontend-modulos` apontar componente ou movimento faltando,
      chame `glass-design-system` e `motion-designer` **em paralelo** (arquivos separados).
    - Depois o `frontend-modulos`, com o plano, os endpoints e DTOs entregues
@@ -52,7 +57,8 @@ Entrega só de back ou só de front pula a outra parte.
 - **Em paralelo, na mesma mensagem:**
   - `revisor-backend` com o diff do backend (`git diff main...HEAD -- ero-api/`);
   - `seguranca` com o diff completo (`git diff main...HEAD`), **sempre**, mesmo em entrega só de front;
-  - `revisor-ui` com as telas e os componentes tocados (se houve front).
+  - `revisor-ui` com as telas e os componentes tocados (se houve front);
+  - `guardiao-layout` com as telas tocadas (se houve tela de cadastro ou mudança no kit).
 - **Depois:** o `qa` com o que a entrega tocou (rotas, telas, regras, quem pode o quê).
   Ele sobe a API e o front, então roda sozinho.
 
@@ -62,6 +68,7 @@ Voltam para o agente dono do arquivo, com o achado literal:
 - `bloqueia` ou `corrigir` do `revisor-backend`;
 - qualquer `bloqueia` do `seguranca`;
 - achados graves do `revisor-ui`;
+- tela `reprovada` pelo `guardiao-layout`;
 - qualquer ❌ do `qa`.
 
 Os donos são: `dev-backend` para `ero-api/`, e `frontend-modulos`,

@@ -69,7 +69,7 @@ Biblioteca: Motion (Framer Motion) com `AnimatePresence` e animações de layout
 - Cadastros: pessoas, empresas/filiais, produtos, usuários e permissões
 - Futuro: outros módulos no mesmo shell (menu, barra superior, busca global)
 
-Todo cadastro segue o mesmo padrão de tela: listagem com busca e filtros → painel de detalhe → formulário em etapas. Fazer uma vez no design system e reutilizar.
+Todo cadastro segue o padrão de construção do EroErp 2.0: kit de telas `T*` e telas copiadas dos modelos List, Form e FormList (`docs/07-layout-de-telas.md`, que prevalece em tudo que é forma de tela). Esta direção visual vale para a pele do kit: vidro, destaque e montagem em blocos.
 
 ## 6. Norte para o futuro: experiência, não só funcionalidade
 

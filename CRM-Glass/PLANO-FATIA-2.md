@@ -1,5 +1,7 @@
 # Plano APROVADO — fatia 2: telas do front definitivo (login + casca + Minha conta + módulo administrativo)
 
+> **Atualização de 12/11/2026:** as telas de cadastro (Contratantes, Usuários, Logs) passam a seguir o kit de telas e os modelos List/Form/FormList do `docs/07-layout-de-telas.md` (padrão do EroErp 2.0). Onde este plano fala em `Etapas`, `Tabs` ou outra forma de tela, vale o docs/07.
+>
 > **Como usar este arquivo.** Este plano foi aprovado pelo dono em 06/11/2026 para a fatia 1, que acabou dividida em duas:
 > - **Fatia 1 (entregue na branch `timeero/front-fatia-1`):** todo o backend da seção 1, a base do `ero-web/` (tokens, componentes glass, AparenciaProvider) e todo o movimento (cenas, troca de tema em vídeo, coreografia em blocos, `docs/06`).
 > - **Fatia 2 (o que falta):** as telas e a sessão da seção 2 — login, sessão em memória, guardas, menu, casca, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta — e o QA com os critérios da seção 4.
