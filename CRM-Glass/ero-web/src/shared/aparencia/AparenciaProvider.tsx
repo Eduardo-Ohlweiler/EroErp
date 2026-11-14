@@ -11,7 +11,8 @@ import {
 } from 'react';
 import { MotionConfig } from 'motion/react';
 import { usePrefereMenosMovimento } from '../../motion/reduzir';
-import { PADRAO_SISTEMA, deApi, sanear, type AparenciaApi, type Settings, type Theme } from './mapear';
+import { combinarCamadas, temaSemPrevia } from './camadas';
+import { deApi, sanear, temaDeApi, type AparenciaApi, type Settings, type Theme } from './mapear';
 
 export type { Accent, AparenciaApi, Fundo, FundoCatalogo, Movimento, Settings, Theme } from './mapear';
 export { DEFAULT_SETTINGS, PADRAO_SISTEMA } from './mapear';
@@ -20,8 +21,11 @@ export { DEFAULT_SETTINGS, PADRAO_SISTEMA } from './mapear';
  * Aparência aplicada na interface, em camadas (a de cima vence):
  *   1. padrão do sistema  (sempre; é o que vale na tela de login)
  *   2. contratante        (`usuario.aparencia` vindo da API: login, refresh, acessar/sair de contratante)
- *   3. prévia             (temporária, tela de Configuração do contratante)
- * Não há camada do usuário e nada sobre o contratante vai para o localStorage.
+ *   3. tema do usuário    (`usuario.temaPreferido`: só claro/escuro; `null` segue o tema padrão do contratante)
+ *   4. prévia             (temporária, tela Aparência do contratante: mostra o tema configurado do contratante,
+ *                          que é o que o cliente verá; ao sair dela volta o tema do usuário)
+ * O resto da aparência (fundo, destaque, vidro, animações, desempenho) é só do contratante.
+ * Nada disso vai para o localStorage. A regra das camadas é o `combinarCamadas` (camadas.ts).
  *
  * Tema: quando o tema pedido pelas camadas muda, a troca passa pelo `trocarTema` recebido por prop
  * (ponto de extensão do motion-designer: View Transition + cena). Sem ele, a troca é direta.
@@ -60,8 +64,18 @@ export type AparenciaCtx = {
    * `false` no login e na plataforma (sem contratante); só com `true` o aparelho é medido para o modo leve.
    */
   desempenhoAutomatico: boolean;
+  /**
+   * Tema sem a prévia: o do usuário, senão o do contratante, senão o do sistema. É o que o botão claro/escuro
+   * da barra mostra e alterna (na tela Aparência a prévia manda no que aparece; a escolha do usuário é esta).
+   */
+  temaBase: Theme;
   /** Camada do contratante (`usuario.aparencia`); `null` volta ao padrão do sistema (logout). */
   definirContratante: (aparencia: Partial<AparenciaApi> | null | undefined) => void;
+  /**
+   * Camada do tema do usuário, no formato da API (`usuario.temaPreferido`: 'CLARO' | 'ESCURO' | null).
+   * `null` (ou valor desconhecido) segue o contratante. A mudança passa pela troca de tema em vídeo.
+   */
+  definirTemaDoUsuario: (tema: unknown) => void;
   /** Substitui a prévia inteira pela aparência informada (formato da API). */
   definirPrevia: (aparencia: Partial<AparenciaApi>) => void;
   /** Desfaz a prévia (ao sair, cancelar ou salvar a Configuração). */
@@ -76,9 +90,14 @@ const Ctx = createContext<AparenciaCtx | null>(null);
 
 export function AparenciaProvider({ children, trocarTema }: { children: ReactNode; trocarTema?: TrocarTema }) {
   const [contratante, setContratante] = useState<Partial<Settings> | null>(null);
+  const [temaDoUsuario, setTemaDoUsuario] = useState<Theme | null>(null);
   const [previa, setPrevia] = useState<Partial<Settings> | null>(null);
 
-  const alvo = useMemo<Settings>(() => ({ ...PADRAO_SISTEMA, ...contratante, ...previa }), [contratante, previa]);
+  const alvo = useMemo<Settings>(
+    () => combinarCamadas({ contratante, temaDoUsuario, previa }),
+    [contratante, temaDoUsuario, previa],
+  );
+  const temaBase = temaSemPrevia({ contratante, temaDoUsuario });
 
   const [temaAplicado, setTemaAplicado] = useState<Theme>(alvo.theme);
   const [trocandoTema, setTrocandoTema] = useState(false);
@@ -134,6 +153,7 @@ export function AparenciaProvider({ children, trocarTema }: { children: ReactNod
   const definirContratante = useCallback<AparenciaCtx['definirContratante']>((a) => {
     setContratante(a ? deApi(a) : null);
   }, []);
+  const definirTemaDoUsuario = useCallback<AparenciaCtx['definirTemaDoUsuario']>((t) => setTemaDoUsuario(temaDeApi(t)), []);
   const definirPrevia = useCallback<AparenciaCtx['definirPrevia']>((a) => setPrevia(deApi(a)), []);
   const limparPrevia = useCallback(() => setPrevia(null), []);
   const set = useCallback<AparenciaCtx['set']>((p) => setPrevia((s) => ({ ...s, ...sanear(p) })), []);
@@ -147,13 +167,15 @@ export function AparenciaProvider({ children, trocarTema }: { children: ReactNod
       trocandoTema,
       emPrevia: previa !== null,
       desempenhoAutomatico: alvo.desempenhoAutomatico,
+      temaBase,
       definirContratante,
+      definirTemaDoUsuario,
       definirPrevia,
       limparPrevia,
       set,
       reset: limparPrevia,
     }),
-    [settings, alvo, trocandoTema, previa, definirContratante, definirPrevia, limparPrevia, set],
+    [settings, alvo, trocandoTema, previa, temaBase, definirContratante, definirTemaDoUsuario, definirPrevia, limparPrevia, set],
   );
 
   return (

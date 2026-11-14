@@ -1,6 +1,7 @@
 package com.api.ero_api.usuario.entity;
 
 import com.api.ero_api.compartilhado.entity.TenantEntity;
+import com.api.ero_api.tenant.enums.TemaInterface;
 import com.api.ero_api.usuario.enums.Papel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,10 +18,10 @@ import org.hibernate.annotations.DynamicUpdate;
  * Usuário de um contratante.
  *
  * <p>Os campos de controle de acesso ({@code tentativasFalhas}, {@code bloqueadoAte},
- * {@code ultimoLoginEm}) são gravados só por UPDATE direto
- * no repository (ver {@code UsuarioService.atualizarTentativas} e afins): assim um
- * login não muda a {@code version} nem o "alterado por" do cadastro. Não use os
- * setters deles fora de criação.
+ * {@code ultimoLoginEm}) e a preferência {@code temaPreferido} são gravados só por
+ * UPDATE direto no repository (ver {@code UsuarioService.atualizarTentativas} e
+ * afins): assim um login ou uma troca de tema não muda a {@code version} nem o
+ * "alterado por" do cadastro. Não use os setters deles fora de criação.
  */
 @Entity
 @Table(name = "usuario")
@@ -62,6 +63,11 @@ public class Usuario extends TenantEntity {
 
     @Column(name = "ultimo_login_em")
     private Instant ultimoLoginEm;
+
+    /** Claro ou escuro escolhido pelo próprio usuário. {@code null} = segue o tema padrão do contratante. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tema_preferido", length = 10)
+    private TemaInterface temaPreferido;
 
     public boolean bloqueadoEm(Instant momento) {
         return bloqueadoAte != null && bloqueadoAte.isAfter(momento);

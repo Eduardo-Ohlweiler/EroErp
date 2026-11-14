@@ -17,6 +17,16 @@ export type Pendencia = z.infer<typeof pendenciaSchema>;
  */
 const aparenciaSchema = z.record(z.string(), z.unknown()).nullable().optional();
 
+/** Tema da interface (TemaInterface da API). */
+export const temaApiSchema = z.enum(['CLARO', 'ESCURO']);
+export type TemaApi = z.infer<typeof temaApiSchema>;
+
+/**
+ * Tema escolhido pelo próprio usuário (`usuario.temaPreferido`); `null` segue o tema padrão do contratante.
+ * Ausente ou desconhecido vira `null`: um valor estranho aqui não pode derrubar a sessão inteira.
+ */
+const temaPreferidoSchema = temaApiSchema.nullable().catch(null);
+
 /** UsuarioLogadoDto (`GET /api/auth/eu`, e dentro da resposta do verificar e do refresh). */
 export const usuarioLogadoSchema = z.object({
   id: z.string(),
@@ -26,6 +36,7 @@ export const usuarioLogadoSchema = z.object({
   tenantId: z.string().nullable().optional(),
   tenantNome: z.string().nullable().optional(),
   aparencia: aparenciaSchema,
+  temaPreferido: temaPreferidoSchema,
   superadminAtuando: z.boolean().optional().default(false),
   pendencia: pendenciaSchema,
   permissoes: z.array(z.string()).optional().default([]),

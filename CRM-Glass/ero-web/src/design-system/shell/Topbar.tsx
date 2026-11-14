@@ -24,7 +24,8 @@ export type TopbarProps = {
 /**
  * Barra superior: contratante, título da tela, busca (Ctrl K, opcional), relógio e menu do usuário.
  * O menu do usuário aparece em todas as larguras: no celular é o único caminho visível para o Sair.
- * Sem botão de tema (a aparência é do contratante), sem "Novo" e sem sino nesta fase.
+ * O botão claro/escuro do usuário entra pelo `direita` (Casca.tsx): o tema é escolha de cada usuário; o resto da
+ * aparência é do contratante. Sem "Novo" e sem sino nesta fase.
  */
 export function Topbar({ titulo, contratante, onBuscar, textoBusca = 'Buscar telas…', direita }: TopbarProps) {
   const [now, setNow] = useState(() => new Date());

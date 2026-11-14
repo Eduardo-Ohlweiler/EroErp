@@ -44,7 +44,7 @@ esconder botões) e `telas` (para montar o menu).
 - ADMIN e SUPERADMIN não têm lista de liberações (já têm tudo).
 - Só ADMIN ou SUPERADMIN **redefinem a senha ou trocam o e-mail** de outra pessoa (fazer isso é tomar a conta dela; o e-mail também é para onde vai o código do login).
 - Usuário comum só altera ou inativa colega cujo acesso esteja **contido** no dele.
-- Usuário com **pendência** (hoje só a senha temporária: `TROCAR_SENHA`) não recebe nenhuma permissão, nem `ACESSO_LIBERADO`, até resolver. Ele só alcança `/api/auth/eu` e `/api/auth/senha`. O código por e-mail não é pendência: é a segunda etapa do login, antes de existir sessão.
+- Usuário com **pendência** (hoje só a senha temporária: `TROCAR_SENHA`) não recebe nenhuma permissão, nem `ACESSO_LIBERADO`, até resolver. Ele só alcança `/api/auth/eu`, `/api/auth/senha` e `/api/auth/eu/tema`. O código por e-mail não é pendência: é a segunda etapa do login, antes de existir sessão.
 
 ## `ACESSO_LIBERADO`
 
@@ -62,7 +62,7 @@ papel no controller e não aparecem em `GET /api/permissoes/catalogo`:
 |---|---|---|---|
 | Contratantes | `GET/POST /api/tenants`, `GET/PUT /api/tenants/{id}`, `PATCH /{id}/inativar` e `/ativar`, `GET /api/tenants/selecao` | `hasRole('SUPERADMIN')` | É a plataforma, não o contratante. |
 | Configuração do contratante (aparência e cena exclusiva) | `PUT /api/tenants/{id}/configuracao`, `GET /api/tenants/fundos` | `hasRole('SUPERADMIN')` | Idem. |
-| Minha conta (senha, sessões) | `/api/auth/senha`, `/api/sessoes/*` | o próprio usuário | Cada um só mexe no que é seu. |
+| Minha conta (senha, tema, sessões) | `/api/auth/senha`, `/api/auth/eu/tema`, `/api/sessoes/*` | o próprio usuário | Cada um só mexe no que é seu. |
 
 Por que não um grupo: todo grupo é concedido automaticamente ao `ADMIN` do
 contratante (ver Papéis). Um grupo `CONTRATANTES` daria a qualquer administrador

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="011-add-usuario-tema-preferido" author="eduardo">
+        <comment>
+            Claro ou escuro escolhido pelo próprio usuário (vale em qualquer computador). NULL = segue o
+            tema padrão do contratante (tenant.tema_padrao); é o valor de todo usuário existente e novo.
+            O resto da aparência continua sendo do contratante.
+        </comment>
+        <addColumn tableName="usuario">
+            <column name="tema_preferido" type="VARCHAR(10)"/>
+        </addColumn>
+        <sql>ALTER TABLE usuario ADD CONSTRAINT ck_usuario_tema_preferido CHECK (tema_preferido IN ('CLARO', 'ESCURO'))</sql>
+    </changeSet>
+
+</databaseChangeLog>

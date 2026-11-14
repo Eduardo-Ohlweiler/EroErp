@@ -2,6 +2,7 @@ package com.api.ero_api.auth.dtos;
 
 import com.api.ero_api.seguranca.UsuarioAutenticado.Pendencia;
 import com.api.ero_api.tenant.dtos.AparenciaDto;
+import com.api.ero_api.tenant.enums.TemaInterface;
 import com.api.ero_api.usuario.enums.Papel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -17,6 +18,8 @@ public record UsuarioLogadoDto(
         UUID tenantId,
         String tenantNome,
         @Schema(description = "Aparência do contratante em que está atuando") AparenciaDto aparencia,
+        @Schema(description = "Tema escolhido pelo próprio usuário; null = segue aparencia.temaPadrao",
+                nullable = true) TemaInterface temaPreferido,
         @Schema(description = "Superadmin dentro de um contratante") boolean superadminAtuando,
         @Schema(description = "O que precisa resolver antes de usar o sistema") Pendencia pendencia,
         @Schema(description = "Authorities: USUARIOS_LER, USUARIOS_ESCREVER, ações...") List<String> permissoes,

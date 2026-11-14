@@ -8,6 +8,7 @@ import com.api.ero_api.permissao.enums.GrupoLiberacao;
 import com.api.ero_api.seguranca.UsuarioAutenticado;
 import com.api.ero_api.seguranca.tenant.TenantContext;
 import com.api.ero_api.tenant.entity.Tenant;
+import com.api.ero_api.tenant.enums.TemaInterface;
 import com.api.ero_api.tenant.mapper.TenantMapper;
 import com.api.ero_api.usuario.enums.Papel;
 import java.time.Instant;
@@ -18,7 +19,13 @@ public final class AuthMapper {
     private AuthMapper() {
     }
 
-    public static UsuarioLogadoDto toUsuarioLogadoDto(UsuarioAutenticado u, Tenant tenantAtuacao) {
+    /**
+     * @param temaPreferido escolha pessoal do usuário ({@code null} = segue o tema padrão
+     *                      de {@code tenantAtuacao}); vale também para o superadmin atuando
+     *                      num contratante
+     */
+    public static UsuarioLogadoDto toUsuarioLogadoDto(UsuarioAutenticado u, Tenant tenantAtuacao,
+                                                      TemaInterface temaPreferido) {
         return new UsuarioLogadoDto(
                 u.usuarioId(),
                 u.nome(),
@@ -27,6 +34,7 @@ public final class AuthMapper {
                 tenantAtuacao.getId(),
                 tenantAtuacao.getNome(),
                 TenantMapper.toAparenciaDto(tenantAtuacao),
+                temaPreferido,
                 u.papel() == Papel.SUPERADMIN && !tenantAtuacao.getId().equals(TenantContext.ROOT),
                 u.pendencia(),
                 List.copyOf(u.authorities()),

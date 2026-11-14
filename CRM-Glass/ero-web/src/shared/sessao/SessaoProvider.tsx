@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { sessaoApi } from '../api/auth';
 import { api } from '../api/cliente';
 import { ErroApi } from '../api/erros';
-import type { AutenticacaoResposta, UsuarioLogado } from '../api/tipos';
+import type { AutenticacaoResposta, TemaApi, UsuarioLogado } from '../api/tipos';
 import { ESTADO_INICIAL, identidadeDoUsuario, reduzirSessao, trocouIdentidade, usuarioDoEstado, type EstadoSessao } from './estado';
 
 export type SessaoCtx = {
@@ -14,6 +14,12 @@ export type SessaoCtx = {
   entrar: (resposta: AutenticacaoResposta) => Promise<UsuarioLogado>;
   /** relê o `/api/auth/eu` (ex.: depois de trocar a senha) */
   atualizarEu: () => Promise<UsuarioLogado>;
+  /**
+   * Grava o tema do próprio usuário (`PUT /api/auth/eu/tema`; `null` segue o contratante). Já muda o
+   * `temaPreferido` da sessão antes da resposta (a interface troca na hora); se a gravação falhar, volta ao
+   * anterior e rejeita com o `ErroApi`, para quem chamou avisar com `useMessage().erroApi`.
+   */
+  trocarTemaPreferido: (tema: TemaApi | null) => Promise<void>;
   /** encerra a sessão na API e no front (token, cache das telas) */
   sair: () => Promise<void>;
   /** abre a sessão de novo pelo cookie (tela "servidor indisponível") */
@@ -115,9 +121,26 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
 
   const tentarDeNovo = useCallback(() => void iniciar(), [iniciar]);
 
+  const temaAtual = useRef<TemaApi | null>(null);
+  temaAtual.current = usuarioDoEstado(estado)?.temaPreferido ?? null;
+  /** Gravação mais recente: só ela desfaz a troca, para uma falha antiga não apagar a escolha seguinte. */
+  const vezTema = useRef(0);
+
+  const trocarTemaPreferido = useCallback<SessaoCtx['trocarTemaPreferido']>(async (tema) => {
+    const anterior = temaAtual.current;
+    const minha = ++vezTema.current;
+    despachar({ tipo: 'temaPreferido', tema });
+    try {
+      await sessaoApi.trocarTema(tema);
+    } catch (e) {
+      if (minha === vezTema.current) despachar({ tipo: 'temaPreferido', tema: anterior });
+      throw e;
+    }
+  }, []);
+
   const value = useMemo<SessaoCtx>(
-    () => ({ estado, usuario: usuarioDoEstado(estado), entrar, atualizarEu, sair, tentarDeNovo }),
-    [estado, entrar, atualizarEu, sair, tentarDeNovo],
+    () => ({ estado, usuario: usuarioDoEstado(estado), entrar, atualizarEu, trocarTemaPreferido, sair, tentarDeNovo }),
+    [estado, entrar, atualizarEu, trocarTemaPreferido, sair, tentarDeNovo],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

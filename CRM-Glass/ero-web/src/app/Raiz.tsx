@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useOutlet } from 'react-router';
 import { EstadoErro, GlassCard, Splash } from '../design-system/ui';
 import { TrocaDeArea } from '../motion/coreografia';
@@ -32,14 +32,15 @@ export function Raiz() {
 }
 
 /**
- * Login usa sempre a aparência padrão do sistema; a casca, a do contratante. Ordem: a área que sai se desmonta
- * inteira com a aparência que tinha e só então (`aoSairCompleto`) entra a da área nova.
+ * Login usa sempre a aparência padrão do sistema; a casca, a do contratante com o tema do usuário por cima.
+ * Ordem: a área que sai se desmonta inteira com a aparência que tinha e só então (`aoSairCompleto`) entra a da
+ * área nova. Dentro da mesma área, o tema do usuário muda na hora (botão claro/escuro da barra).
  */
 function Areas() {
   const outlet = useOutlet();
   const { pathname } = useLocation();
   const { usuario } = useSessao();
-  const { definirContratante } = useAparencia();
+  const { definirContratante, definirTemaDoUsuario } = useAparencia();
 
   // A casca guarda o último usuário: ao sair ou expirar, a chave não muda até a rota ir para o login.
   const ultimo = useRef<UsuarioLogado | null>(usuario);
@@ -48,17 +49,35 @@ function Areas() {
   const noLogin = pathname === '/login' || pathname.startsWith('/login/');
   const chave = noLogin ? 'login' : `casca:${ultimo.current?.tenantId ?? 'plataforma'}`;
   const aparencia = noLogin ? null : (ultimo.current?.aparencia ?? null);
-  const atual = useRef(aparencia);
-  atual.current = aparencia;
+  const tema = noLogin ? null : (ultimo.current?.temaPreferido ?? null);
+  const atual = useRef({ chave, aparencia, tema });
+  atual.current = { chave, aparencia, tema };
+
+  /** Chave da área cuja aparência está aplicada (muda só quando a área nova entra). */
+  const aplicada = useRef<string | null>(null);
+  const aplicarArea = useCallback(() => {
+    aplicada.current = atual.current.chave;
+    definirContratante(atual.current.aparencia);
+    definirTemaDoUsuario(atual.current.tema);
+  }, [definirContratante, definirTemaDoUsuario]);
 
   // Primeira montagem: não há área saindo, aplica direto. Ao desmontar (não acontece no app), volta ao padrão.
   useEffect(() => {
-    definirContratante(atual.current);
-    return () => definirContratante(null);
-  }, [definirContratante]);
+    aplicarArea();
+    return () => {
+      aplicada.current = null;
+      definirContratante(null);
+      definirTemaDoUsuario(null);
+    };
+  }, [aplicarArea, definirContratante, definirTemaDoUsuario]);
+
+  // O usuário trocou o próprio tema com a área já na tela: aplica sem esperar troca de área.
+  useEffect(() => {
+    if (aplicada.current === chave) definirTemaDoUsuario(tema);
+  }, [chave, tema, definirTemaDoUsuario]);
 
   return (
-    <TrocaDeArea chave={chave} aoSairCompleto={() => definirContratante(atual.current)}>
+    <TrocaDeArea chave={chave} aoSairCompleto={aplicarArea}>
       {outlet}
     </TrocaDeArea>
   );

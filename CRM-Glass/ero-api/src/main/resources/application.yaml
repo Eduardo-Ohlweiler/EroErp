@@ -32,6 +32,10 @@ spring:
         max-page-size: 100
   jackson:
     default-property-inclusion: always
+    # Enum só pelo nome: "papel": 2 ou "tema": 1 dão 400 em vez de pegar a constante pela posição.
+    datatype:
+      enum:
+        fail-on-numbers-for-enums: true
   threads:
     virtual:
       enabled: true

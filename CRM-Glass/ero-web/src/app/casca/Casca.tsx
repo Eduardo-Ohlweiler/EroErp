@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useIsPresent } from 'motion/react';
+import { Moon, Sun } from 'lucide-react';
+import { useMessage } from '../../design-system/kit';
 import { ChipContratante, CommandPalette, MenuUsuario, MobileNav, Sidebar, Topbar, type Comando } from '../../design-system/shell';
+import { Button } from '../../design-system/ui';
+import { useAparencia } from '../../shared/aparencia/AparenciaProvider';
 import { casca } from '../../motion/tokens';
 import { RotaAnimada } from '../../motion/coreografia';
 import type { UsuarioLogado } from '../../shared/api/tipos';
@@ -78,9 +82,12 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
     void sair();
   };
 
+  const tema = useAlternarTema();
+
   const comandos: Comando[] = [
     ...menu.map((i) => ({ grupo: 'Telas', rotulo: i.label, icone: i.icon, executar: () => navegar(i.to) })),
     ...administrativo.map((i) => ({ grupo: ROTULO_ADMINISTRATIVO, rotulo: i.label, icone: i.icon, executar: () => navegar(i.to) })),
+    { grupo: 'Ações', rotulo: 'Alternar tema', dica: tema.rotulo, icone: tema.Icone, executar: tema.alternar },
   ];
 
   return (
@@ -93,7 +100,20 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
             titulo={tituloDaRota(pathname)}
             contratante={<ChipContratante nome={contratante} detalhe={papel} />}
             onBuscar={comBusca ? () => setBusca(true) : undefined}
-            direita={<MenuUsuario nome={usuario.nome} email={usuario.email} papel={papel} contexto={contratante} onSair={fazerSair} />}
+            direita={
+              <span className="flex items-center gap-1.5">
+                <Button
+                  size="icon"
+                  className="size-11 rounded-2xl"
+                  onClick={tema.alternar}
+                  aria-label={tema.rotulo}
+                  title={tema.rotulo}
+                >
+                  <tema.Icone className="size-[18px]" aria-hidden />
+                </Button>
+                <MenuUsuario nome={usuario.nome} email={usuario.email} papel={papel} contexto={contratante} onSair={fazerSair} />
+              </span>
+            }
           />
           <main className="mt-6">
             <RotaAnimada atrasoInicial={casca.atrasoConteudo} />
@@ -103,4 +123,24 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
       {comBusca && <CommandPalette aberto={busca} onAbertoChange={setBusca} comandos={comandos} />}
     </>
   );
+}
+
+/**
+ * Claro/escuro do próprio usuário (o resto da aparência é do contratante). Mostra e alterna o tema sem a prévia
+ * (`temaBase`): na tela Aparência a prévia continua mostrando o tema do contratante, e a escolha vale ao sair dela.
+ * A sessão muda na hora e a Raiz aplica o tema pela troca em vídeo do AparenciaProvider (modo leve e movimento
+ * reduzido incluídos); a gravação vai em seguida e, se falhar, a sessão volta ao tema anterior.
+ * Voltar a seguir o contratante (`null`) fica para a tela "Minha conta".
+ */
+function useAlternarTema() {
+  const { temaBase } = useAparencia();
+  const { trocarTemaPreferido } = useSessao();
+  const mensagem = useMessage();
+  const escuro = temaBase === 'dark';
+
+  const alternar = useCallback(() => {
+    trocarTemaPreferido(escuro ? 'CLARO' : 'ESCURO').catch((e: unknown) => mensagem.erroApi(e));
+  }, [escuro, trocarTemaPreferido, mensagem]);
+
+  return { alternar, rotulo: escuro ? 'Usar tema claro' : 'Usar tema escuro', Icone: escuro ? Moon : Sun };
 }

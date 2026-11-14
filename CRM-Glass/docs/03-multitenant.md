@@ -45,16 +45,18 @@ porque o Hibernate lê o tenant quando abre a sessão. Por isso esses fluxos usa
 
 ## Aparência do contratante
 
-A aparência é **do contratante** e vale para todos os usuários dele. Não existe
-preferência por usuário nem nada guardado no navegador; a tela de login usa
-sempre o padrão do sistema. Só o superadmin muda (tela Configuração).
+A aparência é **do contratante** e vale para todos os usuários dele: fundo,
+destaque, vidro, animações e desempenho. Só o superadmin muda (tela Configuração).
+A única exceção é **claro ou escuro**, que cada usuário escolhe para si (ver
+"Tema do usuário" abaixo). Nada fica guardado no navegador; a tela de login usa
+sempre o padrão do sistema.
 
 Campos (`AparenciaDto`, em `tenant`):
 
 | Campo | Tipo | Valores | Padrão |
 |---|---|---|---|
 | `corDestaque` | texto | `violeta`, `azul`, `laranja`, `esmeralda`, `rosa`, `ambar` | `violeta` |
-| `temaPadrao` | `TemaInterface` | `ESCURO`, `CLARO` | `ESCURO` |
+| `temaPadrao` | `TemaInterface` | `ESCURO`, `CLARO`. Vale para quem não escolheu o próprio tema (`temaPreferido` nulo). | `ESCURO` |
 | `fundo` | `Fundo` | `ORBS`, `AURORA`, `ONDAS`, `MINIMO` (VIVO); `ESCRITORIO`, `CIDADE`, `MARINA`, `EXPEDIENTE`, `COWORKING` (CENA) | `ORBS` |
 | `fundoAnimado` | booleano | | `true` |
 | `vidroDesfoque` | inteiro | 0 a 40 | 12 |
@@ -86,6 +88,39 @@ Onde a aparência aparece:
 | `PUT /api/tenants/{id}/configuracao` | `hasRole('SUPERADMIN')`, na visão de plataforma | `{ aparencia, fundoExclusivo, version }` → `TenantResponseDto`. 400 com `erros[].campo` = `aparencia.vidroDesfoque` etc.; 409 sem `erros` para versão antiga e com `erros[0].campo = "fundoExclusivo"` para cena exclusiva de outro; 422 superadmin dentro de contratante, cena comum como exclusiva ou fundo exclusivo que não é o dele; 404 para a Plataforma. |
 | `GET /api/tenants/fundos?tenantId=` | `hasRole('SUPERADMIN')` | `[{ codigo, rotulo, tipo, exclusiva }]`: comuns + exclusivas livres + a exclusiva do próprio `tenantId`. `tenantId` da Plataforma dá 404 |
 | `PATCH /api/tenants/{id}/inativar`, `/ativar` | `hasRole('SUPERADMIN')`, na visão de plataforma | 204. Já na situação pedida: 204 sem evento novo e sem limpar o cache (linha travada: o duplo clique não duplica). 404 para a Plataforma. |
+
+### Tema do usuário (claro ou escuro)
+
+Cada usuário escolhe o próprio tema; a escolha fica no usuário (coluna
+`usuario.tema_preferido`, migration 011) e vale em qualquer computador.
+
+**Precedência:** `temaPreferido` do usuário; se for `null`, `aparencia.temaPadrao`
+do contratante em que está atuando. `null` é o valor inicial de todo usuário
+(inclusive os que já existiam). O resto da aparência não tem escolha pessoal.
+
+| Campo | Tipo | Valores | Padrão |
+|---|---|---|---|
+| `temaPreferido` | `TemaInterface` ou nulo | `CLARO`, `ESCURO`, `null` = segue o contratante | `null` |
+
+| Rota | Quem | Entrada / saída |
+|---|---|---|
+| `PUT /api/auth/eu/tema` | `isAuthenticated()` (até com pendência, como `/api/auth/senha`) | `{ "tema": "CLARO" \| "ESCURO" \| null }` → 204. Campo ausente = `null`. Outro valor (`"AZUL"`, `"claro"`, número, objeto) ou sem corpo: 400 `REQUISICAO_INVALIDA`. Sem token: 401. |
+| `GET /api/auth/eu` e o `usuario` de login (2FA), refresh, `superadmin/acessar` e `superadmin/sair` | logado | `UsuarioLogadoDto.temaPreferido`, sempre presente (`null` quando segue o contratante). |
+
+Regras:
+
+- Só o próprio: o id vem da sessão, nunca do corpo. Não existe rota para mudar
+  o tema de outra pessoa, e o `UsuarioResponseDto` (ficha e lista de usuários)
+  **não** traz a preferência.
+- O superadmin também tem a sua. Ela vale na visão de plataforma e dentro de um
+  contratante (é dele, não do contratante); a leitura e a gravação rodam em ROOT
+  no `AuthService`, pelo id da sessão.
+- Gravada por UPDATE direto (`UsuarioRepository.definirTemaPreferido`): não sobe a
+  `version` nem o "alterado por" do cadastro, então nunca dá 409 nem atrapalha um
+  administrador que está com a ficha do usuário aberta. Salvar a ficha também não
+  apaga a preferência (`@DynamicUpdate`).
+- Não grava evento de segurança: é preferência visual.
+- Não fica no cache de 30 s do `UsuarioAutenticado`: o próximo `/eu` já traz a troca.
 
 ### Contrato do `TenantResponseDto`
 

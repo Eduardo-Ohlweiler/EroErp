@@ -8,6 +8,7 @@ import com.api.ero_api.auth.dtos.DoisFatoresReenviarDto;
 import com.api.ero_api.auth.dtos.DoisFatoresVerificarDto;
 import com.api.ero_api.auth.dtos.LoginDto;
 import com.api.ero_api.auth.dtos.TrocarSenhaDto;
+import com.api.ero_api.auth.dtos.TrocarTemaDto;
 import com.api.ero_api.auth.dtos.UsuarioLogadoDto;
 import com.api.ero_api.auth.mapper.AuthMapper;
 import com.api.ero_api.auth.service.CodigoVerificacaoService.Desafio;
@@ -44,8 +45,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Login (senha + código enviado por e-mail), renovação, logout, troca da própria senha e o
- * "acessar contratante" do superadmin.
+ * Login (senha + código enviado por e-mail), renovação, logout, troca da própria senha
+ * e do próprio tema e o "acessar contratante" do superadmin.
  *
  * <p>Por que não usa {@code @Transactional}: estes fluxos começam SEM tenant
  * conhecido. O contexto ROOT precisa ser ligado ANTES da transação abrir (o
@@ -267,6 +268,20 @@ public class AuthService {
         }
     }
 
+    /**
+     * Troca o próprio tema (claro, escuro ou {@code null} = segue o padrão do contratante).
+     * Só o do usuário logado: o id vem da sessão, nunca do corpo. Vale em qualquer
+     * computador e, para o superadmin, também dentro de um contratante. Não grava evento
+     * de segurança (é preferência visual) nem mexe na version do cadastro.
+     */
+    public void trocarTema(TrocarTemaDto dto) {
+        UsuarioAutenticado eu = SecurityUtils.exigirUsuario();
+        boolean gravou = root(() -> usuarioService.definirTemaPreferido(eu.usuarioId(), dto.tema()));
+        if (!gravou) {
+            throw new AutenticacaoException(MSG_SESSAO);
+        }
+    }
+
     // ---------------------------------------------------------------- superadmin
 
     /** Superadmin passa a atuar dentro de um contratante. Fica registrado na auditoria. */
@@ -364,8 +379,15 @@ public class AuthService {
         return AutenticacaoRespostaDto.sessao(token.token(), token.expiraEm(), usuarioLogado(u));
     }
 
+    /**
+     * O tema preferido é lido do banco a cada chamada (não fica no cache de 30 s do
+     * {@code UsuarioAutenticado}), então a troca aparece no próximo {@code /eu}. Em ROOT
+     * porque o superadmin pertence à Plataforma mesmo atuando num contratante; a busca é
+     * pelo id da sessão já validada.
+     */
     private UsuarioLogadoDto usuarioLogado(UsuarioAutenticado u) {
-        return AuthMapper.toUsuarioLogadoDto(u, tenantService.buscarEntidade(u.tenantId()));
+        return root(() -> AuthMapper.toUsuarioLogadoDto(u, tenantService.buscarEntidade(u.tenantId()),
+                usuarioService.buscarTemaPreferido(u.usuarioId())));
     }
 
     private <T> T root(Supplier<T> acao) {

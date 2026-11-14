@@ -1,4 +1,4 @@
-import type { UsuarioLogado } from '../api/tipos';
+import type { TemaApi, UsuarioLogado } from '../api/tipos';
 
 /**
  * Estados da sessão:
@@ -21,6 +21,8 @@ export type MotivoAnonimo = 'nenhum' | 'saiu' | 'expirou';
 export type AcaoSessao =
   | { tipo: 'iniciar' }
   | { tipo: 'usuario'; usuario: UsuarioLogado }
+  /** o usuário trocou o próprio tema (botão da barra): muda só o `temaPreferido`, sem reler o `/eu` */
+  | { tipo: 'temaPreferido'; tema: TemaApi | null }
   | { tipo: 'semSessao' }
   | { tipo: 'indisponivel'; detail: string; correlationId?: string }
   | { tipo: 'encerrada'; motivo: Exclude<MotivoAnonimo, 'nenhum'> };
@@ -38,6 +40,11 @@ export function reduzirSessao(estado: EstadoSessao, acao: AcaoSessao): EstadoSes
       return { tipo: 'carregando' };
     case 'usuario':
       return estadoDoUsuario(acao.usuario);
+    case 'temaPreferido':
+      // Sem sessão não há de quem trocar o tema.
+      if (estado.tipo !== 'pendente' && estado.tipo !== 'autenticado') return estado;
+      if (estado.usuario.temaPreferido === acao.tema) return estado;
+      return { ...estado, usuario: { ...estado.usuario, temaPreferido: acao.tema } };
     case 'semSessao':
       return { tipo: 'anonimo', motivo: 'nenhum' };
     case 'indisponivel':

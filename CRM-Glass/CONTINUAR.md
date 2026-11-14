@@ -110,7 +110,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
   - ero-api: aparência por contratante (migration 008: tema, destaque, fundo, vidro, foco, animações, cena exclusiva), `GET /api/tenants/fundos` e `PUT /api/tenants/{id}/configuracao` (superadmin), logs com filtros e retenção de 12 meses, `PATCH /api/sessoes/encerrar-outras`, status do 2FA no `/eu`. Regra inviolável: entidade nunca sai da API (ArchUnit). 92 testes verdes.
   - `ero-web/`: base do front definitivo (Vite, React 19, React Router 7, TanStack Query), tokens e componentes glass com contraste AA nos dois temas, `AparenciaProvider` (sistema → contratante → prévia), cenas com shader, fundos vivos, troca de tema em vídeo ligada à aparência e coreografia de montar e desmontar em blocos (`motion/coreografia`). Catálogo e demonstração em `/design-system` (só dev).
   - `docs/06-fundos-de-cena.md`: passo a passo para cena nova e cena exclusiva.
-  - Decisões do dono: aparência fixa por contratante (sem preferência do usuário; o botão de tema saiu da barra), só o superadmin configura, login sempre com a aparência padrão do sistema.
+  - Decisões do dono: a aparência é do contratante e só o superadmin a configura. O login usa sempre a aparência padrão do sistema. Ficou mudado em 14/11/2026: **cada usuário escolhe claro ou escuro**, a escolha fica salva no usuário e o botão volta à barra. Quem nunca escolheu segue o tema padrão do contratante. Fundo, destaque, vidro, animações e desempenho continuam só do contratante.
 - **Menu Administrativo: Contratantes** (13 e 14/11/2026, na `main`, sem commit, pelo `/timeero`):
   - **Telas do superadmin** (só na visão de plataforma):
     - `/admin/contratantes`: lista com filtros "Nome ou documento" e Situação, Exportar CSV e Pdf;
@@ -147,6 +147,12 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
       - Para testar: `?desempenho=normal|leve|auto` (fica guardado no navegador), ou o seletor e o botão "Medir agora" no `/design-system`.
     - Orbs e aurora desenhados por degradê, sem `filter: blur`. O visual ficou igual e o ganho foi pequeno, de ~2 fps.
     - Ainda não medido com a máquina livre: repetir com `scratchpad/medir-leve.mjs`, ou com a medição que o `qa` fizer.
+  - **Tema por usuário (14/11/2026):**
+    - O botão claro/escuro voltou à barra (`app/casca/Casca.tsx`) e há o comando "Alternar tema" no Ctrl + K.
+    - A escolha fica salva no usuário: `PUT /api/auth/eu/tema`, `temaPreferido` no `/eu`, migration 011.
+    - Precedência: sistema, depois contratante, depois tema do usuário, depois a prévia da Aparência.
+    - Voltar a "seguir o contratante" (`null`) fica para a futura tela Minha conta.
+    - A API passou a aceitar enum só pelo nome (Jackson `fail-on-numbers-for-enums`).
   - **Revisões:** revisor-backend, seguranca, revisor-ui e guardiao-layout aprovaram. O QA aprovou a bateria de ponta a ponta: isolamento entre contratantes, 403 para não superadmin e contratante inativado caindo na hora.
   - **Logins de teste:** contratantes "Teste QA …" e "Teste Contratante …" ficam no banco.
 - **Protótipo** em `prototipo/` (congelado; detalhes no `prototipo/README.md`):

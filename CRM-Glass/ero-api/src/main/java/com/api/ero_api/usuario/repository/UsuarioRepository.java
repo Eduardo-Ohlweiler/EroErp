@@ -1,6 +1,7 @@
 package com.api.ero_api.usuario.repository;
 
 import com.api.ero_api.compartilhado.entity.SqlNativoRevisado;
+import com.api.ero_api.tenant.enums.TemaInterface;
 import com.api.ero_api.usuario.dtos.UsuarioSelectDto;
 import com.api.ero_api.usuario.entity.Usuario;
 import jakarta.persistence.LockModeType;
@@ -136,6 +137,27 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
             WHERE u.id = :id
             """)
     int regravarHashSenha(@Param("id") UUID id, @Param("hash") String hash);
+
+    // ------------------------------------------------------------ preferência pessoal (AuthService, contexto ROOT)
+
+    /** {@code null} quando o usuário segue o tema padrão do contratante. */
+    @Query("""
+            SELECT u.temaPreferido FROM Usuario u
+            WHERE u.id = :id
+            """)
+    TemaInterface buscarTemaPreferido(@Param("id") UUID id);
+
+    /**
+     * Preferência pessoal: UPDATE direto, sem mexer em version/auditoria do cadastro.
+     * A troca de tema nunca gera 409 nem atrapalha quem está editando o usuário.
+     */
+    @Modifying
+    @Query("""
+            UPDATE Usuario u
+            SET u.temaPreferido = :tema
+            WHERE u.id = :id
+            """)
+    int definirTemaPreferido(@Param("id") UUID id, @Param("tema") TemaInterface tema);
 
     /**
      * Registra que algo do usuário mudou fora da tabela dele (ex.: permissões):

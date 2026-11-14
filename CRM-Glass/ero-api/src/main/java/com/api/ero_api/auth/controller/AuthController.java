@@ -6,6 +6,7 @@ import com.api.ero_api.auth.dtos.DoisFatoresReenviarDto;
 import com.api.ero_api.auth.dtos.DoisFatoresVerificarDto;
 import com.api.ero_api.auth.dtos.LoginDto;
 import com.api.ero_api.auth.dtos.TrocarSenhaDto;
+import com.api.ero_api.auth.dtos.TrocarTemaDto;
 import com.api.ero_api.auth.dtos.UsuarioLogadoDto;
 import com.api.ero_api.auth.service.AuthService;
 import com.api.ero_api.auth.service.AuthService.Resultado;
@@ -108,6 +109,14 @@ public class AuthController {
     @Operation(summary = "Troca a minha senha (encerra as outras sessões)")
     public ResponseEntity<Void> trocarSenha(@Valid @RequestBody TrocarSenhaDto dto) {
         authService.trocarSenha(dto);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/eu/tema")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Troca o meu tema: CLARO, ESCURO ou null para seguir o padrão do contratante")
+    public ResponseEntity<Void> trocarTema(@Valid @RequestBody TrocarTemaDto dto) {
+        authService.trocarTema(dto);
         return ResponseEntity.noContent().build();
     }
 

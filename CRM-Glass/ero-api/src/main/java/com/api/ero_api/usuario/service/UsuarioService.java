@@ -17,6 +17,7 @@ import com.api.ero_api.seguranca.senha.SenhaService;
 import com.api.ero_api.seguranca.tenant.TenantContext;
 import com.api.ero_api.sessao.enums.MotivoRevogacao;
 import com.api.ero_api.sessao.service.SessaoService;
+import com.api.ero_api.tenant.enums.TemaInterface;
 import com.api.ero_api.tenant.service.LimiteUsuariosService;
 import com.api.ero_api.usuario.dtos.UsuarioCreateDto;
 import com.api.ero_api.usuario.dtos.UsuarioRedefinirSenhaDto;
@@ -336,6 +337,28 @@ public class UsuarioService {
     @Transactional
     public void regravarHashSenha(UUID id, String hash) {
         repository.regravarHashSenha(id, hash);
+    }
+
+    // ---------------------------------------------------------------- preferência pessoal (AuthService, contexto ROOT)
+
+    /**
+     * Tema escolhido pelo próprio usuário ({@code null} = segue o padrão do contratante).
+     * Lido em ROOT porque o superadmin pertence à Plataforma mesmo atuando num contratante.
+     */
+    @Transactional(readOnly = true)
+    public TemaInterface buscarTemaPreferido(UUID id) {
+        return repository.buscarTemaPreferido(id);
+    }
+
+    /**
+     * Grava a preferência de tema por UPDATE direto: não sobe a version nem o "alterado por",
+     * então nunca dá 409 nem derruba a edição do cadastro aberta por um administrador.
+     *
+     * @return {@code false} se o usuário não existe mais
+     */
+    @Transactional
+    public boolean definirTemaPreferido(UUID id, TemaInterface tema) {
+        return repository.definirTemaPreferido(id, tema) == 1;
     }
 
     // ---------------------------------------------------------------- regras

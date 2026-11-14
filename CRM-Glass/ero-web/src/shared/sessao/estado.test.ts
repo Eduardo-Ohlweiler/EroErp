@@ -18,6 +18,7 @@ const usuario = (p: Partial<UsuarioLogado> = {}): UsuarioLogado => ({
   tenantId: 't1',
   tenantNome: 'Demo Solar',
   aparencia: null,
+  temaPreferido: null,
   superadminAtuando: false,
   pendencia: 'NENHUMA',
   permissoes: [],
@@ -61,6 +62,20 @@ describe('estados da sessão', () => {
   it('quem já está fora não muda de motivo (duas recusas seguidas)', () => {
     const fora: EstadoSessao = { tipo: 'anonimo', motivo: 'saiu' };
     expect(reduzirSessao(fora, { tipo: 'encerrada', motivo: 'expirou' })).toBe(fora);
+  });
+
+  it('trocar o tema muda só o temaPreferido do usuário da sessão', () => {
+    const antes: EstadoSessao = { tipo: 'autenticado', usuario: usuario() };
+    const depois = reduzirSessao(antes, { tipo: 'temaPreferido', tema: 'CLARO' });
+    expect(depois).toEqual({ tipo: 'autenticado', usuario: usuario({ temaPreferido: 'CLARO' }) });
+    expect(reduzirSessao(depois, { tipo: 'temaPreferido', tema: null })).toEqual(antes);
+  });
+
+  it('mesmo tema ou sem sessão: nada muda', () => {
+    const com: EstadoSessao = { tipo: 'autenticado', usuario: usuario({ temaPreferido: 'ESCURO' }) };
+    expect(reduzirSessao(com, { tipo: 'temaPreferido', tema: 'ESCURO' })).toBe(com);
+    const fora: EstadoSessao = { tipo: 'anonimo', motivo: 'saiu' };
+    expect(reduzirSessao(fora, { tipo: 'temaPreferido', tema: 'CLARO' })).toBe(fora);
   });
 
   it('usuarioDoEstado só devolve usuário em pendente/autenticado', () => {
