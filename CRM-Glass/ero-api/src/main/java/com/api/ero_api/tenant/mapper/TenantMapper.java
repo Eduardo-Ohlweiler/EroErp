@@ -12,13 +12,19 @@ import com.api.ero_api.tenant.enums.Fundo;
 import com.api.ero_api.tenant.util.DocumentoValidator;
 import java.math.RoundingMode;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
 public final class TenantMapper {
 
     private TenantMapper() {
     }
 
-    public static TenantResponseDto toResponseDto(Tenant t, long usuariosAtivos) {
+    /**
+     * {@code nomes}: quem cadastrou e quem alterou, já resolvidos pelo service (uma
+     * consulta por página, sem N+1). Id fora do mapa sai com o nome vazio.
+     */
+    public static TenantResponseDto toResponseDto(Tenant t, long usuariosAtivos, Map<UUID, String> nomes) {
         return new TenantResponseDto(
                 t.getId(),
                 t.getNome(),
@@ -33,6 +39,8 @@ public final class TenantMapper {
                 t.getUpdatedAt(),
                 t.getCreatedBy(),
                 t.getUpdatedBy(),
+                nome(nomes, t.getCreatedBy()),
+                nome(nomes, t.getUpdatedBy()),
                 t.getVersion());
     }
 
@@ -52,10 +60,11 @@ public final class TenantMapper {
                 t.isFundoAnimado(),
                 t.getVidroDesfoque(),
                 t.getFundoFoco(),
-                t.getAnimacoes());
+                t.getAnimacoes(),
+                t.isDesempenhoAutomatico());
     }
 
-    /** Padrão do sistema: os valores iniciais da entidade (iguais aos da migration 008). */
+    /** Padrão do sistema: os valores iniciais da entidade (iguais aos das migrations 008 e 010). */
     public static AparenciaDto aparenciaPadrao() {
         return toAparenciaDto(new Tenant());
     }
@@ -69,6 +78,8 @@ public final class TenantMapper {
         // A coluna é NUMERIC(3,1): "4.50" e "4.5" gravam igual e a resposta sai com uma casa.
         t.setFundoFoco(dto.fundoFoco().setScale(1, RoundingMode.UNNECESSARY));
         t.setAnimacoes(dto.animacoes());
+        // Opcional na entrada: cliente antigo que não manda o campo grava o padrão (false).
+        t.setDesempenhoAutomatico(Boolean.TRUE.equals(dto.desempenhoAutomatico()));
     }
 
     public static FundoCatalogoDto toFundoCatalogoDto(Fundo f) {
@@ -92,6 +103,10 @@ public final class TenantMapper {
         t.setDocumento(DocumentoValidator.normalizar(dto.documento()));
         t.setEmail(minusculo(dto.email()));
         t.setLimiteUsuarios(dto.limiteUsuarios());
+    }
+
+    private static String nome(Map<UUID, String> nomes, UUID id) {
+        return id == null ? null : nomes.get(id);
     }
 
     private static String minusculo(String valor) {

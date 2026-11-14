@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { animate, useIsPresent, type AnimationPlaybackControls } from 'motion/react';
-import { useReduce, useSettings } from '../../shared/aparencia/AparenciaProvider';
+import { useSettings } from '../../shared/aparencia/AparenciaProvider';
+import { useReduzirMovimento } from '../reduzir';
 import { cena as tempos } from '../tokens';
 import type { Cena } from './cenas';
 import { MAX_LUZES, Renderizador, type Cores, type Quadro } from './SceneShader';
 import { registrarCena } from './sceneSync';
 import { pegarCanvas, quandoOcioso } from './canvasReserva';
+import { modoLeve, useModoLeve } from '../desempenho';
 
 /*
  * Fundo de cena: roteiro da troca de tema. Um progresso p (0 = noite, 1 = dia) anda no tempo;
@@ -128,7 +130,7 @@ function pixelsParaFoco(px: number) {
 
 export function SceneBackground({ cena }: { cena: Cena }) {
   const { settings } = useSettings();
-  const reduce = useReduce();
+  const reduce = useReduzirMovimento();
   const raiz = useRef<HTMLDivElement>(null);
   /** Onde o canvas reservado (canvasReserva.ts) é encaixado. */
   const lugarCanvas = useRef<HTMLDivElement>(null);
@@ -136,7 +138,9 @@ export function SceneBackground({ cena }: { cena: Cena }) {
   /** Sobe quando o contexto WebGL é restaurado, para recriar o renderizador. */
   const [geracao, setGeracao] = useState(0);
   const alvoTema: 0 | 1 = settings.theme === 'light' ? 1 : 0;
-  const deriva = settings.fundoAnimado && !reduce;
+  /** Modo leve (aparelho fraco, motion/desempenho.ts): sem deriva em repouso e sem a sequência na troca de tema. */
+  const leve = useModoLeve();
+  const deriva = settings.fundoAnimado && !reduce && !leve;
   const focoPx = settings.fundoFoco;
   /** false enquanto esta cena sai (esmaecimento cruzado para outro fundo): deixa de responder à troca de tema. */
   const presente = useIsPresent();
@@ -230,10 +234,31 @@ export function SceneBackground({ cena }: { cena: Cena }) {
     });
   };
 
+  /**
+   * Modo leve: a cena salta para o alvo num quadro só. A troca de tema (trocarTema.ts) faz isso dentro da captura
+   * nova da View Transition, então a foto esmaece junto com a interface, sem a sequência de 4 s no WebGL.
+   */
+  const saltarPara = (alvo: 0 | 1) => {
+    const e = s.current;
+    e.controle?.stop();
+    e.controle = null;
+    e.inversao = null;
+    e.destino = alvo;
+    e.p = alvo;
+    e.modo = { acendendo: alvo === 1, completa: false, simples: false };
+    resolverPendentes('chegou');
+    desenhar();
+  };
+
   /** Leva a cena até o alvo. Resolve true na hora de trocar o tema da interface; false se outra troca a substituiu. */
   const irPara = (alvo: 0 | 1) =>
     new Promise<boolean>((resolve) => {
       const e = s.current;
+      if (modoLeve() && !e.reduce) {
+        saltarPara(alvo);
+        resolve(true);
+        return;
+      }
       const ponto = alvo === 1 ? tempos.trocaInterface.claro : tempos.trocaInterface.escuro;
       if (e.destino === alvo && (e.controle || e.p === alvo)) {
         e.pendentes.push({ alvo, ponto: e.reduce ? alvo : ponto, resolve });
@@ -384,16 +409,23 @@ export function SceneBackground({ cena }: { cena: Cena }) {
   }, [cena, presente]);
 
   // Tema trocado por qualquer caminho (troca em vídeo, troca direta com movimento reduzido): a cena segue.
-  useEffect(() => {
+  // Efeito de layout: roda dentro do flushSync da View Transition, e o salto do modo leve sai na captura nova.
+  useLayoutEffect(() => {
     void irPara(alvoTema);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alvoTema]);
 
   // Tintas de contraste acompanham o tema da interface, no mesmo esmaecimento dela.
   const tinta = useRef(alvoTema as number);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = raiz.current;
     if (!el || tinta.current === alvoTema) return;
+    if (modoLeve() && !reduce) {
+      // Modo leve: a tinta salta junto com a cena (o esmaecimento da View Transition cobre a troca).
+      tinta.current = alvoTema;
+      el.style.setProperty('--tinta', String(alvoTema));
+      return;
+    }
     const c = animate(tinta.current, alvoTema, {
       duration: (reduce ? tempos.duracaoReduzida : tempos.esmaecerInterface) * Math.abs(alvoTema - tinta.current),
       ease: tempos.esmaecerEase,

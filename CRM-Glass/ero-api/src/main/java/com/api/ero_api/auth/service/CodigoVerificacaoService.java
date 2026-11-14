@@ -1,5 +1,6 @@
 package com.api.ero_api.auth.service;
 
+import com.api.ero_api.auditoria.dtos.JanelaEventosDto;
 import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import com.api.ero_api.auditoria.service.EventoSegurancaService;
 import com.api.ero_api.auth.dtos.CodigoEnviadoDto;
@@ -23,10 +24,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -42,7 +46,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * <ul>
  *   <li>{@link #emitir}: depois da senha certa. Apaga os códigos anteriores do
  *       usuário, grava o novo (cifrado), envia o e-mail e devolve o desafio JWT,
- *       cujo {@code jti} aponta para a linha gravada.</li>
+ *       cujo {@code jti} aponta para a linha gravada. No máximo
+ *       {@code codigoMaxEmissoesPorHora} códigos novos por hora (429 sem apagar o pendente).</li>
  *   <li>{@link #reenviar}: manda o MESMO código de novo, sem estender a validade,
  *       no mínimo {@code codigoReenvioIntervalo} entre envios e no máximo
  *       {@code codigoMaxEnvios} envios.</li>
@@ -62,7 +67,11 @@ public class CodigoVerificacaoService {
 
     public static final String MSG_ENVIO_FALHOU = "Não foi possível enviar o código agora. Tente de novo em instantes.";
     public static final String MSG_ENTRE_DE_NOVO = "Entre de novo para receber outro código.";
+    public static final String MSG_MUITOS_CODIGOS = "Muitos códigos pedidos. Tente de novo mais tarde.";
 
+    private static final Duration JANELA_EMISSOES = Duration.ofHours(1);
+    /** Valor de produção do limite de códigos por hora; acima disso só em dev/test. */
+    private static final int EMISSOES_POR_HORA_PRODUCAO = 10;
     private static final Logger log = LoggerFactory.getLogger(CodigoVerificacaoService.class);
 
     private final CodigoVerificacaoRepository repository;
@@ -76,7 +85,8 @@ public class CodigoVerificacaoService {
 
     public CodigoVerificacaoService(CodigoVerificacaoRepository repository, UsuarioService usuarioService,
                                     EmailService emailService, JwtService jwtService, EventoSegurancaService eventos,
-                                    SegurancaProperties props, PlatformTransactionManager transactionManager) {
+                                    SegurancaProperties props, PlatformTransactionManager transactionManager,
+                                    Environment ambiente) {
         this.repository = repository;
         this.usuarioService = usuarioService;
         this.emailService = emailService;
@@ -84,6 +94,7 @@ public class CodigoVerificacaoService {
         this.eventos = eventos;
         this.props = props;
         this.tx = new TransactionTemplate(transactionManager);
+        avisarLimiteFolgado(ambiente);
     }
 
     /** Desafio para o front + dados do código enviado. */
@@ -103,6 +114,16 @@ public class CodigoVerificacaoService {
         @Override
         public String toString() {
             return "ParaEnviar[usuarioId=" + usuarioId + ", ***]";
+        }
+    }
+
+    private sealed interface Emissao {
+        /** Código novo gravado + id do CODIGO_ENVIADO que reservou a vaga (desfeito se o e-mail não sair). */
+        record Enviar(ParaEnviar dados, UUID reserva) implements Emissao {
+        }
+
+        /** Limite de códigos por hora atingido: 429 com Retry-After de {@code segundos}. */
+        record Barrada(long segundos) implements Emissao {
         }
     }
 
@@ -129,13 +150,29 @@ public class CodigoVerificacaoService {
      * códigos anteriores dele são apagados. Se o e-mail não sair, o código também é
      * apagado e responde 503 (nenhuma sessão é aberta). A linha do usuário fica
      * travada na transação: dois logins ao mesmo tempo não deixam dois códigos valendo.
+     *
+     * <p>No máximo {@code codigoMaxEmissoesPorHora} códigos novos por usuário na
+     * última hora (contados pelos eventos CODIGO_ENVIADO; reenvio é outro evento e
+     * não conta). Passou: 429 com Retry-After ANTES de apagar o código pendente,
+     * para quem sabe a senha não derrubar o login do dono da conta a cada pedido.
+     * A vaga é reservada na mesma transação travada (o CODIGO_ENVIADO é gravado
+     * antes do commit e antes do e-mail): logins em paralelo do mesmo usuário passam
+     * um de cada vez pela contagem e cada um já vê a reserva dos anteriores. Se o
+     * e-mail não sair, a reserva é desfeita junto com o código.
+     *
+     * <p>Barrado pelo limite, a transação termina com commit (só leu e, no máximo,
+     * gravou o CODIGO_LIMITE_ATINGIDO) e o 429 é lançado depois dela.
      */
     public Emitido emitir(UUID usuarioId) {
         Instant agora = agora();
         String codigo = sortearCodigo();
-        ParaEnviar p = root(() -> {
+        Emissao resultado = root(() -> {
             Usuario u = usuarioService.buscarComBloqueio(usuarioId)
                     .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado."));
+            OptionalLong espera = esperaPeloLimite(u, agora);
+            if (espera.isPresent()) {
+                return new Emissao.Barrada(espera.getAsLong());
+            }
             String email = u.getEmail();
             String nome = u.getNome();
             UUID tenantId = u.getTenantId();
@@ -149,13 +186,22 @@ public class CodigoVerificacaoService {
             c.setUltimoEnvioEm(agora);
             c.setEnvios(1);
             repository.save(c);
-            return paraEnviar(c, tenantId, email, nome);
+            UUID reserva = eventos.reservar(TipoEventoSeguranca.CODIGO_ENVIADO, usuarioId, tenantId, null);
+            return new Emissao.Enviar(paraEnviar(c, tenantId, email, nome), reserva);
         });
+        Emissao.Enviar emissao = switch (resultado) {
+            case Emissao.Enviar e -> e;
+            case Emissao.Barrada b -> throw new MuitasRequisicoesException(MSG_MUITOS_CODIGOS, b.segundos());
+        };
+        ParaEnviar p = emissao.dados();
         if (!emailService.enviarCodigoVerificacao(p.email(), p.nome(), p.codigo(), props.desafio2fa())) {
-            root(() -> repository.apagarPorDesafio(p.jti()));
+            root(() -> {
+                repository.apagarPorDesafio(p.jti());
+                eventos.desfazerReserva(emissao.reserva(), TipoEventoSeguranca.CODIGO_ENVIADO);
+                return null;
+            });
             throw falhaDeEnvio(p);
         }
-        eventos.registrarIndependente(TipoEventoSeguranca.CODIGO_ENVIADO, p.usuarioId(), p.tenantId(), null);
         String desafio = jwtService.emitirDesafio2fa(p.usuarioId(), p.jti(), p.expiraEm()).token();
         return new Emitido(desafio, p.dto());
     }
@@ -268,6 +314,70 @@ public class CodigoVerificacaoService {
     }
 
     // ---------------------------------------------------------------- interno
+
+    /**
+     * Limite de códigos por hora acima do de produção (10) só serve para testar (ex.:
+     * o modo Mailpit de dev usa 1000). Em dev/test vira um aviso; fora deles, ERRO no
+     * log, sem impedir a subida (o teto de 1000 já vem do {@code @Max} da propriedade).
+     */
+    private void avisarLimiteFolgado(Environment ambiente) {
+        int limite = props.codigoMaxEmissoesPorHora();
+        if (limite <= EMISSOES_POR_HORA_PRODUCAO) {
+            return;
+        }
+        if (ambiente.acceptsProfiles(Profiles.of("dev", "test"))) {
+            log.warn("Limite de códigos de login por hora em {} (APP_CODIGO_MAX_EMISSOES_POR_HORA): "
+                    + "aceitável só em desenvolvimento.", limite);
+        } else {
+            log.error("Limite de códigos de login por hora em {} (APP_CODIGO_MAX_EMISSOES_POR_HORA), acima de {}: "
+                    + "quem sabe a senha pode encher a caixa do usuário. Use {} em produção.",
+                    limite, EMISSOES_POR_HORA_PRODUCAO, EMISSOES_POR_HORA_PRODUCAO);
+        }
+    }
+
+    /**
+     * Limite de códigos novos por hora. A janela começa na última troca de senha, se
+     * ela for mais recente: quando o administrador redefine a senha, a cota gasta por
+     * quem sabia a senha antiga deixa de valer. O Retry-After conta até o mais antigo
+     * da janela sair dela (aí sobra uma vaga). Só o id vai para o log.
+     *
+     * @return vazio se ainda há vaga; senão, os segundos do Retry-After
+     */
+    private OptionalLong esperaPeloLimite(Usuario u, Instant agora) {
+        Instant inicio = agora.minus(JANELA_EMISSOES);
+        if (u.getSenhaAlteradaEm() != null && u.getSenhaAlteradaEm().isAfter(inicio)) {
+            inicio = u.getSenhaAlteradaEm();
+        }
+        JanelaEventosDto janela = eventos.janelaDoUsuario(u.getId(), TipoEventoSeguranca.CODIGO_ENVIADO, inicio);
+        if (janela.quantidade() < props.codigoMaxEmissoesPorHora()) {
+            return OptionalLong.empty();
+        }
+        long segundos = segundosAte(agora, janela.primeiro().plus(JANELA_EMISSOES));
+        log.warn("limite_emissoes_codigo usuario={} emitidos={} retry_after={}s",
+                u.getId(), janela.quantidade(), segundos);
+        registrarLimiteAtingido(u, inicio);
+        return OptionalLong.of(segundos);
+    }
+
+    /**
+     * Senha certa barrada pelo limite: alguém que sabe a senha está insistindo, e isso
+     * vai para a trilha. Um CODIGO_LIMITE_ATINGIDO por usuário dentro da mesma janela
+     * (a mesma do limite), para a insistência não virar uma enxurrada de eventos.
+     *
+     * <p>Gravado na transação do login, que ainda segura a linha do usuário travada e
+     * termina com commit (o 429 só é lançado depois dela, em {@link #emitir}). Dois
+     * logins barrados ao mesmo tempo passam aqui um de cada vez e o segundo já vê o
+     * evento do primeiro. Não usa transação própria de propósito: ela pediria uma
+     * segunda conexão enquanto as outras requisições do mesmo usuário esperam a trava
+     * segurando as delas, e uma rajada esgotaria o pool.
+     */
+    private void registrarLimiteAtingido(Usuario u, Instant inicio) {
+        JanelaEventosDto registrados = eventos.janelaDoUsuario(u.getId(), TipoEventoSeguranca.CODIGO_LIMITE_ATINGIDO, inicio);
+        if (registrados.quantidade() == 0) {
+            eventos.registrar(TipoEventoSeguranca.CODIGO_LIMITE_ATINGIDO, u.getId(), u.getTenantId(),
+                    "limite de " + props.codigoMaxEmissoesPorHora() + " códigos por hora");
+        }
+    }
 
     private ParaEnviar paraEnviar(CodigoVerificacao c, UUID tenantId, String email, String nome) {
         Instant reenvio = c.getUltimoEnvioEm().plus(props.codigoReenvioIntervalo());

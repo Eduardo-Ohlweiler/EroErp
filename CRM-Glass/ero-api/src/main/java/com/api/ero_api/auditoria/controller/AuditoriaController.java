@@ -7,6 +7,7 @@ import com.api.ero_api.compartilhado.dtos.PaginaDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
@@ -37,6 +38,9 @@ public class AuditoriaController {
     public PaginaDto<EventoSegurancaResponseDto> listar(
             @Parameter(description = "Tipos de evento (vazio = todos). Repita o parâmetro ou separe por vírgula.")
             @RequestParam(required = false) @Size(max = 50, message = "Tipos demais") List<TipoEventoSeguranca> tipos,
+            @Parameter(description = "Não use: o filtro é \"tipos\". Vir com \"tipo\" é recusado (400) para o "
+                    + "erro de digitação não virar \"todos os tipos\" em silêncio.")
+            @RequestParam(name = "tipo", required = false) @Null(message = "Use o parâmetro tipos") String tipo,
             @Parameter(description = "Usuário afetado") @RequestParam(required = false) UUID usuarioId,
             @Parameter(description = "Contratante (só na visão de plataforma; ignorado dentro de um contratante)")
             @RequestParam(required = false) UUID tenantId,

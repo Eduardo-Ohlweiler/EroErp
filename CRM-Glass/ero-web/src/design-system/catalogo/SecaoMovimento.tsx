@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Clapperboard, Moon, Play, Sun } from 'lucide-react';
 import { Bloco, TrocaDeArea, Tela } from '../../motion/coreografia';
 import { ehCena } from '../../motion/cena/cenas';
+import { fixarDesempenho, medirDesempenhoAgora, useDesempenho, type EstadoDesempenho } from '../../motion/desempenho';
 import { useAparencia } from '../../shared/aparencia/AparenciaProvider';
 import { FUNDOS, type Fundo } from '../../shared/aparencia/mapear';
 import { cn } from '../../shared/util/utils';
@@ -30,6 +31,7 @@ export function SecaoMovimento() {
   const { alvo, settings, set, trocandoTema } = useAparencia();
   const [palco, setPalco] = useState<'cartoes' | 'formulario'>('cartoes');
   const comCena = ehCena(alvo.fundo);
+  const leve = useDesempenho().modo === 'leve';
 
   return (
     <GlassCard className="col-span-12">
@@ -66,7 +68,12 @@ export function SecaoMovimento() {
 
           <div>
             <p className="text-xs font-medium text-muted mb-2">
-              Tema {comCena ? '— com cena: a luz muda primeiro e a interface troca no meio da sequência' : '— fundo vivo: revelação circular a partir do clique'}
+              Tema{' '}
+              {leve
+                ? '— modo leve: esmaecimento simples, sem a revelação circular'
+                : comCena
+                  ? '— com cena: a luz muda primeiro e a interface troca no meio da sequência'
+                  : '— fundo vivo: revelação circular a partir do clique'}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Segmented
@@ -92,6 +99,8 @@ export function SecaoMovimento() {
               Com cena, <code className="kbd">__cena.quadro(0.35)</code> no console desenha um ponto da sequência. Movimento reduzido: só esmaece.
             </p>
           </div>
+
+          <SeletorDesempenho />
 
           <div>
             <p className="text-xs font-medium text-muted mb-2">Montagem entre rotas, com a forma do app real</p>
@@ -149,5 +158,52 @@ export function SecaoMovimento() {
         </div>
       </div>
     </GlassCard>
+  );
+}
+
+const num = (v: number, casas = 0) => v.toLocaleString('pt-BR', { maximumFractionDigits: casas });
+
+function textoDaMedicao(d: EstadoDesempenho) {
+  if (d.medindo) return 'Medindo o ritmo de quadros…';
+  const m = d.medicao;
+  if (!m) return 'Ainda não medido nesta sessão do navegador.';
+  const hora = new Date(m.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return `Medido às ${hora}: ${num(m.fps, 1)} fps numa tela de ${num(m.taxaTela)} Hz (limite ${num(m.limiar)} fps), ${num(m.lentos * 100)}% de quadros lentos → aparelho ${m.modo === 'leve' ? 'fraco' : 'bom'}.`;
+}
+
+/**
+ * Modo leve (motion/desempenho.ts): fixa o modo neste navegador (o mesmo que ?desempenho=auto|normal|leve) e mostra
+ * o que a detecção mediu e se o contratante atual pediu a detecção. O valor fixo vence a flag do contratante.
+ */
+function SeletorDesempenho() {
+  const d = useDesempenho();
+  return (
+    <div>
+      <p className="text-xs font-medium text-muted mb-2">Desempenho — no modo leve o fundo para e a troca de tema só esmaece</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Segmented
+          size="sm"
+          options={[
+            { value: 'auto', label: 'Automático' },
+            { value: 'normal', label: 'Sempre completo' },
+            { value: 'leve', label: 'Sempre leve' },
+          ]}
+          value={d.preferencia}
+          onChange={fixarDesempenho}
+        />
+        <Button size="sm" variant="ghost" carregando={d.medindo} onClick={() => void medirDesempenhoAgora()}>
+          Medir agora
+        </Button>
+        <Badge tone={d.modo === 'leve' ? 'accent' : 'neutral'} dot>
+          {d.modo === 'leve' ? 'Leve agora' : 'Completo agora'}
+        </Badge>
+      </div>
+      <p className="text-[11px] text-subtle mt-2">
+        {d.contratantePediu
+          ? 'O contratante atual pediu a detecção (otimizar desempenho em computadores mais fracos).'
+          : 'O contratante atual não pediu a detecção: no automático fica completo, sem medir.'}{' '}
+        {textoDaMedicao(d)}
+      </p>
+    </div>
   );
 }

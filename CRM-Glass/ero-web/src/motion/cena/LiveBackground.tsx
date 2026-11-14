@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useReduce, useSettings } from '../../shared/aparencia/AparenciaProvider';
+import { useSettings } from '../../shared/aparencia/AparenciaProvider';
+import { useReduzirMovimento } from '../reduzir';
 import { cn } from '../../shared/util/utils';
 import { blocoReduzido, camadaFundo, cena as tempos } from '../tokens';
 import { SceneBackground } from './SceneBackground';
 import { quandoOcioso, reservarCanvas } from './canvasReserva';
-import { CENAS, CENAS_EXCLUSIVAS, type Cena } from './cenas';
+import { CENAS, carregadorDaCenaExclusiva, type Cena } from './cenas';
 import { useFundoPausado } from './pausaFundo';
+import { configurarDeteccao, useModoLeve } from '../desempenho';
+import { temaEmTroca } from './trocarTema';
 
 /**
  * Fundo vivo: o vidro só fica bonito quando tem algo com cor e profundidade atrás.
@@ -17,8 +20,9 @@ import { useFundoPausado } from './pausaFundo';
  * (motion/tokens.ts, `fundo`). Cada camada é igual ao fundo do protótipo.
  */
 export function LiveBackground() {
-  const { settings } = useSettings();
-  const reduce = useReduce();
+  const aparencia = useSettings();
+  const { settings } = aparencia;
+  const reduce = useReduzirMovimento(); // ao vivo: ligar o movimento reduzido com o app aberto para o fundo na hora
   const { fundo, cena } = useFundoResolvido(settings.fundo);
   const vidro = cena?.vidro;
   // Canvas WebGL reservado em tempo ocioso (canvasReserva.ts): a cena do contratante nasce sem criar contexto
@@ -33,12 +37,22 @@ export function LiveBackground() {
 
   // Revelação circular do tema em andamento (trocarTema.ts): orbs, aurora e ondas param por baixo do clip-path.
   const pausadoNaTroca = useFundoPausado();
+  // Modo leve (aparelho fraco, motion/desempenho.ts): o fundo fica parado no quadro em que está.
+  const leve = useModoLeve();
+  // Só um contratante com "otimizar desempenho em computadores mais fracos" (desempenhoAutomatico) tem o aparelho
+  // medido, e só com o fundo animado (com ele parado, a medição não diria nada). A troca de tema em andamento
+  // descarta a janela medida. Padrão, plataforma e login: completo, sem medir.
+  const animado = settings.fundoAnimado && !reduce;
+  const contratantePediu = pediuDeteccao(aparencia);
+  useEffect(() => {
+    void configurarDeteccao({ contratante: contratantePediu, fundoAnimado: animado, ocupado: temaEmTroca });
+  }, [contratantePediu, animado]);
   // Fundo vivo usa o destaque (orbs, aurora, ondas): cada camada guarda o destaque com que nasceu e a troca
   // de destaque vira esmaecimento cruzado, sem salto de cor num quadro. A cena não usa o destaque.
   const chave = cena ? fundo : `${fundo}:${settings.accent}`;
 
   return (
-    <div className={cn('live-bg', (!settings.fundoAnimado || reduce || pausadoNaTroca) && 'paused')} aria-hidden>
+    <div className={cn('live-bg', (!animado || leve || pausadoNaTroca) && 'paused')} aria-hidden>
       <AnimatePresence initial={false}>
         <motion.div
           key={chave}
@@ -80,17 +94,27 @@ export function LiveBackground() {
 }
 
 /**
+ * Flag do contratante `desempenhoAutomatico` (aparência; false por padrão), exposta pelo AparenciaProvider em
+ * `useAparencia().desempenhoAutomatico`. Lida também em `alvo`, caso o provider a ponha junto da aparência pedida.
+ */
+function pediuDeteccao(ctx: object): boolean {
+  const c = ctx as { desempenhoAutomatico?: boolean; alvo?: { desempenhoAutomatico?: boolean } };
+  return (c.desempenhoAutomatico ?? c.alvo?.desempenhoAutomatico) === true;
+}
+
+/**
  * Fundo a mostrar agora. Cena pública: na hora. Cena exclusiva: carrega o pedaço dela e, enquanto isso,
  * mantém o fundo anterior na tela (a troca acontece quando a cena chega, com o mesmo esmaecimento).
  */
 function useFundoResolvido(pedido: string): { fundo: string; cena: Cena | undefined } {
   const publica = CENAS.find((c) => c.id === pedido);
-  const exclusiva = !publica && pedido in CENAS_EXCLUSIVAS;
+  const carregar = publica ? undefined : carregadorDaCenaExclusiva(pedido);
+  const exclusiva = !!carregar;
   const [carregada, setCarregada] = useState<Cena | null>(null);
   useEffect(() => {
-    if (!exclusiva) return;
+    if (!carregar) return;
     let vivo = true;
-    CENAS_EXCLUSIVAS[pedido]()
+    carregar()
       .then((c) => vivo && setCarregada(c))
       .catch(() => {
         /* sem a cena: fica o fundo anterior */
@@ -98,7 +122,7 @@ function useFundoResolvido(pedido: string): { fundo: string; cena: Cena | undefi
     return () => {
       vivo = false;
     };
-  }, [pedido, exclusiva]);
+  }, [carregar]);
   const cena = publica ?? (carregada?.id === pedido ? carregada : undefined);
   const mostrado = useRef<{ fundo: string; cena: Cena | undefined }>({ fundo: pedido, cena });
   if (!exclusiva || cena) mostrado.current = { fundo: pedido, cena };

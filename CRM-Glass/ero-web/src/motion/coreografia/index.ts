@@ -6,3 +6,6 @@ export { TrocaDeArea, type TrocaDeAreaProps } from './TrocaDeArea';
 export { TrocaEtapa, type TrocaEtapaProps } from './TrocaEtapa';
 export { AtrasoMontagem, BlocoDaTela, useAtrasoMontagem, useBlocoDaTela } from './contexto';
 export { aguardarTelaParada, telaEmMovimento } from './andamento';
+export { useVariantesDoPapel, variantesDoPapel, DentroDoCartao } from './papeis';
+export { useAntesDaProximaTela } from './saida';
+export { CoreografiaDaTela, useCoreografiaDaTela } from './contexto';

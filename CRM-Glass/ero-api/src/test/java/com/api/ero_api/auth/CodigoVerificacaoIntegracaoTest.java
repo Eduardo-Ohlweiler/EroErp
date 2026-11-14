@@ -231,6 +231,21 @@ class CodigoVerificacaoIntegracaoTest extends IntegracaoTest {
         assertThat(reenviados.path("totalElementos").asLong()).isEqualTo(4);
     }
 
+    /** O Retry-After do reenvio é o que falta do intervalo, não os 60 s inteiros. */
+    @Test
+    void retryAfterDoReenvioCaiComOTempo() {
+        Contratante c = novoContratante();
+        UsuarioCriado u = novoUsuario(c.admin());
+        String desafio = desafio(u.email(), SENHA_FORTE);
+        jdbc.update("UPDATE codigo_verificacao SET ultimo_envio_em = ultimo_envio_em - interval '30 seconds' "
+                + "WHERE usuario_id = ?", u.id());
+
+        MvcTestResult cedo = reenviarCodigo(desafio);
+        assertThat(status(cedo)).isEqualTo(429);
+        assertThat(Long.parseLong(cedo.getResponse().getHeader("Retry-After"))).as("60 s - 30 s").isBetween(29L, 31L);
+        assertThat(corpo(cedo).path("detail").asString()).matches("Aguarde (29|30|31) segundos para pedir outro código\\.");
+    }
+
     @Test
     void falhaNoEnvioDoEmailDa503SemAbrirSessao() {
         Contratante c = novoContratante();

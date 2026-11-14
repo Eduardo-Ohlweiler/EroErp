@@ -2,7 +2,8 @@
 @import './tokens.css';
 
 @theme inline {
-  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Fonte hospedada no próprio app (@fontsource-variable, importada em main.tsx): nada vem do Google. */
+  --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --color-fg: var(--fg);
   --color-muted: var(--fg-muted);
   --color-subtle: var(--fg-subtle);
@@ -25,7 +26,7 @@
   body {
     background: var(--bg);
     color: var(--fg);
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -98,8 +99,8 @@
   }
   .glass-hover {
     transition:
-      border-color 0.3s var(--ease-out),
-      box-shadow 0.3s var(--ease-out);
+      border-color var(--mov-hover) var(--mov-ease-out),
+      box-shadow var(--mov-hover) var(--mov-ease-out);
   }
   .glass-hover:hover {
     border-color: var(--glass-border-hover);
@@ -164,10 +165,37 @@
     z-index: -1;
     background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.38) 50%, transparent 70%);
     transform: translateX(-130%);
-    transition: transform 0.9s var(--ease-out);
+    transition: transform var(--mov-reflexo) var(--mov-ease-out);
   }
   .btn-shine:hover::after {
     transform: translateX(130%);
+  }
+  /* Movimento reduzido (sistema ou contratante): sem o reflexo que atravessa. */
+  [data-movimento='reduzida'] .btn-shine::after {
+    display: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn-shine::after {
+      display: none;
+    }
+  }
+
+  /* Microtransições do kit (seta do TPanel, fundo do cartão da grade): duração em motion/tokens.ts (micro.realce). */
+  .transicao-giro {
+    transition: transform var(--mov-realce) var(--mov-ease-out);
+  }
+  .transicao-cor {
+    transition: background-color var(--mov-realce) var(--mov-ease-out);
+  }
+  [data-movimento='reduzida'] .transicao-giro,
+  [data-movimento='reduzida'] .transicao-cor {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .transicao-giro,
+    .transicao-cor {
+      transition: none;
+    }
   }
 
   /* ---------- Campos ---------- */
@@ -181,9 +209,9 @@
     padding: 0 14px;
     font-size: 14px;
     transition:
-      border-color 0.2s,
-      box-shadow 0.2s,
-      background 0.2s;
+      border-color var(--mov-realce),
+      box-shadow var(--mov-realce),
+      background var(--mov-realce);
   }
   .input::placeholder {
     color: var(--fg-subtle);
@@ -200,6 +228,25 @@
   .input[aria-invalid='true'] {
     border-color: var(--danger);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 15%, transparent);
+  }
+  /* Campo só leitura (disabled e readOnly): fundo próprio e sem o realce de hover e de foco — quem olha vê que ali
+   * não se digita (docs/07 §3.4). O readOnly que recebe foco pelo teclado continua com o anel visível. */
+  .input:disabled,
+  .input:read-only,
+  .input[aria-readonly='true'] {
+    background: var(--input-bg-readonly);
+    border-color: var(--input-border-readonly);
+    color: var(--fg-muted);
+    box-shadow: none;
+    cursor: default;
+  }
+  .input:disabled {
+    cursor: not-allowed;
+  }
+  .input:read-only:focus-visible,
+  .input[aria-readonly='true']:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
   }
   .kbd {
     font-size: 11px;
@@ -221,7 +268,7 @@
     background: color-mix(in srgb, var(--ev) 20%, transparent);
     border: 1px solid color-mix(in srgb, var(--ev) 34%, transparent);
     box-shadow: inset 3px 0 0 var(--ev);
-    transition: background 0.2s;
+    transition: background var(--mov-realce);
   }
   .ev:hover {
     background: color-mix(in srgb, var(--ev) 32%, transparent);
@@ -293,34 +340,43 @@
 .orb {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(90px);
-  opacity: var(--orb-opacity);
+  opacity: calc(var(--orb-opacity) * var(--orb-pico));
   will-change: transform;
+}
+/*
+ * Desfoque desenhado no degradê (tokens.css, --orb-perfil), sem filter: blur — o filtro era refeito a cada
+ * quadro com o orb se mexendo. O degradê passa 3 desvios da borda do orb, até onde o blur espalhava a cor.
+ */
+.orb::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--orb-desfoque) * -3);
+  background: radial-gradient(circle closest-side, var(--orb-perfil));
 }
 .orb-1 {
   width: 46vw;
   height: 46vw;
   left: -10vw;
   top: -14vw;
-  background: var(--accent);
-  animation: orb1 38s ease-in-out infinite alternate;
+  color: var(--accent);
+  animation: orb1 var(--mov-orb-1) var(--mov-ease-ambiente) infinite alternate;
 }
 .orb-2 {
   width: 40vw;
   height: 40vw;
   right: -12vw;
   top: 12vh;
-  background: var(--accent-2);
-  animation: orb2 46s ease-in-out infinite alternate;
+  color: var(--accent-2);
+  animation: orb2 var(--mov-orb-2) var(--mov-ease-ambiente) infinite alternate;
 }
 .orb-3 {
   width: 32vw;
   height: 32vw;
   left: 32vw;
   bottom: -16vw;
-  background: var(--accent-3);
+  color: var(--accent-3);
   opacity: calc(var(--orb-opacity) * 0.7);
-  animation: orb3 54s ease-in-out infinite alternate;
+  animation: orb3 var(--mov-orb-3) var(--mov-ease-ambiente) infinite alternate;
 }
 @keyframes orb1 {
   50% {
@@ -346,17 +402,30 @@
     transform: translate3d(12vw, -20vh, 0) scale(1);
   }
 }
+/*
+ * Aurora sem filter: blur (tokens.css, --aurora-*). O cônico já é macio em volta; o desfoque só fazia falta
+ * no centro (as três cores se encontram num ponto: --aurora-centro mistura ali) e nas bordas da caixa, que
+ * giram e passam pelos cantos da tela. A borda desfocada é a máscara em x e em y (o blur de um retângulo é
+ * separável), numa caixa 3 desvios maior por lado, até onde o blur espalhava. Cada camada guarda a caixa de antes.
+ */
 .aurora {
   position: absolute;
-  inset: -25%;
-  background: conic-gradient(from 180deg at 50% 50%, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
-  filter: blur(120px);
+  inset: calc(-25% - var(--aurora-desfoque) * 3);
+  color: var(--aurora-media);
+  background:
+    radial-gradient(circle closest-side, var(--aurora-centro)),
+    conic-gradient(from 180deg at 50% 50%, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
+  -webkit-mask-image: linear-gradient(to right, var(--aurora-borda)), linear-gradient(to bottom, var(--aurora-borda));
+  mask-image: linear-gradient(to right, var(--aurora-borda)), linear-gradient(to bottom, var(--aurora-borda));
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
   opacity: calc(var(--orb-opacity) * 0.55);
-  animation: spin 70s linear infinite;
+  animation: spin var(--mov-aurora) linear infinite;
 }
 .aurora-2 {
-  inset: 10% -10% -40% 30%;
-  animation-duration: 90s;
+  inset: calc(10% - var(--aurora-desfoque) * 3) calc(-10% - var(--aurora-desfoque) * 3)
+    calc(-40% - var(--aurora-desfoque) * 3) calc(30% - var(--aurora-desfoque) * 3);
+  animation-duration: var(--mov-aurora-2);
   animation-direction: reverse;
   opacity: calc(var(--orb-opacity) * 0.35);
 }
@@ -372,10 +441,10 @@
   height: 100%;
 }
 .wave-1 {
-  animation: wave1 28s ease-in-out infinite alternate;
+  animation: wave1 var(--mov-onda-1) var(--mov-ease-ambiente) infinite alternate;
 }
 .wave-2 {
-  animation: wave2 34s ease-in-out infinite alternate;
+  animation: wave2 var(--mov-onda-2) var(--mov-ease-ambiente) infinite alternate;
 }
 @keyframes wave1 {
   to {
@@ -449,7 +518,12 @@
 .paused .orb,
 .paused .aurora,
 .paused .wave-1,
-.paused .wave-2 {
+.paused .wave-2,
+/* Modo leve (aparelho fraco; o motion-designer marca no <html>): o fundo fica parado e bonito, não some. */
+html[data-desempenho='leve'] .orb,
+html[data-desempenho='leve'] .aurora,
+html[data-desempenho='leve'] .wave-1,
+html[data-desempenho='leve'] .wave-2 {
   animation-play-state: paused;
 }
 
@@ -477,7 +551,7 @@
 .animate-wave-hand {
   display: inline-block;
   transform-origin: 70% 70%;
-  animation: wave-hand 2.4s ease-in-out 0.8s 1;
+  animation: wave-hand var(--mov-aceno) var(--mov-ease-ambiente) var(--mov-aceno-atraso) 1;
 }
 
 /* Troca de tema com revelação circular (View Transitions API). */
@@ -602,4 +676,288 @@ html.vt-cena::view-transition-image-pair(root) {
 }
 [data-movimento='reduzida'] .carregando-giro {
   animation: carregando-pulso var(--mov-pulso) ease-in-out infinite;
+}
+
+/* F11: durante a troca de tema (View Transition, motion/cena/trocarTema.ts põe html.tema-em-troca), nenhuma
+ * transição CSS roda: cada uma recalculava estilo em todos os elementos e derrubava a revelação circular. */
+html.tema-em-troca *,
+html.tema-em-troca *::before,
+html.tema-em-troca *::after {
+  transition: none !important;
+}
+
+/* ---------- Kit de telas (docs/07 §3.4): botões de ação, folha impressa ---------- */
+@layer components {
+  /* Ações cheias, "versão glass" das cores do 2.0: degradê opaco da cor, brilho difuso por baixo, reflexo no topo
+   * e o brilho que atravessa no hover (btn-shine, no TButton). Sem backdrop-filter: o botão está dentro do cartão. */
+  .acao-sucesso,
+  .acao-info,
+  .acao-perigo,
+  .acao-alerta {
+    font-weight: 600;
+  }
+  .acao-sucesso {
+    background-image: linear-gradient(135deg, var(--success-strong), var(--success-2-strong));
+    color: var(--on-success);
+    box-shadow:
+      0 10px 30px -8px var(--success-glow),
+      inset 0 1px 0 var(--acao-reflexo);
+  }
+  .acao-info {
+    background-image: linear-gradient(135deg, var(--info-strong), var(--info-2-strong));
+    color: var(--on-info);
+    box-shadow:
+      0 10px 30px -8px var(--info-glow),
+      inset 0 1px 0 var(--acao-reflexo);
+  }
+  .acao-perigo {
+    background-image: linear-gradient(135deg, var(--danger-strong), var(--danger-2-strong));
+    color: var(--on-danger);
+    box-shadow:
+      0 10px 30px -8px var(--danger-glow),
+      inset 0 1px 0 var(--acao-reflexo);
+  }
+  .acao-alerta {
+    background-image: linear-gradient(135deg, var(--warning-strong), var(--warning-2-strong));
+    color: var(--on-warning);
+    box-shadow:
+      0 10px 30px -8px var(--warning-glow),
+      inset 0 1px 0 var(--acao-reflexo);
+  }
+  /* Ações leves da grade (Editar, Inativar, Reativar): ícone na cor, fundo da cor a 12 % no hover. */
+  .acao-leve-info,
+  .acao-leve-perigo,
+  .acao-leve-sucesso {
+    background: transparent;
+  }
+  .acao-leve-info {
+    color: var(--info);
+  }
+  .acao-leve-perigo {
+    color: var(--danger);
+  }
+  .acao-leve-sucesso {
+    color: var(--success);
+  }
+  .acao-leve-info:hover {
+    background: color-mix(in srgb, var(--info) 12%, transparent);
+  }
+  .acao-leve-perigo:hover {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+  }
+  .acao-leve-sucesso:hover {
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+  }
+
+  /*
+   * Folha impressa (documento da TPage, docs/08): não existe na tela; no papel é a única coisa que existe.
+   * Moldura igual em todo relatório: cabeçalho (logo + barra do destaque) no thead da .folha-moldura, que repete a
+   * cada página; filtros em fluxo, só na 1ª; rodapé nas caixas de margem do @page (lá embaixo, em @media print).
+   */
+  .folha {
+    display: none;
+    background: var(--folha-bg);
+    color: var(--folha-fg);
+    font-size: 9.5pt;
+    line-height: 1.4;
+  }
+  /* Prévia da folha no catálogo (/design-system). */
+  .folha-na-tela .folha {
+    display: block;
+    padding: 24px;
+    border-radius: 16px;
+    overflow-x: auto;
+  }
+  .folha-moldura {
+    width: 100%;
+    /* fixa: a tabela de dentro nunca alarga a moldura além da folha */
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+  .folha-moldura > thead > tr > td,
+  .folha-moldura > tbody > tr > td {
+    padding: 0;
+    vertical-align: top;
+  }
+  .folha-cabecalho {
+    display: flex;
+    align-items: center;
+    gap: 6mm;
+    padding-bottom: 3mm;
+    margin-bottom: 4mm;
+    border-bottom: 0.6mm solid var(--folha-destaque);
+  }
+  .folha-logo {
+    flex: none;
+    /* 32 mm: a mesma altura do logo de antes com "SISTEMA" (viewBox 1215 → 915 de largura) */
+    width: 32mm;
+    height: auto;
+    color: var(--folha-destaque);
+    --logo-acento: var(--folha-destaque-vivo);
+  }
+  .folha-barra {
+    flex: 1;
+    min-width: 0;
+    padding: 2mm 4mm;
+    background: var(--folha-destaque-fundo);
+    border-left: 1.2mm solid var(--folha-destaque-vivo);
+    border-radius: 0 1.5mm 1.5mm 0;
+  }
+  .folha-emitente {
+    font-size: 12pt;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--folha-destaque);
+  }
+  .folha-titulo {
+    margin-top: 0.5mm;
+    font-size: 10.5pt;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .folha-filtros {
+    color: var(--folha-fg-muted);
+  }
+  .folha-filtros strong {
+    color: var(--folha-fg);
+    font-weight: 700;
+  }
+  .folha-corpo {
+    margin-top: 4mm;
+  }
+  .folha-tabela {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .folha-tabela th {
+    text-align: left;
+    font-weight: 700;
+    color: var(--folha-sobre-destaque);
+    background: var(--folha-destaque);
+    padding: 1.5mm 2mm;
+  }
+  .folha-tabela td {
+    border-bottom: 1px solid var(--folha-linha);
+    padding: 1.5mm 2mm;
+    vertical-align: top;
+    /*
+     * nome longo quebra dentro da coluna: a tabela nunca passa da largura da folha. No e-mail (`quebra: 'email'`) a
+     * folha põe <wbr> depois do @ e de cada ponto (impressao.tsx), e o navegador prefere esses pontos: "contato@ /
+     * demomarina.test", nunca "contato@demomari / na.test". O `anywhere` só parte um pedaço quando ele sozinho é mais
+     * largo que a coluna, e é por isso que fica aqui também para o e-mail: com `normal`, a largura mínima do pedaço mais
+     * longo empurrava as outras colunas ("Demo / Marin / a").
+     */
+    overflow-wrap: anywhere;
+  }
+  /* só a linha (caixa menor que a página) não se parte; nunca um grupo inteiro */
+  .folha-tabela tr {
+    break-inside: avoid;
+  }
+  /* tabela de várias páginas repete o cabeçalho das colunas */
+  .folha-tabela thead {
+    display: table-header-group;
+  }
+  /* com a especificidade de `.folha-tabela th`: sem isso o título da coluna numérica ficava à esquerda */
+  .folha-tabela .folha-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .folha-sem-quebra {
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+  .folha-aviso {
+    margin-top: 4mm;
+    color: var(--folha-fg-muted);
+  }
+  /* Rodapé da prévia de tela; no papel quem desenha é o @page (com a página). */
+  .folha-rodape {
+    display: flex;
+    justify-content: space-between;
+    gap: 6mm;
+    margin-top: 6mm;
+    padding-top: 2mm;
+    border-top: 1px solid var(--folha-linha);
+    color: var(--folha-fg-muted);
+    font-size: 8pt;
+  }
+}
+
+/*
+ * Impressão: quando a tela tem documento (TPage documento), só a folha vai para o papel. Some tudo o que não é a
+ * folha nem um ancestral dela (casca, fundo, cartões), e os ancestrais perdem transform, opacidade e vidro da
+ * montagem em blocos. Tela sem documento imprime como está.
+ */
+@media print {
+  /*
+   * Margem da página: embaixo sobra lugar para o rodapé da folha (docs/08 §1.3), que mora nas caixas de margem:
+   * só elas conhecem counter(page) e counter(pages) (Chrome 131+). O conteúdo das caixas vem da Folha
+   * (`regraDoRodape`, em impressao.tsx) e só existe com uma folha montada; sem `content` a caixa nem é gerada, e a tela
+   * sem documento imprime sem rodapé. As caixas herdam do <html>: fonte e variáveis (--folha-*, destaque).
+   */
+  @page {
+    margin: 12mm 15mm 16mm;
+
+    @bottom-left {
+      width: 72%;
+      margin-left: 3mm;
+      padding-top: 2mm;
+      vertical-align: top;
+      border-top: 1px solid var(--folha-linha);
+      color: var(--folha-fg-muted);
+      font-family: inherit;
+      font-size: 7.5pt;
+    }
+    @bottom-right {
+      width: 28%;
+      margin-right: 3mm;
+      padding-top: 2mm;
+      vertical-align: top;
+      text-align: right;
+      border-top: 1px solid var(--folha-linha);
+      color: var(--folha-fg-muted);
+      font-family: inherit;
+      font-size: 7.5pt;
+    }
+  }
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  html:has([data-kit='folha']),
+  html:has([data-kit='folha']) body {
+    /* color-scheme claro: com o tema escuro o Chrome pintava de escuro a margem da página (@page). */
+    color-scheme: light !important;
+    background: var(--folha-bg) !important;
+    color: var(--folha-fg);
+  }
+  body:has([data-kit='folha']) *:not([data-kit='folha'], [data-kit='folha'] *, :has([data-kit='folha'])) {
+    display: none !important;
+  }
+  body *:has([data-kit='folha']) {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  .folha {
+    display: block;
+    /* respiro nas bordas: a barra do cabeçalho e a última coluna não encostam na margem da página (o rodapé do
+     * @page tem o mesmo recuo, margin-left/right das caixas) */
+    padding: 0 3mm;
+  }
+  /* no papel o rodapé é o do @page, em toda página e com a numeração */
+  .folha-rodape {
+    display: none;
+  }
 }

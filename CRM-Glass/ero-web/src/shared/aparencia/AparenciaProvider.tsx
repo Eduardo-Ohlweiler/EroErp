@@ -9,7 +9,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { MotionConfig, useReducedMotion } from 'motion/react';
+import { MotionConfig } from 'motion/react';
+import { usePrefereMenosMovimento } from '../../motion/reduzir';
 import { PADRAO_SISTEMA, deApi, sanear, type AparenciaApi, type Settings, type Theme } from './mapear';
 
 export type { Accent, AparenciaApi, Fundo, FundoCatalogo, Movimento, Settings, Theme } from './mapear';
@@ -54,6 +55,11 @@ export type AparenciaCtx = {
   trocandoTema: boolean;
   /** true enquanto há prévia ativa. */
   emPrevia: boolean;
+  /**
+   * "Otimizar desempenho em computadores mais fracos" da aparência efetiva (prévia > contratante > padrão).
+   * `false` no login e na plataforma (sem contratante); só com `true` o aparelho é medido para o modo leve.
+   */
+  desempenhoAutomatico: boolean;
   /** Camada do contratante (`usuario.aparencia`); `null` volta ao padrão do sistema (logout). */
   definirContratante: (aparencia: Partial<AparenciaApi> | null | undefined) => void;
   /** Substitui a prévia inteira pela aparência informada (formato da API). */
@@ -81,7 +87,7 @@ export function AparenciaProvider({ children, trocarTema }: { children: ReactNod
   const trocador = useRef(trocarTema);
   trocador.current = trocarTema;
 
-  const sys = useReducedMotion();
+  const sys = usePrefereMenosMovimento();
   const reduzir = !!sys || alvo.movimento === 'reduzida';
   const reduzirRef = useRef(reduzir);
   reduzirRef.current = reduzir;
@@ -140,6 +146,7 @@ export function AparenciaProvider({ children, trocarTema }: { children: ReactNod
       alvo,
       trocandoTema,
       emPrevia: previa !== null,
+      desempenhoAutomatico: alvo.desempenhoAutomatico,
       definirContratante,
       definirPrevia,
       limparPrevia,
@@ -168,7 +175,7 @@ export const useSettings = useAparencia;
 
 /** true quando o sistema pede menos movimento ou o contratante escolheu animações reduzidas. */
 export function useReduce() {
-  const sys = useReducedMotion();
+  const sys = usePrefereMenosMovimento();
   const { alvo } = useAparencia();
   return !!sys || alvo.movimento === 'reduzida';
 }

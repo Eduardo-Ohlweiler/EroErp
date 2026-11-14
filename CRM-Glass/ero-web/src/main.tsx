@@ -5,11 +5,14 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { AparenciaProvider } from './shared/aparencia/AparenciaProvider';
 import { SessaoProvider } from './shared/sessao';
 import { ToastProvider } from './design-system/ui/Toast';
+import { TQuestionProvider } from './design-system/kit/useQuestion';
 import { LiveBackground } from './motion/cena/LiveBackground';
 import { trocarTema } from './motion/cena/trocarTema';
 import { aplicarVariaveisDeMovimento } from './motion/tokens';
 import { queryClient } from './app/queryClient';
 import { roteador } from './app/rotas';
+// Plus Jakarta Sans hospedada no app (OFL, @fontsource-variable): sem Google Fonts.
+import '@fontsource-variable/plus-jakarta-sans';
 import './styles/index.css';
 
 /*
@@ -25,12 +28,15 @@ createRoot(document.getElementById('root')!).render(
     <AparenciaProvider trocarTema={trocarTema}>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
-          <SessaoProvider>
-            <LiveBackground />
-            <div className="relative z-10">
-              <RouterProvider router={roteador} />
-            </div>
-          </SessaoProvider>
+          {/* A janela de confirmação do kit (useQuestion), uma só para o app. */}
+          <TQuestionProvider>
+            <SessaoProvider>
+              <LiveBackground />
+              <div className="relative z-10">
+                <RouterProvider router={roteador} />
+              </div>
+            </SessaoProvider>
+          </TQuestionProvider>
         </ToastProvider>
       </QueryClientProvider>
     </AparenciaProvider>

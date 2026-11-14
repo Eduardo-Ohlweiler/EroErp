@@ -6,6 +6,7 @@ Estado atual:
 - **Front:** o definitivo está em `ero-web/`, por fatias (a 1ª entregou a base e o movimento; a 2ª, as telas do `PLANO-FATIA-2.md`). O `prototipo/` fica congelado como laboratório visual e referência de movimento.
 - **Backend:** fundação pronta em `ero-api/` (Java 25 + Spring Boot 4.1, PostgreSQL, multi-tenant). Já tem segurança OWASP, login com código por e-mail para todos, contratantes (com limite de usuários), usuários e permissões.
 - **Telas:** construídas com o padrão do EroErp 2.0 — kit `T*`, larguras por escala e toda tela de cadastro copiada de um modelo List, Form ou FormList (`docs/07-layout-de-telas.md`) —, com o visual glass. O kit nasce na primeira tela de cadastro (fase 0 da skill `padronizar-layout`).
+- **Relatórios:** o mesmo padrão do EroErp 2.0 (`docs/08-relatorios.md`): a folha impressa é o DOM, com a mesma moldura em todo relatório — logo do Ero e barra na cor de destaque do contratante em toda página, filtros só na 1ª, rodapé `CRM Glass · data · usuário · Página X de Y` em toda página.
 
 Onde paramos, decisões em aberto e próximos passos: `CONTINUAR.md`.
 
@@ -17,7 +18,7 @@ Onde paramos, decisões em aberto e próximos passos: `CONTINUAR.md`.
 | `ero-web/` | Front definitivo (React 19 + Vite + React Router 7 + TanStack Query), ligado à ero-api |
 | `prototipo/` | Protótipo visual congelado (dados fictícios). Referência de movimento. Ver `prototipo/README.md` |
 | `ero-api/` | Backend Spring Boot (API REST) |
-| `docs/` | Arquitetura e regras do backend (01 a 05), fundos de cena (06) e o kit de telas (07) |
+| `docs/` | Arquitetura e regras do backend (01 a 05), fundos de cena (06), o kit de telas (07) e o padrão de relatórios (08) |
 | `deploy/dev/` | `docker compose up --build -d` na raiz sobe banco, API e front (ver `CONTINUAR.md`) |
 | `.claude/agents/` | Time de agentes |
 | `.claude/skills/` | `timeero` (orquestração), `padronizar-layout` (kit e migração de telas), `olhar-telas` (screenshots e medição de campos) |
@@ -51,6 +52,7 @@ Rodar: `ero-api/run-dev.cmd` (Windows) ou `cd ero-api && ./mvnw spring-boot:run 
 | `seguranca` | Checklist OWASP de `docs/02` em toda entrega; achado de segurança bloqueia (só lê) | nada |
 | `revisor-ui` | Visual glass, contraste, acessibilidade, movimento, desempenho (só lê) | nada |
 | `guardiao-layout` | Forma das telas contra o `docs/07`: modelo, kit, larguras, disposição, 1440/768/360 px (só lê e mede) | nada |
+| `relatorios` | Relatórios e camada de impressão no padrão do `docs/08` (moldura com logo, barra na cor do contratante, filtros na 1ª página, rodapé em todas) | front: `kit/impressao.tsx`, bloco `.folha*`, tokens `--folha-*` |
 | `qa` | Build, testes, API rodando, bateria entre tenants, uso como usuário | só pasta temporária |
 | `operador-deploy` | Imagem Docker, compose por contratante, backup. Servidor só com OK do dono | `deploy/` |
 | `pesquisa-eroerp` | Procura no EroErp e no EroErp2.0 o que já foi resolvido (só lê) | nada |

@@ -15,7 +15,7 @@ import lombok.Setter;
 /**
  * Trilha de segurança. NÃO é TenantEntity de propósito: login com e-mail
  * inexistente não tem tenant. Por isso a consulta filtra {@code tenantId} à mão
- * (ver EventoSegurancaService.listar). Só insere, nunca altera.
+ * (ver EventoSegurancaService.listar). Só insere, nunca altera (apaga só na retenção e ao desfazer a reserva de um código que não saiu).
  */
 @Entity
 @Table(name = "evento_seguranca")

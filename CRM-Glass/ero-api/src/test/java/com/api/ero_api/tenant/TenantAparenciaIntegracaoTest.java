@@ -44,6 +44,8 @@ class TenantAparenciaIntegracaoTest extends IntegracaoTest {
         assertThat(padrao.path("vidroDesfoque").asInt()).isEqualTo(12);
         assertThat(padrao.path("fundoFoco").decimalValue()).isEqualByComparingTo("3.0");
         assertThat(padrao.path("animacoes").asString()).isEqualTo("COMPLETAS");
+        assertThat(padrao.path("desempenhoAutomatico").isBoolean()).as("sempre presente na saída").isTrue();
+        assertThat(padrao.path("desempenhoAutomatico").asBoolean()).isFalse();
 
         MvcTestResult criado = criar(s, aparencia("azul", "CLARO", "MARINA", false, 20, new BigDecimal("4.5"), "REDUZIDAS"));
         assertThat(status(criado)).isEqualTo(201);
@@ -240,7 +242,89 @@ class TenantAparenciaIntegracaoTest extends IntegracaoTest {
                 .as("transação desfeita").isZero();
     }
 
+    // ------------------------------------------------------------ desempenho automático
+
+    @Test
+    void desempenhoAutomatico_ligadoChegaNaFichaNoAtualENoEu() {
+        Contratante c = novoContratante();
+        Sessao s = loginSuperadmin();
+        assertThat(desempenho(corpo(get("/api/tenants/" + c.id(), s.token())))).as("padrão do contratante novo").isFalse();
+
+        MvcTestResult r = configurar(s, c.id(), comDesempenho(padrao(), true), versao(s, c.id()));
+        assertThat(status(r)).isEqualTo(200);
+        assertThat(desempenho(corpo(r))).as("resposta do PUT").isTrue();
+
+        assertThat(desempenho(corpo(get("/api/tenants/" + c.id(), s.token())))).as("ficha").isTrue();
+        assertThat(desempenho(corpo(get("/api/tenants/atual", c.admin().token())))).as("atual").isTrue();
+        assertThat(desempenho(corpo(get("/api/auth/eu", c.admin().token())))).as("eu").isTrue();
+        JsonNode lista = corpo(get("/api/tenants?busca=" + corpo(get("/api/tenants/" + c.id(), s.token())).path("nome").asString(),
+                s.token()));
+        assertThat(lista.path("conteudo").valueStream().map(this::desempenho)).as("lista").containsExactly(true);
+
+        // Desligar volta ao visual completo.
+        assertThat(status(configurar(s, c.id(), comDesempenho(padrao(), false), versao(s, c.id())))).isEqualTo(200);
+        assertThat(desempenho(corpo(get("/api/auth/eu", c.admin().token())))).isFalse();
+    }
+
+    @Test
+    void desempenhoAutomatico_padraoFalseNosContratantesExistentes() {
+        // A Plataforma vem da migration 001: existia antes da 010 e recebeu o padrão da coluna.
+        JsonNode eu = corpo(get("/api/auth/eu", loginSuperadmin().token())).path("aparencia");
+        assertThat(eu.path("desempenhoAutomatico").isBoolean()).isTrue();
+        assertThat(eu.path("desempenhoAutomatico").asBoolean()).isFalse();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenant WHERE desempenho_automatico IS NULL", Long.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT desempenho_automatico FROM tenant WHERE id = ?", Boolean.class, UUID.fromString(PLATAFORMA)))
+                .isFalse();
+    }
+
+    @Test
+    void desempenhoAutomatico_corpoSemOCampoContinuaAceitoEValeFalse() {
+        Contratante c = novoContratante();
+        Sessao s = loginSuperadmin();
+        assertThat(status(configurar(s, c.id(), comDesempenho(padrao(), true), versao(s, c.id())))).isEqualTo(200);
+
+        Map<String, Object> semCampo = padrao();
+        assertThat(semCampo).doesNotContainKey("desempenhoAutomatico");
+        MvcTestResult r = configurar(s, c.id(), semCampo, versao(s, c.id()));
+        assertThat(status(r)).as("cliente antigo não quebra").isEqualTo(200);
+        assertThat(desempenho(corpo(r))).as("ausente = false").isFalse();
+
+        assertThat(status(configurar(s, c.id(), comDesempenho(padrao(), null), versao(s, c.id())))).isEqualTo(200);
+        assertThat(desempenho(corpo(get("/api/tenants/" + c.id(), s.token())))).as("nulo = false").isFalse();
+
+        // Cadastro com aparência aninhada: sem o campo vale false, com true grava true.
+        assertThat(desempenho(corpo(criar(s, padrao())))).isFalse();
+        assertThat(desempenho(corpo(criar(s, comDesempenho(padrao(), true))))).isTrue();
+    }
+
+    @Test
+    void desempenhoAutomatico_soSuperadminLiga() {
+        Contratante c = novoContratante();
+        Sessao s = loginSuperadmin();
+        long versao = versao(s, c.id());
+        assertThat(status(configurar(c.admin(), c.id(), comDesempenho(padrao(), true), versao)))
+                .as("ADMIN do contratante não liga").isEqualTo(403);
+        assertThat(desempenho(corpo(get("/api/auth/eu", c.admin().token())))).isFalse();
+        assertThat(versao(s, c.id())).as("nada gravado").isEqualTo(versao);
+    }
+
     // ------------------------------------------------------------ apoio
+
+    /** Lê {@code aparencia.desempenhoAutomatico} de qualquer resposta que traga a aparência. */
+    private boolean desempenho(JsonNode resposta) {
+        JsonNode campo = resposta.path("aparencia").path("desempenhoAutomatico");
+        assertThat(campo.isBoolean()).as("desempenhoAutomatico presente na saída").isTrue();
+        return campo.asBoolean();
+    }
+
+    private static Map<String, Object> padrao() {
+        return aparencia("violeta", "ESCURO", "ORBS", true, 12, new BigDecimal("3"), "COMPLETAS");
+    }
+
+    private static Map<String, Object> comDesempenho(Map<String, Object> aparencia, Boolean desempenho) {
+        aparencia.put("desempenhoAutomatico", desempenho);
+        return aparencia;
+    }
 
     private MvcTestResult criar(Sessao s, Map<String, Object> aparencia) {
         Map<String, Object> corpo = new LinkedHashMap<>();

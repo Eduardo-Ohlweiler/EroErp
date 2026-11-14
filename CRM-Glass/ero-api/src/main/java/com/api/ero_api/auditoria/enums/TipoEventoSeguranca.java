@@ -21,6 +21,11 @@ public enum TipoEventoSeguranca {
     CODIGO_ENVIADO,
     /** Mesmo código reenviado a pedido do usuário. */
     CODIGO_REENVIADO,
+    /**
+     * Senha certa, mas o limite de códigos novos por hora já tinha sido atingido (o
+     * login respondeu 429). No máximo um por usuário dentro da janela de 1 hora.
+     */
+    CODIGO_LIMITE_ATINGIDO,
     /** O servidor de e-mail recusou ou não respondeu (o login respondeu 503). */
     EMAIL_FALHA_ENVIO,
     USUARIO_CRIADO,

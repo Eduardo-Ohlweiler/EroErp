@@ -3,6 +3,7 @@ package com.api.ero_api.tenant.service;
 import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import com.api.ero_api.auditoria.service.EventoSegurancaService;
 import com.api.ero_api.compartilhado.dtos.PaginaDto;
+import com.api.ero_api.compartilhado.exception.ConflitoCampoException;
 import com.api.ero_api.compartilhado.exception.ConflitoException;
 import com.api.ero_api.compartilhado.exception.NaoEncontradoException;
 import com.api.ero_api.compartilhado.exception.RegraNegocioException;
@@ -25,12 +26,14 @@ import com.api.ero_api.tenant.util.DocumentoValidator;
 import com.api.ero_api.usuario.service.UsuarioService;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -79,7 +82,9 @@ public class TenantService {
         Page<Tenant> encontrados = repository.buscarComFiltros(TenantContext.ROOT, termo, digitos, ativo, pagina);
         Map<UUID, Long> ativos = usuarioService.contarAtivosPorContratante(
                 encontrados.getContent().stream().map(Tenant::getId).toList());
-        return PaginaDto.de(encontrados, t -> TenantMapper.toResponseDto(t, ativos.getOrDefault(t.getId(), 0L)));
+        Map<UUID, String> nomes = usuarioService.buscarNomes(idsDeAuditoria(encontrados.getContent()));
+        return PaginaDto.de(encontrados,
+                t -> TenantMapper.toResponseDto(t, ativos.getOrDefault(t.getId(), 0L), nomes));
     }
 
     @Transactional(readOnly = true)
@@ -87,11 +92,11 @@ public class TenantService {
         return repository.buscarParaSelecao(TenantContext.ROOT).stream().map(TenantMapper::toSelectDto).toList();
     }
 
-    /** Só na visão de plataforma, pelo mesmo motivo de {@link #listar}. */
+    /** Só na visão de plataforma, pelo mesmo motivo de {@link #listar}. A Plataforma não tem ficha (404). */
     @Transactional(readOnly = true)
     public TenantResponseDto buscarPorId(UUID id) {
         exigirVisaoPlataforma();
-        return toResponseDto(buscarEntidade(id));
+        return toResponseDto(buscarContratante(id));
     }
 
     /** Para outros services (login, autorização). Inclui a Plataforma. */
@@ -142,8 +147,13 @@ public class TenantService {
         validarDocumento(t.getDocumento(), null);
         validarFundos(t, null);
         repository.saveAndFlush(t);
-        usuarioService.criarAdminInicial(t.getId(), dto.administrador().nome(), dto.administrador().email(),
-                dto.administrador().senha());
+        try {
+            usuarioService.criarAdminInicial(t.getId(), dto.administrador().nome(), dto.administrador().email(),
+                    dto.administrador().senha());
+        } catch (ConflitoCampoException e) {
+            // E-mail em uso: no TenantCreateDto o campo fica dentro de "administrador".
+            throw e.dentroDe("administrador");
+        }
         // usuarioId = afetado (nenhum); quem fez fica em created_by do evento.
         eventos.registrar(TipoEventoSeguranca.TENANT_CRIADO, null, t.getId(), t.getNome());
         return toResponseDto(t);
@@ -187,7 +197,7 @@ public class TenantService {
             // Dois superadmins vinculando a mesma cena ao mesmo tempo: o índice único segura.
             // Outra violação segue para o tratamento global (409 genérico).
             if (violou(e, UK_FUNDO_EXCLUSIVO)) {
-                throw new ConflitoException(MSG_CENA_DE_OUTRO);
+                throw new ConflitoCampoException("fundoExclusivo", MSG_CENA_DE_OUTRO);
             }
             throw e;
         }
@@ -195,19 +205,31 @@ public class TenantService {
         return toResponseDto(t);
     }
 
+    /**
+     * Já inativo: 204 sem fazer nada (nem evento, nem limpeza do cache). A linha é
+     * travada antes de ler: no duplo clique, o segundo pedido espera o primeiro e
+     * já o lê inativo.
+     */
     @Transactional
     public void inativar(UUID id) {
         exigirVisaoPlataforma();
-        Tenant t = buscarContratante(id);
+        Tenant t = buscarContratanteComBloqueio(id);
+        if (!t.isAtivo()) {
+            return;
+        }
         t.setAtivo(false);
         cache.invalidarTudo();
         eventos.registrar(TipoEventoSeguranca.TENANT_INATIVADO, null, t.getId(), t.getNome());
     }
 
+    /** Já ativo: 204 sem fazer nada, como em {@link #inativar}. */
     @Transactional
     public void ativar(UUID id) {
         exigirVisaoPlataforma();
-        Tenant t = buscarContratante(id);
+        Tenant t = buscarContratanteComBloqueio(id);
+        if (t.isAtivo()) {
+            return;
+        }
         t.setAtivo(true);
         cache.invalidarTudo();
         eventos.registrar(TipoEventoSeguranca.TENANT_ATIVADO, null, t.getId(), t.getNome());
@@ -222,13 +244,22 @@ public class TenantService {
         return buscarEntidade(id);
     }
 
+    /** {@link #buscarContratante} com a linha travada até o fim da transação. */
+    private Tenant buscarContratanteComBloqueio(UUID id) {
+        if (TenantContext.ROOT.equals(id)) {
+            throw new NaoEncontradoException("Contratante não encontrado.");
+        }
+        return repository.buscarPorIdComBloqueio(id)
+                .orElseThrow(() -> new NaoEncontradoException("Contratante não encontrado."));
+    }
+
     /** CPF/CNPJ válido (dígito verificador) e sem outro contratante com o mesmo. */
     private void validarDocumento(String documento, UUID ignorarId) {
         if (documento != null && !DocumentoValidator.valido(documento)) {
             throw new RegraNegocioException("CPF ou CNPJ inválido.");
         }
         if (documento != null && repository.existeDocumento(documento, ignorarId == null ? TenantContext.NENHUM : ignorarId)) {
-            throw new ConflitoException("Já existe um contratante com este documento.");
+            throw new ConflitoCampoException("documento", "Já existe um contratante com este documento.");
         }
     }
 
@@ -243,7 +274,7 @@ public class TenantService {
         }
         if (exclusivo != null
                 && repository.existeFundoExclusivo(exclusivo, ignorarId == null ? TenantContext.NENHUM : ignorarId)) {
-            throw new ConflitoException(MSG_CENA_DE_OUTRO);
+            throw new ConflitoCampoException("fundoExclusivo", MSG_CENA_DE_OUTRO);
         }
         if (t.getFundo().exclusiva() && t.getFundo() != exclusivo) {
             throw new RegraNegocioException("Este fundo não está disponível para este contratante.");
@@ -260,10 +291,24 @@ public class TenantService {
         return false;
     }
 
-    /** Resposta com a contagem de usuários ativos (o limite aparece ao lado do uso). */
+    /**
+     * Resposta com a contagem de usuários ativos (o limite aparece ao lado do uso) e
+     * os nomes de quem cadastrou e alterou (TAuditoria da ficha).
+     */
     private TenantResponseDto toResponseDto(Tenant t) {
         long ativos = usuarioService.contarAtivosPorContratante(List.of(t.getId())).getOrDefault(t.getId(), 0L);
-        return TenantMapper.toResponseDto(t, ativos);
+        Map<UUID, String> nomes = usuarioService.buscarNomes(idsDeAuditoria(List.of(t)));
+        return TenantMapper.toResponseDto(t, ativos, nomes);
+    }
+
+    /**
+     * Quem cadastrou e quem alterou (o superadmin). Os nomes vêm numa consulta só
+     * por página; na visão de plataforma o filtro de tenant não esconde o superadmin.
+     */
+    private static Set<UUID> idsDeAuditoria(Collection<Tenant> tenants) {
+        Set<UUID> ids = new HashSet<>();
+        tenants.forEach(t -> Stream.of(t.getCreatedBy(), t.getUpdatedBy()).filter(Objects::nonNull).forEach(ids::add));
+        return ids;
     }
 
     private static void exigirVersao(Tenant t, Long versaoVista) {

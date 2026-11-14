@@ -7,7 +7,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +36,8 @@ import org.springframework.web.util.HtmlUtils;
  * (código!) não vai para o log; a falha é logada com o e-mail mascarado.
  *
  * <p>Sem SMTP configurado a aplicação sobe com um aviso e todo envio devolve
- * {@code false} (o login responde 503).
+ * {@code false} (o login responde 503). Com SMTP configurado e fora do ar, 5 falhas
+ * seguidas em 10 minutos geram um log de erro de alerta (ver {@link #registrarFalha}).
  *
  * <p>Modelos em {@code resources/templates/email/}: HTML simples com estilos inline
  * (cliente de e-mail não lê CSS externo), sem imagens nem scripts, e marcadores
@@ -44,18 +49,27 @@ public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private static final String MODELO_CODIGO = "templates/email/codigo-verificacao.html";
+    private static final int FALHAS_PARA_ALERTA = 5;
+    private static final Duration JANELA_ALERTA = Duration.ofMinutes(10);
 
     private final JavaMailSender mailSender;
     private final String remetente;
     private final String remetenteNome;
     private final String modeloCodigo;
     private final boolean configurado;
+    /** Instantes das falhas seguidas dentro da janela (guardado pelo monitor da instância). */
+    private final Deque<Instant> falhasSeguidas = new ArrayDeque<>();
+    private Instant ultimoAlerta;
+    /** Relógio da janela do alerta: o do sistema, ou um de teste se houver um bean {@link Clock}. */
+    private final Clock relogio;
 
     public EmailService(ObjectProvider<JavaMailSender> mailSender,
                         @Value("${app.email.remetente:}") String remetente,
                         @Value("${app.email.remetente-nome:CRM Glass}") String remetenteNome,
-                        Environment ambiente) {
+                        Environment ambiente,
+                        ObjectProvider<Clock> relogio) {
         this.mailSender = mailSender.getIfAvailable();
+        this.relogio = relogio.getIfAvailable(Clock::systemUTC);
         this.remetente = remetente == null ? "" : remetente.trim();
         this.remetenteNome = remetenteNome == null || remetenteNome.isBlank() ? "CRM Glass" : remetenteNome.trim();
         this.modeloCodigo = lerModelo(MODELO_CODIGO);
@@ -90,12 +104,39 @@ public class EmailService {
             m.setSubject("Seu código de acesso ao " + remetenteNome);
             m.setText(textoCodigo(nome, codigo, minutos), htmlCodigo(nome, codigo, minutos));
             mailSender.send(mensagem);
+            registrarSucesso();
             return true;
         } catch (MailException | MessagingException | UnsupportedEncodingException e) {
             // Só o tipo do erro: a mensagem da exceção pode carregar dados do envio.
             log.warn("Falha ao enviar e-mail para {}: {}", LogSeguro.email(para), e.getClass().getSimpleName());
+            registrarFalha(relogio.instant());
             return false;
         }
+    }
+
+    // ---------------------------------------------------------------- alerta de SMTP fora do ar
+
+    /**
+     * {@value #FALHAS_PARA_ALERTA} falhas seguidas em 10 minutos viram UM log de erro
+     * por janela de 10 minutos (o monitoramento procura "alerta smtp_falhas_seguidas").
+     * Sem e-mail nem id no texto. Um envio bem-sucedido zera a sequência. Contagem em
+     * memória: cada instância da API conta as suas.
+     */
+    private synchronized void registrarFalha(Instant agora) {
+        Instant inicioJanela = agora.minus(JANELA_ALERTA);
+        while (!falhasSeguidas.isEmpty() && falhasSeguidas.peekFirst().isBefore(inicioJanela)) {
+            falhasSeguidas.pollFirst();
+        }
+        falhasSeguidas.addLast(agora);
+        boolean jaAlertouNaJanela = ultimoAlerta != null && ultimoAlerta.isAfter(inicioJanela);
+        if (falhasSeguidas.size() >= FALHAS_PARA_ALERTA && !jaAlertouNaJanela) {
+            ultimoAlerta = agora;
+            log.error("alerta smtp_falhas_seguidas={} janela=10m", falhasSeguidas.size());
+        }
+    }
+
+    private synchronized void registrarSucesso() {
+        falhasSeguidas.clear();
     }
 
     // ---------------------------------------------------------------- conteúdo

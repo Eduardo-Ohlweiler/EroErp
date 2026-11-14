@@ -69,13 +69,38 @@ export function PageHeader({
   title,
   subtitle,
   actions,
+  breadcrumb,
+  className,
   bloco = true,
   variants,
-}: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode } & PropsBloco) {
+}: {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  actions?: ReactNode;
+  /** o caminho até a tela, em texto, acima do título: `['Administração', 'Contratantes']` */
+  breadcrumb?: string[];
+  className?: string;
+} & PropsBloco) {
   const variantesBloco = useVariantesBloco(bloco, variants);
   return (
-    <motion.div variants={variantesBloco} className="flex flex-wrap items-end justify-between gap-4 mb-6">
-      <div>
+    <motion.div variants={variantesBloco} className={cn('flex flex-wrap items-end justify-between gap-4 mb-6', className)}>
+      <div className="min-w-0">
+        {breadcrumb && breadcrumb.length > 0 && (
+          <nav aria-label="Caminho" className="mb-1 text-xs text-muted">
+            <ol className="flex flex-wrap items-center gap-x-1.5">
+              {breadcrumb.map((b, i) => (
+                <li key={`${i}-${b}`} className="flex items-center gap-x-1.5" aria-current={i === breadcrumb.length - 1 ? 'page' : undefined}>
+                  {i > 0 && (
+                    <span aria-hidden className="text-subtle">
+                      ›
+                    </span>
+                  )}
+                  {b}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
         <h1 className="text-[26px] md:text-[30px] font-semibold tracking-tight leading-tight">{title}</h1>
         {subtitle && <p className="text-sm text-muted mt-1">{subtitle}</p>}
       </div>
@@ -93,10 +118,13 @@ export function BarraAcoes({
   className,
   bloco = true,
   variants,
-}: { children: ReactNode; alinhar?: keyof typeof alinhamento; className?: string } & PropsBloco) {
+  ...rest
+}: { children: ReactNode; alinhar?: keyof typeof alinhamento; className?: string } & PropsBloco &
+  Omit<HTMLMotionProps<'div'>, 'children' | 'className' | 'variants'>) {
   const variantesBloco = useVariantesBloco(bloco, variants);
   return (
     <motion.div
+      {...rest}
       variants={variantesBloco}
       className={cn('flex flex-wrap items-center gap-2', alinhamento[alinhar], className)}
     >

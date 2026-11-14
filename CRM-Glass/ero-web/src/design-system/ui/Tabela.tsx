@@ -171,13 +171,15 @@ export type PaginacaoProps = {
   tamanho?: number;
   onPagina: (pagina: number) => void;
   carregando?: boolean;
+  /** texto da faixa (padrão "1–50 de 1.234"); recebe os números já formatados em pt-BR */
+  textoFaixa?: (inicio: string, fim: string, total: string, totalNumero: number) => string;
   className?: string;
 };
 
 const int = new Intl.NumberFormat('pt-BR');
 
 /** Paginação simples: "1–50 de 1.234", página X de Y, anterior/próxima. */
-export function Paginacao({ pagina, totalPaginas, totalElementos, tamanho, onPagina, carregando, className }: PaginacaoProps) {
+export function Paginacao({ pagina, totalPaginas, totalElementos, tamanho, onPagina, carregando, textoFaixa, className }: PaginacaoProps) {
   const total = Math.max(1, totalPaginas);
   const temAnterior = pagina > 0;
   const temProxima = pagina < total - 1;
@@ -185,7 +187,12 @@ export function Paginacao({ pagina, totalPaginas, totalElementos, tamanho, onPag
     totalElementos !== undefined && tamanho
       ? totalElementos === 0
         ? 'Nenhum registro'
-        : `${int.format(pagina * tamanho + 1)}–${int.format(Math.min(totalElementos, (pagina + 1) * tamanho))} de ${int.format(totalElementos)}`
+        : (textoFaixa ?? ((i: string, f: string, t: string) => `${i}–${f} de ${t}`))(
+            int.format(pagina * tamanho + 1),
+            int.format(Math.min(totalElementos, (pagina + 1) * tamanho)),
+            int.format(totalElementos),
+            totalElementos,
+          )
       : null;
   return (
     <nav aria-label="Paginação" className={cn('flex flex-wrap items-center justify-between gap-3 text-xs text-muted', className)}>

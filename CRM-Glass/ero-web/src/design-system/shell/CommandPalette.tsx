@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState, type ComponentType } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { CornerDownLeft, Search } from 'lucide-react';
-import { spring } from '../../motion/tokens';
+import { micro, spring } from '../../motion/tokens';
+import { useReduzirMovimento } from '../../motion/reduzir';
 import { cn, norm } from '../../shared/util/utils';
 import { Avatar } from '../ui/Bits';
 
@@ -26,6 +27,7 @@ export type CommandPaletteProps = {
 
 /** Busca global (Ctrl/⌘ + K): telas liberadas e ações rápidas. */
 export function CommandPalette({ aberto: open, onAbertoChange: setOpen, comandos, placeholder = 'O que você procura?' }: CommandPaletteProps) {
+  const reduzir = useReduzirMovimento();
   const [q, setQ] = useState('');
   const [idx, setIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -88,12 +90,19 @@ export function CommandPalette({ aberto: open, onAbertoChange: setOpen, comandos
             role="dialog"
             aria-modal="true"
             aria-label="Busca global"
-            initial={{ opacity: 0, y: -16, scale: 0.96, filter: 'blur(8px)' }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }}
-            exit={{ opacity: 0, y: -10, scale: 0.97, transition: { duration: 0.15 } }}
+            /* A casca de vidro anima só opacidade, y e escala: `filter` num elemento com backdrop-filter apagava o
+               vidro na entrada. O desfoque de entrada fica no conteúdo de dentro (sem backdrop-filter), logo abaixo. */
+            initial={{ opacity: 0, y: -16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.97, transition: { duration: micro.saidaRapida } }}
             transition={spring.soft}
             className="glass-solid relative w-full max-w-[600px] rounded-[26px] overflow-hidden"
           >
+            <motion.div
+              initial={reduzir ? false : { filter: 'blur(8px)' }}
+              animate={{ filter: 'blur(0px)', transitionEnd: { filter: 'none' } }}
+              transition={spring.soft}
+            >
             <div className="flex items-center gap-3 px-5 h-16 border-b border-line">
               <Search className="size-5 text-subtle" aria-hidden />
               <input
@@ -166,6 +175,7 @@ export function CommandPalette({ aberto: open, onAbertoChange: setOpen, comandos
                 <span className="kbd">Enter</span> abrir
               </span>
             </div>
+            </motion.div>
           </motion.div>
         </div>
       )}

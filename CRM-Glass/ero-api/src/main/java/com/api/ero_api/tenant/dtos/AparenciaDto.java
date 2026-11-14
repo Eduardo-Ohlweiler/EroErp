@@ -19,6 +19,7 @@ import java.math.BigDecimal;
  * Aparência do contratante. Serve de entrada (aninhada no cadastro e na
  * configuração) e de saída ({@code /api/auth/eu}, {@code /api/tenants/atual}).
  * Limites iguais aos controles da tela e aos CHECKs da migration 008.
+ * {@code desempenhoAutomatico} veio na 010 e é o único opcional na entrada.
  */
 @Schema(description = "Aparência do contratante (vale para todos os usuários dele)")
 public record AparenciaDto(
@@ -57,5 +58,11 @@ public record AparenciaDto(
 
         @Schema(description = "Animações da interface", example = "COMPLETAS")
         @NotNull(message = "Animações é obrigatório")
-        NivelAnimacao animacoes) {
+        NivelAnimacao animacoes,
+
+        // Sem @NotNull de propósito: cliente que ainda não manda o campo continua
+        // aceito e o mapper grava false. Na saída sai sempre preenchido.
+        @Schema(description = "Mede o aparelho e liga o modo leve em computadores mais fracos "
+                + "(na entrada, ausente = false)", example = "false")
+        Boolean desempenhoAutomatico) {
 }

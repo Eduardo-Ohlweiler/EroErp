@@ -142,3 +142,11 @@ export function useUsuarioAtual(): UsuarioLogado {
   if (!u) throw new Error('useUsuarioAtual fora da casca');
   return u;
 }
+
+/**
+ * Usuário da casca, ou null fora dela. Para o que também se desenha fora da casca (a folha impressa na prévia do
+ * catálogo `/design-system`); tela de módulo usa `useUsuarioAtual`.
+ */
+export function useUsuarioDaCasca(): UsuarioLogado | null {
+  return useContext(UsuarioDaCasca);
+}

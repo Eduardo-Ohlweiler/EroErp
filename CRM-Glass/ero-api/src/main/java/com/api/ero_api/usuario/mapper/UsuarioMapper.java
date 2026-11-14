@@ -6,6 +6,8 @@ import com.api.ero_api.usuario.dtos.UsuarioSelectDto;
 import com.api.ero_api.usuario.dtos.UsuarioUpdateDto;
 import com.api.ero_api.usuario.entity.Usuario;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Conversão entidade ↔ DTO, à mão e sem regra de negócio.
@@ -16,7 +18,13 @@ public final class UsuarioMapper {
     private UsuarioMapper() {
     }
 
-    public static UsuarioResponseDto toResponseDto(Usuario u) {
+    /**
+     * {@code nomes}: quem cadastrou e quem alterou, já resolvidos pelo service (uma
+     * consulta por página, sem N+1, com o filtro de tenant ligado). {@code plataforma}:
+     * o superadmin na visão de plataforma vê tudo. Dentro de um contratante o superadmin
+     * não está no mapa: o id dele não sai e o nome fica vazio (mesma regra da trilha de logs).
+     */
+    public static UsuarioResponseDto toResponseDto(Usuario u, Map<UUID, String> nomes, boolean plataforma) {
         return new UsuarioResponseDto(
                 u.getId(),
                 u.getNome(),
@@ -28,8 +36,10 @@ public final class UsuarioMapper {
                 u.getBloqueadoAte(),
                 u.getCreatedAt(),
                 u.getUpdatedAt(),
-                u.getCreatedBy(),
-                u.getUpdatedBy(),
+                visivel(nomes, u.getCreatedBy(), plataforma),
+                visivel(nomes, u.getUpdatedBy(), plataforma),
+                nome(nomes, u.getCreatedBy()),
+                nome(nomes, u.getUpdatedBy()),
                 u.getVersion());
     }
 
@@ -56,5 +66,14 @@ public final class UsuarioMapper {
 
     public static String normalizarEmail(String email) {
         return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String nome(Map<UUID, String> nomes, UUID id) {
+        return id == null ? null : nomes.get(id);
+    }
+
+    /** Fora da visão de plataforma, só sai o id de quem tem nome visível daqui (o superadmin não tem). */
+    private static UUID visivel(Map<UUID, String> nomes, UUID id, boolean plataforma) {
+        return plataforma || id == null || nomes.containsKey(id) ? id : null;
     }
 }

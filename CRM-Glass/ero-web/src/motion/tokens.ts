@@ -1,4 +1,4 @@
-import type { Transition, Variants } from 'motion/react';
+import type { TargetAndTransition, Transition, Variants } from 'motion/react';
 
 /**
  * Tokens de movimento. Todo o sistema importa daqui — nada de durações ou curvas soltas nas telas.
@@ -6,7 +6,12 @@ import type { Transition, Variants } from 'motion/react';
 export const ease = {
   out: [0.16, 1, 0.3, 1] as [number, number, number, number],
   inOut: [0.65, 0, 0.35, 1] as [number, number, number, number],
+  /** vai e volta macio do fundo vivo (orbs, ondas): a mesma curva do `ease-in-out` do CSS */
+  ambiente: [0.42, 0, 0.58, 1] as [number, number, number, number],
 };
+
+/** Curva no formato do CSS: `cubic-bezier(a,b,c,d)`. */
+export const curvaCss = (c: readonly number[]) => `cubic-bezier(${c.join(',')})`;
 
 export const spring = {
   soft: { type: 'spring', stiffness: 260, damping: 30, mass: 0.9 } as Transition,
@@ -124,6 +129,13 @@ export const cena = {
    * (ex.: o cartão Escuro/Claro da Configuração). Clique mais antigo que `memoria` (s) → centro da tela.
    */
   revelacao: { duracao: 0.7, ease: ease.out, memoria: 1.5 },
+  /**
+   * Saída de uma tela com prévia (Aparência): a próxima tela começa a montar quando a troca da interface
+   * (revelação circular ou esmaecimento da cena) já percorreu esta fração. Os blocos sobem enquanto o fim da
+   * revelação ainda passa, sem tela vazia esperando o vídeo acabar. A captura da View Transition já foi feita
+   * antes disso, então os blocos em movimento não aparecem duplicados (só na imagem nova, que é ao vivo).
+   */
+  corteDaSaida: 0.6,
   /** Troca de contratante com cena nova: espera as fotos carregarem até este limite (s) antes da sequência. */
   esperaFotos: 1.2,
   /** O canvas WebGL reservado (canvasReserva.ts) é criado em tempo ocioso; sem tempo ocioso, no máximo após isto (s). */
@@ -140,6 +152,51 @@ export const fundo = {
   saida: 0.4,
   atrasoSaida: 0.9,
 };
+/* =====================================================================================
+ * Modo leve automático (motion/desempenho.ts). Em aparelho fraco o sistema percebe sozinho, pausa o fundo vivo
+ * e troca a revelação circular (ou a sequência da cena) por um esmaecimento. Em aparelho bom nada muda.
+ * Medido num i5-1334U com Intel UHD e tela de 120 Hz: repouso com o fundo vivo em 46 fps (120 com ele parado),
+ * revelação circular em ~29 fps. A GPU redesenha a tela cheia (vidro + fundo); o aparelho bom passa dos 100.
+ * ===================================================================================== */
+export const desempenho = {
+  /**
+   * Espera desde que o fundo animado passou a valer até medir (s): o login ou a casca terminam de montar,
+   * o canvas da cena é reservado (cena.aquecerGpu) e a fonte chega. Depois disso ainda espera a tela parar.
+   */
+  atraso: 2,
+  /** A aba voltou a ficar visível: espera o navegador se acomodar antes de medir (s). */
+  atrasoAoVoltar: 0.8,
+  /** Janela de medição do ritmo de quadros (s). */
+  janela: 1.5,
+  /**
+   * Abaixo disto (quadros por segundo, média da janela) o aparelho é leve. Fica abaixo dos 60 Hz comuns com folga
+   * para um quadro perdido aqui e ali, e bem acima dos 46 fps medidos no aparelho fraco.
+   */
+  fpsMinimo: 50,
+  /**
+   * Normalização pela tela: numa tela abaixo de ~59 Hz (50 Hz, 48 Hz), o limite vira esta fração da taxa dela.
+   * Uma tela de 60 Hz a 60 fps nunca vira "fraca" só por ter 60 Hz.
+   */
+  fracaoDaTela: 0.85,
+  /** Taxa da tela estimada pelo melhor intervalo entre quadros, nunca abaixo disto (Hz): não existe notebook a 30 Hz. */
+  taxaMinimaTela: 48,
+  /** Quadro lento (ms): mais que dois quadros de 60 Hz. */
+  quadroLento: 33,
+  /** Fração de quadros lentos que já basta para o modo leve (travadas frequentes, mesmo com média boa). */
+  fracaoLentos: 0.15,
+  /** Um intervalo maior que isto (s) não é ritmo de desenho (aba escondida, depurador): a medição recomeça. */
+  pausa: 0.5,
+  /** Medições interrompidas (tela montando, troca de tema) antes de desistir nesta carga; fica o modo normal. */
+  tentativas: 4,
+  /** Validade do resultado na sessão do navegador (s): passado isso, a próxima carga mede de novo. */
+  validade: 30 * 60,
+  /**
+   * Troca de tema no modo leve: esmaecimento da página inteira (View Transition, só opacidade no compositor),
+   * no lugar da revelação circular e da sequência da cena.
+   */
+  esmaecer: { duracao: 0.4, ease: ease.inOut },
+};
+
 /** Camada de fundo (LiveBackground): a nova entra por cima, a antiga esmaece depois. Só opacidade. */
 export const camadaFundo: Variants = {
   hidden: { opacity: 0 },
@@ -184,6 +241,12 @@ export const montagem = {
   esperaTema: 2.5,
   /** quanto tempo sem nenhuma montagem conta como "parada" (s); cobre o quadro entre a saída e a entrada */
   folgaTema: 0.1,
+  /**
+   * Teto da espera entre a saída de uma tela e a montagem da próxima quando a saída tem uma tarefa
+   * (useAntesDaProximaTela; ex.: a Aparência desfaz a prévia e a troca de tema em vídeo roda antes da próxima tela).
+   * Cobre a sequência mais longa (amanhecer com cena + esmaecimento da interface); passou disso, a próxima monta.
+   */
+  esperaSaida: cena.duracaoClaro,
 };
 
 /** Mola do encaixe dos blocos: firme, sem quicar (peça encaixando, não bola). */
@@ -289,6 +352,61 @@ export const blocoTexto: Variants = {
   exit: { opacity: 0, y: montagem.distancia * 0.6, filter: 'blur(6px)', transition: { duration: montagem.saida, ease: ease.inOut } },
 };
 
+/* =====================================================================================
+ * Encaixe dos blocos do kit de telas T* (docs/07 §4.4). Cada peça tem um papel na montagem:
+ *   cabeçalho (PageHeader da TPage) → cartão (TForm) → campos e rodapé, em cascata DENTRO do cartão →
+ *   grade (TDataGrid) → primeiras linhas da grade, em cascata dentro dela → rodapé da grade.
+ * A <Tela> orquestra os blocos dela (cabeçalho, cartões, grade); cada cartão e a grade orquestram os de dentro.
+ * Campos e linhas não têm saída própria: saem junto com o cartão ou a grade que os contém (menos camadas
+ * animando ao mesmo tempo, e a saída inteira da tela continua em ~0,24 s).
+ * ===================================================================================== */
+export const kit = {
+  /** campos e rodapé dentro do cartão: começam quando o cartão já está aparecendo (s); a partir de `limite`, juntos */
+  campos: { inicio: 0.06, passo: 0.03, limite: 8 },
+  /** primeiras linhas da grade (s); `quantas` é o `linhasAnimadas` da Tabela: as demais aparecem com a grade */
+  linhas: { inicio: 0.08, passo: 0.03, limite: 8, quantas: 8 },
+  /** de onde o campo e a linha sobem (px) */
+  distanciaCampo: 8,
+  distanciaLinha: 6,
+};
+
+/** Papéis dos blocos do kit. */
+export type Papel = 'cartao' | 'campo' | 'rodape' | 'grade' | 'linhaGrade';
+
+/** Um bloco que, além de encaixar, orquestra os de dentro em cascata (cartão → campos, grade → linhas). */
+function comCascata(base: Variants, ritmo: { inicio: number; passo: number; limite: number }): Variants {
+  const show = base.show as TargetAndTransition;
+  return {
+    ...base,
+    show: {
+      ...show,
+      transition: { ...show.transition, delayChildren: atrasoDoBloco('documento', ritmo.passo, ritmo.limite, ritmo.inicio) },
+    },
+  };
+}
+
+/** Campo (CampoForm de TEntry, TCombo, TAuditoria...) e rodapé do cartão: sobem um pouco e aparecem. */
+export const campo: Variants = {
+  hidden: { opacity: 0, y: kit.distanciaCampo },
+  show: { opacity: 1, y: 0, transition: { duration: montagem.entrada * 0.7, ease: ease.out } },
+};
+/** Linha da grade (as `kit.linhas.quantas` primeiras): mais curta que o campo; só sobe e aparece. */
+export const linhaGrade: Variants = {
+  hidden: { opacity: 0, y: kit.distanciaLinha },
+  show: { opacity: 1, y: 0, transition: { duration: montagem.entrada * 0.6, ease: ease.out } },
+};
+
+/** Variantes por papel em uma coreografia: `bloco` é o encaixe dos blocos de nível de tela dela. */
+function papeis(blocoDaTela: Variants): Record<Papel, Variants> {
+  return {
+    cartao: comCascata(blocoDaTela, kit.campos),
+    campo,
+    rodape: campo,
+    grade: comCascata(blocoDaTela, kit.linhas),
+    linhaGrade,
+  };
+}
+
 /**
  * Contêiner da rota (RotaAnimada): só transform, conforme a direção (`custom`):
  *  0 → troca de módulo (os blocos fazem tudo) · 1 → mais fundo (entra da direita) · −1 → voltando (entra da esquerda).
@@ -342,8 +460,36 @@ export const tituloTela: Variants = {
   show: { y: 0, opacity: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none' }, transition: { duration: 0.35, ease: ease.out } },
   exit: { y: -16, opacity: 0, filter: 'blur(4px)', transition: { duration: 0.35, ease: ease.out } },
 };
-/** Saída rápida de dicas e menus pequenos (s). */
-export const micro = { saidaRapida: 0.12 };
+/** Microinterações (s). */
+export const micro = {
+  /** saída de dicas, menus, popovers e da paleta de comandos (Sidebar, Popover de Overlays, CommandPalette) */
+  saidaRapida: 0.12,
+  /** aviso (Toast) saindo para o lado */
+  saidaAviso: 0.2,
+  /** realce de borda, sombra e fundo em campo e evento da agenda (CSS: --mov-realce) */
+  realce: 0.2,
+  /** borda e brilho do cartão com hover (CSS: --mov-hover) */
+  hover: 0.3,
+  /** reflexo que atravessa o botão no hover, `btn-shine` (CSS: --mov-reflexo) */
+  reflexo: 0.9,
+  /** mãozinha acenando no "Bom dia" (CSS: --mov-aceno, --mov-aceno-atraso): uma vez, depois que a tela montou */
+  aceno: 2.4,
+  acenoAtraso: 0.8,
+};
+
+/**
+ * Fundo vivo em CSS (orbs, aurora, ondas): um ciclo de cada camada (s). Longos e diferentes entre si, para as
+ * camadas nunca voltarem juntas ao mesmo ponto. Só transform; vão para o CSS pelas variáveis --mov-* abaixo.
+ */
+export const ambiente = {
+  orbs: [38, 46, 54] as [number, number, number],
+  aurora: 70,
+  /** segunda camada da aurora, girando ao contrário */
+  aurora2: 90,
+  ondas: [28, 34] as [number, number],
+  /** vai e volta macio (orbs e ondas); a aurora gira em velocidade constante (`linear`) */
+  ease: ease.ambiente,
+};
 /** Dados vivos: contagem dos KPIs e barra de progresso crescendo (só na primeira exibição). */
 export const dados = {
   contagem: { duracao: 1.3, atraso: 0.15 },
@@ -359,9 +505,33 @@ export const carregando = { giro: 0.9, pulso: 1.8 };
 
 /** Durações usadas no CSS (index.css lê as variáveis; nada de número solto lá). Chamado no main.tsx. */
 export function aplicarVariaveisDeMovimento(root: HTMLElement = document.documentElement) {
-  root.style.setProperty('--mov-esqueleto', `${esqueleto.brilho}s`);
-  root.style.setProperty('--mov-giro', `${carregando.giro}s`);
-  root.style.setProperty('--mov-pulso', `${carregando.pulso}s`);
+  for (const [nome, valor] of Object.entries(variaveisDeMovimento())) root.style.setProperty(nome, valor);
+}
+
+/** As variáveis --mov-* que o CSS lê (nome → valor). Separado para o teste conferir sem DOM. */
+export function variaveisDeMovimento(): Record<`--mov-${string}`, string> {
+  const s = (v: number) => `${v}s`;
+  return {
+    '--mov-esqueleto': s(esqueleto.brilho),
+    '--mov-giro': s(carregando.giro),
+    '--mov-pulso': s(carregando.pulso),
+    // fundo vivo
+    '--mov-orb-1': s(ambiente.orbs[0]),
+    '--mov-orb-2': s(ambiente.orbs[1]),
+    '--mov-orb-3': s(ambiente.orbs[2]),
+    '--mov-aurora': s(ambiente.aurora),
+    '--mov-aurora-2': s(ambiente.aurora2),
+    '--mov-onda-1': s(ambiente.ondas[0]),
+    '--mov-onda-2': s(ambiente.ondas[1]),
+    '--mov-ease-ambiente': curvaCss(ambiente.ease),
+    // microinterações em CSS
+    '--mov-realce': s(micro.realce),
+    '--mov-hover': s(micro.hover),
+    '--mov-reflexo': s(micro.reflexo),
+    '--mov-aceno': s(micro.aceno),
+    '--mov-aceno-atraso': s(micro.acenoAtraso),
+    '--mov-ease-out': curvaCss(ease.out),
+  };
 }
 
 /* =====================================================================================
@@ -484,10 +654,17 @@ export const coreografias: Record<NomeCoreografia, Coreografia> = {
    * KPIs com CountUp, linha que se desenha e barras que crescem ficam dentro dos blocos.
    */
   inicio: simples(ritmoPadrao, reversa, 0, { bloco, menu: cascaMenu(), barra: cascaBarra() }),
-  /** Qualquer tela de lista ou detalhe. */
-  padrao: simples(ritmoPadrao, reversa, 0, { bloco }),
-  /** Formulários longos: movimento curto e funcional, cascata rápida, saída de uma vez. */
-  formulario: simples(ritmoFormulario, { entrada: 'documento', saida: 'junto' }, 0, { bloco: blocoCurto }),
+  /**
+   * Qualquer tela de lista ou detalhe (modelo List do kit). Cabeçalho, cartão de filtros e grade encaixam
+   * como blocos; os campos e o rodapé do cartão e as primeiras linhas da grade entram em cascata dentro deles
+   * (papéis do kit: `cartao`, `campo`, `rodape`, `grade`, `linhaGrade`; uso em useVariantesDoPapel).
+   */
+  padrao: simples(ritmoPadrao, reversa, 0, { bloco, ...papeis(bloco) }),
+  /**
+   * Formulários (modelos Form e FormList do kit): movimento curto e funcional, cascata rápida, saída de uma vez.
+   * O cartão do TForm encaixa curto e os campos vêm em cascata dentro dele.
+   */
+  formulario: simples(ritmoFormulario, { entrada: 'documento', saida: 'junto' }, 0, { bloco: blocoCurto, ...papeis(blocoCurto) }),
   /**
    * Etapa dentro de um cartão (login: credenciais → código → trocar senha). O contêiner desliza na direção
    * (`custom`: 1 avança, −1 volta) e os campos encaixam; ao sair, os campos vão de baixo para cima.

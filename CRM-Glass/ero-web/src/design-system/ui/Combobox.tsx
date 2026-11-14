@@ -24,6 +24,8 @@ export type ComboboxProps = {
   icone?: ComponentType<{ className?: string }>;
   invalido?: boolean;
   desabilitado?: boolean;
+  /** só leitura: continua focável (leitor de tela lê o valor), mas não abre a lista nem limpa */
+  somenteLeitura?: boolean;
   id?: string;
   'aria-describedby'?: string;
   'aria-invalid'?: boolean | 'true' | 'false';
@@ -47,6 +49,7 @@ export function Combobox({
   icone: Icone,
   invalido,
   desabilitado,
+  somenteLeitura,
   id,
   className,
   ...aria
@@ -74,7 +77,7 @@ export function Combobox({
   }, [aberto]);
 
   const abrir = () => {
-    if (desabilitado) return;
+    if (desabilitado || somenteLeitura) return;
     setBusca('');
     setAberto(true);
   };
@@ -86,6 +89,7 @@ export function Combobox({
   };
 
   const tecla = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (somenteLeitura) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (!aberto) return abrir();
@@ -138,11 +142,14 @@ export function Combobox({
             aria-label={rotulo}
             aria-describedby={aria['aria-describedby']}
             aria-invalid={ruim || undefined}
+            aria-readonly={somenteLeitura || undefined}
+            readOnly={somenteLeitura}
             disabled={desabilitado}
             autoComplete="off"
             placeholder={selecionada ? selecionada.rotulo : placeholder}
             value={aberto ? busca : (selecionada?.rotulo ?? '')}
             onChange={(e) => {
+              if (somenteLeitura) return;
               if (!aberto) setAberto(true);
               setBusca(e.target.value);
               setAtivo(0);
@@ -154,7 +161,7 @@ export function Combobox({
           />
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
             {carregando && <Loader2 aria-hidden className="size-4 text-subtle motion-safe:animate-spin mr-1" />}
-            {limpavel && selecionada && !desabilitado && (
+            {limpavel && selecionada && !desabilitado && !somenteLeitura && (
               <button
                 type="button"
                 aria-label="Limpar seleção"
@@ -167,6 +174,7 @@ export function Combobox({
                 <X className="size-4" />
               </button>
             )}
+            {!somenteLeitura && (
             <button
               type="button"
               tabIndex={-1}
@@ -181,6 +189,7 @@ export function Combobox({
             >
               <ChevronsUpDown className="size-4" />
             </button>
+            )}
           </div>
         </div>
       </RadixPopover.Anchor>

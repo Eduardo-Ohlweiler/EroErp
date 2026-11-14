@@ -22,6 +22,11 @@ export type Settings = {
   /** desfoque da foto nos fundos de cena, em px (0 = nítido, até 10) */
   fundoFoco: number;
   movimento: Movimento;
+  /**
+   * "Otimizar desempenho em computadores mais fracos" (decisão do superadmin por contratante). Só com ela ligada o
+   * aparelho é medido e pode cair no modo leve (motion/desempenho.ts); desligada, todos têm o visual completo.
+   */
+  desempenhoAutomatico: boolean;
 };
 
 /** Padrão do sistema: vale antes do login e quando o contratante não define algo válido. */
@@ -33,6 +38,7 @@ export const PADRAO_SISTEMA: Settings = {
   blur: 12,
   fundoFoco: 3,
   movimento: 'completa',
+  desempenhoAutomatico: false,
 };
 /** Nome antigo (protótipo), mantido para quem portar código de lá. */
 export const DEFAULT_SETTINGS = PADRAO_SISTEMA;
@@ -80,7 +86,16 @@ export type AparenciaApi = {
   vidroDesfoque: number;
   fundoFoco: number;
   animacoes: AnimacoesApi;
+  /**
+   * "Otimizar desempenho em computadores mais fracos". A API sempre manda; ausente na entrada, ela grava `false`.
+   * Opcional aqui só enquanto há aparência de exemplo sem o campo (catálogo do design system); o que vai para a
+   * API é sempre `AparenciaApiCompleta`, com o valor atual.
+   */
+  desempenhoAutomatico?: boolean;
 };
+
+/** AparenciaDto com todos os campos, como sai do `paraApi` e vai no PUT da configuração. */
+export type AparenciaApiCompleta = Required<AparenciaApi>;
 
 /** Item do catálogo `GET /api/tenants/fundos` (FundoCatalogoDto). */
 export type FundoCatalogo = {
@@ -138,7 +153,8 @@ export function destaqueDeApi(v: unknown): Accent | null {
 
 /**
  * Aparência da API (ou parte dela) → ajustes do front, só com o que passou na lista branca e nos limites.
- * Campos inválidos ou ausentes ficam de fora (vale a camada de baixo).
+ * Campos inválidos ou ausentes ficam de fora (vale a camada de baixo). Exceção: `desempenhoAutomatico` sai sempre,
+ * `true` só quando a API manda exatamente `true` (ausente ou inválido = `false`, o visual completo).
  */
 export function deApi(a: unknown): Partial<Settings> {
   if (!a || typeof a !== 'object') return {};
@@ -156,11 +172,12 @@ export function deApi(a: unknown): Partial<Settings> {
   const foco = prenderFoco(o.fundoFoco);
   if (foco !== null) s.fundoFoco = foco;
   if (typeof o.animacoes === 'string' && temProp(ANIMACOES, o.animacoes)) s.movimento = ANIMACOES[o.animacoes];
+  s.desempenhoAutomatico = o.desempenhoAutomatico === true;
   return s;
 }
 
 /** Ajustes do front → corpo da API (AparenciaDto). */
-export function paraApi(s: Settings): AparenciaApi {
+export function paraApi(s: Settings): AparenciaApiCompleta {
   return {
     corDestaque: s.accent,
     temaPadrao: s.theme === 'light' ? 'CLARO' : 'ESCURO',
@@ -169,15 +186,19 @@ export function paraApi(s: Settings): AparenciaApi {
     vidroDesfoque: s.blur,
     fundoFoco: s.fundoFoco,
     animacoes: s.movimento === 'reduzida' ? 'REDUZIDAS' : 'COMPLETAS',
+    desempenhoAutomatico: s.desempenhoAutomatico === true,
   };
 }
 
 /** Aparência padrão do sistema no formato da API (ex.: valor inicial do formulário de contratante). */
-export const APARENCIA_PADRAO: AparenciaApi = paraApi(PADRAO_SISTEMA);
+export const APARENCIA_PADRAO: AparenciaApiCompleta = paraApi(PADRAO_SISTEMA);
 
-/** Sanitiza ajustes já no formato do front (ex.: `set()` de compatibilidade). */
+/**
+ * Sanitiza ajustes já no formato do front (ex.: `set()` de compatibilidade). Só devolve o que veio: um ajuste sem
+ * `desempenhoAutomatico` não o desliga na camada de cima.
+ */
 export function sanear(p: Partial<Settings>): Partial<Settings> {
-  return deApi({
+  const s = deApi({
     temaPadrao: p.theme === undefined ? undefined : p.theme === 'light' ? 'CLARO' : p.theme === 'dark' ? 'ESCURO' : null,
     corDestaque: p.accent,
     fundo: p.fundo,
@@ -185,5 +206,8 @@ export function sanear(p: Partial<Settings>): Partial<Settings> {
     vidroDesfoque: p.blur,
     fundoFoco: p.fundoFoco,
     animacoes: p.movimento === undefined ? undefined : p.movimento === 'reduzida' ? 'REDUZIDAS' : p.movimento === 'completa' ? 'COMPLETAS' : null,
+    desempenhoAutomatico: p.desempenhoAutomatico,
   });
+  if (p.desempenhoAutomatico === undefined) delete s.desempenhoAutomatico;
+  return s;
 }

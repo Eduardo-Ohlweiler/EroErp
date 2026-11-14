@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { Building2, Home, KeyRound, Mail, Palette, Plus, ScrollText, Search, Trash2, UserRound, Users } from 'lucide-react';
 import { staggerGroup } from '../../motion/tokens';
 import { CountUp } from '../../motion/CountUp';
@@ -22,6 +22,7 @@ import {
   Dialogo,
   Gaveta,
   EditorAparencia,
+  type ValorEditorAparencia,
   EstadoErro,
   EstadoVazio,
   Etapas,
@@ -48,6 +49,8 @@ import {
 import { ChipContratante, CommandPalette, MenuUsuario, MobileNav, Sidebar, Topbar, type Comando, type ItemMenu } from '../shell';
 import { MedidorFps } from './MedidorFps';
 import { SecaoMovimento } from './SecaoMovimento';
+import { SecaoKit } from './SecaoKit';
+import { ModelosDoKit, type ModeloKit } from './KitModelos';
 
 /* ---------------- Dados fictícios só para o catálogo ---------------- */
 type UsuarioDemo = { id: string; nome: string; email: string; papel: 'ADMIN' | 'USUARIO'; situacao: 'ATIVO' | 'INATIVO' | 'BLOQUEADO'; acesso: string };
@@ -86,8 +89,27 @@ function Secao({ titulo, subtitulo, children, className = 'col-span-12 lg:col-sp
   );
 }
 
-/** Catálogo vivo do design system (só em desenvolvimento): cada componente com variações e estados. */
+const MODELOS_KIT: ModeloKit[] = ['lista', 'novo', 'editar', 'leitura'];
+
+/**
+ * Catálogo vivo do design system (só em desenvolvimento): cada componente com variações e estados.
+ * Com `?kit=lista|novo|editar|leitura`, mostra os modelos do kit de telas em tela cheia (docs/07 §4).
+ */
 export default function DesignSystem() {
+  const [params] = useSearchParams();
+  const kit = params.get('kit') as ModeloKit | null;
+  if (kit && MODELOS_KIT.includes(kit)) {
+    return (
+      <>
+        <MedidorFps />
+        <ModelosDoKit modelo={kit} id={params.get('id') ?? undefined} />
+      </>
+    );
+  }
+  return <Catalogo />;
+}
+
+function Catalogo() {
   const toast = useToast();
   const nav = useNavigate();
   const { alvo, set, definirPrevia, limparPrevia, emPrevia } = useAparencia();
@@ -111,7 +133,7 @@ export default function DesignSystem() {
   const [avisoFlutuante, setAvisoFlutuante] = useState(false);
   const [casca, setCasca] = useState(false);
   const [busca, setBusca] = useState(false);
-  const [editor, setEditor] = useState<AparenciaApi>(() => paraApi(alvo));
+  const [editor, setEditor] = useState<ValorEditorAparencia>(() => ({ ...paraApi(alvo), desempenhoAutomatico: false }));
   const [previaAoVivo, setPreviaAoVivo] = useState(false);
   const [replay, setReplay] = useState(0);
   const [carregandoDemo, setCarregandoDemo] = useState(true);
@@ -159,7 +181,7 @@ export default function DesignSystem() {
     [toast],
   );
 
-  const mudarEditor = (v: AparenciaApi) => {
+  const mudarEditor = (v: ValorEditorAparencia) => {
     setEditor(v);
     if (previaAoVivo) definirPrevia(v);
   };
@@ -207,7 +229,14 @@ export default function DesignSystem() {
                   value={alvo.theme}
                   onChange={(v) => set({ theme: v })}
                 />
-                <Segmented size="sm" options={DESTAQUES.map((d) => ({ value: d.id, label: d.nome }))} value={alvo.accent} onChange={(v) => set({ accent: v })} />
+                {/* Seis destaques não cabem numa linha de 320 px: a pílula quebra em vez de rolar a página para o lado. */}
+                <Segmented
+                  size="sm"
+                  className="max-w-full flex-wrap !rounded-2xl"
+                  options={DESTAQUES.map((d) => ({ value: d.id, label: d.nome }))}
+                  value={alvo.accent}
+                  onChange={(v) => set({ accent: v })}
+                />
                 <Segmented
                   size="sm"
                   options={[
@@ -229,6 +258,9 @@ export default function DesignSystem() {
           <div className="grid grid-cols-12 gap-4">
             {/* ---------- Movimento (motion-designer) ---------- */}
             <SecaoMovimento />
+
+            {/* ---------- Kit de telas (docs/07) ---------- */}
+            <SecaoKit />
 
             {/* ---------- Fundamentos ---------- */}
             <Secao titulo="Níveis de vidro" subtitulo="glass-subtle, glass e glass-solid (tabelas, formulários, modais, menus)" className="col-span-12">
@@ -692,7 +724,7 @@ export default function DesignSystem() {
                   <Button
                     size="sm"
                     onClick={() => {
-                      setEditor(APARENCIA_PADRAO);
+                      setEditor({ ...APARENCIA_PADRAO, desempenhoAutomatico: false });
                       if (previaAoVivo) definirPrevia(APARENCIA_PADRAO);
                     }}
                   >

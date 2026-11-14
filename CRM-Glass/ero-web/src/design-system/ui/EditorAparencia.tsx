@@ -209,7 +209,7 @@ export function SeletorFundo({ valor, onChange, fundos, tema, miniatura = miniat
               {f.rotulo}
               {f.exclusiva && <Badge tone="accent">Exclusiva</Badge>}
             </div>
-            <div className="relative text-[11px] text-subtle">{DESCRICOES[id] ?? (f.tipo === 'CENA' ? 'Cena fotográfica' : 'Fundo animado')}</div>
+            <div className="relative text-[11px] text-subtle">{(Object.hasOwn(DESCRICOES, id) ? DESCRICOES[id] : undefined) ?? (f.tipo === 'CENA' ? 'Cena fotográfica' : 'Fundo animado')}</div>
           </button>
         );
       })}
@@ -218,9 +218,15 @@ export function SeletorFundo({ valor, onChange, fundos, tema, miniatura = miniat
 }
 
 /* ---------------- Editor completo ---------------- */
+/**
+ * Valor do editor: a aparência da API mais o modo leve automático (`aparencia.desempenhoAutomatico`, padrão
+ * false). Opcional aqui até o `AparenciaApi` (shared/aparencia/mapear.ts) ganhar o campo; ausente = desligado.
+ */
+export type ValorEditorAparencia = AparenciaApi & { desempenhoAutomatico?: boolean };
+
 export type EditorAparenciaProps = PropsBloco & {
-  valor: AparenciaApi;
-  onChange: (v: AparenciaApi) => void;
+  valor: ValorEditorAparencia;
+  onChange: (v: ValorEditorAparencia) => void;
   /** catálogo de fundos liberados para o contratante */
   fundos: FundoCatalogo[];
   miniatura?: (id: string, tema: Theme) => string | undefined;
@@ -234,7 +240,7 @@ export type EditorAparenciaProps = PropsBloco & {
  * Controlado: quem usa chama `definirPrevia(valor)` a cada mudança para ver na interface inteira.
  */
 export function EditorAparencia({ valor, onChange, fundos, miniatura, desabilitado, extra, bloco = true, variants }: EditorAparenciaProps) {
-  const set = <K extends keyof AparenciaApi>(k: K, v: AparenciaApi[K]) => onChange({ ...valor, [k]: v });
+  const set = <K extends keyof ValorEditorAparencia>(k: K, v: ValorEditorAparencia[K]) => onChange({ ...valor, [k]: v });
   const tema: Theme = valor.temaPadrao === 'CLARO' ? 'light' : 'dark';
   const ehCena = fundos.find((f) => f.codigo === valor.fundo)?.tipo === 'CENA';
   const cartao = { bloco, variants };
@@ -317,6 +323,21 @@ export function EditorAparencia({ valor, onChange, fundos, miniatura, desabilita
             value={valor.animacoes}
             onChange={(v) => set('animacoes', v)}
           />
+        </div>
+        <div>
+          {/* Modo leve automático: quem mede o aparelho e marca <html data-desempenho="leve"> é o motion-designer. */}
+          <Toggle
+            checked={valor.desempenhoAutomatico ?? false}
+            onChange={(v) => set('desempenhoAutomatico', v)}
+            label="Otimizar desempenho em computadores mais fracos"
+            ariaDescribedBy={`${uid}-desempenho`}
+            disabled={desabilitado}
+          />
+          {/* recuo = interruptor (w-11) + espaço (gap-3): a ajuda alinha com o rótulo */}
+          <p id={`${uid}-desempenho`} className="mt-1.5 pl-14 text-xs text-muted">
+            O sistema mede o aparelho de cada usuário. Se for fraco, o fundo fica parado e a troca de tema usa um
+            esmaecimento simples, no lugar da animação circular.
+          </p>
         </div>
         {extra}
       </GlassCard>

@@ -2,13 +2,22 @@ package com.api.ero_api.tenant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.api.ero_api.seguranca.tenant.TenantContext;
 import com.api.ero_api.support.IntegracaoTest;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import tools.jackson.databind.JsonNode;
 
 class TenantIntegracaoTest extends IntegracaoTest {
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @Test
     void soSuperadminGerenciaContratantes() {
@@ -143,6 +152,10 @@ class TenantIntegracaoTest extends IntegracaoTest {
                 "nome", unico("Outra"), "documento", cnpj, "limiteUsuarios", LIMITE_PADRAO,
                 "administrador", Map.of("nome", "Rita Alves", "email", unico("a") + "@teste.local", "senha", SENHA_FORTE)));
         assertThat(status(duplicado)).isEqualTo(409);
+        assertThat(corpo(duplicado).path("erros").get(0).path("campo").asString())
+                .as("duplicidade diz o campo").isEqualTo("documento");
+        assertThat(corpo(duplicado).path("erros").get(0).path("mensagem").asString())
+                .isEqualTo("Já existe um contratante com este documento.");
 
         assertThat(corpo(get("/api/tenants?busca=" + mascarado,
                 s.token())).path("totalElementos").asLong()).isEqualTo(1);
@@ -154,7 +167,34 @@ class TenantIntegracaoTest extends IntegracaoTest {
         MvcTestResult alterado = put("/api/tenants/" + id, s.token(), edicao);
         assertThat(status(alterado)).isEqualTo(200);
         assertThat(corpo(alterado).path("version").asLong()).isEqualTo(versao + 1);
-        assertThat(status(put("/api/tenants/" + id, s.token(), edicao))).as("versão antiga").isEqualTo(409);
+        MvcTestResult versaoAntiga = put("/api/tenants/" + id, s.token(), edicao);
+        assertThat(status(versaoAntiga)).as("versão antiga").isEqualTo(409);
+        assertThat(corpo(versaoAntiga).has("erros")).as("409 de versão não traz erros").isFalse();
+
+        // Outro contratante tentando ficar com o mesmo documento no PUT.
+        Contratante outro = novoContratante();
+        long versaoOutro = corpo(get("/api/tenants/" + outro.id(), s.token())).path("version").asLong();
+        MvcTestResult duplicadoNoPut = put("/api/tenants/" + outro.id(), s.token(), Map.of(
+                "nome", unico("Outra"), "documento", mascarado, "limiteUsuarios", LIMITE_PADRAO, "version", versaoOutro));
+        assertThat(status(duplicadoNoPut)).isEqualTo(409);
+        assertThat(corpo(duplicadoNoPut).path("erros").get(0).path("campo").asString()).isEqualTo("documento");
+    }
+
+    /** E-mail do administrador inicial já usado: 409 apontando o campo aninhado do TenantCreateDto. */
+    @Test
+    void emailDoAdministradorEmUsoApontaOCampo() {
+        Contratante existente = novoContratante();
+        Sessao s = loginSuperadmin();
+        String nome = unico("Empresa");
+        MvcTestResult r = post("/api/tenants", s.token(), Map.of(
+                "nome", nome, "limiteUsuarios", LIMITE_PADRAO,
+                "administrador", Map.of("nome", "Rita Alves", "email", existente.adminEmail(), "senha", SENHA_FORTE)));
+        assertThat(status(r)).isEqualTo(409);
+        assertThat(corpo(r).path("codigo").asString()).isEqualTo("CONFLITO");
+        assertThat(corpo(r).path("erros").get(0).path("campo").asString()).isEqualTo("administrador.email");
+        assertThat(corpo(r).path("erros").get(0).path("mensagem").asString()).isEqualTo("Este e-mail já está em uso.");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenant WHERE nome = ?", Long.class, nome))
+                .as("o contratante não fica sem administrador").isZero();
     }
 
     @Test
@@ -171,6 +211,212 @@ class TenantIntegracaoTest extends IntegracaoTest {
                 "nome", unico("Sem"), "documento", "N/A", "limiteUsuarios", LIMITE_PADRAO,
                 "administrador", Map.of("nome", "Rita Alves", "email", unico("a") + "@teste.local", "senha", SENHA_FORTE)));
         assertThat(status(na)).isEqualTo(422);
+    }
+
+    // ------------------------------------------------------------ auditoria, plataforma e acesso
+
+    /**
+     * TAuditoria da ficha: nome de quem cadastrou e de quem alterou, na ficha e na
+     * lista (um SELECT de nomes por página). Contratante sem autor (como os de
+     * migration) sai com os nomes vazios.
+     */
+    /**
+     * As escritas também: dentro de um contratante o superadmin não cria, altera,
+     * configura, inativa nem reativa contratante nenhum (nem o próprio). Corpos válidos,
+     * para a recusa vir da regra e não da validação.
+     */
+    @Test
+    void escritasSoNaVisaoDePlataforma() {
+        Contratante x = novoContratante();
+        Sessao s = loginSuperadmin();
+        JsonNode antes = corpo(get("/api/tenants/" + x.id(), s.token()));
+        long versao = antes.path("version").asLong();
+        String rota = "/api/tenants/" + x.id();
+        String nomeNovo = unico("Nao Criada");
+
+        String dentro = corpo(post("/api/auth/superadmin/acessar/" + x.id(), s.token(), Map.of()))
+                .path("tokenAcesso").asString();
+        MvcTestResult criar = post("/api/tenants", dentro, Map.of(
+                "nome", nomeNovo, "limiteUsuarios", LIMITE_PADRAO,
+                "administrador", Map.of("nome", "Ana Lima", "email", unico("admin") + "@teste.local", "senha", SENHA_FORTE)));
+        assertThat(status(criar)).as("POST").isEqualTo(422);
+        assertThat(corpo(criar).path("detail").asString()).isEqualTo("Saia do contratante para gerenciar contratantes.");
+        assertThat(status(put(rota, dentro, Map.of(
+                "nome", "Renomeada Por Dentro", "limiteUsuarios", LIMITE_PADRAO + 1, "version", versao))))
+                .as("PUT").isEqualTo(422);
+        assertThat(status(put(rota + "/configuracao", dentro, Map.of(
+                "aparencia", antes.path("aparencia"), "version", versao)))).as("PUT /configuracao").isEqualTo(422);
+        assertThat(status(patch(rota + "/inativar", dentro))).as("PATCH inativar").isEqualTo(422);
+        assertThat(status(patch(rota + "/ativar", dentro))).as("PATCH ativar").isEqualTo(422);
+
+        String naPlataforma = corpo(post("/api/auth/superadmin/sair", dentro, Map.of())).path("tokenAcesso").asString();
+        JsonNode depois = corpo(get(rota, naPlataforma));
+        assertThat(depois.path("version").asLong()).as("nada mudou").isEqualTo(versao);
+        assertThat(depois.path("nome").asString()).isEqualTo(antes.path("nome").asString());
+        assertThat(depois.path("ativo").asBoolean()).isTrue();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenant WHERE nome = ?", Long.class, nomeNovo)).isZero();
+    }
+
+    @Test
+    void auditoriaTrazNomesDeQuemCriouEAlterou() {
+        Sessao s = loginSuperadmin();
+        String nome = unico("Auditada");
+        String adminEmail = unico("admin") + "@teste.local";
+        MvcTestResult criado = post("/api/tenants", s.token(), Map.of(
+                "nome", nome, "limiteUsuarios", LIMITE_PADRAO,
+                "administrador", Map.of("nome", "Ana Lima", "email", adminEmail, "senha", SENHA_FORTE)));
+        assertThat(status(criado)).isEqualTo(201);
+        JsonNode t = corpo(criado);
+        String id = t.path("id").asString();
+        assertThat(t.path("criadoPorNome").asString()).isEqualTo("Superadmin Teste");
+        assertThat(t.path("createdBy").asString()).isEqualTo(s.corpo().path("usuario").path("id").asString());
+
+        // Alterado por outra pessoa (simulado): o nome de quem alterou é resolvido à parte do de quem criou.
+        String adminId = jdbc.queryForObject("SELECT id::text FROM usuario WHERE email = ?", String.class, adminEmail);
+        jdbc.update("UPDATE tenant SET updated_by = ?::uuid WHERE id = ?::uuid", adminId, id);
+        JsonNode ficha = corpo(get("/api/tenants/" + id, s.token()));
+        assertThat(ficha.path("criadoPorNome").asString()).isEqualTo("Superadmin Teste");
+        assertThat(ficha.path("alteradoPorNome").asString()).isEqualTo("Ana Lima");
+        JsonNode naLista = corpo(get("/api/tenants?busca=" + nome, s.token())).path("conteudo").get(0);
+        assertThat(naLista.path("criadoPorNome").asString()).isEqualTo("Superadmin Teste");
+        assertThat(naLista.path("alteradoPorNome").asString()).isEqualTo("Ana Lima");
+
+        MvcTestResult alterado = put("/api/tenants/" + id, s.token(), Map.of(
+                "nome", nome, "limiteUsuarios", LIMITE_PADRAO + 1, "version", ficha.path("version").asLong()));
+        assertThat(status(alterado)).isEqualTo(200);
+        assertThat(corpo(alterado).path("alteradoPorNome").asString()).isEqualTo("Superadmin Teste");
+        assertThat(corpo(alterado).path("updatedAt").asString()).isNotBlank();
+
+        jdbc.update("UPDATE tenant SET created_by = NULL, updated_by = NULL WHERE id = ?::uuid", id);
+        JsonNode semAutor = corpo(get("/api/tenants/" + id, s.token()));
+        assertThat(semAutor.path("criadoPorNome").isNull()).as("como contratante de migration").isTrue();
+        assertThat(semAutor.path("alteradoPorNome").isNull()).isTrue();
+        JsonNode semAutorNaLista = corpo(get("/api/tenants?busca=" + nome, s.token())).path("conteudo").get(0);
+        assertThat(semAutorNaLista.path("criadoPorNome").isNull()).isTrue();
+    }
+
+    /** A Plataforma (id zero) não é contratante: não se abre, inativa, reativa, altera nem configura. */
+    @Test
+    void naoMexeNaPlataforma() {
+        Contratante c = novoContratante();
+        Sessao s = loginSuperadmin();
+        JsonNode existente = corpo(get("/api/tenants/" + c.id(), s.token()));
+        String plataforma = "/api/tenants/" + TenantContext.ROOT;
+
+        assertThat(status(get(plataforma, s.token()))).as("a ficha da Plataforma não abre").isEqualTo(404);
+        assertThat(corpo(get("/api/tenants/selecao", s.token())).valueStream()
+                .map(t -> t.path("id").asString())).doesNotContain(TenantContext.ROOT.toString());
+        assertThat(status(get("/api/tenants/fundos?tenantId=" + TenantContext.ROOT, s.token()))).isEqualTo(404);
+        assertThat(status(patch(plataforma + "/inativar", s.token()))).isEqualTo(404);
+        assertThat(status(patch(plataforma + "/ativar", s.token()))).isEqualTo(404);
+        assertThat(status(put(plataforma, s.token(), Map.of(
+                "nome", "Plataforma", "limiteUsuarios", LIMITE_PADRAO, "version", 0)))).isEqualTo(404);
+        assertThat(status(put(plataforma + "/configuracao", s.token(), Map.of(
+                "aparencia", existente.path("aparencia"), "version", 0)))).isEqualTo(404);
+
+        assertThat(status(get("/api/auth/eu", s.token()))).as("o superadmin continua entrando").isEqualTo(200);
+        assertThat(jdbc.queryForObject("SELECT ativo FROM tenant WHERE id = ?", Boolean.class, TenantContext.ROOT)).isTrue();
+    }
+
+    /** Inativar (ou ativar) o que já está assim responde 204 sem evento novo. */
+    @Test
+    void inativarDuasVezesNaoDuplicaEvento() {
+        Contratante c = novoContratante();
+        Sessao s = loginSuperadmin();
+        String rota = "/api/tenants/" + c.id();
+
+        assertThat(status(patch(rota + "/inativar", s.token()))).isEqualTo(204);
+        assertThat(status(patch(rota + "/inativar", s.token()))).as("já inativo").isEqualTo(204);
+        assertThat(eventos(s, "TENANT_INATIVADO", c)).isEqualTo(1);
+        assertThat(corpo(get(rota, s.token())).path("ativo").asBoolean()).isFalse();
+
+        assertThat(status(patch(rota + "/ativar", s.token()))).isEqualTo(204);
+        assertThat(status(patch(rota + "/ativar", s.token()))).as("já ativo").isEqualTo(204);
+        assertThat(eventos(s, "TENANT_ATIVADO", c)).isEqualTo(1);
+        assertThat(corpo(get(rota, s.token())).path("ativo").asBoolean()).isTrue();
+    }
+
+    /**
+     * Duplo clique em "Inativar": a linha do contratante é travada antes de ler, então
+     * o segundo pedido espera o primeiro, já o lê inativo e responde 204 sem evento.
+     * Sem a trava, os dois leem ativo: sai evento em dobro ou 409 de versão.
+     */
+    @Test
+    void inativarEmParaleloDaDuasVezes204EUmEventoSo() throws Exception {
+        Sessao s = loginSuperadmin();
+        for (int rodada = 0; rodada < 5; rodada++) {
+            Contratante c = novoContratante();
+            java.util.concurrent.CountDownLatch largada = new java.util.concurrent.CountDownLatch(1);
+            java.util.concurrent.Callable<Integer> clique = () -> {
+                largada.await();
+                return status(patch("/api/tenants/" + c.id() + "/inativar", s.token()));
+            };
+            List<Integer> resultados;
+            try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+                var primeiro = pool.submit(clique);
+                var segundo = pool.submit(clique);
+                largada.countDown();
+                resultados = List.of(primeiro.get(30, TimeUnit.SECONDS), segundo.get(30, TimeUnit.SECONDS));
+            }
+            assertThat(resultados).as("rodada %d", rodada).containsOnly(204);
+            assertThat(eventos(s, "TENANT_INATIVADO", c)).as("rodada %d", rodada).isEqualTo(1);
+        }
+    }
+
+    /** ADMIN de um contratante e USUARIO com todos os grupos não chegam a nenhuma rota da plataforma. */
+    @Test
+    void naoSuperadminRecusadoEmTodasAsRotas() {
+        Contratante a = novoContratante();
+        Contratante b = novoContratante();
+        UsuarioCriado u = novoUsuario(a.admin());
+        liberar(a.admin().token(), u.id(), List.of(grupo("USUARIOS", "ESCREVER"), grupo("AUDITORIA", "ESCREVER")),
+                Set.of("USUARIOS_LIBERAR_ACESSO"));
+        Sessao comum = loginTrocandoSenha(u.email(), SENHA_FORTE, SENHA_FORTE_2);
+        Sessao s = loginSuperadmin();
+        JsonNode fichaB = corpo(get("/api/tenants/" + b.id(), s.token()));
+        long versao = fichaB.path("version").asLong();
+
+        for (String token : List.of(a.admin().token(), comum.token())) {
+            String rotaB = "/api/tenants/" + b.id();
+            assertThat(status(get("/api/tenants", token))).isEqualTo(403);
+            assertThat(status(get("/api/tenants/selecao", token))).isEqualTo(403);
+            assertThat(status(get("/api/tenants/fundos", token))).isEqualTo(403);
+            assertThat(status(get(rotaB, token))).as("ficha de outro contratante").isEqualTo(403);
+            assertThat(status(get("/api/tenants/" + a.id(), token))).as("nem a do próprio").isEqualTo(403);
+            assertThat(status(post("/api/tenants", token, Map.of(
+                    "nome", unico("Invasora"), "limiteUsuarios", LIMITE_PADRAO,
+                    "administrador", Map.of("nome", "Rita Alves", "email", unico("a") + "@teste.local",
+                            "senha", SENHA_FORTE))))).isEqualTo(403);
+            assertThat(status(put(rotaB, token, Map.of(
+                    "nome", "Tomada", "limiteUsuarios", 10000, "version", versao)))).isEqualTo(403);
+            assertThat(status(put(rotaB + "/configuracao", token, Map.of(
+                    "aparencia", fichaB.path("aparencia"), "version", versao)))).isEqualTo(403);
+            assertThat(status(patch(rotaB + "/inativar", token))).isEqualTo(403);
+            assertThat(status(patch(rotaB + "/ativar", token))).isEqualTo(403);
+        }
+        JsonNode depois = corpo(get("/api/tenants/" + b.id(), s.token()));
+        assertThat(depois.path("version").asLong()).as("nada mudou em B").isEqualTo(versao);
+        assertThat(depois.path("ativo").asBoolean()).isTrue();
+    }
+
+    @Test
+    void listaRecusaBuscaLongaEOrdenacaoForaDaListaBranca() {
+        Sessao s = loginSuperadmin();
+        MvcTestResult longa = get("/api/tenants?busca=" + "a".repeat(101), s.token());
+        assertThat(status(longa)).isEqualTo(400);
+        assertThat(corpo(longa).path("erros").get(0).path("campo").asString()).isEqualTo("busca");
+        assertThat(corpo(longa).path("erros").get(0).path("mensagem").asString()).isEqualTo("Busca muito longa");
+        assertThat(status(get("/api/tenants?busca=" + "a".repeat(100), s.token()))).isEqualTo(200);
+
+        MvcTestResult ordem = get("/api/tenants?sort=documento", s.token());
+        assertThat(status(ordem)).isEqualTo(422);
+        assertThat(corpo(ordem).path("detail").asString()).isEqualTo("Não é possível ordenar por \"documento\".");
+        assertThat(status(get("/api/tenants?sort=createdAt,desc", s.token()))).isEqualTo(200);
+    }
+
+    private long eventos(Sessao s, String tipo, Contratante c) {
+        return corpo(get("/api/auditoria/eventos?tipos=" + tipo + "&tenantId=" + c.id(), s.token()))
+                .path("totalElementos").asLong();
     }
 
     /** CNPJ válido aleatório (dígitos verificadores calculados). */

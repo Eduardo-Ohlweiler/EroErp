@@ -5,9 +5,11 @@ import com.api.ero_api.compartilhado.web.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.List;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.core.MethodParameter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
@@ -19,9 +21,12 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterErrors;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -38,9 +43,16 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /**
+     * Exceções de negócio. Duplicidade num campo ({@link ConflitoCampoException}) traz
+     * {@code erros[{campo, mensagem}]} como o 400; o 409 de versão sai sem {@code erros}.
+     */
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ProblemDetail> negocio(ApiException ex, HttpServletRequest req) {
-        ResponseEntity<ProblemDetail> r = resposta(ex.getStatus(), ex.getCodigo(), ex.getMessage(), req, null);
+        List<ErroCampoDto> erros = ex instanceof ConflitoCampoException c
+                ? List.of(new ErroCampoDto(c.getCampo(), c.getMessage()))
+                : null;
+        ResponseEntity<ProblemDetail> r = resposta(ex.getStatus(), ex.getCodigo(), ex.getMessage(), req, erros);
         if (ex instanceof MuitasRequisicoesException m && m.getSegundosParaTentar() != null) {
             return ResponseEntity.status(r.getStatusCode())
                     .header(HttpHeaders.RETRY_AFTER, String.valueOf(m.getSegundosParaTentar()))
@@ -57,9 +69,19 @@ public class GlobalExceptionHandler {
         return resposta(HttpStatus.BAD_REQUEST, "VALIDACAO", "Existem campos inválidos.", req, erros);
     }
 
+    /**
+     * Parâmetro de URL recusado ({@code @Size}, {@code @Null}...): {@code erros[].campo} é o
+     * nome do parâmetro. Quando o método também tem restrição em parâmetro, o Spring valida
+     * o {@code @Valid @RequestBody} junto e o erro do corpo chega aqui como
+     * {@link ParameterErrors}: aí o campo é o do DTO ({@code email}, {@code administrador.email}),
+     * igual ao handler do corpo, e não o nome do parâmetro Java.
+     */
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ProblemDetail> validacaoParametro(HandlerMethodValidationException ex, HttpServletRequest req) {
-        return resposta(HttpStatus.BAD_REQUEST, "VALIDACAO", "Parâmetros inválidos.", req, null);
+        List<ErroCampoDto> erros = ex.getParameterValidationResults().stream()
+                .flatMap(GlobalExceptionHandler::errosDoParametro)
+                .toList();
+        return resposta(HttpStatus.BAD_REQUEST, "VALIDACAO", "Parâmetros inválidos.", req, erros);
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
@@ -104,6 +126,27 @@ public class GlobalExceptionHandler {
 
     private static ErroCampoDto erroCampo(FieldError fe) {
         return new ErroCampoDto(fe.getField(), fe.getDefaultMessage());
+    }
+
+    /** Corpo ({@link ParameterErrors}): um erro por campo do DTO, como no {@link #validacao}. Parâmetro simples: o nome dele. */
+    private static Stream<ErroCampoDto> errosDoParametro(ParameterValidationResult r) {
+        if (r instanceof ParameterErrors corpo) {
+            return corpo.getFieldErrors().stream().map(GlobalExceptionHandler::erroCampo);
+        }
+        String nome = nomeParametro(r.getMethodParameter());
+        return r.getResolvableErrors().stream().map(e -> new ErroCampoDto(nome, e.getDefaultMessage()));
+    }
+
+    /** O nome que o cliente usou na URL ({@code @RequestParam(name = ...)}), senão o do parâmetro Java. */
+    private static String nomeParametro(MethodParameter p) {
+        RequestParam rp = p.getParameterAnnotation(RequestParam.class);
+        if (rp != null && !rp.name().isEmpty()) {
+            return rp.name();
+        }
+        if (rp != null && !rp.value().isEmpty()) {
+            return rp.value();
+        }
+        return p.getParameterName();
     }
 
     private static String textoPorStatus(HttpStatusCode status) {

@@ -1,5 +1,9 @@
 import type { RouteObject } from 'react-router';
-import { LoginPage } from './pages/LoginPage';
 
-/** Rotas públicas do módulo de acesso (fora da casca). */
-export const rotasAuth: RouteObject[] = [{ path: 'login', element: <LoginPage /> }];
+/** Rotas públicas do módulo de acesso (fora da casca), num pedaço próprio do build. */
+export const rotasAuth: RouteObject[] = [
+  {
+    path: 'login',
+    lazy: async () => ({ Component: (await import('./pages/LoginPage')).LoginPage }),
+  },
+];

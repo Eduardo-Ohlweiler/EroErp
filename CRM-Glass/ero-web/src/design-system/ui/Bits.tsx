@@ -58,13 +58,18 @@ export function Delta({ value, suffix = '%', onAccent }: { value: number; suffix
 }
 
 /* ---------------- Avatar ---------------- */
-const grads = [
-  'linear-gradient(135deg, var(--accent), var(--accent-2))',
-  'linear-gradient(135deg, var(--info), var(--accent))',
-  'linear-gradient(135deg, var(--success), var(--info))',
-  'linear-gradient(135deg, var(--warning), var(--danger))',
-  'linear-gradient(135deg, var(--accent-3), var(--accent))',
-  'linear-gradient(135deg, var(--accent-2), var(--success))',
+/*
+ * Fundo e texto andam juntos: cada degradê usa as pontas "fortes" de uma cor com o texto feito para elas
+ * (≥ 4,5:1 nas duas pontas, nos dois temas e em todo destaque — inclusive âmbar, laranja e esmeralda, que pedem
+ * texto escuro: --on-accent). As cores puras (--accent, --success...) não garantem contraste com texto branco.
+ */
+const grads: { fundo: string; texto: string }[] = [
+  { fundo: 'linear-gradient(135deg, var(--accent-strong), var(--accent-2-strong))', texto: 'var(--on-accent)' },
+  { fundo: 'linear-gradient(135deg, var(--info-strong), var(--info-2-strong))', texto: 'var(--on-info)' },
+  { fundo: 'linear-gradient(135deg, var(--success-strong), var(--success-2-strong))', texto: 'var(--on-success)' },
+  { fundo: 'linear-gradient(135deg, var(--warning-strong), var(--warning-2-strong))', texto: 'var(--on-warning)' },
+  { fundo: 'linear-gradient(135deg, var(--danger-strong), var(--danger-2-strong))', texto: 'var(--on-danger)' },
+  { fundo: 'linear-gradient(135deg, var(--accent-2-strong), var(--accent-strong))', texto: 'var(--on-accent)' },
 ];
 export function Avatar({ name, size = 32, ring, className }: { name: string; size?: number; ring?: boolean; className?: string }) {
   const initials = name
@@ -74,15 +79,16 @@ export function Avatar({ name, size = 32, ring, className }: { name: string; siz
     .map((p) => p[0])
     .join('')
     .toUpperCase();
+  const grad = grads[hash(name) % grads.length];
   return (
     <span
       title={name}
       className={cn(
-        'inline-grid place-items-center rounded-full font-semibold text-on-strong shrink-0 select-none',
+        'inline-grid place-items-center rounded-full font-semibold shrink-0 select-none',
         ring && 'ring-2 ring-[var(--bg)]',
         className,
       )}
-      style={{ width: size, height: size, fontSize: Math.max(9, size * 0.36), background: grads[hash(name) % grads.length] }}
+      style={{ width: size, height: size, fontSize: Math.max(9, size * 0.36), background: grad.fundo, color: grad.texto }}
     >
       {initials}
     </span>
@@ -164,6 +170,7 @@ export function Toggle({
   onChange,
   label,
   ariaLabel,
+  ariaDescribedBy,
   disabled,
 }: {
   checked: boolean;
@@ -171,6 +178,8 @@ export function Toggle({
   label?: ReactNode;
   /** obrigatório quando não há `label` visível */
   ariaLabel?: string;
+  /** id do texto de ajuda que o leitor de tela lê depois do rótulo */
+  ariaDescribedBy?: string;
   disabled?: boolean;
 }) {
   return (
@@ -179,9 +188,10 @@ export function Toggle({
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="inline-flex items-center gap-3 text-sm disabled:opacity-50 disabled:pointer-events-none"
+      className="inline-flex items-center gap-3 text-left text-sm disabled:opacity-50 disabled:pointer-events-none"
     >
       <span
         className={cn(

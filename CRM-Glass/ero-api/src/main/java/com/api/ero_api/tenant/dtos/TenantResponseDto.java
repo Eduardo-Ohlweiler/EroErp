@@ -20,5 +20,7 @@ public record TenantResponseDto(
         Instant updatedAt,
         UUID createdBy,
         UUID updatedBy,
+        @Schema(description = "Nome de quem cadastrou (vazio = cadastro do sistema, ex.: migration)") String criadoPorNome,
+        @Schema(description = "Nome de quem fez a última alteração (vazio = nunca alterado)") String alteradoPorNome,
         Long version) {
 }

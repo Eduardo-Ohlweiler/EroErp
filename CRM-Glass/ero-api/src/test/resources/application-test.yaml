@@ -7,6 +7,10 @@ app:
     cors-origens: http://localhost:5173
     cookie-seguro: false
     refresh-tolerancia: 0s
+    # O superadmin entra centenas de vezes por execução da suíte. O limite de 10/hora
+    # é testado à parte (LimiteEmissaoCodigoIntegracaoTest, com limite 3). 1000 é o teto
+    # aceito pela propriedade (@Max em SegurancaProperties).
+    codigo-max-emissoes-por-hora: 1000
   rate-limit:
     login: 10000
     dois-fatores: 10000

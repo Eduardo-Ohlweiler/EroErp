@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useState, type ComponentType, type ReactNod
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
-import { spring } from '../../motion/tokens';
+import { micro, spring } from '../../motion/tokens';
 import { cn } from '../../shared/util/utils';
 
 /*
@@ -69,7 +69,7 @@ export function Popover({
           data-popover
           initial={{ opacity: 0, y: -8, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: 0.12 } }}
+          exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: micro.saidaRapida } }}
           transition={spring.snappy}
           style={{ position: 'fixed', top: pos.top, left: pos.left, width, transformOrigin: 'top right' }}
           className="glass-solid z-[70] rounded-2xl p-1.5"

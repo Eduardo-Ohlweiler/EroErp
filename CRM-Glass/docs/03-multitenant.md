@@ -60,6 +60,13 @@ Campos (`AparenciaDto`, em `tenant`):
 | `vidroDesfoque` | inteiro | 0 a 40 | 12 |
 | `fundoFoco` | decimal | 0 a 10, uma casa (passo 0,5 na tela) | 3.0 |
 | `animacoes` | `NivelAnimacao` | `COMPLETAS`, `REDUZIDAS` | `COMPLETAS` |
+| `desempenhoAutomatico` | booleano | "Otimizar desempenho em computadores mais fracos": ligado, o front mede o aparelho do usuário e entra no modo leve (pausa o fundo vivo, troca a revelação circular por esmaecimento). Desligado, todos veem o visual completo. | `false` |
+
+`desempenhoAutomatico` (coluna `tenant.desempenho_automatico`, migration 010) é o
+único campo **opcional na entrada**: ausente ou `null` grava `false`, para cliente
+antigo que não manda o campo não quebrar. Atenção: por isso, salvar a configuração
+sem o campo **desliga** a opção. Na saída sai sempre preenchido (`true`/`false`),
+em todas as rotas da tabela abaixo. Os demais campos são obrigatórios.
 
 `tenant.fundo_exclusivo` (enum `Fundo`, nulo = nenhuma) vincula uma **cena
 exclusiva** ao contratante. Cena exclusiva é marcada com `exclusiva = true` no
@@ -72,11 +79,71 @@ Onde a aparência aparece:
 |---|---|---|
 | `GET /api/auth/eu` e o `usuario` de login, 2FA, refresh, `superadmin/acessar` e `superadmin/sair` | logado (até com pendência) | `UsuarioLogadoDto.aparencia` = aparência do contratante **em que está atuando** (Plataforma usa o padrão). |
 | `GET /api/tenants/atual` | `ACESSO_LIBERADO` | `{ id, nome, aparencia }` |
-| `GET /api/tenants`, `GET /api/tenants/{id}` | `hasRole('SUPERADMIN')`, na visão de plataforma (422 dentro de contratante) | `TenantResponseDto` com `aparencia`, `fundoExclusivo`, `limiteUsuarios` e `usuariosAtivos` |
-| `POST /api/tenants` | `hasRole('SUPERADMIN')` | `limiteUsuarios` obrigatório (1 a 10000); `aparencia` opcional (ausente = padrão) |
-| `PUT /api/tenants/{id}` | `hasRole('SUPERADMIN')` | só cadastrais: `{ nome, documento, email, limiteUsuarios, version }` |
-| `PUT /api/tenants/{id}/configuracao` | `hasRole('SUPERADMIN')`, na visão de plataforma | `{ aparencia, fundoExclusivo, version }` → `TenantResponseDto`. 400 com `erros[].campo` = `aparencia.vidroDesfoque` etc.; 409 versão antiga ou cena exclusiva de outro; 422 superadmin dentro de contratante, cena comum como exclusiva ou fundo exclusivo que não é o dele; 404 para a Plataforma. |
-| `GET /api/tenants/fundos?tenantId=` | `hasRole('SUPERADMIN')` | `[{ codigo, rotulo, tipo, exclusiva }]`: comuns + exclusivas livres + a exclusiva do próprio `tenantId` |
+| `GET /api/tenants`, `GET /api/tenants/{id}` | `hasRole('SUPERADMIN')`, na visão de plataforma (422 dentro de contratante) | `TenantResponseDto` com `aparencia`, `fundoExclusivo`, `limiteUsuarios` e `usuariosAtivos`. A Plataforma não aparece na lista e a ficha dela dá 404. |
+| `GET /api/tenants/selecao` | `hasRole('SUPERADMIN')` | `[{ id, nome }]` dos contratantes ativos, sem a Plataforma |
+| `POST /api/tenants` | `hasRole('SUPERADMIN')` | `limiteUsuarios` obrigatório (1 a 10000); `aparencia` opcional (ausente = padrão). 409 com `erros[0].campo` = `documento` (CPF/CNPJ de outro contratante) ou `administrador.email` (e-mail já em uso) |
+| `PUT /api/tenants/{id}` | `hasRole('SUPERADMIN')` | só cadastrais: `{ nome, documento, email, limiteUsuarios, version }`. 409 com `erros[0].campo = "documento"` (duplicidade) ou sem `erros` (versão antiga); 404 para a Plataforma |
+| `PUT /api/tenants/{id}/configuracao` | `hasRole('SUPERADMIN')`, na visão de plataforma | `{ aparencia, fundoExclusivo, version }` → `TenantResponseDto`. 400 com `erros[].campo` = `aparencia.vidroDesfoque` etc.; 409 sem `erros` para versão antiga e com `erros[0].campo = "fundoExclusivo"` para cena exclusiva de outro; 422 superadmin dentro de contratante, cena comum como exclusiva ou fundo exclusivo que não é o dele; 404 para a Plataforma. |
+| `GET /api/tenants/fundos?tenantId=` | `hasRole('SUPERADMIN')` | `[{ codigo, rotulo, tipo, exclusiva }]`: comuns + exclusivas livres + a exclusiva do próprio `tenantId`. `tenantId` da Plataforma dá 404 |
+| `PATCH /api/tenants/{id}/inativar`, `/ativar` | `hasRole('SUPERADMIN')`, na visão de plataforma | 204. Já na situação pedida: 204 sem evento novo e sem limpar o cache (linha travada: o duplo clique não duplica). 404 para a Plataforma. |
+
+### Contrato do `TenantResponseDto`
+
+Resposta de `GET /api/tenants` (dentro de `PaginaDto.conteudo`), `GET /api/tenants/{id}`,
+`POST`, `PUT /{id}` e `PUT /{id}/configuracao`:
+
+| Campo | Tipo | Observação |
+|---|---|---|
+| `id` | UUID | |
+| `nome` | texto | até 150 |
+| `documento` | texto ou nulo | CPF/CNPJ sem máscara (CNPJ pode ser alfanumérico, em maiúsculas) |
+| `email` | texto ou nulo | minúsculo |
+| `ativo` | booleano | |
+| `limiteUsuarios` | inteiro ou nulo | nulo só na Plataforma |
+| `usuariosAtivos` | inteiro | o superadmin não conta |
+| `aparencia` | `AparenciaDto` | tabela acima |
+| `fundoExclusivo` | `Fundo` ou nulo | |
+| `createdAt` | instante ISO-8601 | |
+| `updatedAt` | instante ISO-8601 ou nulo | |
+| `createdBy`, `updatedBy` | UUID ou nulo | |
+| `criadoPorNome` | texto ou nulo | nome de quem cadastrou; nulo em contratante sem autor (ex.: criado por migration) |
+| `alteradoPorNome` | texto ou nulo | nome de quem fez a última alteração |
+| `version` | inteiro | lock otimista; volta no `PUT` |
+
+Os nomes da auditoria (para o `TAuditoria` da ficha) são resolvidos numa consulta por
+página (`UsuarioService.buscarNomes`, sem N+1). Como lista e ficha só respondem na visão
+de plataforma, o filtro de tenant não esconde o superadmin e o nome dele aparece.
+
+### Contrato do 409 (`CONFLITO`)
+
+O 409 tem dois sentidos, e o front distingue pela presença de `erros`:
+
+| Resposta | Significa | O que a tela faz |
+|---|---|---|
+| 409 **com** `erros[{campo, mensagem}]` | duplicidade num campo (`ConflitoCampoException`) | marca o campo, como no 400. Recarregar não resolve. |
+| 409 **sem** `erros` | o registro mudou desde que a tela leu (`version` antiga) ou conflito sem campo (violação de integridade numa corrida) | oferece Recarregar |
+
+`erros` tem o mesmo formato do 400 e `campo` é o caminho no DTO de entrada:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "Este e-mail já está em uso.",
+  "instance": "/api/tenants",
+  "codigo": "CONFLITO",
+  "correlationId": "4f0c…",
+  "erros": [{ "campo": "administrador.email", "mensagem": "Este e-mail já está em uso." }]
+}
+```
+
+| Rota | `erros[0].campo` | `mensagem` |
+|---|---|---|
+| `POST /api/tenants` | `administrador.email` | "Este e-mail já está em uso." |
+| `POST /api/tenants`, `PUT /api/tenants/{id}` | `documento` | "Já existe um contratante com este documento." |
+| `PUT /api/tenants/{id}/configuracao` | `fundoExclusivo` | "Esta cena exclusiva já pertence a outro contratante." |
+| `POST /api/usuarios`, `PUT /api/usuarios/{id}` | `email` | "Este e-mail já está em uso." (o e-mail é único no sistema todo, em qualquer contratante) |
 
 ## Limite de usuários por contratante
 
@@ -110,6 +177,7 @@ Na migration 009, os contratantes que já existiam receberam o maior entre 5 e o
 | Parâmetro | Regra |
 |---|---|
 | `tipos` | lista de `TipoEventoSeguranca` (repetido ou separado por vírgula); vazio = todos |
+| `tipo` | **recusado**: 400 com `erros[0].campo = "tipo"` e mensagem "Use o parâmetro tipos" (o erro de digitação não vira "todos os tipos" em silêncio) |
 | `usuarioId` | usuário afetado |
 | `tenantId` | só vale para o superadmin na visão de plataforma; **dentro de um contratante é ignorado** |
 | `de`, `ate` | ISO-8601 UTC; `de` inclusivo, `ate` exclusivo. Padrão: últimos 7 dias. `de >= ate` → 422 "Período inválido."; mais de 366 dias → 422 "Escolha um período de até 1 ano." |
@@ -117,12 +185,22 @@ Na migration 009, os contratantes que já existiam receberam o maior entre 5 e o
 
 Cada evento traz `usuarioNome` e `autorNome` (e `tenantNome` só na visão de
 plataforma), resolvidos numa consulta por página. O nome é buscado com o filtro
-de tenant ligado: dentro de um contratante o superadmin não é visível, então um
-evento feito pelo suporte chega com `autorId` preenchido e `autorNome` nulo (o
-front mostra "Suporte da plataforma").
+de tenant ligado: dentro de um contratante o superadmin não é visível. Um evento
+do suporte (autor ou afetado sem nome visível daqui) chega com `suporte = true` e
+sem os dados do superadmin: `autorId` (ou `usuarioId`, quando o afetado é ele, como
+em `SUPERADMIN_ACESSOU_TENANT`), `ip` e `userAgent` nulos. O front mostra "Suporte da
+plataforma". Na visão de plataforma tudo aparece e `suporte` é sempre `false`.
 
-Retenção: 12 meses (`app.auditoria.retencao`, padrão `P365D`; horário em
-`app.auditoria.retencao-cron`, padrão `0 30 3 * * *`).
+A mesma regra vale para a auditoria do cadastro de usuários (`GET /api/usuarios` e a
+ficha): dentro de um contratante, `createdBy`/`updatedBy` e `criadoPorNome`/`alteradoPorNome`
+saem vazios quando o autor é o superadmin (o admin inicial, cadastrado na plataforma, ou
+o que o suporte fez depois de acessar o contratante).
+
+`CODIGO_LIMITE_ATINGIDO`: alguém acertou a senha, mas o login foi barrado pelo limite de
+códigos por hora (429). No máximo um por usuário dentro da janela de 1 hora do limite.
+
+Retenção: 12 meses (`app.auditoria.retencao`, padrão `P365D`, mínimo `P30D`: abaixo
+disso a aplicação não sobe; horário em `app.auditoria.retencao-cron`, padrão `0 30 3 * * *`).
 
 ## O que NÃO é filtrado automaticamente
 

@@ -3,5 +3,6 @@ export { LiveBackground, Waves } from './LiveBackground';
 export { SceneBackground } from './SceneBackground';
 export { ParticleSphere } from './ParticleSphere';
 export { CENAS, type Cena, type Janelas, type Luminaria } from './cenas';
-export { trocarTema } from './trocarTema';
+export { trocarTema, aguardarCorteDaTroca, aguardarTrocaDeTema, temaEmTroca } from './trocarTema';
+export { usePreviaDaTela } from './previaDaTela';
 export { cenaAtiva } from './sceneSync';

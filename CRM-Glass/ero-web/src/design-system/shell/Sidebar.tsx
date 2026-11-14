@@ -11,15 +11,17 @@ import { isActive, type ItemMenu } from './navegacao';
 export type SidebarProps = {
   /** telas principais (já filtradas por permissão) */
   itens: ItemMenu[];
-  /** grupo de baixo, separado por uma linha (ex.: Minha conta, Logs) */
+  /** grupo de baixo, separado por uma linha (ex.: Contratantes do superadmin) */
   itensSistema?: ItemMenu[];
+  /** nome do grupo de baixo para leitor de tela (padrão "Sistema"; o superadmin usa "Administrativo") */
+  rotuloSistema?: string;
   onSair: () => void;
   /** nome do produto ou do contratante, para o link do topo */
   marca?: string;
 };
 
 /** Menu lateral flutuante em pílula. O destaque do item ativo desliza entre os itens. */
-export function Sidebar({ itens, itensSistema = [], onSair, marca = 'CRM Glass' }: SidebarProps) {
+export function Sidebar({ itens, itensSistema = [], rotuloSistema = 'Sistema', onSair, marca = 'CRM Glass' }: SidebarProps) {
   const { pathname } = useLocation();
   // Primeira parte da casca a montar e a última a sair (motion/tokens.ts, casca).
   const reduzir = useReduzirMovimento();
@@ -44,7 +46,7 @@ export function Sidebar({ itens, itensSistema = [], onSair, marca = 'CRM Glass' 
       {itensSistema.length > 0 && (
         <>
           <div className="w-7 h-px bg-[var(--line)] my-2.5" />
-          <nav aria-label="Sistema" className="flex flex-col items-center gap-1.5">
+          <nav aria-label={rotuloSistema} className="flex flex-col items-center gap-1.5">
             {itensSistema.map((n) => (
               <NavItem key={n.to} {...n} active={isActive(pathname, n.to)} />
             ))}
@@ -137,26 +139,54 @@ function NavItem({
   );
 }
 
-/** Em telas pequenas o menu vira uma barra inferior. */
-export function MobileNav({ itens }: { itens: ItemMenu[] }) {
+export type MobileNavProps = {
+  itens: ItemMenu[];
+  /** grupo de baixo do menu lateral; na barra entra depois das telas principais, separado por uma linha */
+  itensSistema?: ItemMenu[];
+  /** nome do grupo de baixo para leitor de tela (padrão "Sistema"; o superadmin usa "Administrativo") */
+  rotuloSistema?: string;
+};
+
+/** Máximo de ícones na barra inferior (os dois grupos somados): mais que isso não cabe num celular de 320 px. */
+export const MAXIMO_NA_BARRA_INFERIOR = 5;
+
+/** Em telas pequenas o menu vira uma barra inferior (as telas principais primeiro, depois o grupo de baixo). */
+export function MobileNav({ itens, itensSistema = [], rotuloSistema = 'Sistema' }: MobileNavProps) {
   const { pathname } = useLocation();
+  const principais = itens.slice(0, MAXIMO_NA_BARRA_INFERIOR);
+  const sistema = itensSistema.slice(0, Math.max(0, MAXIMO_NA_BARRA_INFERIOR - principais.length));
   return (
-    <nav aria-label="Principal" className="md:hidden glass fixed z-40 bottom-3 inset-x-3 h-16 rounded-[24px] flex items-center justify-around px-2">
-      {itens.slice(0, 5).map(({ to, label, icon: Icon }) => {
-        const active = isActive(pathname, to);
-        return (
-          <NavLink
-            key={to}
-            to={to}
-            aria-label={label}
-            aria-current={active ? 'page' : undefined}
-            className={cn('relative size-11 grid place-items-center rounded-2xl', active ? 'text-on-accent' : 'text-muted')}
-          >
-            {active && <motion.span layoutId="nav-active-m" transition={spring.snappy} className="absolute inset-0 rounded-2xl accent-gradient" />}
-            <Icon className="relative size-5" />
-          </NavLink>
-        );
-      })}
-    </nav>
+    <div className="md:hidden glass fixed z-40 bottom-3 inset-x-3 h-16 rounded-[24px] flex items-center px-2">
+      {/* Cada grupo cresce na proporção dos seus ícones: o espaço entre os ícones fica igual nos dois. */}
+      <nav aria-label="Principal" className="flex items-center justify-around" style={{ flexGrow: principais.length }}>
+        {principais.map((n) => (
+          <ItemBarra key={n.to} {...n} active={isActive(pathname, n.to)} />
+        ))}
+      </nav>
+      {sistema.length > 0 && (
+        <>
+          {principais.length > 0 && <span aria-hidden className="w-px h-7 bg-[var(--line)]" />}
+          <nav aria-label={rotuloSistema} className="flex items-center justify-around" style={{ flexGrow: sistema.length }}>
+            {sistema.map((n) => (
+              <ItemBarra key={n.to} {...n} active={isActive(pathname, n.to)} />
+            ))}
+          </nav>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ItemBarra({ to, label, icon: Icon, active }: ItemMenu & { active: boolean }) {
+  return (
+    <NavLink
+      to={to}
+      aria-label={label}
+      aria-current={active ? 'page' : undefined}
+      className={cn('relative size-11 grid place-items-center rounded-2xl', active ? 'text-on-accent' : 'text-muted')}
+    >
+      {active && <motion.span layoutId="nav-active-m" transition={spring.snappy} className="absolute inset-0 rounded-2xl accent-gradient" />}
+      <Icon className="relative size-5" />
+    </NavLink>
   );
 }

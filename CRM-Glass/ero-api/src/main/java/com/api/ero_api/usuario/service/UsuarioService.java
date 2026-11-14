@@ -4,6 +4,7 @@ import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import com.api.ero_api.auditoria.service.EventoSegurancaService;
 import com.api.ero_api.compartilhado.dtos.PaginaDto;
 import com.api.ero_api.compartilhado.exception.AcessoNegadoException;
+import com.api.ero_api.compartilhado.exception.ConflitoCampoException;
 import com.api.ero_api.compartilhado.exception.ConflitoException;
 import com.api.ero_api.compartilhado.exception.NaoEncontradoException;
 import com.api.ero_api.compartilhado.exception.RegraNegocioException;
@@ -28,12 +29,16 @@ import com.api.ero_api.usuario.mapper.UsuarioMapper;
 import com.api.ero_api.usuario.repository.UsuarioRepository;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -47,6 +52,9 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>{@link #buscarEntidade} para outros services, {@link #buscarPorId} para o controller;</li>
  *   <li>escreveu e vai devolver o DTO: {@code saveAndFlush} antes de mapear, para a
  *       resposta já trazer a {@code version} e o {@code updatedAt} novos;</li>
+ *   <li>auditoria com nome no ResponseDto: quem criou e quem alterou vêm de
+ *       {@link #buscarNomes}, uma consulta por página (sem N+1); dentro de um
+ *       contratante o superadmin não sai (nem id nem nome);</li>
  *   <li>regras de negócio e de autorização fina aqui; o controller só delega;</li>
  *   <li>tenant nunca aparece: o filtro é automático.</li>
  * </ul>
@@ -84,12 +92,15 @@ public class UsuarioService {
     public PaginaDto<UsuarioResponseDto> listar(String busca, Boolean ativo, Pageable pageable) {
         Pageable pagina = PaginacaoUtils.validar(pageable, ORDENAVEIS, ORDEM_PADRAO);
         String termo = busca == null || busca.isBlank() ? null : busca.trim();
-        return PaginaDto.de(repository.buscarComFiltros(termo, ativo, pagina), UsuarioMapper::toResponseDto);
+        Page<Usuario> usuarios = repository.buscarComFiltros(termo, ativo, pagina);
+        Map<UUID, String> autores = buscarNomes(idsDeAuditoria(usuarios.getContent()));
+        boolean plataforma = naVisaoDePlataforma();
+        return PaginaDto.de(usuarios, u -> UsuarioMapper.toResponseDto(u, autores, plataforma));
     }
 
     @Transactional(readOnly = true)
     public UsuarioResponseDto buscarPorId(UUID id) {
-        return UsuarioMapper.toResponseDto(buscarEntidade(id));
+        return toResponseDto(buscarEntidade(id));
     }
 
     @Transactional(readOnly = true)
@@ -159,7 +170,7 @@ public class UsuarioService {
         exigirVaga(tenantId);
         repository.saveAndFlush(u);
         eventos.registrar(TipoEventoSeguranca.USUARIO_CRIADO, u.getId(), tenantId, "papel=" + u.getPapel());
-        return UsuarioMapper.toResponseDto(u);
+        return toResponseDto(u);
     }
 
     @Transactional
@@ -189,7 +200,7 @@ public class UsuarioService {
         cache.invalidarUsuario(u.getId());
         eventos.registrar(TipoEventoSeguranca.USUARIO_ALTERADO, u.getId(), u.getTenantId(),
                 papelAnterior != u.getPapel() ? "papel " + papelAnterior + " -> " + u.getPapel() : null);
-        return UsuarioMapper.toResponseDto(u);
+        return toResponseDto(u);
     }
 
     @Transactional
@@ -329,6 +340,27 @@ public class UsuarioService {
 
     // ---------------------------------------------------------------- regras
 
+    /** Resposta de um usuário só (ficha, criar, alterar), com os nomes da auditoria. */
+    private UsuarioResponseDto toResponseDto(Usuario u) {
+        Map<UUID, String> autores = buscarNomes(idsDeAuditoria(List.of(u)));
+        return UsuarioMapper.toResponseDto(u, autores, naVisaoDePlataforma());
+    }
+
+    /**
+     * Quem cadastrou e quem alterou. Os nomes vêm numa consulta só por página e com o
+     * filtro de tenant ligado: dentro de um contratante o superadmin não aparece no mapa,
+     * e o mapper esconde o id dele (o contratante não vê quem é o suporte da plataforma).
+     */
+    private static Set<UUID> idsDeAuditoria(Collection<Usuario> usuarios) {
+        Set<UUID> ids = new HashSet<>();
+        usuarios.forEach(u -> Stream.of(u.getCreatedBy(), u.getUpdatedBy()).filter(Objects::nonNull).forEach(ids::add));
+        return ids;
+    }
+
+    private static boolean naVisaoDePlataforma() {
+        return TenantContext.ROOT.equals(SecurityUtils.getTenantIdLogado());
+    }
+
     /**
      * {@link #buscarEntidade} com a linha travada até o fim da transação. A trava vem
      * antes da leitura, então o estado lido já é o gravado por quem a segurava.
@@ -370,9 +402,10 @@ public class UsuarioService {
         return u;
     }
 
+    /** Duplicidade marca o campo {@code email}; quem chama com outro DTO ajusta com {@code dentroDe}. */
     private void validarEmailLivre(String email, UUID ignorarId) {
         if (repository.emailEmUsoNoSistema(email, ignorarId == null ? TenantContext.NENHUM : ignorarId)) {
-            throw new ConflitoException("Este e-mail já está em uso.");
+            throw new ConflitoCampoException("email", "Este e-mail já está em uso.");
         }
     }
 

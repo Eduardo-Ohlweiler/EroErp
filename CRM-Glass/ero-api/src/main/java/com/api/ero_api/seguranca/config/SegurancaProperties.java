@@ -1,5 +1,6 @@
 package com.api.ero_api.seguranca.config;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import java.time.Duration;
@@ -26,6 +27,10 @@ import org.springframework.validation.annotation.Validated;
  *                          corrida entre abas (recusa sem derrubar a sessão)
  * @param codigoReenvioIntervalo tempo mínimo entre dois envios do mesmo código
  * @param codigoMaxEnvios   envios do mesmo código (o 1º + reenvios) antes de exigir login de novo
+ * @param codigoMaxEmissoesPorHora códigos NOVOS (logins com a senha certa) por usuário na última
+ *                          hora; o seguinte recebe 429 e o código pendente continua valendo.
+ *                          Reenvios do mesmo código não contam. Máximo 1000 (o modo Mailpit de
+ *                          dev); acima de 10 fora de dev/test, a subida registra um ERRO no log
  */
 @Validated
 @ConfigurationProperties("app.seguranca")
@@ -42,5 +47,6 @@ public record SegurancaProperties(
         @DefaultValue("15m") Duration loginBloqueio,
         @DefaultValue("10s") Duration refreshTolerancia,
         @DefaultValue("60s") Duration codigoReenvioIntervalo,
-        @DefaultValue("5") @Min(1) int codigoMaxEnvios) {
+        @DefaultValue("5") @Min(1) int codigoMaxEnvios,
+        @DefaultValue("10") @Min(1) @Max(1000) int codigoMaxEmissoesPorHora) {
 }

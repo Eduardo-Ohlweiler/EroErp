@@ -6,6 +6,7 @@ import com.api.ero_api.support.IntegracaoTest;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import tools.jackson.databind.JsonNode;
@@ -68,6 +69,72 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
         MvcTestResult senhaFraca = post("/api/usuarios", c.admin().token(), Map.of(
                 "nome", "Carlos Dias", "email", unico("carlos") + "@teste.local", "senha", "senha123456789", "papel", "USUARIO"));
         assertThat(status(senhaFraca)).isEqualTo(422);
+    }
+
+    /**
+     * Quem define a senha aqui é o administrador, não o dono da conta: a mensagem fala
+     * do e-mail e do nome "do usuário", não "o seu".
+     */
+    @Test
+    void senhaComNomeOuEmailDoUsuarioFalaDoUsuario() {
+        Contratante c = novoContratante();
+        String email = unico("bruxelas") + "@teste.local";
+        String local = email.substring(0, email.indexOf('@'));
+
+        MvcTestResult comEmail = post("/api/usuarios", c.admin().token(), Map.of(
+                "nome", "Carlos Dias", "email", email, "senha", local + "-Xz", "papel", "USUARIO"));
+        assertThat(status(comEmail)).isEqualTo(422);
+        assertThat(corpo(comEmail).path("detail").asString()).isEqualTo("A senha não pode conter o e-mail do usuário.");
+
+        MvcTestResult comNome = post("/api/usuarios", c.admin().token(), Map.of(
+                "nome", "Carlos Dias", "email", email, "senha", "Carlos-Viaja-Longe-2026", "papel", "USUARIO"));
+        assertThat(status(comNome)).isEqualTo(422);
+        assertThat(corpo(comNome).path("detail").asString()).isEqualTo("A senha não pode conter o nome do usuário.");
+    }
+
+    /**
+     * Superadmin dentro do contratante (suporte): quem é do contratante não vê o id nem
+     * o nome dele em quem cadastrou ou alterou, na lista nem na ficha, como na trilha de
+     * logs. O admin inicial também foi cadastrado pelo superadmin (na plataforma). Autor
+     * do próprio contratante aparece com id e nome.
+     */
+    @Test
+    void superadminDentroDoContratanteNaoExpoeIdNaAuditoria() {
+        Contratante c = novoContratante();
+        String admin = c.admin().token();
+        String adminId = c.admin().corpo().path("usuario").path("id").asString();
+        Sessao s = loginSuperadmin();
+        String superadminId = s.corpo().path("usuario").path("id").asString();
+        String dentro = corpo(post("/api/auth/superadmin/acessar/" + c.id(), s.token(), Map.of())).path("tokenAcesso").asString();
+
+        MvcTestResult criado = post("/api/usuarios", dentro, Map.of("nome", "Criado Pelo Suporte",
+                "email", unico("suporte") + "@teste.local", "senha", SENHA_FORTE, "papel", "USUARIO"));
+        assertThat(status(criado)).isEqualTo(201);
+        JsonNode r = corpo(criado);
+        assertThat(r.path("createdBy").isNull()).as("fora da plataforma, nem na resposta ao próprio superadmin").isTrue();
+        String id = r.path("id").asString();
+        assertThat(status(put("/api/usuarios/" + id, dentro, Map.of("nome", "Alterado Pelo Suporte",
+                "email", r.path("email").asString(), "papel", "USUARIO", "version", r.path("version").asLong()))))
+                .isEqualTo(200);
+        UsuarioCriado doAdmin = novoUsuario(c.admin());
+
+        JsonNode ficha = corpo(get("/api/usuarios/" + id, admin));
+        assertThat(ficha.path("createdBy").isNull()).isTrue();
+        assertThat(ficha.path("updatedBy").isNull()).isTrue();
+        assertThat(ficha.path("criadoPorNome").isNull()).isTrue();
+        assertThat(ficha.path("alteradoPorNome").isNull()).isTrue();
+        assertThat(ficha.toString()).doesNotContain(superadminId);
+        JsonNode fichaDoAdmin = corpo(get("/api/usuarios/" + adminId, admin));
+        assertThat(fichaDoAdmin.path("createdBy").isNull()).as("admin inicial, cadastrado na plataforma").isTrue();
+        assertThat(fichaDoAdmin.toString()).doesNotContain(superadminId);
+        assertThat(corpo(get("/api/usuarios?size=100", admin)).toString())
+                .as("o id do superadmin não aparece na lista").doesNotContain(superadminId);
+
+        JsonNode doColega = corpo(get("/api/usuarios/" + doAdmin.id(), admin));
+        assertThat(doColega.path("createdBy").asString()).isEqualTo(adminId);
+        assertThat(doColega.path("criadoPorNome").asString()).isEqualTo("Ana Lima");
+        assertThat(corpo(get("/api/usuarios?busca=" + doAdmin.email(), admin)).path("conteudo").get(0)
+                .path("criadoPorNome").asString()).as("lista também traz o nome").isEqualTo("Ana Lima");
     }
 
     @Test
@@ -323,9 +390,38 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
             try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {
                 var primeiro = pool.submit(clique);
                 var segundo = pool.submit(clique);
-                assertThat(List.of(primeiro.get(), segundo.get())).as("rodada %d", rodada).containsOnly(204);
+                assertThat(List.of(primeiro.get(30, TimeUnit.SECONDS), segundo.get(30, TimeUnit.SECONDS))).as("rodada %d", rodada).containsOnly(204);
             }
             assertThat(corpo(get("/api/usuarios/" + u.id(), admin)).path("ativo").asBoolean()).isTrue();
+        }
+    }
+
+    /**
+     * Dois cadastros ao mesmo tempo disputando a última vaga: a linha do contratante
+     * é travada (PESSIMISTIC_WRITE) antes de contar, então exatamente um entra.
+     * Sem a trava os dois contam 1 de 2 e passam (este teste fica vermelho).
+     */
+    @Test
+    void ultimaVagaNaoEOcupadaDuasVezesEmParalelo() throws Exception {
+        Sessao s = loginSuperadmin();
+        for (int rodada = 0; rodada < 10; rodada++) {
+            Contratante c = novoContratante(2);
+            String admin = c.admin().token();
+            java.util.concurrent.CountDownLatch largada = new java.util.concurrent.CountDownLatch(1);
+            java.util.concurrent.Callable<Integer> cadastro = () -> {
+                largada.await();
+                return status(post("/api/usuarios", admin, novoUsuarioBody("USUARIO")));
+            };
+            List<Integer> resultados;
+            try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+                var primeiro = pool.submit(cadastro);
+                var segundo = pool.submit(cadastro);
+                largada.countDown();
+                resultados = List.of(primeiro.get(30, TimeUnit.SECONDS), segundo.get(30, TimeUnit.SECONDS));
+            }
+            assertThat(resultados).as("rodada %d", rodada).containsExactlyInAnyOrder(201, 422);
+            assertThat(corpo(get("/api/tenants/" + c.id(), s.token())).path("usuariosAtivos").asLong())
+                    .as("rodada %d", rodada).isEqualTo(2);
         }
     }
 
@@ -423,8 +519,11 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
 
         assertThat(status(put("/api/usuarios/" + u.id(), token,
                 Map.of("nome", "Primeira Edicao", "email", u.email(), "papel", "USUARIO", "version", versao)))).isEqualTo(200);
-        assertThat(status(put("/api/usuarios/" + u.id(), token,
-                Map.of("nome", "Segunda Edicao", "email", u.email(), "papel", "USUARIO", "version", versao)))).isEqualTo(409);
+        MvcTestResult r = put("/api/usuarios/" + u.id(), token,
+                Map.of("nome", "Segunda Edicao", "email", u.email(), "papel", "USUARIO", "version", versao));
+        assertThat(status(r)).isEqualTo(409);
+        // Sem "erros": o front oferece Recarregar (409 com "erros" é duplicidade de campo).
+        assertThat(corpo(r).has("erros")).isFalse();
     }
 
     @Test
@@ -435,6 +534,15 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
         MvcTestResult r = post("/api/usuarios", b.admin().token(),
                 Map.of("nome", "Outro Nome", "email", u.email(), "senha", SENHA_FORTE, "papel", "USUARIO"));
         assertThat(status(r)).isEqualTo(409);
+        assertThat(corpo(r).path("erros").get(0).path("campo").asString()).isEqualTo("email");
+        assertThat(corpo(r).path("erros").get(0).path("mensagem").asString()).isEqualTo("Este e-mail já está em uso.");
+
+        UsuarioCriado colega = novoUsuario(b.admin());
+        long versao = corpo(get("/api/usuarios/" + colega.id(), b.admin().token())).path("version").asLong();
+        MvcTestResult troca = put("/api/usuarios/" + colega.id(), b.admin().token(),
+                Map.of("nome", "Colega", "email", u.email(), "papel", "USUARIO", "version", versao));
+        assertThat(status(troca)).as("trocar para um e-mail em uso").isEqualTo(409);
+        assertThat(corpo(troca).path("erros").get(0).path("campo").asString()).isEqualTo("email");
     }
 
     @Test

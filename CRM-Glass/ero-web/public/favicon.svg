@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="481.6 370.9 214.9 214.9">
+  <!--
+    Ícone do Ero na pele do CRM Glass (design/DIRECAO-VISUAL.md): o símbolo do Ero sobre uma placa de vidro com o
+    degradê do destaque padrão (violeta → azul, os accent-strong e accent-2-strong do tema), luz no canto de cima,
+    sombra suave embaixo, reflexo no topo (o acao-reflexo dos botões) e borda de luz.
+    (Comentário de XML não aceita dois hifens seguidos: os nomes dos tokens vão sem eles.)
+    Arquivo estático não lê variável CSS: os hex do destaque padrão ficam escritos aqui (exceção aceita).
+  -->
+  <defs>
+    <linearGradient id="placa" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="0.5" stop-color="#6d28d9"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <radialGradient id="luz" cx="0.22" cy="0.12" r="0.75">
+      <stop offset="0" stop-color="#c4b5fd" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#c4b5fd" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fundo" cx="0.85" cy="1.05" r="0.7">
+      <stop offset="0" stop-color="#1e1b4b" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#1e1b4b" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="reflexo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.2"/>
+      <stop offset="0.48" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="borda" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="0.7" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.25"/>
+    </linearGradient>
+    <filter id="relevo" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1e1b4b" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect x="481.6" y="370.9" width="214.9" height="214.9" rx="47.3" fill="url(#placa)"/>
+  <rect x="481.6" y="370.9" width="214.9" height="214.9" rx="47.3" fill="url(#luz)"/>
+  <rect x="481.6" y="370.9" width="214.9" height="214.9" rx="47.3" fill="url(#fundo)"/>
+  <rect x="481.6" y="370.9" width="214.9" height="214.9" rx="47.3" fill="url(#reflexo)"/>
+  <rect x="484.1" y="373.4" width="209.9" height="209.9" rx="44.8" fill="none" stroke="url(#borda)" stroke-width="5"/>
+  <g fill="#ffffff" filter="url(#relevo)">
+    <path d="M633.675 554.89L612.625 554.99C609.927 555.006 606.846 553.049 605.697 550.435L593.216 521.966L552.898 430.79L537.794 505.138L527.403 554.648L510 554.84L515.737 529.668L539.718 414.262L541.058 401.906L563.665 401.731C566.304 402.372 568.453 404.087 569.693 406.935L622.983 529.052L647.963 408.067C648.671 404.653 649.42 402.247 653.625 401.681L668.013 401.772L664.258 414.487L652.942 466.42L635.723 546.938L633.666 554.898L633.675 554.89Z"/>
+  </g>
+</svg>

@@ -1,14 +1,14 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { AlertTriangle, CheckCircle2, Info, Sparkles } from 'lucide-react';
-import { spring } from '../../motion/tokens';
+import { AlertTriangle, CheckCircle2, Info, OctagonAlert, Sparkles, X } from 'lucide-react';
+import { micro, spring } from '../../motion/tokens';
 import { cn } from '../../shared/util/utils';
 
-type Tone = 'success' | 'info' | 'danger' | 'accent';
+type Tone = 'success' | 'info' | 'danger' | 'warning' | 'accent';
 /** Botão dentro do toast (ex.: "Recarregar" num conflito 409). */
 export type AcaoToast = { rotulo: string; onClick: () => void };
-type ToastItem = { id: number; title: string; description?: string; tone: Tone; acao?: AcaoToast };
+type ToastItem = { id: number; title: string; description?: string; tone: Tone; acao?: AcaoToast; fixo?: boolean };
 export type ToastInput = {
   title: string;
   description?: string;
@@ -16,16 +16,19 @@ export type ToastInput = {
   acao?: AcaoToast;
   /** tempo na tela, em ms (padrão 3800; com ação, 8000) */
   duracao?: number;
+  /** fica até a pessoa fechar (botão Fechar); o erro do kit (useMessage) usa */
+  fixo?: boolean;
 };
 type Push = (t: ToastInput) => void;
 
 const ToastCtx = createContext<Push>(() => {});
 
-const icons = { success: CheckCircle2, info: Info, danger: AlertTriangle, accent: Sparkles };
+const icons = { success: CheckCircle2, info: Info, danger: OctagonAlert, warning: AlertTriangle, accent: Sparkles };
 const iconClass: Record<Tone, string> = {
   success: 'bg-success/15 text-success',
   info: 'bg-info/15 text-info',
   danger: 'bg-danger/15 text-danger',
+  warning: 'bg-warning/15 text-warning',
   accent: 'accent-gradient',
 };
 
@@ -36,7 +39,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     ({ tone = 'info', duracao, ...t }) => {
       const id = Date.now() + Math.random();
       setItems((s) => [...s.slice(-3), { ...t, tone, id }]);
-      setTimeout(() => fechar(id), duracao ?? (t.acao ? 8000 : 3800));
+      if (!t.fixo) setTimeout(() => fechar(id), duracao ?? (t.acao ? 8000 : 3800));
     },
     [fechar],
   );
@@ -55,15 +58,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   layout
                   initial={{ opacity: 0, y: 24, scale: 0.94 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: 80, transition: { duration: 0.2 } }}
+                  exit={{ opacity: 0, x: 80, transition: { duration: micro.saidaAviso } }}
                   transition={spring.bouncy}
-                  role={i.tone === 'danger' ? 'alert' : 'status'}
+                  role={i.tone === 'danger' || i.tone === 'warning' ? 'alert' : 'status'}
                   className="glass-solid pointer-events-auto rounded-2xl p-3.5 flex gap-3 items-start"
                 >
                   <span className={cn('size-9 rounded-xl grid place-items-center shrink-0', iconClass[i.tone])}>
                     <Icon className="size-[18px]" />
                   </span>
-                  <div className="min-w-0 pt-0.5">
+                  <div className="min-w-0 flex-1 pt-0.5">
                     <div className="text-sm font-semibold">{i.title}</div>
                     {i.description && <div className="text-xs text-muted mt-0.5">{i.description}</div>}
                     {i.acao && (
@@ -79,6 +82,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                       </button>
                     )}
                   </div>
+                  {i.fixo && (
+                    <button
+                      type="button"
+                      aria-label="Fechar"
+                      onClick={() => fechar(i.id)}
+                      className="size-8 -mr-1 -mt-0.5 shrink-0 rounded-xl grid place-items-center text-muted hover:text-fg hover:bg-[var(--chip)] transition-colors"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  )}
                 </motion.div>
               );
             })}

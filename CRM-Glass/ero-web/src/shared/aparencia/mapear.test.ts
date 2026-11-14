@@ -13,7 +13,16 @@ describe('mapear aparência', () => {
         fundoFoco: 4.5,
         animacoes: 'REDUZIDAS',
       }),
-    ).toEqual({ accent: 'azul', theme: 'light', fundo: 'marina', fundoAnimado: false, blur: 20, fundoFoco: 4.5, movimento: 'reduzida' });
+    ).toEqual({
+      accent: 'azul',
+      theme: 'light',
+      fundo: 'marina',
+      fundoAnimado: false,
+      blur: 20,
+      fundoFoco: 4.5,
+      movimento: 'reduzida',
+      desempenhoAutomatico: false,
+    });
   });
 
   it('descarta o que não está na lista branca', () => {
@@ -26,9 +35,10 @@ describe('mapear aparência', () => {
         vidroDesfoque: 'abc',
         fundoFoco: null,
         animacoes: 'TODAS',
+        desempenhoAutomatico: 'true',
         __proto__: { temaPadrao: 'CLARO' },
       }),
-    ).toEqual({});
+    ).toEqual({ desempenhoAutomatico: false });
     expect(deApi(null)).toEqual({});
     expect(deApi('ESCURO')).toEqual({});
   });
@@ -60,11 +70,24 @@ describe('mapear aparência', () => {
       vidroDesfoque: 12,
       fundoFoco: 3,
       animacoes: 'COMPLETAS',
+      desempenhoAutomatico: false,
     });
   });
 
   it('sanear aceita só ajustes válidos do front', () => {
     expect(sanear({ theme: 'light', blur: 99 })).toEqual({ theme: 'light', blur: 40 });
     expect(sanear({ theme: 'roxo' as never })).toEqual({});
+    expect(sanear({ desempenhoAutomatico: true })).toEqual({ desempenhoAutomatico: true });
+  });
+
+  it('otimizar desempenho: ausente ou inválido vira false; true passa; e vai sempre para a API', () => {
+    expect(deApi({ corDestaque: 'azul' })).toEqual({ accent: 'azul', desempenhoAutomatico: false });
+    expect(deApi({ desempenhoAutomatico: true })).toEqual({ desempenhoAutomatico: true });
+    expect(deApi({ desempenhoAutomatico: 1 })).toEqual({ desempenhoAutomatico: false });
+    expect(deApi({ desempenhoAutomatico: null })).toEqual({ desempenhoAutomatico: false });
+    expect(PADRAO_SISTEMA.desempenhoAutomatico).toBe(false);
+    expect(APARENCIA_PADRAO.desempenhoAutomatico).toBe(false);
+    expect(paraApi({ ...PADRAO_SISTEMA, desempenhoAutomatico: true }).desempenhoAutomatico).toBe(true);
+    expect(deApi(paraApi({ ...PADRAO_SISTEMA, desempenhoAutomatico: true }))).toEqual({ ...PADRAO_SISTEMA, desempenhoAutomatico: true });
   });
 });

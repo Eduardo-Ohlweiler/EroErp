@@ -67,13 +67,13 @@ public class SenhaService {
         if (email != null && email.contains("@")) {
             String usuarioEmail = email.substring(0, email.indexOf('@')).toLowerCase(Locale.ROOT);
             if (usuarioEmail.length() >= 4 && minuscula.contains(usuarioEmail)) {
-                throw new RegraNegocioException("A senha não pode conter o seu e-mail.");
+                throw new RegraNegocioException("A senha não pode conter o e-mail do usuário.");
             }
         }
         if (nome != null) {
             for (String parte : nome.toLowerCase(Locale.ROOT).split("\\s+")) {
                 if (parte.length() >= 4 && minuscula.contains(parte)) {
-                    throw new RegraNegocioException("A senha não pode conter o seu nome.");
+                    throw new RegraNegocioException("A senha não pode conter o nome do usuário.");
                 }
             }
         }

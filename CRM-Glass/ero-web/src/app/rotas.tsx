@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { Splash } from '../design-system/ui/Splash';
+import { rotasAdmin } from '../modules/admin/routes';
 import { rotasAuth } from '../modules/auth/routes';
 import { rotasInicio } from '../modules/inicio/routes';
 import { CascaProtegida } from './casca/Casca';
@@ -14,16 +15,20 @@ const DesignSystem = import.meta.env.DEV ? lazy(() => import('../design-system/c
  *   /login                 área de login (pública)
  *   casca protegida        sem sessão → /login?voltar=<rota>; troca de senha pendente → /login
  *     /                    Início
+ *     /admin/contratantes  Administrativo: só o superadmin na plataforma (modules/admin/routes.tsx)
  *     *                    → Início
+ *
+ * Cada tela é um pedaço próprio do build (lazy); o Splash cobre o primeiro carregamento dela.
  */
 const rotas: RouteObject[] = [
   {
     element: <Raiz />,
+    hydrateFallbackElement: <Splash />,
     children: [
       ...rotasAuth,
       {
         element: <CascaProtegida />,
-        children: [...rotasInicio, { path: '*', element: <Navigate to="/" replace /> }],
+        children: [...rotasInicio, ...rotasAdmin, { path: '*', element: <Navigate to="/" replace /> }],
       },
     ],
   },

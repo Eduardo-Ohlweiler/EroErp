@@ -3,7 +3,7 @@ import { motion, type HTMLMotionProps } from 'motion/react';
 import { useReduzirMovimento } from '../reduzir';
 import { coreografias, telaReduzida, type NomeCoreografia } from '../tokens';
 import { useMarcarMontagem } from './andamento';
-import { BlocoDaTela, useAtrasoMontagem } from './contexto';
+import { BlocoDaTela, CoreografiaDaTela, useAtrasoMontagem } from './contexto';
 
 export type TelaProps = Omit<HTMLMotionProps<'div'>, 'variants' | 'initial' | 'animate' | 'exit' | 'custom'> & {
   /** coreografia de entrada e saída (motion/tokens.ts, `coreografias`) */
@@ -58,7 +58,9 @@ export const Tela = forwardRef<HTMLDivElement, TelaProps>(function Tela(
       }}
       {...rest}
     >
-      <BlocoDaTela.Provider value={c.variantes.bloco}>{children}</BlocoDaTela.Provider>
+      <CoreografiaDaTela.Provider value={coreografia}>
+        <BlocoDaTela.Provider value={c.variantes.bloco}>{children}</BlocoDaTela.Provider>
+      </CoreografiaDaTela.Provider>
     </motion.div>
   );
 });

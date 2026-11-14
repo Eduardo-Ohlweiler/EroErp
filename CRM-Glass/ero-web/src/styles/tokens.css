@@ -10,7 +10,7 @@
   /* valor opaco usado só em máscaras CSS (não aparece como cor) */
   --mask-on: #000;
   --blur: 22px;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* curvas e durações de movimento: --mov-* (motion/tokens.ts, aplicadas por aplicarVariaveisDeMovimento) */
   /* indicador de carregando com movimento reduzido: opacidade mínima da pulsação leve (o ícone nunca some).
    * 0,8 mantém o ícone ≥ 3:1 (WCAG 1.4.11) no vale da pulsação. Pior caso: ghost (texto muted) no tema claro,
    * 3,4:1 a 3,8:1 (com 0,7 cairia para 2,8:1); primary violeta 3,9:1; primary âmbar 4,8:1; danger claro 4,6:1. */
@@ -203,6 +203,83 @@
   --focus-ring: var(--accent-text);
 }
 
+/* ---------- Fundo vivo sem filter: blur (orbs e aurora, index.css) ----------
+ * O desfoque é desenhado no próprio degradê (pintado uma vez) em vez de `filter: blur()` (refeito a cada
+ * quadro enquanto o fundo se mexe). Valem nos dois temas: a intensidade continua em --orb-opacity.
+ * As paradas são a curva de um disco (orb) ou de uma borda reta (aurora) desfocados por uma gaussiana de
+ * desvio --*-desfoque, de meio em meio desvio; sem anel: de uma parada à outra o alfa muda no máximo 19 pontos.
+ * A cor entra por currentColor (o orb/aurora define `color`), para o token valer em qualquer destaque.
+ */
+:root {
+  /* desvio do desfoque imitado (era filter: blur(90px) no orb e blur(120px) na aurora) */
+  --orb-desfoque: 90px;
+  --aurora-desfoque: 120px;
+  /* pico do orb: o perfil supõe um disco grande perto do desvio; em tela estreita o orb (46vw) é pequeno e o
+     blur de verdade apagava o centro — compensa baixando a intensidade (ver @media logo abaixo) */
+  --orb-pico: 1;
+  /* orb: disco de raio R desfocado; o degradê vai até R + 3 desvios (100%) */
+  --orb-perfil:
+    currentColor calc(100% - var(--orb-desfoque) * 6),
+    color-mix(in srgb, currentColor 98.5%, transparent) calc(100% - var(--orb-desfoque) * 5.5),
+    color-mix(in srgb, currentColor 95.9%, transparent) calc(100% - var(--orb-desfoque) * 5),
+    color-mix(in srgb, currentColor 90%, transparent) calc(100% - var(--orb-desfoque) * 4.5),
+    color-mix(in srgb, currentColor 79%, transparent) calc(100% - var(--orb-desfoque) * 4),
+    color-mix(in srgb, currentColor 62.8%, transparent) calc(100% - var(--orb-desfoque) * 3.5),
+    color-mix(in srgb, currentColor 43.7%, transparent) calc(100% - var(--orb-desfoque) * 3),
+    color-mix(in srgb, currentColor 25.9%, transparent) calc(100% - var(--orb-desfoque) * 2.5),
+    color-mix(in srgb, currentColor 12.8%, transparent) calc(100% - var(--orb-desfoque) * 2),
+    color-mix(in srgb, currentColor 5.2%, transparent) calc(100% - var(--orb-desfoque) * 1.5),
+    color-mix(in srgb, currentColor 1.7%, transparent) calc(100% - var(--orb-desfoque) * 1),
+    color-mix(in srgb, currentColor 0.4%, transparent) calc(100% - var(--orb-desfoque) * 0.5),
+    transparent 100%;
+  /* aurora: borda reta desfocada, nos quatro lados (máscara em x e em y); a caixa cresce 3 desvios por lado */
+  --aurora-borda:
+    transparent 0,
+    color-mix(in srgb, var(--mask-on) 0.6%, transparent) calc(var(--aurora-desfoque) * 0.5),
+    color-mix(in srgb, var(--mask-on) 2.3%, transparent) calc(var(--aurora-desfoque) * 1),
+    color-mix(in srgb, var(--mask-on) 6.7%, transparent) calc(var(--aurora-desfoque) * 1.5),
+    color-mix(in srgb, var(--mask-on) 15.9%, transparent) calc(var(--aurora-desfoque) * 2),
+    color-mix(in srgb, var(--mask-on) 30.9%, transparent) calc(var(--aurora-desfoque) * 2.5),
+    color-mix(in srgb, var(--mask-on) 50%, transparent) calc(var(--aurora-desfoque) * 3),
+    color-mix(in srgb, var(--mask-on) 69.1%, transparent) calc(var(--aurora-desfoque) * 3.5),
+    color-mix(in srgb, var(--mask-on) 84.1%, transparent) calc(var(--aurora-desfoque) * 4),
+    color-mix(in srgb, var(--mask-on) 93.3%, transparent) calc(var(--aurora-desfoque) * 4.5),
+    color-mix(in srgb, var(--mask-on) 97.7%, transparent) calc(var(--aurora-desfoque) * 5),
+    color-mix(in srgb, var(--mask-on) 99.4%, transparent) calc(var(--aurora-desfoque) * 5.5),
+    var(--mask-on) calc(var(--aurora-desfoque) * 6),
+    var(--mask-on) calc(100% - var(--aurora-desfoque) * 6),
+    color-mix(in srgb, var(--mask-on) 99.4%, transparent) calc(100% - var(--aurora-desfoque) * 5.5),
+    color-mix(in srgb, var(--mask-on) 97.7%, transparent) calc(100% - var(--aurora-desfoque) * 5),
+    color-mix(in srgb, var(--mask-on) 93.3%, transparent) calc(100% - var(--aurora-desfoque) * 4.5),
+    color-mix(in srgb, var(--mask-on) 84.1%, transparent) calc(100% - var(--aurora-desfoque) * 4),
+    color-mix(in srgb, var(--mask-on) 69.1%, transparent) calc(100% - var(--aurora-desfoque) * 3.5),
+    color-mix(in srgb, var(--mask-on) 50%, transparent) calc(100% - var(--aurora-desfoque) * 3),
+    color-mix(in srgb, var(--mask-on) 30.9%, transparent) calc(100% - var(--aurora-desfoque) * 2.5),
+    color-mix(in srgb, var(--mask-on) 15.9%, transparent) calc(100% - var(--aurora-desfoque) * 2),
+    color-mix(in srgb, var(--mask-on) 6.7%, transparent) calc(100% - var(--aurora-desfoque) * 1.5),
+    color-mix(in srgb, var(--mask-on) 2.3%, transparent) calc(100% - var(--aurora-desfoque) * 1),
+    color-mix(in srgb, var(--mask-on) 0.6%, transparent) calc(100% - var(--aurora-desfoque) * 0.5),
+    transparent 100%;
+  /* aurora: o desfoque mistura as cores perto do centro do cônico (senão as três se encontram num ponto) */
+  --aurora-centro:
+    currentColor 0,
+    color-mix(in srgb, currentColor 84.5%, transparent) calc(var(--aurora-desfoque) * 0.25),
+    color-mix(in srgb, currentColor 69.6%, transparent) calc(var(--aurora-desfoque) * 0.5),
+    color-mix(in srgb, currentColor 56.1%, transparent) calc(var(--aurora-desfoque) * 0.75),
+    color-mix(in srgb, currentColor 44.3%, transparent) calc(var(--aurora-desfoque) * 1),
+    color-mix(in srgb, currentColor 26.5%, transparent) calc(var(--aurora-desfoque) * 1.5),
+    color-mix(in srgb, currentColor 15.6%, transparent) calc(var(--aurora-desfoque) * 2),
+    color-mix(in srgb, currentColor 6.3%, transparent) calc(var(--aurora-desfoque) * 3),
+    color-mix(in srgb, currentColor 3.3%, transparent) calc(var(--aurora-desfoque) * 4),
+    color-mix(in srgb, currentColor 1.5%, transparent) calc(var(--aurora-desfoque) * 6),
+    transparent calc(var(--aurora-desfoque) * 8);
+}
+/* Média das três cores do cônico da aurora (o que o desfoque mostra no centro): recalcula em cada destaque. */
+:root,
+[data-accent] {
+  --aurora-media: color-mix(in srgb, color-mix(in srgb, var(--accent) 50%, var(--accent-2)) 66.67%, var(--accent-3));
+}
+
 /* ---------- Fundo de cena (foto que acende/apaga com o tema) ----------
  * Valem nos dois temas: a cena passa de noite para dia durante a troca.
  * O shader lê estas cores na inicialização (SceneShader.ts) — nada de cor literal no GLSL.
@@ -264,4 +341,134 @@
   --qr-plate-border: rgb(18 19 27 / 0.1);
   --qr-shadow: 0 14px 30px -18px rgb(35 45 90 / 0.4);
   --on-strong: #ffffff;
+}
+
+/* ---------- Kit de telas (docs/07 §3.4): ações, campo só leitura, folha impressa ----------
+ * Cores cheias das ações (Salvar, Buscar, Limpar, Pdf...): degradê opaco, então o contraste do texto não depende
+ * do que está atrás do vidro. Texto ≥ 4,5:1 nas duas pontas do degradê, nos dois temas (medido):
+ *   success  #047857 5,48 · #065f46 7,68 (texto #fff)     info    #1d4ed8 6,70 · #1e40af 8,72 (texto #fff)
+ *   danger   #be123c 6,29 · #9f1239 8,02 (texto #fff)     warning #f59e0b 8,53 · #fbbf24 10,98 (texto #1a1405)
+ * `--success`, `--info`, `--danger` e `--warning` continuam sendo os de texto e ícone; os `-strong` são preenchimento.
+ *
+ * Campo só leitura (disabled e readOnly): fundo próprio, quase opaco, para o texto --fg-muted passar de 4,5:1 sobre
+ * qualquer fundo de cena. Pior caso medido (vidro normal e denso, orbs dos seis destaques, cena preta/branca):
+ *   escuro 5,75:1 · claro 5,20:1.
+ */
+:root,
+[data-theme='dark'] {
+  --success-strong: #047857;
+  --success-2-strong: #065f46;
+  --on-success: #ffffff;
+  --info-strong: #1d4ed8;
+  --info-2-strong: #1e40af;
+  --on-info: #ffffff;
+  --danger-strong: #be123c;
+  --danger-2-strong: #9f1239;
+  --on-danger: #ffffff;
+  --warning-strong: #f59e0b;
+  --warning-2-strong: #fbbf24;
+  --on-warning: #1a1405;
+  /* reflexo no topo dos botões cheios (o mesmo do accent-glow) */
+  --acao-reflexo: rgb(255 255 255 / 0.28);
+
+  --input-bg-readonly: rgb(8 8 14 / 0.5);
+  --input-border-readonly: rgb(255 255 255 / 0.04);
+
+  /* folha impressa: papel branco, texto preto, sem vidro nem fundo de cena (igual nos dois temas) */
+  --folha-bg: #ffffff;
+  --folha-fg: #111318;
+  --folha-fg-muted: #4b5160;
+  --folha-linha: #d5d8e0;
+}
+[data-theme='light'] {
+  --success-strong: #047857;
+  --success-2-strong: #065f46;
+  --on-success: #ffffff;
+  --info-strong: #1d4ed8;
+  --info-2-strong: #1e40af;
+  --on-info: #ffffff;
+  --danger-strong: #be123c;
+  --danger-2-strong: #9f1239;
+  --on-danger: #ffffff;
+  --warning-strong: #f59e0b;
+  --warning-2-strong: #fbbf24;
+  --on-warning: #1a1405;
+  --acao-reflexo: rgb(255 255 255 / 0.28);
+
+  --input-bg-readonly: rgb(226 229 237 / 0.85);
+  --input-border-readonly: rgb(18 19 27 / 0.06);
+
+  --folha-bg: #ffffff;
+  --folha-fg: #111318;
+  --folha-fg-muted: #4b5160;
+  --folha-linha: #d5d8e0;
+}
+/* Folha impressa x destaque do contratante (docs/08 §1): o cabeçalho de todo relatório leva a cor de destaque do
+ * contratante efetivo, que já troca no <html> (data-accent). Nunca hex cravado na folha: tudo sai do destaque.
+ * O papel é claro nos dois temas, então o texto usa o tom escuro do destaque (--accent-ink), ≥ 4,5:1 sobre o branco
+ * e sobre a barra (10 % do destaque no branco). Texto branco sobre o tom escuro (cabeçalho da tabela) ≥ 6:1 nos
+ * seis destaques (pior caso: âmbar #845500, 6,4:1). */
+:root,
+[data-theme],
+[data-accent] {
+  /* nome do emitente, régua sob o cabeçalho, cabeçalho da tabela, letras do logo */
+  --folha-destaque: var(--accent-ink);
+  /* a borda da barra e o acento do logo (decorativos, sem texto em cima) */
+  --folha-destaque-vivo: var(--accent);
+  /* fundo da barra do cabeçalho: o tom claro do destaque */
+  --folha-destaque-fundo: color-mix(in srgb, var(--accent) 10%, var(--folha-bg));
+  /* texto sobre --folha-destaque */
+  --folha-sobre-destaque: #ffffff;
+}
+/* Brilho difuso sob os botões cheios, como o --accent-glow. */
+:root,
+[data-theme] {
+  --success-glow: color-mix(in srgb, var(--success-strong) 50%, transparent);
+  --info-glow: color-mix(in srgb, var(--info-strong) 50%, transparent);
+  --danger-glow: color-mix(in srgb, var(--danger-strong) 50%, transparent);
+  --warning-glow: color-mix(in srgb, var(--warning-strong) 50%, transparent);
+}
+
+/* ---------- Ações x destaque do contratante: tom próprio no conflito (decisão do Eduardo, 2026-11-13) ----------
+ * O Novo usa o destaque (accent-gradient). Quando o destaque cai na cor de uma ação vizinha, a AÇÃO troca de tom
+ * para não ficar igual ao Novo. Valem nos dois temas (o degradê é opaco) e também num [data-theme] aninhado.
+ * Texto ≥ 4,5:1 nas duas pontas (medido):
+ *   âmbar e laranja → Pdf terracota   #b45309 5,02 · #92400e 7,09 (texto #fff)   (o Novo é âmbar/laranja claro)
+ *   azul            → Buscar índigo   #4f46e5 6,29 · #3730a3 9,93 (texto #fff)   (o Novo é azul → azul-celeste)
+ *   rosa            → Limpar tijolo   #c2410c 5,18 · #9a3412 7,31 (texto #fff)   (o Novo é rosa → violeta)
+ *   esmeralda       → Salvar e Exportar oliva #4d7c0f 4,99 · #3f6212 7,08 (texto #fff) (o Novo é esmeralda → celeste)
+ * Os brilhos (--*-glow) acompanham sozinhos (color-mix do -strong).
+ */
+[data-accent='ambar'],
+[data-accent='ambar'] [data-theme],
+[data-accent='laranja'],
+[data-accent='laranja'] [data-theme] {
+  --warning-strong: #b45309;
+  --warning-2-strong: #92400e;
+  --on-warning: #ffffff;
+}
+[data-accent='azul'],
+[data-accent='azul'] [data-theme] {
+  --info-strong: #4f46e5;
+  --info-2-strong: #3730a3;
+  --on-info: #ffffff;
+}
+[data-accent='rosa'],
+[data-accent='rosa'] [data-theme] {
+  --danger-strong: #c2410c;
+  --danger-2-strong: #9a3412;
+  --on-danger: #ffffff;
+}
+[data-accent='esmeralda'],
+[data-accent='esmeralda'] [data-theme] {
+  --success-strong: #4d7c0f;
+  --success-2-strong: #3f6212;
+  --on-success: #ffffff;
+}
+
+/* Orb em tela estreita: ver --orb-pico (precisa vir depois do :root acima para valer). */
+@media (max-width: 480px) {
+  :root {
+    --orb-pico: 0.55;
+  }
 }

@@ -8,6 +8,7 @@ import jakarta.mail.Multipart;
 import jakarta.mail.Part;
 import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -35,6 +36,7 @@ public class CaixaDeEmailFake extends JavaMailSenderImpl {
 
     private final List<Recebido> recebidos = new ArrayList<>();
     private volatile boolean falhar;
+    private volatile Duration atraso = Duration.ZERO;
 
     public CaixaDeEmailFake() {
         // "Configurado" para o EmailService: host preenchido e sem autenticação.
@@ -65,8 +67,27 @@ public class CaixaDeEmailFake extends JavaMailSenderImpl {
         return recebidos.stream().filter(r -> r.para().equals(alvo)).count();
     }
 
+    /**
+     * Cada envio demora este tempo (SMTP lento de verdade leva de 1 a 3 s). A espera
+     * fica fora do monitor: envios em paralelo esperam ao mesmo tempo. Zere no finally.
+     */
+    public void atrasarEnvios(Duration atraso) {
+        this.atraso = atraso;
+    }
+
     @Override
-    protected synchronized void doSend(MimeMessage[] mensagens, Object[] originais) {
+    protected void doSend(MimeMessage[] mensagens, Object[] originais) {
+        if (!atraso.isZero()) {
+            try {
+                Thread.sleep(atraso);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        guardar(mensagens);
+    }
+
+    private synchronized void guardar(MimeMessage[] mensagens) {
         if (falhar) {
             throw new MailSendException("SMTP simulado fora do ar");
         }

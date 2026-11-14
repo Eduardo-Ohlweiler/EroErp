@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { atrasoDoBloco, coreografias, montagem, orquestrar } from './tokens';
+import { ambiente, atrasoDoBloco, coreografias, kit, montagem, orquestrar, variaveisDeMovimento, type Papel } from './tokens';
 
 type ComDelay = { transition: { delayChildren: (i: number, n: number) => number; when?: string } };
 
@@ -51,5 +51,64 @@ describe('ritmo dos blocos', () => {
         expect(valores).not.toHaveProperty('filter');
       }
     }
+  });
+});
+
+describe('encaixe dos blocos do kit T*', () => {
+  const PAPEIS: Papel[] = ['cartao', 'campo', 'rodape', 'grade', 'linhaGrade'];
+  const valores = (v: unknown) => (typeof v === 'function' ? v(0, {}, {}) : v) as Record<string, unknown> & ComDelay;
+
+  it('padrao e formulario definem todos os papéis', () => {
+    for (const nome of ['padrao', 'formulario'] as const) {
+      for (const p of PAPEIS) expect(coreografias[nome].variantes[p], `${nome}.${p}`).toBeDefined();
+    }
+  });
+
+  it('cartão e grade encaixam como o bloco da tela e põem os de dentro em cascata', () => {
+    for (const nome of ['padrao', 'formulario'] as const) {
+      const v = coreografias[nome].variantes;
+      for (const [papel, ritmo] of [
+        ['cartao', kit.campos],
+        ['grade', kit.linhas],
+      ] as const) {
+        const show = valores(v[papel].show);
+        const bloco = valores(v.bloco.show);
+        expect(show.opacity).toBe(bloco.opacity);
+        const f = show.transition.delayChildren;
+        expect(+f(0, 10).toFixed(3)).toBe(ritmo.inicio);
+        expect(+f(1, 10).toFixed(3)).toBe(+(ritmo.inicio + ritmo.passo).toFixed(3));
+        // depois do limite, o resto vem junto
+        expect(f(ritmo.limite + 3, 20)).toBe(f(ritmo.limite, 20));
+      }
+    }
+  });
+
+  it('a cascata de dentro termina cedo: o último campo e a última linha animada começam em menos de 0,4 s', () => {
+    for (const r of [kit.campos, kit.linhas]) expect(r.inicio + r.limite * r.passo).toBeLessThan(0.4);
+    expect(kit.linhas.quantas).toBeLessThanOrEqual(kit.linhas.limite);
+  });
+
+  it('campos e linhas só animam opacidade e transform, e saem com o cartão (sem saída própria)', () => {
+    for (const nome of ['padrao', 'formulario'] as const) {
+      for (const p of ['campo', 'rodape', 'linhaGrade'] as const) {
+        const v = coreografias[nome].variantes[p];
+        expect(v.exit).toBeUndefined();
+        for (const rotulo of ['hidden', 'show']) {
+          const chaves = Object.keys(valores(v[rotulo])).filter((k) => k !== 'transition');
+          expect(chaves.every((k) => ['opacity', 'x', 'y', 'scale'].includes(k)), `${nome}.${p}.${rotulo}`).toBe(true);
+        }
+      }
+    }
+  });
+});
+
+describe('variáveis --mov-* do CSS', () => {
+  it('saem dos tokens, em segundos, e cobrem o fundo vivo', () => {
+    const v = variaveisDeMovimento();
+    expect(v['--mov-orb-1']).toBe(`${ambiente.orbs[0]}s`);
+    expect(v['--mov-aurora']).toBe(`${ambiente.aurora}s`);
+    expect(v['--mov-onda-2']).toBe(`${ambiente.ondas[1]}s`);
+    expect(v['--mov-ease-ambiente']).toBe('cubic-bezier(0.42,0,0.58,1)');
+    for (const [nome, valor] of Object.entries(v)) expect(valor, nome).toMatch(/^(\d+(\.\d+)?s|cubic-bezier\([\d.,-]+\))$/);
   });
 });

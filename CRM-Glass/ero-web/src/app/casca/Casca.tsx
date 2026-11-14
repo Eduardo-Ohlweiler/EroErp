@@ -7,7 +7,7 @@ import { RotaAnimada } from '../../motion/coreografia';
 import type { UsuarioLogado } from '../../shared/api/tipos';
 import { nomeDoContratante, rotaDoLogin, rotuloDoPapel, useSessao, UsuarioDaCascaProvider } from '../../shared/sessao';
 import { cn } from '../../shared/util/utils';
-import { menuDoUsuario, tituloDaRota } from '../menu';
+import { menuAdministrativo, menuDoUsuario, ROTULO_ADMINISTRATIVO, tituloDaRota } from '../menu';
 
 /**
  * Casca protegida: só com sessão autenticada. Sem sessão → /login?voltar=<rota>; com a troca de senha
@@ -49,9 +49,10 @@ export function CascaProtegida() {
 /**
  * Menu lateral (barra inferior no celular) → barra superior → conteúdo (RotaAnimada).
  *
- * Busca (Ctrl K): fica desligada até haver 3 telas ou mais no menu; com uma só, ela não leva a lugar nenhum.
+ * Busca (Ctrl K): fica desligada até haver 3 telas ou mais no menu (os dois grupos somados); com uma só, ela não
+ * leva a lugar nenhum. O grupo de baixo é o Administrativo (só o superadmin na plataforma).
  * O Sair fica no menu lateral e no MenuUsuario (que também aparece no celular).
- * Barra inferior do celular: só com 2 telas ou mais (com uma, ocupa espaço fixo à toa).
+ * Barra inferior do celular: só com 2 telas ou mais, somando os dois grupos (com uma, ocupa espaço fixo à toa).
  */
 const MINIMO_PARA_BUSCA = 3;
 const MINIMO_PARA_BARRA_INFERIOR = 2;
@@ -64,10 +65,12 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
   const saindo = useRef(false);
 
   const menu = useMemo(() => menuDoUsuario(usuario), [usuario]);
+  const administrativo = useMemo(() => menuAdministrativo(usuario), [usuario]);
+  const totalNoMenu = menu.length + administrativo.length;
   const contratante = nomeDoContratante(usuario);
   const papel = rotuloDoPapel(usuario.papel);
-  const comBusca = menu.length >= MINIMO_PARA_BUSCA;
-  const comBarraInferior = menu.length >= MINIMO_PARA_BARRA_INFERIOR;
+  const comBusca = totalNoMenu >= MINIMO_PARA_BUSCA;
+  const comBarraInferior = totalNoMenu >= MINIMO_PARA_BARRA_INFERIOR;
 
   const fazerSair = () => {
     if (saindo.current) return;
@@ -75,12 +78,15 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
     void sair();
   };
 
-  const comandos: Comando[] = menu.map((i) => ({ grupo: 'Telas', rotulo: i.label, icone: i.icon, executar: () => navegar(i.to) }));
+  const comandos: Comando[] = [
+    ...menu.map((i) => ({ grupo: 'Telas', rotulo: i.label, icone: i.icon, executar: () => navegar(i.to) })),
+    ...administrativo.map((i) => ({ grupo: ROTULO_ADMINISTRATIVO, rotulo: i.label, icone: i.icon, executar: () => navegar(i.to) })),
+  ];
 
   return (
     <>
-      <Sidebar itens={menu} onSair={fazerSair} />
-      {comBarraInferior && <MobileNav itens={menu} />}
+      <Sidebar itens={menu} itensSistema={administrativo} rotuloSistema={ROTULO_ADMINISTRATIVO} onSair={fazerSair} />
+      {comBarraInferior && <MobileNav itens={menu} itensSistema={administrativo} rotuloSistema={ROTULO_ADMINISTRATIVO} />}
       <div className={cn('md:pl-[104px] px-3 md:pr-6 pt-4 md:pb-10', comBarraInferior ? 'pb-28' : 'pb-8')}>
         <div className="mx-auto max-w-[1680px]">
           <Topbar

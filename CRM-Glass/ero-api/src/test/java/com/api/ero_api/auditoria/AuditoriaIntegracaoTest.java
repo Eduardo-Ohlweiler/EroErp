@@ -40,6 +40,8 @@ class AuditoriaIntegracaoTest extends IntegracaoTest {
         assertThat(evento.path("autorId").asString()).as("quem criou")
                 .isEqualTo(c.admin().corpo().path("usuario").path("id").asString());
         assertThat(evento.path("autorNome").asString()).isEqualTo("Ana Lima");
+        assertThat(evento.path("suporte").asBoolean()).isFalse();
+        assertThat(evento.path("ip").asString()).as("IP de quem é do próprio contratante aparece").isNotBlank();
         assertThat(evento.path("tenantNome").isNull()).as("nome do contratante só na plataforma").isTrue();
     }
 
@@ -59,6 +61,15 @@ class AuditoriaIntegracaoTest extends IntegracaoTest {
         MvcTestResult longo = get("/api/auditoria/eventos?de=" + agora.minus(Duration.ofDays(400)) + "&ate=" + agora, token);
         assertThat(status(longo)).isEqualTo(422);
         assertThat(corpo(longo).path("detail").asString()).isEqualTo("Escolha um período de até 1 ano.");
+
+        // "tipo" (singular) é erro de digitação: sem a recusa, viraria "todos os tipos" em silêncio.
+        for (String uri : List.of("/api/auditoria/eventos?tipo=LOGIN_SUCESSO", "/api/auditoria/eventos?tipo=")) {
+            MvcTestResult singular = get(uri, token);
+            assertThat(status(singular)).as(uri).isEqualTo(400);
+            JsonNode erro = corpo(singular).path("erros").get(0);
+            assertThat(erro.path("campo").asString()).isEqualTo("tipo");
+            assertThat(erro.path("mensagem").asString()).isEqualTo("Use o parâmetro tipos");
+        }
     }
 
     @Test
@@ -121,26 +132,52 @@ class AuditoriaIntegracaoTest extends IntegracaoTest {
         assertThat(criado.path("autorNome").asString()).isEqualTo("Ana Lima");
     }
 
+    /**
+     * Superadmin dentro do contratante: quem tem AUDITORIA_LER lá vê "Suporte da
+     * plataforma", sem o id, o IP e o navegador do superadmin. Na plataforma, tudo aparece.
+     */
     @Test
-    void autorSuperadminVistoDeDentroDoContratanteSaiSemNome() {
+    void superadminDentroDoContratanteNaoExpoeIpNavegadorNemId() {
         Contratante c = novoContratante();
         Sessao s = loginSuperadmin();
         String superadminId = s.corpo().path("usuario").path("id").asString();
         String dentro = corpo(post("/api/auth/superadmin/acessar/" + c.id(), s.token(), Map.of())).path("tokenAcesso").asString();
-        MvcTestResult r = post("/api/usuarios", dentro, Map.of(
-                "nome", "Criado Pelo Suporte", "email", unico("suporte") + "@teste.local", "senha", SENHA_FORTE, "papel", "USUARIO"));
+        MvcTestResult r = mvc.post().uri("/api/usuarios")
+                .header("Authorization", "Bearer " + dentro)
+                .header("User-Agent", "Navegador-Do-Suporte/1.0")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(Map.of("nome", "Criado Pelo Suporte",
+                        "email", unico("suporte") + "@teste.local", "senha", SENHA_FORTE, "papel", "USUARIO")))
+                .exchange();
         assertThat(status(r)).isEqualTo(201);
         String criadoId = corpo(r).path("id").asString();
 
         JsonNode visto = corpo(get("/api/auditoria/eventos?tipos=USUARIO_CRIADO&usuarioId=" + criadoId, c.admin().token()))
                 .path("conteudo").get(0);
-        assertThat(visto.path("autorId").asString()).isEqualTo(superadminId);
-        assertThat(visto.path("autorNome").isNull()).as("front mostra \"Suporte da plataforma\"").isTrue();
+        assertThat(visto.path("suporte").asBoolean()).as("front mostra \"Suporte da plataforma\"").isTrue();
+        assertThat(visto.path("autorId").isNull()).isTrue();
+        assertThat(visto.path("autorNome").isNull()).isTrue();
+        assertThat(visto.path("ip").isNull()).isTrue();
+        assertThat(visto.path("userAgent").isNull()).isTrue();
+        assertThat(visto.path("usuarioId").asString()).as("o afetado é do contratante").isEqualTo(criadoId);
         assertThat(visto.path("usuarioNome").asString()).isEqualTo("Criado Pelo Suporte");
+
+        // O próprio superadmin como afetado (entrou no contratante): o id dele também não sai.
+        JsonNode acessou = corpo(get("/api/auditoria/eventos?tipos=SUPERADMIN_ACESSOU_TENANT", c.admin().token()))
+                .path("conteudo").get(0);
+        assertThat(acessou.path("suporte").asBoolean()).isTrue();
+        assertThat(acessou.path("usuarioId").isNull()).isTrue();
+        assertThat(acessou.path("ip").isNull()).isTrue();
+        assertThat(corpo(get("/api/auditoria/eventos?size=100", c.admin().token())).toString())
+                .as("o id do superadmin não aparece em lugar nenhum").doesNotContain(superadminId);
 
         JsonNode naPlataforma = corpo(get("/api/auditoria/eventos?tipos=USUARIO_CRIADO&usuarioId=" + criadoId,
                 loginSuperadmin().token())).path("conteudo").get(0);
+        assertThat(naPlataforma.path("suporte").asBoolean()).isFalse();
+        assertThat(naPlataforma.path("autorId").asString()).isEqualTo(superadminId);
         assertThat(naPlataforma.path("autorNome").asString()).isEqualTo("Superadmin Teste");
+        assertThat(naPlataforma.path("ip").asString()).isNotBlank();
+        assertThat(naPlataforma.path("userAgent").asString()).isEqualTo("Navegador-Do-Suporte/1.0");
     }
 
     @Test

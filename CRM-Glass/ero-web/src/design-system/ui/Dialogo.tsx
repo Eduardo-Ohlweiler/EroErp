@@ -20,6 +20,8 @@ export type DialogoProps = {
   bloquearFechar?: boolean;
   /** elemento que recebe o foco ao abrir (padrão: o primeiro focável) */
   focoInicial?: RefObject<HTMLElement | null>;
+  /** confirmação de ação destrutiva: `role="alertdialog"` (o leitor de tela anuncia como alerta) */
+  alerta?: boolean;
   className?: string;
 };
 
@@ -38,6 +40,7 @@ export function Dialogo({
   largura = 520,
   bloquearFechar,
   focoInicial,
+  alerta,
   className,
 }: DialogoProps) {
   /** quem tinha o foco ao abrir (o diálogo é controlado de fora, sem Radix Trigger): recebe o foco de volta ao fechar */
@@ -61,6 +64,7 @@ export function Dialogo({
                 asChild
                 forceMount
                 aria-modal="true"
+                {...(alerta ? { role: 'alertdialog' } : {})}
                 onOpenAutoFocus={(e) => {
                   anterior.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
                   if (focoInicial?.current) {
@@ -170,6 +174,7 @@ export function ConfirmDialog({
       largura={440}
       bloquearFechar={ocupado}
       focoInicial={perigo ? cancelarRef : undefined}
+      alerta={perigo}
       rodape={
         <>
           <Button ref={cancelarRef} onClick={() => onAbertoChange(false)} disabled={ocupado}>

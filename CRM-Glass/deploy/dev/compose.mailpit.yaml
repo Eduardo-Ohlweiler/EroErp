@@ -4,7 +4,7 @@
 # Caixa de entrada: http://localhost:8025
 services:
   mailpit:
-    image: axllent/mailpit
+    image: axllent/mailpit:v1.33.1
     ports:
       - "127.0.0.1:${MAILPIT_PORTA:-8025}:8025"
       - "127.0.0.1:${SMTP_PORTA:-1025}:1025"
@@ -17,3 +17,5 @@ services:
       MAIL_SMTP_AUTH: "false"
       MAIL_STARTTLS: "false"
       MAIL_REMETENTE: crm@teste.local
+      # Modo de teste: o QA e a olhar-telas entram muitas vezes por hora com o mesmo usuário.
+      APP_CODIGO_MAX_EMISSOES_POR_HORA: "1000"

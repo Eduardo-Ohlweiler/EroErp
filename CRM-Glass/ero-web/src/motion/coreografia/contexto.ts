@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { Variants } from 'motion/react';
+import type { NomeCoreografia } from '../tokens';
 
 /**
  * Atraso de montagem herdado (s): quanto a tela que está nascendo deve esperar antes do primeiro bloco.
@@ -20,4 +21,14 @@ export const BlocoDaTela = createContext<Variants | null>(null);
 
 export function useBlocoDaTela() {
   return useContext(BlocoDaTela);
+}
+
+/**
+ * Coreografia da <Tela> em volta (`padrao`, `formulario`...). Os blocos do kit T* leem por `useVariantesDoPapel`
+ * para encaixar no ritmo da tela; fora de uma <Tela>, `null` (o papel cai no da coreografia `padrao`).
+ */
+export const CoreografiaDaTela = createContext<NomeCoreografia | null>(null);
+
+export function useCoreografiaDaTela() {
+  return useContext(CoreografiaDaTela);
 }

@@ -93,6 +93,8 @@ app:
     cripto-chave: ${APP_CRIPTO_CHAVE:}
     cors-origens: ${APP_CORS_ORIGENS:}
     cookie-seguro: true
+    # Códigos de login NOVOS por usuário por hora (reenvios não contam). Passou: 429 com Retry-After.
+    codigo-max-emissoes-por-hora: ${APP_CODIGO_MAX_EMISSOES_POR_HORA:10}
   email:
     # Endereço do "De:". No Gmail precisa ser a própria conta (MAIL_USUARIO).
     remetente: ${MAIL_REMETENTE:${MAIL_USUARIO:}}

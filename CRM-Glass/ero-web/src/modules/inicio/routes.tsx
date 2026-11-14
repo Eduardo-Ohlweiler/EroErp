@@ -1,5 +1,9 @@
 import type { RouteObject } from 'react-router';
-import { InicioPage } from './pages/InicioPage';
 
-/** Rotas do Início (dentro da casca). */
-export const rotasInicio: RouteObject[] = [{ index: true, element: <InicioPage /> }];
+/** Rotas do Início (dentro da casca), num pedaço próprio do build. */
+export const rotasInicio: RouteObject[] = [
+  {
+    index: true,
+    lazy: async () => ({ Component: (await import('./pages/InicioPage')).InicioPage }),
+  },
+];

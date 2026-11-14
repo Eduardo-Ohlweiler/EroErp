@@ -38,8 +38,8 @@ import org.springframework.transaction.annotation.Transactional;
  *       {@code tenantId} recebido é ignorado (o filtro é manual, porque o evento
  *       não é TenantEntity).</li>
  *   <li>Os nomes são resolvidos uma vez por página. Dentro de um contratante, o
- *       superadmin não é visível: o autor sai sem nome e o front mostra
- *       "Suporte da plataforma".</li>
+ *       superadmin não é visível: o evento sai com {@code suporte = true}, sem o id
+ *       dele, sem IP e sem navegador, e o front mostra "Suporte da plataforma".</li>
  * </ul>
  */
 @Service
@@ -84,7 +84,18 @@ public class ConsultaEventoService {
 
         Map<UUID, String> nomesUsuarios = usuarioService.buscarNomes(idsDeUsuarios(eventos));
         Map<UUID, String> nomesTenants = plataforma ? tenantService.buscarNomes(idsDeTenants(eventos)) : Map.of();
-        return PaginaDto.de(eventos, e -> EventoSegurancaMapper.toResponseDto(e, nomesUsuarios, nomesTenants));
+        return PaginaDto.de(eventos, e -> EventoSegurancaMapper.toResponseDto(e, nomesUsuarios, nomesTenants,
+                !plataforma && doSuporte(e, nomesUsuarios)));
+    }
+
+    /**
+     * Dentro do contratante, todo usuário do evento tem nome visível, menos o
+     * superadmin (o filtro de tenant o esconde). Autor ou afetado sem nome = suporte
+     * da plataforma: o id dele, o IP e o navegador não saem para o contratante.
+     */
+    private static boolean doSuporte(EventoSeguranca e, Map<UUID, String> nomesUsuarios) {
+        return Stream.of(e.getCreatedBy(), e.getUsuarioId())
+                .anyMatch(id -> id != null && !nomesUsuarios.containsKey(id));
     }
 
     private static Set<UUID> idsDeUsuarios(Page<EventoSeguranca> eventos) {

@@ -136,13 +136,14 @@ por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora
 
 | Exceção | HTTP | `codigo` |
 |---|---|---|
-| validação de DTO | 400 | `VALIDACAO` |
+| validação de DTO ou de parâmetro (`erros[{campo, mensagem}]`: o campo do DTO, ex. `administrador.email`, ou o nome do parâmetro na URL; vale também quando a rota mistura `@Valid @RequestBody` com restrição em parâmetro) | 400 | `VALIDACAO` |
 | `AutenticacaoException` / token inválido | 401 | `NAO_AUTENTICADO` |
 | `/2fa/verificar`: desafio vencido, código vencido, já usado, substituído por login novo ou anterior à última troca de senha (voltar para a senha) | 401 | `DESAFIO_EXPIRADO` |
 | `/2fa/verificar`: código errado, ou conta bloqueada/inativa/contratante inativo, sem dizer qual (pode digitar de novo) | 401 | `CODIGO_INVALIDO` |
 | `AcessoNegadoException` / sem permissão | 403 | `ACESSO_NEGADO` |
 | `NaoEncontradoException` (também quando é de outro tenant) | 404 | `NAO_ENCONTRADO` |
-| `ConflitoException` / versão desatualizada / duplicidade | 409 | `CONFLITO` |
+| `ConflitoException` / versão desatualizada (sem `erros`) | 409 | `CONFLITO` |
+| `ConflitoCampoException` / duplicidade num campo (com `erros[{campo, mensagem}]`, como o 400; ver `docs/03`, "Contrato do 409") | 409 | `CONFLITO` |
 | `RegraNegocioException` | 422 | `REGRA_NEGOCIO` |
 | limite de requisições (com `Retry-After`) | 429 | `MUITAS_REQUISICOES` |
 | `ServicoIndisponivelException` (ex.: e-mail não saiu) | 503 | `SERVICO_INDISPONIVEL` |
@@ -152,7 +153,15 @@ por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora
 
 Toda entidade tem `created_at`, `updated_at`, `created_by`, `updated_by` (UUID do
 usuário) e `version`. São preenchidos pelo Spring Data; ninguém seta à mão. O
-ResponseDto devolve esses campos.
+ResponseDto devolve esses campos e mais `criadoPorNome` e `alteradoPorNome` (o que o
+`TAuditoria` da tela lê). Os nomes vêm de `UsuarioService.buscarNomes`, uma consulta por
+página (sem N+1), e o mapper monta a resposta (modelo: `UsuarioService.listar` e
+`UsuarioMapper.toResponseDto`).
+
+O filtro de tenant vale também aqui: dentro de um contratante o superadmin não está no
+mapa de nomes. Quando foi ele (o suporte da plataforma) quem cadastrou ou alterou, o
+registro sai com `createdBy`/`updatedBy` e o nome **vazios**: o id do superadmin não sai
+para o contratante (mesma regra da trilha de logs). Na visão de plataforma tudo aparece.
 
 ## Passo a passo: módulo novo
 

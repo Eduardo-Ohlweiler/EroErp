@@ -1,0 +1,127 @@
+import { forwardRef, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useController } from 'react-hook-form';
+import { Input } from '../ui/Bits';
+import { InputSenha } from '../ui/InputSenha';
+import { cn } from '../../shared/util/utils';
+import { CampoDoKit, useLigadoAoForm, type PropsDeCampo } from './campo';
+import {
+  aplicarMascara,
+  larguraPadraoDoEntry,
+  TAMANHO_MAXIMO,
+  teclado,
+  valorParaExibir,
+  valorParaGravar,
+  type Mascara,
+} from './mascaras';
+import { useSomenteLeituraDoForm } from './somenteLeitura';
+
+export type TEntryProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'width' | 'required' | 'disabled' | 'size'> &
+  PropsDeCampo & {
+    /** `cpf`, `cnpj` (alfanumérico), `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal` */
+    mascara?: Mascara;
+    /** casas decimais (ignorado em `inteiro`; padrão 2) */
+    casas?: number;
+    /** unidade à direita ("kg", "%") */
+    suffix?: ReactNode;
+  };
+
+/**
+ * Campo de texto do kit (docs/07 §3.2), sobre o `Input` (ou o `InputSenha` com `type="password"`).
+ *
+ * Dentro de um `TForm`, basta o `name`: valor, erro e `onBlur` vêm do formulário. Fora dele (ou com
+ * `value`/`onChange`), é um input controlado comum.
+ *
+ * A máscara mora aqui, não no `onChange` da tela: o componente reescreve `e.target.value` antes de repassar o
+ * evento. Documento, CEP e telefone ligados ao formulário gravam cru (o CNPJ alfanumérico em maiúsculas); as
+ * numéricas gravam o texto da máscara ("72,50"), que o `paraCorpo` converte com `paraNumero`.
+ */
+export const TEntry = forwardRef<HTMLInputElement, TEntryProps>(function TEntry(props, ref) {
+  const ligado = useLigadoAoForm(props.name, props.onChange !== undefined || props.value !== undefined);
+  if (ligado) return <TEntryLigado {...props} name={props.name!} />;
+  return <TEntryBase {...props} ref={ref} />;
+});
+
+function TEntryLigado(props: TEntryProps & { name: string }) {
+  const { field, fieldState } = useController({ name: props.name });
+  return (
+    <TEntryBase
+      {...props}
+      ref={field.ref}
+      value={valorParaExibir(props.mascara, field.value)}
+      onChange={(e) => field.onChange(valorParaGravar(props.mascara, e.target.value))}
+      onBlur={field.onBlur}
+      error={props.error ?? fieldState.error?.message}
+    />
+  );
+}
+
+const TEntryBase = forwardRef<HTMLInputElement, TEntryProps>(function TEntryBase(
+  { label, error, suffix, ajuda, mascara, casas, width, rotuloOculto, required, disabled, className, id, onChange, type, readOnly, ...rest },
+  ref,
+) {
+  // Só leitura do TForm: readOnly (focável, o leitor de tela lê o valor). `disabled` só para campo travado de verdade.
+  const somenteLeitura = useSomenteLeituraDoForm() || !!readOnly;
+
+  const aoDigitar = !mascara
+    ? onChange
+    : (e: ChangeEvent<HTMLInputElement>) => {
+        const colou = (e.nativeEvent as InputEvent).inputType === 'insertFromPaste';
+        e.target.value = aplicarMascara(mascara, e.target.value, { casas, colou });
+        onChange?.(e);
+      };
+
+  const doc = mascara === 'cnpj' || mascara === 'cpfCnpj';
+  const comum: InputHTMLAttributes<HTMLInputElement> & { ref: typeof ref } = {
+    ...rest,
+    ref,
+    onChange: aoDigitar,
+    disabled: !!disabled,
+    readOnly: somenteLeitura,
+    'aria-readonly': somenteLeitura || undefined,
+    'aria-required': (required && !somenteLeitura) || undefined,
+    maxLength: rest.maxLength ?? (mascara ? TAMANHO_MAXIMO[mascara] : undefined),
+    inputMode: rest.inputMode ?? (type === 'email' ? 'email' : teclado(mascara)),
+    ...(type === 'email' || doc ? { spellCheck: false } : {}),
+    ...(type === 'email' ? { autoCapitalize: 'off' } : {}),
+    ...(doc ? { autoCapitalize: 'characters' } : {}),
+  };
+
+  const moeda = mascara === 'moeda';
+  return (
+    <CampoDoKit
+      kit="TEntry"
+      padrao={larguraPadraoDoEntry(mascara)}
+      mascara={mascara}
+      label={label}
+      width={width}
+      ajuda={ajuda}
+      error={error}
+      rotuloOculto={rotuloOculto}
+      required={required}
+      id={id}
+      semReserva={somenteLeitura || !!disabled}
+    >
+      {(ids) =>
+        type === 'password' ? (
+          <InputSenha icon={null} autoComplete="new-password" invalid={!!error} {...comum} {...ids} className={className} />
+        ) : (
+          <div className="relative">
+            <Input
+              type={type}
+              invalid={!!error}
+              right={suffix ? <span className="px-2 text-xs text-subtle">{suffix}</span> : undefined}
+              {...comum}
+              {...ids}
+              className={cn(moeda && 'pl-10', mascara && 'tabular-nums', className)}
+            />
+            {moeda && (
+              <span aria-hidden className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-xs text-subtle">
+                R$
+              </span>
+            )}
+          </div>
+        )
+      }
+    </CampoDoKit>
+  );
+});

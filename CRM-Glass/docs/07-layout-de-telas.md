@@ -19,12 +19,56 @@
 
 ## 0. Estado
 
-> **O kit ainda não existe.** Ele nasce junto com a primeira tela de cadastro —
-> provavelmente Contratantes, no menu administrativo do superadmin — na fase 0
-> do `/padronizar-layout`: o `glass-design-system` constrói o kit e o mostra no
-> catálogo `/design-system`, e só então o `frontend-modulos` monta a tela.
-> Nenhuma tela de cadastro existe ainda; as que existem (login, Início) não são
-> cadastro e ficam fora do kit (§3.5).
+> **O kit existe (fase 0 enxuta, 2026-11-13)** em `ero-web/src/design-system/kit/`,
+> porta única `kit/index.ts`. Entrou o que os modelos List e Form usam:
+> `larguras.ts`, `TPage`, `TForm` + `TFormFooter`/`TFormActionsLeft`/`TFormActionsRight`,
+> `TRow`, `TCol`, `TRotulo`, `TPanel`, `TEntry` (todas as máscaras, CNPJ
+> alfanumérico), `TCombo` + `SITUACAO_OPCOES`, `TButton` (todas as variantes),
+> `TDataGrid`, `TDataGridFooter`, `TBadge`, `TAuditoria`, `TAcoesDeExportacao`
+> (+ `DocumentoLista`/`Folha` para o `documento` da `TPage`), `useMessage`,
+> `useQuestion` (o `TQuestionProvider` está montado em `main.tsx`) e
+> `useSomenteLeitura`. Fora do kit: `shared/util/format.ts` e
+> `shared/api/pagina.ts` (`paginaSchema`, `PaginaDto`).
+> **Ainda não existem** (pedir ao `glass-design-system` antes de usar): `TDate`,
+> `TDateTime`, `TTextArea`, `TDBCombo`, `TDBComboMulti`, `TCheckBox`,
+> `TDBCheckBox`, `TRadio`, `TDBRadio`, `TCor`, `TFieldList`, `TModal`, `TTabs`,
+> `TBotaoImprimir` e o modelo FormList.
+> Catálogo: seção "Kit de telas" em `/design-system` e os modelos em tela cheia
+> em `/design-system?kit=lista`, `?kit=novo`, `?kit=editar&id=c2` e
+> `?kit=leitura&id=c2` (Contratantes de mentira; só em dev).
+> Telas de cadastro no kit: nenhuma ainda (a primeira é Contratantes). Login e
+> Início não são cadastro e ficam fora do kit (§3.5).
+>
+> Diferenças do kit do 2.0, de pele e de plataforma:
+>
+> - `TCombo` usa o `Combobox` glass (WAI-ARIA, lista em portal), não o
+>   `<select>` nativo; o valor continua texto e `vazio` vale `''`.
+> - **Tom próprio no conflito** (decisão do Eduardo): quando o destaque do
+>   contratante coincide com a cor de uma ação vizinha do Novo, a ação troca de
+>   tom por token (`tokens.css`, bloco "Ações x destaque"): Âmbar e Laranja →
+>   Pdf terracota; Azul → Buscar índigo; Rosa → Limpar tijolo; Esmeralda →
+>   Salvar e Exportar oliva. Todas com texto ≥ 4,5:1.
+> - Dentro de `TForm somenteLeitura` os campos ficam `readOnly` +
+>   `aria-readonly` (focáveis: o leitor de tela lê o valor), não `disabled`;
+>   o `TCombo` foca e não abre a lista; some o `*` de obrigatório e a
+>   `ajuda`. `disabled` fica para o campo travado de verdade (Código).
+> - `reservarErro` (a linha do erro reservada embaixo do campo) só liga dentro
+>   de um `TForm` cujo `useForm` tem `resolver`; filtros e campos soltos não
+>   reservam. A ajuda e o erro podem passar da largura de um campo curto (até
+>   28rem, a partir de `sm`).
+> - `TDataGrid` ganhou `erro`/`onTentarDeNovo` (`EstadoErro`), `rotulo` (nome da
+>   grade para leitor de tela) e `rotuloLinha`; com linhas na tela, `carregando`
+>   não troca as linhas pelo esqueleto (o `placeholderData` as mantém).
+>   No celular os cartões ficam numa superfície de vidro só.
+> - `TDataGridFooter` lê o `PaginaDto` (`pagina`, `tamanho`, `totalElementos`,
+>   `totalPaginas`) e aceita `carregando`.
+> - `TBadge` aceita os tons do 2.0 (`neutro`, `sucesso`, `alerta`, `erro`,
+>   `info`, `destaque`) e os do `Badge`; `ponto` põe a bolinha.
+> - `useMessage().erroApi(e, form?, { recarregar? })`: o Recarregar do 409 (só
+>   o 409 sem `erros`; com `erros` é duplicidade e marca o campo, como o 400), por
+>   padrão, relê as consultas ativas (`queryClient.invalidateQueries()`).
+> - O `documento` da `TPage` imprime sozinho por CSS (`@media print` em
+>   `index.css`: some tudo o que não é a folha), sem classe `nao-imprime`.
 >
 > O kit **não duplica** o que o `ero-web` já tem: cada peça veste um componente
 > de `ero-web/src/design-system/ui/` (exportados pelo `index.ts` de lá) ou da
@@ -269,7 +313,7 @@ para os componentes de baixo, que falam português (`loading` → `carregando`,
 | `TFormFooter` · `TFormActionsLeft` · `TFormActionsRight` | `children` | Rodapé do cartão, com borda no topo (`--line`): os botões ficam **embaixo do formulário, à esquerda**, na ordem do padrão (§3.4), o principal primeiro. No celular empilham na mesma ordem, o principal em cima. É um bloco (`BarraAcoes`). `TFormActionsRight` existe, mas nenhum modelo o usa. |
 | `TRow` | `children` | Uma linha: `flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start`. |
 | `TCol` | `width?: 'auto' \| 'rotulo' \| Largura`, `align?: 'left' \| 'right'` | Coluna da linha. **Sem `width`, divide a linha em partes iguais** (`sm:flex-1 sm:min-w-0 sm:basis-64`) — CNH · Categoria · Validade ficam um em cada terço. `auto` encolhe até o campo, para curtos ficarem colados. `rotulo` (`sm:w-48`, 192 px) é a coluna de labels do §5. |
-| `TPanel` | `title?`, `recolhido?`, `actions?` | Seção por assunto (Administrador, Endereços…), recolhível pelo título. **Sem vidro próprio**: está dentro do cartão `glass-solid` e a região não passa de duas camadas de `backdrop-filter` (DIRECAO-VISUAL §3, desempenho). Separa por borda `--line` e título (`CardHeader`), como o `.glass-flat`. |
+| `TPanel` | `title?`, `subtitle?`, `recolhido?`, `actions?` | Seção por assunto (Administrador, Endereços…), recolhível pelo título. **Sem vidro próprio**: está dentro do cartão `glass-solid` e a região não passa de duas camadas de `backdrop-filter` (DIRECAO-VISUAL §3, desempenho). Separa por borda `--line` e título (`CardHeader`), como o `.glass-flat`. |
 | `TModal` | `aberto`, `titulo`, `onFechar`, `acoes?`, `largura?` | Janela (`Dialogo`, `glass-solid`, fundo sem desfoque); nunca passa de `calc(100vw - 2rem)`. |
 | `TTabs` · `TTabPanel` | como no 2.0 | Abas (`Tabs` · `ConteudoAba`), quando o formulário é grande demais para painéis. |
 
@@ -287,7 +331,7 @@ são os do `CampoForm`, e cada campo é um bloco da montagem.
 
 | Componente | Props próprias | O que faz |
 |---|---|---|
-| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?` | Texto (`Input`). Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado; CPF, CNPJ, CEP e telefone gravam só os dígitos, as numéricas gravam o texto da máscara** (§0) — com as funções de `shared/util/format.ts`. A tela nunca chama máscara no `onChange`. `type="password"` usa o `InputSenha` (mostrar/ocultar); `type="email"` põe `inputMode="email"` e `autoCapitalize="off"`. |
+| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?` | Texto (`Input`). Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado; CPF, CNPJ, CEP e telefone gravam só os dígitos, as numéricas gravam o texto da máscara** (§0) — com as funções de `shared/util/format.ts`. A tela nunca chama máscara no `onChange`. `type="password"` usa o `InputSenha` (mostrar/ocultar); `type="email"` põe `inputMode="email"` e `autoCapitalize="off"`. Aceita `maxLength` — use o mesmo limite do DTO (`@Size(max = 150)` → `maxLength={150}`); nas máscaras o kit já põe o tamanho do texto formatado. |
 | `TDate` | — | Data com calendário em pt-BR (no `Popover` glass) e botão de limpar. Grava `AAAA-MM-DD`; monta com `T00:00:00` para exibir; valor inicial `hojeIso()` quando o form pede hoje. A API manda ISO-8601 e o front formata. |
 | `TDateTime` | `passoMinutos?` (padrão 5) | Data e hora; grava `AAAA-MM-DDTHH:mm`. |
 | `TTextArea` | `linhas?`, `maxLength?` | Texto longo; mostra "máx. N caracteres". |
@@ -301,7 +345,7 @@ são os do `CampoForm`, e cada campo é um bloco da montagem.
 | `TDBRadio` | `buscar()`, `vertical?` | Escolha única vinda do banco. |
 | `TFieldList` | `name`, `colunas: {name, componente(campo, i, linha), width?}[]`, `novaLinha`, `minimo?`, `rotuloAdicionar?`, `vazio?`, `detalhe?(i, linha)` | **Lista filha editável** dentro do formulário (e-mails, telefones): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão e o remover no fim, botão Acrescentar no rodapé. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
 | `TRotulo` | `htmlFor`, `required?` | Só o rótulo, para a coluna de labels do §5. |
-| `TAuditoria` | `registro` | Só na edição, no fim do formulário: Criado por · Criado em, Alterado por · Alterado em, só leitura. Lê `criadoPorNome`, `createdAt`, `alteradoPorNome`, `updatedAt` do `ResponseDto` (datas ISO-8601 em UTC, formatadas em pt-BR no fuso do navegador). Linha sem dado não aparece. **O backend do CRM ainda não publica `criadoPorNome`/`alteradoPorNome`** — os `ResponseDto` trazem `createdBy`/`updatedBy` (UUID) — e passa a publicar na fase 0 (§0 do `/padronizar-layout`). Até lá a linha "por" não aparece. |
+| `TAuditoria` | `registro` | Só na edição, no fim do formulário: Criado por · Criado em, Alterado por · Alterado em, só leitura. Lê `criadoPorNome`, `createdAt`, `alteradoPorNome`, `updatedAt` do `ResponseDto` (datas ISO-8601 em UTC, formatadas em pt-BR no fuso do navegador). Linha sem dado não aparece. O backend publica `criadoPorNome`/`alteradoPorNome` em Contratantes e Usuários (cadastro novo segue o mesmo modelo, `docs/01`, "Auditoria de registro"). Dentro de um contratante, o que o superadmin (suporte) cadastrou ou alterou chega com o nome vazio: a linha mostra só a data. |
 
 ### 3.3 Mensagens e confirmação
 
@@ -316,7 +360,8 @@ e faz o que cada resposta pede:
 | Resposta | O que a tela mostra |
 |---|---|
 | 400 com `erros[{campo, mensagem}]` | **erro no campo**: `form.setError(campo, { message })`, foco no primeiro. O `campo` é o caminho do DTO (`administrador.email`), que é o `name` do campo quando o schema espelha o DTO. Campo que a tela não tem cai no toast. |
-| 409 (`CONFLITO`, `version` desatualizada) | toast de erro com o botão **Recarregar** (relê o registro e refaz o `form.reset`) |
+| 409 com `erros[{campo, mensagem}]` (`CONFLITO` de duplicidade: e-mail, documento já usado) | **igual ao 400**: erro no campo pelo caminho do DTO (`administrador.email`, `documento`, `email`), foco no primeiro, **sem** Recarregar (recarregar não resolve duplicidade). Se nenhum campo existe no form, o `detail` vai num toast de erro comum, também sem Recarregar. |
+| 409 sem `erros` (`CONFLITO`, `version` desatualizada) | toast de erro com o botão **Recarregar** (relê o registro e refaz o `form.reset`) |
 | 429 | aviso com o `retryAfter` em segundos |
 | 401 | nada: o cliente já tentou renovar e a sessão cai no login |
 | demais | o `detail` (em português), senão o texto padrão do status |
@@ -328,8 +373,8 @@ vivo, simulação), 400 é estado inline (`Alerta`), não mensagem.
 
 | Componente | Props | O que faz |
 |---|---|---|
-| `TButton` | `variant`, `label`, `loading?`, `size?`, `type?` | Variantes de ação **com ícone e cor prontos**: `salvar`, `novo`, `buscar`, `limpar`, `voltar`, `exportar`, `pdf`, `editar`, `inativar`, `reativar`; e as genéricas `primary`, `secondary`, `ghost`, `danger`. Cores por token, nunca hex. Dentro de `TForm somenteLeitura`, `salvar`, `novo`, `inativar` e `reativar` **não aparecem**. `label=""` deixa só o ícone (grade); o nome vira `aria-label` e dica. `loading` é o `carregando` do `Button`: continua focável e não muda de largura. |
-| `TDataGrid` | `colunas`, `linhas`, `chaveDe`, `carregando?`, `onLinhaClick?`, `tituloCartao?`, `vazioTitulo?`, `vazioDescricao?`, `acoes?(linha)`, `erro?`, `onTentarDeNovo?` | A `Tabela` glass (`glass-solid`). Ações na **primeira coluna**, como no antigo. Vira cartões abaixo de `md`. `erro` mostra o `EstadoErro` no lugar das linhas, com "Tentar de novo". Coluna: `chave`, `cabecalho`, `render(linha)`, `numerica?`, `secundaria?`, `className?`. |
+| `TButton` | `variant`, `label`, `loading?`, `size?`, `type?`, `icone?` | Variantes de ação **com ícone e cor prontos**: `salvar`, `novo`, `buscar`, `limpar`, `voltar`, `exportar`, `pdf`, `editar`, `inativar`, `reativar`; e as genéricas `primary`, `secondary`, `ghost`, `danger`. Cores por token, nunca hex. Dentro de `TForm somenteLeitura`, `salvar`, `novo`, `inativar` e `reativar` **não aparecem**. `label=""` deixa só o ícone (grade); o nome vira `aria-label` e dica. `loading` é o `carregando` do `Button`: continua focável e não muda de largura. `icone` (componente do `lucide-react`) dá ícone às genéricas (`<TButton variant="secondary" icone={Palette} label="Configurar aparência" />`); nas ações troca o padrão. Sem `size`, vale o que o contêiner impõe (`sm` no `acoes` do `TDataGrid`), senão `md`. |
+| `TDataGrid` | `colunas`, `linhas`, `chaveDe`, `carregando?`, `onLinhaClick?`, `tituloCartao?`, `vazioTitulo?`, `vazioDescricao?`, `acoes?(linha)`, `erro?`, `onTentarDeNovo?` | A `Tabela` glass (`glass-solid`). Ações na **primeira coluna**, como no antigo. Vira cartões abaixo de `md`. `erro` mostra o `EstadoErro` no lugar das linhas, com "Tentar de novo". Coluna: `chave`, `cabecalho`, `render(linha)`, `numerica?`, `secundaria?`, `principal?`, `className?`. |
 | `TDataGridFooter` | `pagina` (o `PaginaDto`), `onPaginaChange` | "Exibindo X–Y de N registros" e a paginação (`Paginacao`). Lê `pagina`, `tamanho`, `totalElementos`, `totalPaginas`. |
 | `TAcoesDeExportacao` | como no 2.0 (`nome`, `colunas`, `carregar(limite, indice)`, `aoCarregarParaImprimir`) | Os botões **Exportar** (planilha CSV) e **Pdf** (a folha impressa). Repetem a consulta com os **filtros aplicados**, página a página, até o teto do 2.0 (`TETO_DE_EXPORTACAO`), e avisam se cortou. Na List, vão no rodapé do filtro, depois do Novo. |
 | `TBotaoImprimir` | como no 2.0 | No `actions` da `TPage`. |
@@ -376,6 +421,7 @@ degradê, nos dois temas; o anel de foco continua `--focus-ring`):
 | `--success-glow`, `--info-glow`, `--danger-glow`, `--warning-glow` | brilho sob o botão, como o `--accent-glow` | `color-mix(in srgb, var(--x-strong) 50%, transparent)` |
 | `--input-bg-readonly`, `--input-border-readonly` | campo só leitura (abaixo) | escuro um tom mais fundo que `--input-bg`; claro um cinza leve; o texto `--fg-muted` tem de passar de 4,5:1 sobre ele |
 | `--folha-bg`, `--folha-fg`, `--folha-fg-muted`, `--folha-linha` | a folha impressa (`documento` da `TPage`): papel branco, texto preto, sem vidro nem fundo de cena | — |
+| `--folha-destaque`, `--folha-destaque-vivo`, `--folha-destaque-fundo`, `--folha-sobre-destaque` | a moldura do relatório na cor do contratante ([docs/08](08-relatorios.md)): logo, barra do cabeçalho, régua, cabeçalho da tabela | derivados de `--accent-ink`/`--accent`; texto branco sobre `--folha-destaque` ≥ 6:1 nos seis destaques |
 
 `--success`, `--info`, `--danger` e `--warning` de hoje continuam sendo os de
 texto e ícone (no claro são tons escuros, no escuro claros); os `-strong` são
@@ -418,6 +464,18 @@ No CRM não há o que renomear: nenhuma tela de cadastro existe. O que muda é
 | `ConfirmDialog` com estado de aberto à mão | `useQuestion()` |
 | `Badge` | `TBadge` |
 | `grid md:grid-cols-2` na página | `TRow` + `TCol` + `width` da escala |
+
+**Rodapé de ações fora de um `TForm`** (tela que não é cadastro, como a Aparência
+do contratante): usa o mesmo `TFormFooter` + `TFormActionsLeft` + `TButton`, não
+`BarraAcoes` solto. Fora do `TForm` ele não desenha a borda no topo, mas empilha
+igual no celular (o principal em cima, cada botão na largura toda).
+
+**Peças de `ui/` que saem pelo kit:** `AvisoContexto` (selo "Prévia de X",
+"Você está dentro de X") e `EditorAparencia` são reexportados por
+`design-system/kit`, para a Aparência do contratante (e qualquer tela que use o
+kit) importar só do kit. Dentro de uma `<Tela>`, o `AvisoContexto` no fluxo é
+um bloco da montagem: entra e sai com a coreografia, como o `TFormFooter` fora
+do `TForm`.
 
 O login (`modules/auth`) e o Início (`modules/inicio`) não são cadastro e
 continuam como estão, com as coreografias `login` e `inicio`. Kanban, agenda e
@@ -493,7 +551,7 @@ export function ContratanteList() {                                     // troca
     } catch (e) { msg.erroApi(e) }
   }
 
-  const colunas: Coluna<TenantResponse>[] = [ /* nome · documento · e-mail · usuários · situação */ ] // troca
+  const colunas: Coluna<TenantResponse>[] = [ /* nome (principal: true) · documento · e-mail · criado em · usuários · situação */ ] // troca
 
   return (
     <TPage title="Contratantes" breadcrumb={['Administração', 'Contratantes']} // troca
@@ -527,10 +585,14 @@ export function ContratanteList() {                                     // troca
 
 - Ordem dos filtros: código → principal (nome, busca) → combos → período De ·
   Até (uma `TRow`, cada um na sua `TCol width="auto"`).
-- Ordem das colunas: código · principal · demais textos · datas · valores
-  (`numerica`) · situação (`TBadge`) por último. Código, data, valor e situação
-  com `className: 'w-px whitespace-nowrap'`; a principal leva a sobra;
-  `secundaria: true` nas que podem sumir em tela média, nunca na principal.
+- Ordem das colunas: código · principal · demais textos · datas (ex.: "Criado
+  em", opcional) · valores (`numerica`) · situação (`TBadge`) por último —
+  datas sempre antes dos valores. Código, data, valor e situação com
+  `className: 'w-px whitespace-nowrap'`; a principal leva a sobra e vai com
+  `principal: true` (com `tituloCartao`, ela não se repete no cartão do
+  celular; sem nenhuma marcada, vale a primeira); `secundaria: true` nas que
+  podem sumir em tela média, nunca na principal.
+- Os botões do `acoes` da grade não levam `size`: o `TDataGrid` impõe `sm`.
 - A exportação repete os **filtros aplicados**, não os digitados e não
   filtrados.
 - O `queryKey` leva os filtros aplicados e a página: trocar de página não
@@ -559,16 +621,16 @@ export function ContratanteForm() {                                     // troca
       msg.sucesso('Contratante salvo')                                  // troca
       await queryClient.invalidateQueries({ queryKey: ['tenants'] })
       navigate(`/admin/contratantes/${t.id}`)
-    } catch (e) { msg.erroApi(e, form) }   // 400 → erro no campo; 409 → "Recarregar"
+    } catch (e) { msg.erroApi(e, form) }   // 400 e 409 com erros → erro no campo; 409 sem erros → "Recarregar"
   }
   const novo = () => (id ? navigate('/admin/contratantes/novo') : form.reset(VAZIO))
 
   return (
     <TPage title={somenteLeitura ? 'Contratante' : id ? 'Editar contratante' : 'Novo contratante'} // troca
-           breadcrumb={['Administração', 'Contratantes', id ? 'Editar' : 'Novo']}
+           breadcrumb={['Administração', 'Contratantes', id ? (salvo.data?.nome ?? 'Editar') : 'Novo']}
            coreografia="formulario" carregando={salvo.isLoading}>
       <TForm form={form} onSubmit={salvar} somenteLeitura={somenteLeitura}>
-        <TRow><TEntry name="nome" label="Nome" required autoFocus /></TRow>             {/* troca */}
+        <TRow><TEntry name="nome" label="Nome" required autoFocus={!somenteLeitura} /></TRow> {/* troca */}
         <TRow><TEntry name="documento" label="CNPJ ou CPF" mascara="cpfCnpj" /></TRow>
         <TRow><TEntry name="email" label="E-mail" type="email" /></TRow>
         <TRow><TEntry name="limiteUsuarios" label="Limite de usuários" mascara="inteiro" required /></TRow>
@@ -615,6 +677,18 @@ Ordem fixa:
 tela e monta de novo — o formulário nasce limpo, sem precisar de componente
 de rota no meio. A direção vem da profundidade da rota: da lista para a ficha
 (mais fundo) a tela nova entra pela direita; voltar, pela esquerda.
+
+**Erro ao carregar o registro** (id que não existe, ou que a API devolve como
+404): o Form avisa e volta à lista, sem ficar com o esqueleto ou o formulário
+vazio na tela:
+
+```tsx
+useEffect(() => {
+  if (!salvo.error) return;
+  msg.erroApi(salvo.error);                                   // o detail da API (404 → "Não encontramos…")
+  navigate('/admin/contratantes', { replace: true });         // troca
+}, [salvo.error, msg, navigate]);
+```
 
 Formulário grande demais para painéis usa `TTabs`; dentro de cada aba, as
 mesmas regras.
@@ -812,7 +886,7 @@ Quando a lista de componentes ou a escala mudar, o `CAMPOS_DO_KIT` e os
 - [ ] Form: Situação (se a API recebe `ativo`), `TAuditoria` e rodapé Salvar · Novo · Voltar
 - [ ] FormList: rodapé Salvar · Novo
 - [ ] List: filtros com Buscar · Limpar · Novo · Exportar · Pdf; colunas na ordem da §4.1
-- [ ] Mensagens por `useMessage`, confirmação por `useQuestion`; 400 marca o campo, 409 oferece Recarregar
+- [ ] Mensagens por `useMessage`, confirmação por `useQuestion`; 400 e 409 com `erros` marcam o campo, 409 sem `erros` oferece Recarregar
 - [ ] Edição manda a `version`; lista lê o `PaginaDto`
 - [ ] Só leitura pelo `<GRUPO>_ESCREVER` do `/api/auth/eu`: sem Salvar, Novo, Inativar
 - [ ] `TPage` com a coreografia do modelo; a tela monta e desmonta em blocos, e com movimento reduzido só esmaece

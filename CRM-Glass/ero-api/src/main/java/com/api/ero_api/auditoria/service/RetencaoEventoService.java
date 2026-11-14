@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <ul>
  *   <li>Eventos de segurança mais antigos que {@code app.auditoria.retencao}
- *       (padrão {@code P365D}, 12 meses).</li>
+ *       (padrão {@code P365D}, 12 meses; menos de {@code P30D} a aplicação não sobe).</li>
  *   <li>Sessões e refresh tokens já expirados (não servem para mais nada).</li>
  * </ul>
  *
@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RetencaoEventoService {
 
     private static final Logger log = LoggerFactory.getLogger(RetencaoEventoService.class);
+    private static final Duration RETENCAO_MINIMA = Duration.ofDays(30);
 
     private final EventoSegurancaRepository repository;
     private final SessaoService sessaoService;
@@ -34,6 +35,11 @@ public class RetencaoEventoService {
 
     public RetencaoEventoService(EventoSegurancaRepository repository, SessaoService sessaoService,
                                  @Value("${app.auditoria.retencao:P365D}") Duration retencao) {
+        // Um "P3D" ou "30m" digitado errado apagaria quase toda a trilha na madrugada seguinte.
+        if (retencao.compareTo(RETENCAO_MINIMA) < 0) {
+            throw new IllegalStateException("app.auditoria.retencao precisa ser de pelo menos 30 dias (P30D); veio "
+                    + retencao + ".");
+        }
         this.repository = repository;
         this.sessaoService = sessaoService;
         this.retencao = retencao;

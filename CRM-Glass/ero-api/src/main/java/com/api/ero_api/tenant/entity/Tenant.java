@@ -21,9 +21,10 @@ import lombok.Setter;
  * <p>O registro com id {@code 00000000-0000-0000-0000-000000000000} é a
  * "Plataforma", dona do superadmin, criada pela migration 001.
  *
- * <p>A aparência (tema, destaque, fundo, vidro, foco, animações) é do contratante e
- * vale para todos os usuários dele: não existe preferência por usuário. Os valores
- * iniciais abaixo são o padrão do sistema, iguais aos da migration 008.
+ * <p>A aparência (tema, destaque, fundo, vidro, foco, animações, desempenho automático)
+ * é do contratante e vale para todos os usuários dele: não existe preferência por
+ * usuário. Os valores iniciais abaixo são o padrão do sistema, iguais aos das
+ * migrations 008 e 010.
  */
 @Entity
 @Table(name = "tenant")
@@ -79,6 +80,13 @@ public class Tenant extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "animacoes", nullable = false, length = 10)
     private NivelAnimacao animacoes = NivelAnimacao.COMPLETAS;
+
+    /**
+     * "Otimizar desempenho em computadores mais fracos": ligado, o front mede o
+     * aparelho do usuário e entra no modo leve. Padrão desligado (migration 010).
+     */
+    @Column(name = "desempenho_automatico", nullable = false)
+    private boolean desempenhoAutomatico = false;
 
     /** Cena exclusiva vinculada a este contratante (cada cena tem no máximo um dono). */
     @Enumerated(EnumType.STRING)

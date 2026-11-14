@@ -1,5 +1,6 @@
 package com.api.ero_api.auditoria.repository;
 
+import com.api.ero_api.auditoria.dtos.JanelaEventosDto;
 import com.api.ero_api.auditoria.entity.EventoSeguranca;
 import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import java.time.Instant;
@@ -51,6 +52,35 @@ public interface EventoSegurancaRepository extends JpaRepository<EventoSeguranca
                                         @Param("de") Instant de,
                                         @Param("ate") Instant ate,
                                         Pageable pageable);
+
+    /**
+     * Quantos eventos do tipo o usuário teve desde {@code desde} e quando foi o mais
+     * antigo deles (limite de códigos por hora). Usa o índice ix_evento_seguranca_usuario
+     * (só usuario_id): poucas linhas por usuário dentro da retenção.
+     */
+    @Query("""
+            SELECT new com.api.ero_api.auditoria.dtos.JanelaEventosDto(COUNT(e), MIN(e.createdAt))
+            FROM EventoSeguranca e
+            WHERE e.usuarioId = :usuarioId
+              AND e.tipo = :tipo
+              AND e.createdAt >= :desde
+            """)
+    JanelaEventosDto resumirDoUsuarioDesde(@Param("usuarioId") UUID usuarioId,
+                                           @Param("tipo") TipoEventoSeguranca tipo,
+                                           @Param("desde") Instant desde);
+
+    /**
+     * Desfaz a reserva de um código cujo e-mail não saiu (CodigoVerificacaoService):
+     * a única exclusão pontual da trilha, sempre do evento que acabou de ser gravado.
+     * O DELETE passa por fora do contexto de persistência: grava o pendente antes e
+     * limpa o contexto depois, para ninguém ler da memória um evento que já não existe.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            DELETE FROM EventoSeguranca e
+            WHERE e.id = :id AND e.tipo = :tipo
+            """)
+    int apagarPorIdETipo(@Param("id") UUID id, @Param("tipo") TipoEventoSeguranca tipo);
 
     /** Retenção: apaga o que passou do prazo (RetencaoEventoService). */
     @Modifying

@@ -1,6 +1,6 @@
 ---
 name: seguranca
-description: Revisor de segurança SOMENTE LEITURA do CRM Glass — passa o checklist OWASP Top 10 de docs/02 em toda entrega: isolamento de tenant, controle de acesso e escalada de privilégio, autenticação e sessão, injeção, dados pessoais em log (LGPD), segredos, configuração e dependências. Achado de segurança sempre bloqueia. Nunca altera arquivos.
+description: "Revisor de segurança SOMENTE LEITURA do CRM Glass — passa o checklist OWASP Top 10 de docs/02 em toda entrega: isolamento de tenant, controle de acesso e escalada de privilégio, autenticação e sessão, injeção, dados pessoais em log (LGPD), segredos, configuração e dependências. Achado de segurança sempre bloqueia. Nunca altera arquivos."
 tools: Read, Grep, Glob, Bash
 disallowedTools: Edit, Write, NotebookEdit, Agent
 model: opus

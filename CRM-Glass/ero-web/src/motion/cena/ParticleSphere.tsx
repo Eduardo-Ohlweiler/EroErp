@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { useReduce } from '../../shared/aparencia/AparenciaProvider';
+import { useReduzirMovimento } from '../reduzir';
+import { useModoLeve } from '../desempenho';
 import { cn } from '../../shared/util/utils';
 
 function hexToRgb(hex: string) {
@@ -8,10 +9,16 @@ function hexToRgb(hex: string) {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(',');
 }
 
-/** Esfera de partículas que gira devagar e segue o mouse. Para com a aba oculta. */
+/**
+ * Esfera de partículas que gira devagar e segue o mouse. Para com a aba oculta.
+ * Movimento reduzido ou modo leve (aparelho fraco, motion/desempenho.ts): um quadro parado, redesenhado só quando
+ * o canvas muda de tamanho ou o tema/destaque muda (nunca fica vazio).
+ */
 export function ParticleSphere({ className }: { className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const reduce = useReduce();
+  const reduce = useReduzirMovimento();
+  const leve = useModoLeve();
+  const parado = reduce || leve;
 
   useEffect(() => {
     const canvas = ref.current;
@@ -46,7 +53,11 @@ export function ParticleSphere({ className }: { className?: string }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    const ro = new ResizeObserver(resize);
+    // Mudar o tamanho do canvas apaga o desenho: parado, redesenha o quadro na hora.
+    const ro = new ResizeObserver(() => {
+      resize();
+      if (parado) redesenhar();
+    });
     ro.observe(canvas);
 
     let fg = '255,255,255';
@@ -97,7 +108,7 @@ export function ParticleSphere({ className }: { className?: string }) {
         ctx.fillRect(x, py, size, size);
       }
       t += 1 / 60;
-      if (!reduce) raf = requestAnimationFrame(loop);
+      if (!parado) raf = requestAnimationFrame(loop);
     };
     const loop = () => {
       if (document.hidden) {
@@ -106,14 +117,30 @@ export function ParticleSphere({ className }: { className?: string }) {
       }
       draw();
     };
+    /** Parado: um quadro só, com as cores de agora (no próximo quadro, juntando pedidos seguidos). */
+    let pedido = 0;
+    function redesenhar() {
+      if (pedido) return;
+      pedido = requestAnimationFrame(() => {
+        pedido = 0;
+        readColors();
+        t -= 1 / 60; // o mesmo quadro (draw avança o relógio)
+        draw();
+      });
+    }
+    // Parado, o quadro não se refaz sozinho: tema ou destaque trocados redesenham com as cores novas.
+    const mo = parado ? new MutationObserver(redesenhar) : null;
+    mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-accent', 'style'] });
     draw();
 
     return () => {
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(pedido);
       ro.disconnect();
+      mo?.disconnect();
       window.removeEventListener('pointermove', onMove);
     };
-  }, [reduce]);
+  }, [parado]);
 
   return <canvas ref={ref} className={cn('block w-full h-full', className)} aria-hidden />;
 }

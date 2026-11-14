@@ -178,5 +178,18 @@ export const CENAS_EXCLUSIVAS: Record<string, () => Promise<Cena>> = {};
 
 /** true quando o id é de uma cena (pública ou exclusiva), e não de um fundo vivo. */
 export function ehCena(id: string) {
-  return CENAS.some((c) => c.id === id) || id in CENAS_EXCLUSIVAS;
+  return CENAS.some((c) => c.id === id) || ehCenaExclusiva(id);
+}
+
+/**
+ * true quando o id é de uma cena exclusiva registrada. `Object.hasOwn`, nunca `in` nem índice direto:
+ * o id vem da aparência do contratante, e `in` acharia o que o objeto herda (`constructor`, `toString`...).
+ */
+export function ehCenaExclusiva(id: string) {
+  return Object.hasOwn(CENAS_EXCLUSIVAS, id);
+}
+
+/** Carregador da cena exclusiva, ou `undefined` se o id não for de uma (nunca o que o objeto herda). */
+export function carregadorDaCenaExclusiva(id: string): (() => Promise<Cena>) | undefined {
+  return ehCenaExclusiva(id) ? CENAS_EXCLUSIVAS[id] : undefined;
 }

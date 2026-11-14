@@ -4,3 +4,10 @@ prototipo/public/cenas/_provisorio/
 # Artefatos de build do protótipo
 prototipo/dist/
 prototipo/*.tsbuildinfo
+
+# Capturas de depuração que agentes deixam na raiz, e saídas do playwright
+/*.png
+/dbg-*.png
+/.playwright-mcp/
+/playwright-report/
+/test-results/

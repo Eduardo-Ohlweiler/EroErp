@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="010-add-tenant-desempenho-automatico" author="eduardo">
+        <comment>
+            Aparência: "otimizar desempenho em computadores mais fracos", ativado pelo superadmin por contratante.
+            Ligado, o front mede o aparelho do usuário e entra no modo leve (pausa o fundo vivo, troca a revelação
+            circular por esmaecimento). Padrão false: todos os contratantes existentes seguem com o visual completo.
+        </comment>
+        <addColumn tableName="tenant">
+            <column name="desempenho_automatico" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

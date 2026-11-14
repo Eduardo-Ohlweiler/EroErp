@@ -94,7 +94,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 ### O que está pronto
 
 - **Direção visual** em `design/DIRECAO-VISUAL.md`: análise das referências, níveis de vidro, regras de movimento, stack e módulos previstos.
-- **Time de 11 agentes** em `.claude/agents/` e o comando **`/timeero <pedido>`**, que orquestra pesquisa → plano → backend → front → revisões → QA (tabela no `CLAUDE.md`).
+- **Time de 13 agentes** em `.claude/agents/` e o comando **`/timeero <pedido>`**, que orquestra pesquisa → plano → backend → front → revisões → QA (tabela no `CLAUDE.md`).
 - **Backend `ero-api`** (06/11/2026):
   - Fundação: base com auditoria e lock otimista, erros em ProblemDetail, tenant automático, CORS, cabeçalhos de segurança, limite de requisições e criptografia de campos.
   - Módulos `auth` (login, refresh com rotação, logout, troca de senha, 2FA com códigos de recuperação, superadmin "acessar contratante"), `tenant`, `usuario` (módulo-modelo), `permissao`, `sessao` e `auditoria`.
@@ -111,6 +111,44 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
   - `ero-web/`: base do front definitivo (Vite, React 19, React Router 7, TanStack Query), tokens e componentes glass com contraste AA nos dois temas, `AparenciaProvider` (sistema → contratante → prévia), cenas com shader, fundos vivos, troca de tema em vídeo ligada à aparência e coreografia de montar e desmontar em blocos (`motion/coreografia`). Catálogo e demonstração em `/design-system` (só dev).
   - `docs/06-fundos-de-cena.md`: passo a passo para cena nova e cena exclusiva.
   - Decisões do dono: aparência fixa por contratante (sem preferência do usuário; o botão de tema saiu da barra), só o superadmin configura, login sempre com a aparência padrão do sistema.
+- **Menu Administrativo: Contratantes** (13 e 14/11/2026, na `main`, sem commit, pelo `/timeero`):
+  - **Telas do superadmin** (só na visão de plataforma):
+    - `/admin/contratantes`: lista com filtros "Nome ou documento" e Situação, Exportar CSV e Pdf;
+    - `/novo`: com o administrador inicial e senha temporária;
+    - `/:id`: edição com auditoria;
+    - `/:id/aparencia`: prévia ao vivo, com a próxima tela montando durante a troca de tema;
+    - inativar e reativar na grade.
+  - **Kit `T*` (fase 0):** em `ero-web/src/design-system/kit/`, com os modelos List e Form no `/design-system`.
+    - Tokens de ação AA; a ação vizinha troca de tom quando coincide com o destaque.
+    - Máscara de CNPJ alfanumérico.
+    - Só leitura acessível.
+  - **Relatórios:** padrão do EroErp 2.0 em `docs/08-relatorios.md` e agente `relatorios`.
+    - Moldura com o logo "Ero ERP", barra na cor do contratante, filtros na 1ª página e rodapé com o nome de quem gerou e "Página X de Y".
+  - **Favicon:** o do Ero, repaginado em vidro violeta.
+  - **Backend:**
+    - `criadoPorNome` e `alteradoPorNome` no contratante e no usuário. O superadmin fica oculto para o contratante.
+    - 409 de duplicidade com `erros[{campo}]`. O 409 de versão sai sem `erros`.
+    - Limite de 10 códigos de login por hora (`APP_CODIGO_MAX_EMISSOES_POR_HORA`, teto 1000), com reserva da vaga dentro da trava e evento `CODIGO_LIMITE_ATINGIDO`.
+    - Alerta de falhas seguidas de SMTP.
+    - Retenção de logs com piso de 30 dias.
+    - 140 testes verdes.
+  - **Pendências antigas resolvidas:**
+    - favicon, fonte local e pacote JS em partes (nenhuma acima de 500 kB);
+    - contraste do Avatar, literais de cor e de duração e movimento reduzido ao vivo;
+    - login automático da `olhar-telas`;
+    - agente `seguranca` voltou a carregar (YAML);
+    - cabeçalhos de segurança (CSP) no nginx de dev.
+  - **Desempenho** (medido num i5-1334U com vídeo Intel integrado e tela de 120 Hz):
+    - A troca de tela (~68 fps) e a rolagem (118 fps) cumprem a meta. O fundo vivo com vidro por cima fica em ~30–46 fps, e a revelação circular em ~29 fps.
+    - O custo é a placa de vídeo refazendo o desfoque dos cartões enquanto o fundo se mexe. Com o fundo parado, a tela vai a 120 fps.
+    - **Modo leve:** fica em `motion/desempenho.ts`.
+      - Por padrão, todos veem o visual completo e ninguém é medido.
+      - O superadmin pode ligar, na Aparência do contratante, "Otimizar desempenho em computadores mais fracos" (`aparencia.desempenhoAutomatico`, migration 010). Com isso, o app mede o aparelho e, se for fraco, pausa o fundo vivo e troca a revelação circular por esmaecimento.
+      - Para testar: `?desempenho=normal|leve|auto` (fica guardado no navegador), ou o seletor e o botão "Medir agora" no `/design-system`.
+    - Orbs e aurora desenhados por degradê, sem `filter: blur`. O visual ficou igual e o ganho foi pequeno, de ~2 fps.
+    - Ainda não medido com a máquina livre: repetir com `scratchpad/medir-leve.mjs`, ou com a medição que o `qa` fizer.
+  - **Revisões:** revisor-backend, seguranca, revisor-ui e guardiao-layout aprovaram. O QA aprovou a bateria de ponta a ponta: isolamento entre contratantes, 403 para não superadmin e contratante inativado caindo na hora.
+  - **Logins de teste:** contratantes "Teste QA …" e "Teste Contratante …" ficam no banco.
 - **Protótipo** em `prototipo/` (congelado; detalhes no `prototipo/README.md`):
   - login com esfera de partículas;
   - dashboard com números que contam, gráficos que se desenham, medidor, rosca e ranking;
@@ -140,7 +178,16 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 5. ~~Base do front definitivo~~ **Feito na fatia 1.** **Fatia 2:** as telas do `PLANO-FATIA-2.md` (login com código por e-mail e sessão em memória, casca com menu por permissão, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta), mais as pendências da seção 5 desse arquivo. Começar com `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
 6. **Definir as regras do papel ADMIN** (hoje recebe tudo do contratante; ver `docs/04-permissoes.md`).
 7. **Primeiros módulos de negócio pelo `/timeero`:** cadastro de pessoas/clientes, empresas/filiais, produtos, funil de negócios e agenda.
-8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup.
+8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup. Checklist que o `seguranca` deixou para produção:
+   - tirar o Swagger e o actuator do nginx, ou restringi-los por IP;
+   - HSTS no terminador TLS, `server_tokens off` e `Permissions-Policy`;
+   - incluir `deploy/dev/security-headers.conf` (CSP);
+   - **nunca** levar o `APP_CODIGO_MAX_EMISSOES_POR_HORA: "1000"` do modo Mailpit;
+   - avaliar nonce no lugar de `'unsafe-inline'` em `style-src`.
+9. **Próxima fatia do Administrativo:** "acessar contratante" no front (faixa "Você está em X" + Sair, menus separados; o backend já existe), junto com as telas Usuários e Logs. Usuários já recebe `criadoPorNome`/`alteradoPorNome` da API, e Logs precisa do rótulo do evento `CODIGO_LIMITE_ATINGIDO`.
+10. **Só quando houver a 1ª cena exclusiva:** F1 (fotos em URL pública) e F12 (teste do 409 da cena exclusiva), do `PLANO-FATIA-2.md` §5.
+11. **Orçamento de desempenho:** decidir se o `qa` passa a medir fps (rolagem, troca de tela, tela parada) no build de produção em toda entrega e se reprova abaixo da meta. A proposta é 60 fps nas trocas, tela utilizável em menos de 500 ms e nenhuma tarefa acima de 50 ms. Avaliar também um fundo 3D pontual (ex.: login) com WebGL, medindo o fps.
+12. **Custo do `/timeero`:** na próxima entrega só de tela, medir de novo o gasto por agente e só então decidir as otimizações do time (o kit `T*` desta entrega foi um custo único).
 
 ---
 

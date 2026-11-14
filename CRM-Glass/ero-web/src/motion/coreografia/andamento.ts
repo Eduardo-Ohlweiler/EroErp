@@ -12,19 +12,24 @@ const ativos = new Set<number>();
 const esperando = new Set<() => void>();
 let sequencia = 0;
 let relogio: ReturnType<typeof setTimeout> | undefined;
+/** Quando alguma montagem começou ou terminou pela última vez (ms, performance.now). */
+let ultimoMovimento = -Infinity;
 
 function conferir() {
   if (relogio !== undefined) clearTimeout(relogio);
   relogio = undefined;
   if (ativos.size || !esperando.size) return;
   // "Parada" = nenhuma montagem por `folgaTema` (cobre o quadro entre a saída de uma tela e a entrada da outra).
+  // Conta desde o último movimento: quem chega com tudo parado há mais que isso não espera a folga de novo
+  // (ex.: a troca de tema logo depois da saída da Aparência, que já esperou a folga).
+  const restante = Math.max(0, montagem.folgaTema * 1000 - (performance.now() - ultimoMovimento));
   relogio = setTimeout(() => {
     relogio = undefined;
     if (ativos.size) return;
     const fila = [...esperando];
     esperando.clear();
     fila.forEach((f) => f());
-  }, montagem.folgaTema * 1000);
+  }, restante);
 }
 
 /** true enquanto alguma tela monta ou desmonta. */
@@ -56,7 +61,7 @@ export function useMarcarMontagem() {
   useEffect(() => {
     const meu = id.current;
     return () => {
-      ativos.delete(meu);
+      if (ativos.delete(meu)) ultimoMovimento = performance.now();
       conferir();
     };
   }, []);
@@ -64,10 +69,12 @@ export function useMarcarMontagem() {
     () => ({
       onAnimationStart: () => {
         ativos.add(id.current);
+        ultimoMovimento = performance.now();
         conferir();
       },
       onAnimationComplete: () => {
         ativos.delete(id.current);
+        ultimoMovimento = performance.now();
         conferir();
       },
     }),
