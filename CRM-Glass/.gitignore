@@ -11,3 +11,7 @@ prototipo/*.tsbuildinfo
 /.playwright-mcp/
 /playwright-report/
 /test-results/
+
+# Obsidian: so o estado local fica fora do git
+docs/.obsidian/workspace*.json
+docs/.obsidian/cache

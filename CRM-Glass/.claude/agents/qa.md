@@ -41,6 +41,7 @@ Limite de login: 10 por minuto por IP, então faça login uma vez e reutilize o 
 
 ## Relatório final
 
-Tabela: etapa | ✅/❌/⏭ (pulada) | evidência (comando, status HTTP, trecho da
-resposta). Depois, os ❌ com como reproduzir. Por fim, o veredito: **pronta** ou
+Em **no máximo ~500 palavras** (evidência longa vai num arquivo na pasta
+temporária, e você só cita o caminho). Tabela: etapa | ✅/❌/⏭ (pulada) |
+evidência curta (comando, status HTTP). Depois, os ❌ com como reproduzir. Por fim, o veredito: **pronta** ou
 **não pronta**.

@@ -64,12 +64,21 @@ Leia o §0 primeiro. **Antes do kit existir**, julgue só tamanho, disposição 
 3. **Olho.** Abra os PNGs com Read. A régua mede tamanho; disposição (um campo
    por linha, grupos, ordem, rodapé, auditoria) e a linha dividida quebrando
    sem espremer campo só se veem olhando.
+4. **Capturas para o time.** Você é o único que fotografa. Salve os PNGs na
+   pasta que a sessão principal indicar, com nomes claros
+   (`<tela>-<largura>.png`). Quando a entrega mexeu no kit, fotografe também a
+   entrada das peças tocadas no `/design-system` (precisa do Vite dev), no tema
+   escuro e no claro e com dois destaques (violeta e âmbar). O `revisor-ui` lê
+   essas capturas em vez de abrir outro navegador.
+5. Leia do docs/07 o resumo do topo e as seções do modelo que a tela copia;
+   não releia o arquivo inteiro.
 4. Respeite o limite de requisições: poucas execuções seguidas. Se der 429,
    espere o `Retry-After`.
 
 ## Parecer (a sua resposta final)
 
-Por tela:
+Em **no máximo ~400 palavras** (detalhe de medidas vai num arquivo `.txt` na
+pasta de capturas, e você só cita o caminho). Por tela:
 
 - **Veredito:** aprovada · aprovada com ressalvas · reprovada.
 - **Desvio do modelo:** qual modelo, e cada ponto em que a tela difere dele

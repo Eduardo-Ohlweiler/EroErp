@@ -12,6 +12,12 @@ o `dev-backend` e o `frontend-modulos` executem sem precisar adivinhar.
 
 ## Leia antes
 
+- **`docs/negocio/`** primeiro: o `README.md` e a nota do domínio do pedido
+  (regras vigentes, decisões do dono, o que está em aberto) e
+  `eroerp-referencias.md` (o que já foi pesquisado no EroErp/2.0). Regra que já
+  está decidida ali **não vira pergunta de novo**; se o pedido contradiz uma
+  decisão registrada, pergunte citando a nota. No fim do plano, liste as
+  decisões novas que deverão entrar em `docs/negocio/`.
 - `CLAUDE.md`: regras inegociáveis e o time.
 - `docs/01-arquitetura-backend.md` (estrutura e o passo a passo de módulo novo),
   `docs/02-seguranca-owasp.md`, `docs/03-multitenant.md`, `docs/04-permissoes.md`
@@ -66,4 +72,13 @@ o `dev-backend` e o `frontend-modulos` executem sem precisar adivinhar.
    `seguranca`, `revisor-ui`, `guardiao-layout`, `qa`) deve olhar com mais atenção.
 
 Seja específico: nomes de arquivo, de método e de coluna. Plano vago vira
-código inventado.
+código inventado. Seja também enxuto: não repita o que `docs/01`, `docs/04` e
+`docs/07` já dizem (cite a seção), e nas telas de cadastro diga só o modelo
+copiado, os campos com componente e largura, as colunas e o que difere.
+
+Diga também, na ordem de execução:
+- se a entrega precisa de **peça nova no kit** (então o `glass-design-system`
+  entra antes das telas) e de **movimento novo** (então o `motion-designer`
+  entra); se não precisa, diga "kit e movimento: nada novo";
+- quais telas são **cópia direta de modelo** e quais fogem do padrão (kanban,
+  agenda, dashboard). As que fogem são construídas no Opus.

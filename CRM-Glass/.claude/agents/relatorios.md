@@ -82,6 +82,8 @@ Trabalhe onde a sessão principal indicar. **Não faça commit** sem pedido expl
 
 ## Ao terminar
 
+Em **no máximo ~300 palavras**:
+
 Responda com:
 - os arquivos criados e alterados;
 - qual modelo do docs/08 você usou e por quê;
