@@ -45,7 +45,7 @@ export function Topbar({ titulo, contratante, onBuscar, textoBusca = 'Buscar tel
       initial="hidden"
       animate="show"
       exit="exit"
-      className="glass sticky top-4 z-30 h-16 rounded-[22px] px-2.5 flex items-center gap-2"
+      className="glass sticky top-4 z-barra h-16 rounded-[22px] px-2.5 flex items-center gap-2"
     >
       {contratante}
 

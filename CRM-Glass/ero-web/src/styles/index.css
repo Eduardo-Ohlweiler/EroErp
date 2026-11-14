@@ -17,6 +17,16 @@
   --color-danger: var(--danger);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  /* camadas (tokens.css): z-conteudo, z-barra, z-menu, z-splash, z-faixa, z-popover, z-modal, z-paleta, z-toast */
+  --z-index-conteudo: var(--z-conteudo);
+  --z-index-barra: var(--z-barra);
+  --z-index-menu: var(--z-menu);
+  --z-index-splash: var(--z-splash);
+  --z-index-faixa: var(--z-faixa);
+  --z-index-popover: var(--z-popover);
+  --z-index-modal: var(--z-modal);
+  --z-index-paleta: var(--z-paleta);
+  --z-index-toast: var(--z-toast);
 }
 
 @layer base {
@@ -724,6 +734,89 @@ html.tema-em-troca *::after {
       0 10px 30px -8px var(--warning-glow),
       inset 0 1px 0 var(--acao-reflexo);
   }
+  /*
+   * Caixa de marcar e rádio (TCheckBox, TRadio): o <input> de verdade, sem a aparência do sistema, é a caixa (o
+   * leitor de tela, o teclado e o medidor do docs/07 §7.1 continuam vendo um controle nativo). O sinal (✓ ou ponto)
+   * é um irmão por cima, na mesma célula da grade. Tokens: --marca-* (tokens.css).
+   */
+  .marca {
+    appearance: none;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    background: var(--input-bg);
+    border: 1.5px solid var(--marca-borda);
+    cursor: pointer;
+    transition:
+      background-color var(--mov-realce),
+      border-color var(--mov-realce),
+      box-shadow var(--mov-realce);
+  }
+  .marca-caixa {
+    border-radius: 6px;
+  }
+  .marca-radio {
+    border-radius: 9999px;
+  }
+  .marca:hover:not(:disabled, [readonly]) {
+    border-color: var(--marca-borda-hover);
+  }
+  .marca:checked {
+    background-color: var(--accent-strong);
+    background-image: linear-gradient(135deg, var(--accent-strong), var(--accent-2-strong));
+    border-color: var(--marca-borda-marcada);
+    box-shadow: 0 4px 14px -6px var(--accent-glow);
+  }
+  /* Só leitura (TForm somenteLeitura, TPanel somenteLeitura) e desabilitada (ex.: "Liberar acesso" com o grupo em
+   * "Sem acesso"): fundo de campo só leitura, sem o degradê, como o `.input` (docs/07 §3.4). Sem `opacity`: a borda
+   * continua ≥ 3:1 e o sinal em --fg-muted, legíveis nos dois temas; o rótulo da desabilitada fica em --fg-muted. */
+  .marca[readonly],
+  .marca[readonly]:checked,
+  .marca:disabled,
+  .marca:disabled:checked {
+    background: var(--input-bg-readonly);
+    border-color: var(--marca-borda);
+    box-shadow: none;
+    cursor: default;
+  }
+  .marca:disabled {
+    cursor: not-allowed;
+  }
+  .marca-sinal {
+    pointer-events: none;
+    color: var(--on-accent);
+    opacity: 0;
+    transform: scale(0.6);
+    transition:
+      opacity var(--mov-realce),
+      transform var(--mov-realce) var(--mov-ease-out);
+  }
+  .marca:checked + .marca-sinal {
+    opacity: 1;
+    transform: none;
+  }
+  .marca[readonly] + .marca-sinal,
+  .marca:disabled + .marca-sinal {
+    color: var(--fg-muted);
+  }
+  [data-movimento='reduzida'] .marca,
+  [data-movimento='reduzida'] .marca-sinal {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marca,
+    .marca-sinal {
+      transition: none;
+    }
+  }
+
+  /* Só no papel (título da aba do TTabPanel na impressão); na tela não aparece. */
+  .so-impressao {
+    display: none;
+  }
+
   /* Ações leves da grade (Editar, Inativar, Reativar): ícone na cor, fundo da cor a 12 % no hover. */
   .acao-leve-info,
   .acao-leve-perigo,
@@ -959,5 +1052,14 @@ html.tema-em-troca *::after {
   /* no papel o rodapé é o do @page, em toda página e com a numeração */
   .folha-rodape {
     display: none;
+  }
+
+  /* O que é da tela e não do papel (faixa do suporte, barra de abas). */
+  .nao-imprime {
+    display: none !important;
+  }
+  /* Título da aba (TTabPanel) no papel. */
+  .so-impressao {
+    display: block !important;
   }
 }

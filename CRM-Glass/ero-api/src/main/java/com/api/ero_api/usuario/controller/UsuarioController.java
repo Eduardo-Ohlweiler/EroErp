@@ -6,6 +6,7 @@ import com.api.ero_api.usuario.dtos.UsuarioRedefinirSenhaDto;
 import com.api.ero_api.usuario.dtos.UsuarioResponseDto;
 import com.api.ero_api.usuario.dtos.UsuarioSelectDto;
 import com.api.ero_api.usuario.dtos.UsuarioUpdateDto;
+import com.api.ero_api.usuario.enums.Papel;
 import com.api.ero_api.usuario.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -51,15 +52,20 @@ public class UsuarioController {
     public PaginaDto<UsuarioResponseDto> listar(
             @Parameter(description = "Parte do nome ou do e-mail") @RequestParam(required = false) @Size(max = 100, message = "Busca muito longa") String busca,
             @RequestParam(required = false) Boolean ativo,
+            @Parameter(description = "ADMIN ou USUARIO (vazio = todos)") @RequestParam(required = false) Papel papel,
+            @Parameter(description = "true = bloqueados agora por excesso de tentativas; false = não bloqueados")
+            @RequestParam(required = false) Boolean bloqueado,
             @PageableDefault(size = 20, sort = "nome") Pageable pageable) {
-        return service.listar(busca, ativo, pageable);
+        return service.listar(busca, ativo, papel, bloqueado, pageable);
     }
 
     @GetMapping("/selecao")
     @PreAuthorize("hasAuthority('ACESSO_LIBERADO')")
-    @Operation(summary = "Usuários ativos para combos (id e nome)")
-    public List<UsuarioSelectDto> selecao() {
-        return service.buscarParaSelecao();
+    @Operation(summary = "Usuários para combos (id e nome): só os ativos, ou também os inativos")
+    public List<UsuarioSelectDto> selecao(
+            @Parameter(description = "true = traz também os inativos (filtro de Logs)")
+            @RequestParam(defaultValue = "false") boolean inativos) {
+        return service.buscarParaSelecao(inativos);
     }
 
     @GetMapping("/{id}")

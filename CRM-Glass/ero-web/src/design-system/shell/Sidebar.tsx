@@ -33,7 +33,7 @@ export function Sidebar({ itens, itensSistema = [], rotuloSistema = 'Sistema', o
       initial="hidden"
       animate="show"
       exit="exit"
-      className="glass fixed z-40 left-4 top-4 bottom-4 w-[72px] rounded-[28px] hidden md:flex flex-col items-center py-4 gap-1.5"
+      className="glass fixed z-menu left-4 top-4 bottom-4 w-[72px] rounded-[28px] hidden md:flex flex-col items-center py-4 gap-1.5"
     >
       <Link to="/" aria-label={`${marca} — início`} className="mb-3 size-11 rounded-2xl accent-gradient accent-glow grid place-items-center">
         <Sparkles className="size-5" />
@@ -156,7 +156,7 @@ export function MobileNav({ itens, itensSistema = [], rotuloSistema = 'Sistema' 
   const principais = itens.slice(0, MAXIMO_NA_BARRA_INFERIOR);
   const sistema = itensSistema.slice(0, Math.max(0, MAXIMO_NA_BARRA_INFERIOR - principais.length));
   return (
-    <div className="md:hidden glass fixed z-40 bottom-3 inset-x-3 h-16 rounded-[24px] flex items-center px-2">
+    <div className="md:hidden glass fixed z-menu bottom-3 inset-x-3 h-16 rounded-[24px] flex items-center px-2">
       {/* Cada grupo cresce na proporção dos seus ícones: o espaço entre os ícones fica igual nos dois. */}
       <nav aria-label="Principal" className="flex items-center justify-around" style={{ flexGrow: principais.length }}>
         {principais.map((n) => (

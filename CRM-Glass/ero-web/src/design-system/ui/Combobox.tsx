@@ -21,6 +21,8 @@ export type ComboboxProps = {
   limpavel?: boolean;
   /** texto digitado (para busca no servidor); a filtragem local continua valendo */
   onBuscaChange?: (texto: string) => void;
+  /** a lista abriu ou fechou (o TDBCombo busca as opções no servidor ao abrir) */
+  onAbertoChange?: (aberto: boolean) => void;
   icone?: ComponentType<{ className?: string }>;
   invalido?: boolean;
   desabilitado?: boolean;
@@ -46,6 +48,7 @@ export function Combobox({
   textoVazio = 'Nada encontrado',
   limpavel = true,
   onBuscaChange,
+  onAbertoChange,
   icone: Icone,
   invalido,
   desabilitado,
@@ -68,6 +71,16 @@ export function Combobox({
     if (!q) return opcoes;
     return opcoes.filter((o) => norm(`${o.rotulo} ${o.detalhe ?? ''}`).includes(q));
   }, [opcoes, busca]);
+
+  // Avisa quem chamou só quando muda (não na montagem).
+  const avisarAberto = useRef(onAbertoChange);
+  avisarAberto.current = onAbertoChange;
+  const abertoAntes = useRef(aberto);
+  useEffect(() => {
+    if (abertoAntes.current === aberto) return;
+    abertoAntes.current = aberto;
+    avisarAberto.current?.(aberto);
+  }, [aberto]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -212,7 +225,7 @@ export function Combobox({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.98 }}
                 transition={spring.snappy}
-                className="glass-solid z-[70] !rounded-2xl p-1.5 w-[var(--radix-popover-trigger-width)] min-w-[220px]"
+                className="glass-solid z-popover !rounded-2xl p-1.5 w-[var(--radix-popover-trigger-width)] min-w-[220px]"
                 style={{ transformOrigin: 'var(--radix-popover-content-transform-origin)' }}
               >
                 <ul id={listaId} role="listbox" aria-label={rotulo} className="max-h-64 overflow-y-auto">

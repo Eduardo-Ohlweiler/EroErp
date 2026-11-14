@@ -110,7 +110,7 @@ export function MenuUsuario({ nome, email, papel, contexto, onMinhaConta, onSair
                 exit={{ opacity: 0, y: -6, scale: 0.98 }}
                 transition={spring.snappy}
                 style={{ transformOrigin: 'var(--radix-popover-content-transform-origin)' }}
-                className="glass-solid z-[70] !rounded-2xl p-1.5 w-[268px]"
+                className="glass-solid z-popover !rounded-2xl p-1.5 w-[268px]"
               >
                 <div className="flex items-center gap-3 px-2.5 pt-2 pb-3 border-b border-line mb-1.5">
                   <Avatar name={nome} size={36} />

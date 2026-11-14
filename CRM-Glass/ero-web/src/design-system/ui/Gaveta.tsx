@@ -34,7 +34,7 @@ export function Gaveta({ aberto, onAbertoChange, titulo, descricao, children, ro
           <RadixDialog.Portal forceMount>
             <RadixDialog.Overlay asChild forceMount>
               <motion.div
-                className="dialog-overlay fixed inset-0 z-[80]"
+                className="dialog-overlay fixed inset-0 z-modal"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -62,7 +62,7 @@ export function Gaveta({ aberto, onAbertoChange, titulo, descricao, children, ro
                 exit={{ x: '105%' }}
                 transition={spring.soft}
                 className={cn(
-                  'glass-solid fixed z-[80] right-3 top-3 bottom-3 rounded-[28px] flex flex-col',
+                  'glass-solid fixed z-modal right-3 top-3 bottom-3 rounded-[28px] flex flex-col',
                   'w-[min(var(--gaveta-largura),calc(100vw-24px))]',
                   className,
                 )}

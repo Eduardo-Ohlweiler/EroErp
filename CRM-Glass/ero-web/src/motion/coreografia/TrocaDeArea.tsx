@@ -57,16 +57,17 @@ export type TrocaDeAreaProps = {
  *   function Raiz() {
  *     const outlet = useOutlet();
  *     const { pathname } = useLocation();
- *     const { usuario, trocouContratante } = useSessao();
+ *     const { usuario } = useSessao();
  *     const { definirContratante } = useAparencia();
  *     const chave = pathname.startsWith('/login') ? 'login' : `casca:${usuario?.tenantId}`;
+ *     const coreografia = useCoreografiaDaArea(chave); // casca → casca de outro tenant = 'contexto' (area.ts)
  *     const aparencia = chave === 'login' ? null : usuario?.aparencia; // login: sempre o padrão do sistema
  *     const atual = useRef(aparencia);
  *     atual.current = aparencia;
  *     useEffect(() => definirContratante(atual.current), []); // primeira montagem: não há área saindo
  *     return (
  *       <div className="relative z-10">
- *         <TrocaDeArea chave={chave} coreografia={trocouContratante ? 'contexto' : undefined}
+ *         <TrocaDeArea chave={chave} coreografia={coreografia}
  *           aoSairCompleto={() => definirContratante(atual.current)}>{outlet}</TrocaDeArea>
  *       </div>
  *     );

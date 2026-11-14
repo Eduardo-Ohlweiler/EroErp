@@ -9,3 +9,7 @@ export { aguardarTelaParada, telaEmMovimento } from './andamento';
 export { useVariantesDoPapel, variantesDoPapel, DentroDoCartao } from './papeis';
 export { useAntesDaProximaTela } from './saida';
 export { CoreografiaDaTela, useCoreografiaDaTela } from './contexto';
+export { FaixaDaCasca, type FaixaDaCascaProps } from './FaixaDaCasca';
+export { ConteudoDeAba, type ConteudoDeAbaProps } from './ConteudoDeAba';
+export { coreografiaDaTroca, useCoreografiaDaArea, PREFIXO_CASCA } from './area';
+export { TelaMontada, useTelaMontada } from './contexto';

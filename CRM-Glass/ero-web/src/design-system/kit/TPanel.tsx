@@ -1,7 +1,8 @@
-import { useId, useState, type ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { Children, useId, useState, type ReactNode } from 'react';
+import { ChevronDown, Lock } from 'lucide-react';
 import { Bloco } from '../../motion/coreografia/Bloco';
 import { cn } from '../../shared/util/utils';
+import { SomenteLeituraDoForm, useSomenteLeituraDoForm } from './somenteLeitura';
 
 export type TPanelProps = {
   title?: string;
@@ -11,7 +12,14 @@ export type TPanelProps = {
   recolhido?: boolean;
   /** botões à direita do título */
   actions?: ReactNode;
-  children: ReactNode;
+  /**
+   * Só este painel fica só leitura, dentro de um formulário editável (ex.: "Acesso aos módulos" quando o usuário é
+   * você mesmo): os campos de dentro ficam como no `TForm somenteLeitura` e os botões que gravam somem. Dentro de um
+   * `TForm somenteLeitura` o painel já é só leitura.
+   */
+  somenteLeitura?: boolean;
+  /** os campos; sem conteúdo (`null`, `false`), o painel fica só com o título, sem corpo vazio */
+  children?: ReactNode;
 };
 
 /**
@@ -19,22 +27,45 @@ export type TPanelProps = {
  * **Sem vidro próprio**: está dentro do cartão `glass-solid` do `TForm`, e a região não passa de duas camadas de
  * `backdrop-filter`. Separa por borda `--line` e título. Recolhido, os campos continuam montados (o formulário
  * não perde valor nem erro), só escondidos.
+ *
+ * Com `somenteLeitura`, o título ganha a marca "Só leitura" (cadeado), e só o conteúdo do painel muda.
+ *
+ * O primeiro painel do formulário não desenha a borda de cima (ficaria colada à borda do cartão, linha dupla). Sem
+ * conteúdo (ex.: o ADMIN não tem grupos a escolher), não há corpo: nada de 16 px de vão embaixo do título.
  */
-export function TPanel({ title, subtitle, recolhido, actions, children }: TPanelProps) {
+export function TPanel({ title, subtitle, recolhido, actions, somenteLeitura: soEste = false, children }: TPanelProps) {
+  const doForm = useSomenteLeituraDoForm();
+  const somenteLeitura = doForm || soEste;
   const id = useId();
-  const recolhivel = recolhido !== undefined;
+  // `Children.toArray` descarta null, undefined e booleanos: `{ehAdmin ? null : <TRow…/>}` conta como vazio.
+  const temConteudo = Children.toArray(children).length > 0;
+  // Sem corpo não há o que recolher: o título não vira botão (um aria-controls apontaria para o nada).
+  const recolhivel = recolhido !== undefined && temConteudo;
   const [aberto, setAberto] = useState(!recolhido);
   const corpoId = `${id}-corpo`;
 
   const titulo = title && (
     <span className="min-w-0">
-      <span className="block text-[15px] font-semibold tracking-tight">{title}</span>
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="text-[15px] font-semibold tracking-tight">{title}</span>
+        {soEste && !doForm && (
+          <span className="chip inline-flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-medium text-muted">
+            <Lock aria-hidden className="size-3" />
+            Só leitura
+          </span>
+        )}
+      </span>
       {subtitle && <span className="block text-xs text-muted mt-0.5">{subtitle}</span>}
     </span>
   );
 
   return (
-    <section data-kit="TPanel" aria-labelledby={title ? `${id}-titulo` : undefined} className="flex flex-col gap-4 border-t border-line pt-4">
+    <section
+      data-kit="TPanel"
+      data-somente-leitura={soEste || undefined}
+      aria-labelledby={title ? `${id}-titulo` : undefined}
+      className="flex flex-col gap-4 border-t border-line pt-4 first:border-t-0 first:pt-0"
+    >
       {(title || actions) && (
         <Bloco className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           {title && (
@@ -58,9 +89,11 @@ export function TPanel({ title, subtitle, recolhido, actions, children }: TPanel
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </Bloco>
       )}
-      <div id={corpoId} hidden={!aberto} className="flex flex-col gap-4">
-        {children}
-      </div>
+      {temConteudo && (
+        <div id={corpoId} hidden={!aberto} className="flex flex-col gap-4">
+          <SomenteLeituraDoForm.Provider value={somenteLeitura}>{children}</SomenteLeituraDoForm.Provider>
+        </div>
+      )}
     </section>
   );
 }

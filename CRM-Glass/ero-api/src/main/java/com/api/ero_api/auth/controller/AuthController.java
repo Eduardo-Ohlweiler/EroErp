@@ -5,6 +5,8 @@ import com.api.ero_api.auth.dtos.CodigoEnviadoDto;
 import com.api.ero_api.auth.dtos.DoisFatoresReenviarDto;
 import com.api.ero_api.auth.dtos.DoisFatoresVerificarDto;
 import com.api.ero_api.auth.dtos.LoginDto;
+import com.api.ero_api.auth.dtos.MeuPerfilResponseDto;
+import com.api.ero_api.auth.dtos.MeuPerfilUpdateDto;
 import com.api.ero_api.auth.dtos.TrocarSenhaDto;
 import com.api.ero_api.auth.dtos.TrocarTemaDto;
 import com.api.ero_api.auth.dtos.UsuarioLogadoDto;
@@ -102,6 +104,20 @@ public class AuthController {
     @Operation(summary = "Quem sou eu: dados, contratante, permissões e telas liberadas")
     public UsuarioLogadoDto eu() {
         return authService.eu();
+    }
+
+    @GetMapping("/eu/perfil")
+    @PreAuthorize("hasAuthority('ACESSO_LIBERADO')")
+    @Operation(summary = "Os meus dados (Minha conta): nome, e-mail, telefone, papel, contratante e version")
+    public MeuPerfilResponseDto meuPerfil() {
+        return authService.meuPerfil();
+    }
+
+    @PutMapping("/eu/perfil")
+    @PreAuthorize("hasAuthority('ACESSO_LIBERADO')")
+    @Operation(summary = "Altera o meu nome e o meu telefone (e-mail e papel só pelo administrador; 409 se a version mudou)")
+    public MeuPerfilResponseDto atualizarMeuPerfil(@Valid @RequestBody MeuPerfilUpdateDto dto) {
+        return authService.atualizarMeuPerfil(dto);
     }
 
     @PutMapping("/senha")

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
+import { LogIn } from 'lucide-react';
 import {
   DocumentoLista,
   SITUACAO_OPCOES,
@@ -25,7 +26,7 @@ import {
   type PaginaDaCarga,
   type ResultadoDaCarga,
 } from '../../../design-system/kit';
-import { ROTULO_ADMINISTRATIVO } from '../../../shared/sessao';
+import { ROTULO_ADMINISTRATIVO, useSessao } from '../../../shared/sessao';
 import { formatarDataHora, formatarDocumento } from '../../../shared/util/format';
 import { tenantsApi, type TenantResponse } from '../api/tenants';
 import { FILTROS_VAZIOS, paraConsulta, usuariosDe, type FiltrosContratante } from '../schemas/contratante';
@@ -42,6 +43,8 @@ export function ContratanteList() {
   const msg = useMessage();
   const { confirmar } = useQuestion();
   const queryClient = useQueryClient();
+  const { acessarContratante } = useSessao();
+  const [acessando, setAcessando] = useState<string>();
   const form = useForm<FiltrosContratante>({ defaultValues: FILTROS_VAZIOS });
   const [aplicados, setAplicados] = useState(FILTROS_VAZIOS);
   const [pagina, setPagina] = useState(0);
@@ -77,6 +80,19 @@ export function ContratanteList() {
       msg.sucesso(t.ativo ? `${t.nome} foi inativado` : `${t.nome} foi reativado`);
       await queryClient.invalidateQueries({ queryKey: ['tenants'] });
     } catch (e) {
+      msg.erroApi(e);
+    }
+  };
+
+  // troca: o superadmin entra no contratante (a casca inteira troca) e vai ao Início dele.
+  const acessar = async (t: TenantResponse) => {
+    if (acessando) return;
+    setAcessando(t.id);
+    try {
+      await acessarContratante(t.id);
+      navigate('/');
+    } catch (e) {
+      setAcessando(undefined);
       msg.erroApi(e);
     }
   };
@@ -192,6 +208,19 @@ export function ContratanteList() {
                 <>
                   <TButton variant="editar" label="" onClick={() => navigate(`/admin/contratantes/${t.id}`)} />
                   <TButton variant={t.ativo ? 'inativar' : 'reativar'} label="" onClick={() => void alternar(t)} />
+                  {t.ativo && (
+                    // troca: só nos ativos (a API recusa entrar num inativo)
+                    <TButton
+                      variant="secondary"
+                      icone={LogIn}
+                      label=""
+                      aria-label={`Acessar ${t.nome}`}
+                      title="Acessar contratante"
+                      loading={acessando === t.id}
+                      disabled={!!acessando && acessando !== t.id}
+                      onClick={() => void acessar(t)}
+                    />
+                  )}
                 </>
               )
         }

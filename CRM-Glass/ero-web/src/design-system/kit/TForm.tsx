@@ -7,6 +7,7 @@ import { DentroDoCartao, useVariantesDoPapel } from '../../motion/coreografia';
 import { cn } from '../../shared/util/utils';
 import { ReservaErroDoForm } from './campo';
 import { SomenteLeituraDoForm } from './somenteLeitura';
+import { useDentroDoModal } from './TModal';
 
 export type TFormProps<T extends FieldValues> = {
   /** o retorno do `useForm` */
@@ -31,32 +32,45 @@ export function temResolver(form: UseFormReturn<FieldValues>): boolean {
  * montagem). Os campos de dentro se ligam ao formulário só pelo `name`.
  *
  * Só leitura é por contexto, não por `<fieldset disabled>`: o fieldset desligaria também o Voltar.
+ *
+ * Dentro de um `TModal` não há cartão: o modal já é a camada de vidro (docs/07 §6).
  */
 export function TForm<T extends FieldValues>({ form, onSubmit, somenteLeitura = false, children }: TFormProps<T>) {
   // Papel `cartao` (motion/tokens.ts, kit): o cartão encaixa como bloco da tela e põe campos e rodapé em cascata.
   const cartao = useVariantesDoPapel('cartao');
+  const noModal = useDentroDoModal();
+  const formulario = (
+    <form
+      noValidate
+      data-kit="TForm"
+      data-somente-leitura={somenteLeitura || undefined}
+      onSubmit={(e) => {
+        // O TForm de um TModal aberto dentro de outro TForm está num portal, mas o evento do React sobe pela árvore
+        // de componentes: sem isto, o Salvar do modal enviaria também o formulário de fora.
+        e.stopPropagation();
+        return form.handleSubmit(async (dados) => {
+          if (!somenteLeitura) await onSubmit(dados);
+        })(e);
+      }}
+      className="flex min-w-0 flex-col gap-4"
+    >
+      {somenteLeitura && <Alerta tom="info">Você tem acesso só de leitura a esta tela.</Alerta>}
+      {children}
+    </form>
+  );
   return (
     <FormProvider {...form}>
       <SomenteLeituraDoForm.Provider value={somenteLeitura}>
         <ReservaErroDoForm.Provider value={temResolver(form as unknown as UseFormReturn<FieldValues>)}>
           <DentroDoTForm.Provider value>
-            <GlassCard level="solid" variants={cartao} className="min-w-0">
-              {/* Os blocos de dentro (campos, título do TPanel, rodapé) encaixam como `campo`, em cascata. */}
-              <DentroDoCartao>
-                <form
-                  noValidate
-                  data-kit="TForm"
-                  data-somente-leitura={somenteLeitura || undefined}
-                  onSubmit={form.handleSubmit(async (dados) => {
-                    if (!somenteLeitura) await onSubmit(dados);
-                  })}
-                  className="flex min-w-0 flex-col gap-4"
-                >
-                  {somenteLeitura && <Alerta tom="info">Você tem acesso só de leitura a esta tela.</Alerta>}
-                  {children}
-                </form>
-              </DentroDoCartao>
-            </GlassCard>
+            {noModal ? (
+              <DentroDoCartao>{formulario}</DentroDoCartao>
+            ) : (
+              <GlassCard level="solid" variants={cartao} className="min-w-0">
+                {/* Os blocos de dentro (campos, título do TPanel, rodapé) encaixam como `campo`, em cascata. */}
+                <DentroDoCartao>{formulario}</DentroDoCartao>
+              </GlassCard>
+            )}
           </DentroDoTForm.Provider>
         </ReservaErroDoForm.Provider>
       </SomenteLeituraDoForm.Provider>

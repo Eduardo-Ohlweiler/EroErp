@@ -2,7 +2,7 @@ import { useController } from 'react-hook-form';
 import { Combobox, type OpcaoCombobox } from '../ui/Combobox';
 import { CampoDoKit, useLigadoAoForm, type PropsDeCampo } from './campo';
 import { LARGURA_PADRAO } from './larguras';
-import type { OpcaoSelect } from './opcoes';
+import { maiorRotulo, type OpcaoSelect } from './opcoes';
 import { useSomenteLeituraDoForm } from './somenteLeitura';
 
 export type TComboProps = PropsDeCampo & {
@@ -57,6 +57,7 @@ function TComboBase({ label, opcoes, vazio, value, onChange, width, ajuda, error
       required={required}
       id={id}
       semReserva={somenteLeitura || !!disabled}
+      rotuloMax={maiorRotulo(lista)}
     >
       {(ids) => (
         <Combobox

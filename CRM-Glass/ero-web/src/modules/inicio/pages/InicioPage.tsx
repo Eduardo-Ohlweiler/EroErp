@@ -1,21 +1,30 @@
-import { Building2, ScrollText, Users } from 'lucide-react';
+import { useMemo } from 'react';
+import { Link } from 'react-router';
+import { ChevronRight, UserRound } from 'lucide-react';
+import { menuAdministrativo, menuDoUsuario, type ItemDoMenu } from '../../../app/menu';
 import { Avatar, Badge, CardHeader, GlassCard, PageHeader } from '../../../design-system/ui';
 import { Tela } from '../../../motion/coreografia';
 import { nomeDoContratante, rotuloDoPapel, useUsuarioAtual } from '../../../shared/sessao';
 import { useAgora } from '../../../shared/util/tempo';
 import { fmtDataExtenso, primeiroNome, saudacao } from '../../../shared/util/utils';
 
-const EM_BREVE = [
-  { icone: Building2, titulo: 'Contratantes', texto: 'Cadastro das empresas que usam o CRM.' },
-  { icone: Users, titulo: 'Usuários', texto: 'Quem acessa, com que papel e quais telas.' },
-  { icone: ScrollText, titulo: 'Logs', texto: 'Entradas, alterações e eventos de segurança.' },
-];
+/** Minha conta entra sempre nos atalhos: é de todo usuário logado. */
+const MINHA_CONTA: ItemDoMenu = {
+  to: '/minha-conta',
+  label: 'Minha conta',
+  icon: UserRound,
+  descricao: 'Seus dados, a sua senha e os navegadores conectados.',
+};
 
-/** Início: saudação, contratante, data e o que vem nas próximas versões. */
+/** Início: saudação, contratante, data e os atalhos para as telas liberadas (as mesmas do menu). */
 export function InicioPage() {
   const usuario = useUsuarioAtual();
   const agora = useAgora(); // a saudação e a data acompanham o relógio (a tela pode ficar aberta o dia todo)
   const contratante = nomeDoContratante(usuario);
+  const atalhos = useMemo(
+    () => [...menuDoUsuario(usuario).filter((i) => i.to !== '/'), ...menuAdministrativo(usuario), MINHA_CONTA],
+    [usuario],
+  );
 
   return (
     <Tela coreografia="inicio">
@@ -43,17 +52,23 @@ export function InicioPage() {
           </div>
         </GlassCard>
         <GlassCard>
-          <CardHeader title="Em breve" subtitle="As próximas telas deste painel" />
-          <ul className="space-y-3">
-            {EM_BREVE.map(({ icone: I, titulo, texto }) => (
-              <li key={titulo} className="flex items-center gap-3">
-                <span aria-hidden className="size-9 rounded-xl chip grid place-items-center shrink-0">
-                  <I className="size-4 text-accent-text" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium">{titulo}</span>
-                  <span className="block text-xs text-muted">{texto}</span>
-                </span>
+          <CardHeader title="Atalhos" subtitle="As telas que você pode abrir" />
+          <ul className="-mx-2 space-y-1">
+            {atalhos.map(({ to, label, icon: I, descricao }) => (
+              <li key={to}>
+                <Link
+                  to={to}
+                  className="flex items-center gap-3 rounded-xl px-2 py-2 transicao-cor hover:bg-[var(--chip)] focus-visible:bg-[var(--chip)]"
+                >
+                  <span aria-hidden className="size-9 rounded-xl chip grid place-items-center shrink-0">
+                    <I className="size-4 text-accent-text" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium">{label}</span>
+                    {descricao && <span className="block text-xs text-muted">{descricao}</span>}
+                  </span>
+                  <ChevronRight aria-hidden className="size-4 text-subtle shrink-0" />
+                </Link>
               </li>
             ))}
           </ul>

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowRight, LayoutList } from 'lucide-react';
+import { ArrowRight, LayoutList, LockKeyholeOpen, LogIn, LogOut } from 'lucide-react';
 import { ErroApi } from '../../shared/api/erros';
 import { formatarDocumento } from '../../shared/util/format';
 import { Toggle } from '../ui/Bits';
@@ -103,10 +103,13 @@ export function SecaoKit() {
             ))}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
-            <span className="text-xs text-subtle">Grade (só ícone, sm):</span>
+            <span className="text-xs text-subtle">Grade (só ícone, sm, 32×32 em toda variante):</span>
             <TButton variant="editar" label="" size="sm" />
             <TButton variant="inativar" label="" size="sm" />
             <TButton variant="reativar" label="" size="sm" />
+            <TButton variant="secondary" icone={LogIn} label="" size="sm" aria-label="Acessar Demo Solar" title="Acessar contratante" loading={carregando} />
+            <TButton variant="secondary" icone={LockKeyholeOpen} label="" size="sm" aria-label="Desbloquear Marina" title="Desbloquear" />
+            <TButton variant="danger" icone={LogOut} label="" size="sm" aria-label="Encerrar a sessão do Chrome" title="Encerrar sessão" />
             <span className="text-xs text-subtle ml-2">Genéricas:</span>
             <TButton variant="primary" label="Primary" />
             <TButton variant="secondary" label="Secondary" />

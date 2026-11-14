@@ -78,7 +78,7 @@ export function CommandPalette({ aberto: open, onAbertoChange: setOpen, comandos
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div key="cmdk" className="fixed inset-0 z-[90] flex justify-center items-start pt-[14vh] px-4">
+        <div key="cmdk" className="fixed inset-0 z-paleta flex justify-center items-start pt-[14vh] px-4">
           <motion.div
             className="absolute inset-0 modal-overlay"
             initial={{ opacity: 0 }}

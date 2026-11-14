@@ -10,4 +10,13 @@ export {
   type MotivoAnonimo,
 } from './estado';
 export { ehCaminhoInterno, rotaDoLogin, sanitizarVoltar } from './voltar';
-export { naVisaoDePlataforma, nomeDoContratante, ROTULO_ADMINISTRATIVO, rotuloDoPapel } from './rotulos';
+export {
+  dentroDoEscopo,
+  ehAdministrador,
+  naVisaoDePlataforma,
+  nomeDoContratante,
+  podeAbrirTela,
+  ROTULO_ADMINISTRATIVO,
+  rotuloDoPapel,
+  type EscopoDaTela,
+} from './rotulos';

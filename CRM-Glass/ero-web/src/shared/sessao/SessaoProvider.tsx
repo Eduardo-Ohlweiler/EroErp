@@ -20,6 +20,14 @@ export type SessaoCtx = {
    * anterior e rejeita com o `ErroApi`, para quem chamou avisar com `useMessage().erroApi`.
    */
   trocarTemaPreferido: (tema: TemaApi | null) => Promise<void>;
+  /**
+   * Superadmin entra num contratante (`POST /api/auth/superadmin/acessar/{id}`) ou volta à plataforma
+   * (`/sair`). Guarda o token e o usuário novos; quem chamou leva ao Início. O cache das telas NÃO é limpo aqui:
+   * a casca antiga ainda está saindo com os dados que tinha; a raiz limpa quando ela termina de sair, antes de a
+   * casca nova montar (`app/trocaDeContratante.ts`). Falhou: rejeita com o `ErroApi` e nada muda.
+   */
+  acessarContratante: (tenantId: string) => Promise<void>;
+  sairDoContratante: () => Promise<void>;
   /** encerra a sessão na API e no front (token, cache das telas) */
   sair: () => Promise<void>;
   /** abre a sessão de novo pelo cookie (tela "servidor indisponível") */
@@ -112,6 +120,37 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     [definirUsuario, atualizarEu],
   );
 
+  /*
+   * Troca de contratante pedida pelo próprio superadmin. Diferente da troca de identidade que chega sozinha (outra
+   * aba, renovação), aqui se sabe que a casca vai trocar inteira (a chave da área é `casca:${tenantId}`):
+   * - as consultas no ar são canceladas (a resposta de um contratante não pode cair no cache depois da troca);
+   * - a identidade nova é registrada ANTES de despachar o usuário, para o `definirUsuario` não limpar o cache com a
+   *   casca antiga ainda na tela (ela piscaria para o esqueleto e, se relesse, buscaria com o token do outro
+   *   contratante, mostrando dados dele na casca que sai);
+   * - quem limpa é a raiz, no fim da saída da casca antiga e antes de a nova montar.
+   */
+  const trocarDeContratante = useCallback(
+    async (chamar: () => Promise<AutenticacaoResposta>) => {
+      const resposta = await chamar();
+      await queryClient.cancelQueries();
+      api.definirToken(resposta.tokenAcesso ?? null);
+      const usuario = resposta.usuario ?? (await sessaoApi.eu());
+      identidade.current = identidadeDoUsuario(usuario);
+      despachar({ tipo: 'usuario', usuario });
+    },
+    [queryClient],
+  );
+
+  const acessarContratante = useCallback<SessaoCtx['acessarContratante']>(
+    (tenantId) => trocarDeContratante(() => sessaoApi.acessarContratante(tenantId)),
+    [trocarDeContratante],
+  );
+
+  const sairDoContratante = useCallback<SessaoCtx['sairDoContratante']>(
+    () => trocarDeContratante(() => sessaoApi.sairDoContratante()),
+    [trocarDeContratante],
+  );
+
   const sair = useCallback(async () => {
     // Espera o logout: se a página for recarregada logo depois, o cookie já não abre a sessão de novo.
     await sessaoApi.sair().catch(() => undefined);
@@ -139,8 +178,18 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<SessaoCtx>(
-    () => ({ estado, usuario: usuarioDoEstado(estado), entrar, atualizarEu, trocarTemaPreferido, sair, tentarDeNovo }),
-    [estado, entrar, atualizarEu, trocarTemaPreferido, sair, tentarDeNovo],
+    () => ({
+      estado,
+      usuario: usuarioDoEstado(estado),
+      entrar,
+      atualizarEu,
+      trocarTemaPreferido,
+      acessarContratante,
+      sairDoContratante,
+      sair,
+      tentarDeNovo,
+    }),
+    [estado, entrar, atualizarEu, trocarTemaPreferido, acessarContratante, sairDoContratante, sair, tentarDeNovo],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

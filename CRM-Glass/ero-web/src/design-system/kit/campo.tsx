@@ -55,33 +55,58 @@ export function CampoDoKit({
   id,
   semReserva,
   grupo,
+  ariaGrupo,
+  dicas,
+  rotuloMax,
   children,
 }: Omit<PropsDeCampo, 'name' | 'disabled'> & {
   kit: string;
   padrao: Largura | 'conteudo';
   mascara?: string;
-  /** campo só leitura (auditoria) ou travado: não reserva a linha do erro */
+  /** dicas das opções do grupo (`dicasDasOpcoes`): entram depois da `ajuda`, visíveis embaixo do grupo */
+  dicas?: string[];
+  /** maior rótulo das opções, em caracteres: vira `data-rotulo-max` (o `TCombo` emite; o medidor lê) */
+  rotuloMax?: number;
+  /** não reserva a linha do erro: campo só leitura (auditoria), travado, ou grupo de rádio/caixas (que nunca reserva) */
   semReserva?: boolean;
-  grupo?: boolean;
+  grupo?: boolean | 'radiogroup';
+  /** estado do grupo para o leitor de tela (só leitura, obrigatório, inválido) */
+  ariaGrupo?: { 'aria-readonly'?: boolean; 'aria-required'?: boolean; 'aria-invalid'?: boolean };
   children: (ids: IdsCampo) => ReactNode;
 }) {
   const { largura, classe } = useLargura(width, padrao);
   // Em TForm somenteLeitura não se digita: sem o `*` de obrigatório, sem a dica de preenchimento, sem reserva de erro.
   const somenteLeitura = useSomenteLeituraDoForm();
   const reservar = useContext(ReservaErroDoForm) && !semReserva && !somenteLeitura;
+  const temDicas = !!dicas && dicas.length > 0;
+  const ajudaComDicas = temDicas ? (
+    <>
+      {ajuda}
+      {ajuda ? ' ' : null}
+      {dicas.join(' ')}
+    </>
+  ) : (
+    ajuda
+  );
   return (
     <CampoForm
       rotulo={label}
       erro={error}
-      dica={somenteLeitura ? undefined : ajuda}
+      dica={somenteLeitura ? undefined : ajudaComDicas}
       id={id}
       obrigatorio={required && !somenteLeitura}
       rotuloOculto={rotuloOculto}
       reservarErro={reservar}
       grupo={grupo}
+      ariaGrupo={ariaGrupo}
       dicaLarga
       className={classe}
-      dados={{ 'data-kit': kit, 'data-largura': largura, 'data-mascara': mascara }}
+      dados={{
+        'data-kit': kit,
+        'data-largura': largura,
+        'data-mascara': mascara,
+        'data-rotulo-max': rotuloMax === undefined ? undefined : String(rotuloMax),
+      }}
     >
       {children}
     </CampoForm>

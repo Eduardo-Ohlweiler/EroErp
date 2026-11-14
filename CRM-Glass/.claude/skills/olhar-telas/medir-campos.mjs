@@ -7,6 +7,11 @@
  *   node .claude/skills/olhar-telas/medir-campos.mjs /admin/usuarios/42 --aba "Dados"
  *   node .claude/skills/olhar-telas/medir-campos.mjs /admin/contratantes --largura 1280
  *   node .claude/skills/olhar-telas/medir-campos.mjs /login --sem-login
+ *   node .claude/skills/olhar-telas/medir-campos.mjs /admin/logs --espera '[data-kit="TDataGrid"] tbody tr'
+ *
+ * Antes de medir, espera o 1º campo do kit aparecer no conteúdo (a tela pode estar no esqueleto enquanto a API
+ * responde) e a tela parar; `--espera "<seletor>"` troca o que se espera (até 15 s; sem ele aparecer, mede assim mesmo
+ * e avisa).
  *
  * Mede a 1440 px por padrão: a escala vale a partir de `sm`, e no celular todo campo é 100 % de
  * propósito. Sai com código 1 se houver ✗ (dá para usar como verificação) e 2 se não conseguiu medir.
@@ -15,7 +20,11 @@
  *   data-kit="TEntry" (ou TDate, TCombo...)  no elemento de fora do campo, o que recebe a largura;
  *   data-largura="<token>"                    o token aplicado (o `width` ou o padrão do componente),
  *                                             ou "celula" quando o campo está fora de uma TRow;
- *   data-mascara="<mascara>"                  no TEntry com máscara.
+ *   data-mascara="<mascara>"                  no TEntry com máscara;
+ *   data-rotulo-max="<n>"                     no TCombo: caracteres do maior rótulo das opções (decide
+ *                                             entre `situacao` e `medio`, doc 07 §2.1).
+ * Rádio e grupo de caixas (`role=radiogroup`/`group`) saem com o rótulo do GRUPO (`aria-labelledby`), não o da
+ * primeira opção.
  * Campo sem esses atributos (tela fora do kit) é medido como no 2.0, pelo rótulo, pelo `type` e
  * pelo `inputmode`, e sai marcado "fora do kit".
  *
@@ -55,6 +64,12 @@ export const PROPORCIONAIS = {
 }
 
 /** Componentes de campo do kit (doc 07 §3.2). Estrutura (TRow, TCol, TForm...) não é medida. */
+/**
+ * Até quantos caracteres o maior rótulo de um TCombo cabe em `situacao` (192 px, ~132 px úteis depois do X e da
+ * seta, a 13–14 px de fonte) e em `medio` (320 px). Acima de `medio`, livre.
+ */
+export const ROTULO_MAX = { situacao: 18, medio: 36 }
+
 export const CAMPOS_DO_KIT = [
   'TEntry', 'TDate', 'TDateTime', 'TTextArea', 'TCombo', 'TDBCombo', 'TDBComboMulti',
   'TCheckBox', 'TDBCheckBox', 'TRadio', 'TDBRadio', 'TCor',
@@ -103,13 +118,16 @@ export function coletarCampos(camposDoKit) {
   for (const caixa of document.querySelectorAll('[data-kit][data-largura]')) {
     if (!camposDoKit.includes(caixa.dataset.kit) || fora(caixa) || !visivel(caixa)) continue
     const ctrl = caixa.querySelector(SELETOR_CONTROLE)
+    // Rádio e grupo de caixas: o rótulo é o do grupo (aria-labelledby do radiogroup/group), não o da 1ª opção.
+    const grupo = caixa.matches('[role="radiogroup"], [role="group"]') ? caixa : null
     caixa.querySelectorAll(SELETOR_CONTROLE).forEach((c) => jaMedidos.add(c))
     const opcoes = ctrl?.tagName === 'SELECT' ? [...ctrl.options].map((o) => o.textContent.trim()) : null
     campos.push({
       kit: caixa.dataset.kit,
       declarado: caixa.dataset.largura,
       mascara: caixa.dataset.mascara ?? '',
-      rotulo: rotuloDe(ctrl, caixa),
+      rotulo: grupo ? rotuloDe(grupo, caixa) : rotuloDe(ctrl, caixa),
+      rotuloMax: caixa.dataset.rotuloMax ? Number(caixa.dataset.rotuloMax) : null,
       tipo: tipoDe(ctrl),
       inputMode: ctrl?.getAttribute('inputmode') ?? '',
       largura: Math.round(caixa.getBoundingClientRect().width),
@@ -132,6 +150,7 @@ export function coletarCampos(camposDoKit) {
       declarado: null,
       mascara: '',
       rotulo: rotuloDe(el, el.parentElement),
+      rotuloMax: null,
       tipo,
       inputMode: el.getAttribute('inputmode') ?? '',
       largura: Math.round(el.getBoundingClientRect().width),
@@ -166,7 +185,12 @@ export function classificar(c) {
   if (/^c[oó]digo|^n[ºo°]\.?$/.test(r)) return 'codigo'
   // "Número" sozinho é o do endereço (doc 07 §2.1: `curto`), não o do registro.
   if (/^n[uú]mero$|^ean\b|^complemento$|^bairro$/.test(r)) return 'curto'
-  if (c.kit === 'TCombo') return 'situacao'
+  if (c.kit === 'TCombo') {
+    // Sem o data-rotulo-max (build antigo do front): o padrão do componente.
+    if (c.rotuloMax == null) return 'situacao'
+    if (c.rotuloMax <= ROTULO_MAX.situacao) return 'situacao'
+    return c.rotuloMax <= ROTULO_MAX.medio ? 'medio' : null
+  }
   if (c.tipo === 'select') {
     const o = c.opcoes ?? []
     return o.length > 0 && o.length <= 6 && o.every((t) => t.length <= 20) ? 'situacao' : null
@@ -240,7 +264,7 @@ export function relatorio(rota, larguraTela, avaliados) {
 }
 
 // ── Execução direta ──────────────────────────────────────────────────────
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { abrirNavegador, ehPublica, entrar, esperarTelaParada, FRONT, ir, ouvirErros, SAIDA } = await import('./comum.mjs')
 
   const [, , rota = '/', ...resto] = process.argv
@@ -251,6 +275,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const aba = valorDe('--aba')
   const larguraTela = Number(valorDe('--largura') ?? 1440)
   const semLogin = resto.includes('--sem-login') || ehPublica(rota)
+  const espera = valorDe('--espera') ?? CAMPOS_DO_KIT.map((k) => `main [data-kit="${k}"], [role="dialog"] [data-kit="${k}"]`).join(', ')
 
   const { b, pg } = await abrirNavegador({ largura: larguraTela })
   ouvirErros(pg)
@@ -267,6 +292,11 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
       await pg.locator(`[role="tab"]:has-text("${aba}")`).first().click()
       await esperarTelaParada(pg, { minimo: 300 })
     }
+    // A tela pode ter parado no esqueleto (a API ainda não respondeu): espera o 1º campo (ou o --espera) e a
+    // montagem dos blocos dele terminar.
+    const apareceu = await pg.locator(espera).first().waitFor({ state: 'visible', timeout: 15000 }).then(() => true, () => false)
+    if (apareceu) await esperarTelaParada(pg, { minimo: 300 })
+    else console.log(`  aviso   : nada de "${espera.length > 80 ? 'campo do kit' : espera}" em 15 s; medindo o que está na tela`)
 
     const avaliados = avaliar(await pg.evaluate(coletarCampos, CAMPOS_DO_KIT))
     const { texto, violacoes } = relatorio(aba ? `${rota} [${aba}]` : rota, larguraTela, avaliados)

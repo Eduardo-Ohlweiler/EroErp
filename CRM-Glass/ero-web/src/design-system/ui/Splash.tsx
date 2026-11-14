@@ -10,7 +10,7 @@ import { useReduce } from '../../shared/aparencia/AparenciaProvider';
 export function Splash({ mensagem = 'Carregando…' }: { mensagem?: string }) {
   const reduce = useReduce();
   return (
-    <div role="status" aria-live="polite" aria-busy="true" className="fixed inset-0 z-[60] grid place-items-center">
+    <div role="status" aria-live="polite" aria-busy="true" className="fixed inset-0 z-splash grid place-items-center">
       <motion.div
         className="flex flex-col items-center gap-4"
         initial={{ opacity: 0 }}

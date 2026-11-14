@@ -29,7 +29,7 @@ Só onde ainda não se sabe o tenant, ou onde a plataforma age sobre um contrata
 
 - **Login, código por e-mail (verificar e reenviar), refresh e logout** (`AuthService`, `CodigoVerificacaoService`): o e-mail, o desafio ou o cookie ainda não dizem o tenant. O código é buscado só pelo `jti` do desafio assinado. A limpeza diária dos códigos vencidos ou usados (`CodigoVerificacaoService.limparVencidos`) também roda em ROOT, porque a tabela é de contratante.
 - **Montar o usuário da requisição** (`AutorizacaoService`): sempre pelo id do token assinado.
-- **Operações do próprio usuário** (trocar senha): funcionam até para o superadmin dentro de um contratante.
+- **Operações do próprio usuário** (trocar senha, tema, meus dados em `/api/auth/eu/perfil`): funcionam até para o superadmin dentro de um contratante, sempre pelo id da sessão.
 - **Seed do superadmin.**
 - **Superadmin na visão de plataforma** (token com tenant ROOT): cria e altera contratantes e o primeiro admin, com `atribuirTenant` explícito.
 
@@ -121,6 +121,36 @@ Regras:
   apaga a preferência (`@DynamicUpdate`).
 - Não grava evento de segurança: é preferência visual.
 - Não fica no cache de 30 s do `UsuarioAutenticado`: o próximo `/eu` já traz a troca.
+
+### Meus dados (Minha conta)
+
+O próprio usuário altera **nome e telefone**. E-mail (é o segundo fator do login), papel e
+contratante são só leitura: quem troca o e-mail é o administrador.
+
+| Rota | Quem | Entrada / saída |
+|---|---|---|
+| `GET /api/auth/eu/perfil` | `ACESSO_LIBERADO` (com pendência: 403) | `MeuPerfilResponseDto { id, nome, email, telefone, papel, tenantNome, temaPreferido, version }` |
+| `PUT /api/auth/eu/perfil` | `ACESSO_LIBERADO` | `{ nome, telefone, version }` → `MeuPerfilResponseDto` com a `version` nova. 400 com `erros[].campo` = `nome` (vazio ou mais de 150), `telefone` (fora de 10 ou 11 dígitos) ou `version` (ausente); 409 sem `erros` se a `version` mudou. |
+
+Regras:
+
+- O id vem da sessão. O corpo não tem id, e-mail, papel nem tenant; campos extras são ignorados.
+- `tenantNome` é o contratante **a que o usuário pertence**: para o superadmin é "Plataforma",
+  mesmo atuando num contratante. Leitura e gravação rodam em ROOT no `AuthService`.
+- Sobe a `version` e o "alterado por" do cadastro, como uma edição normal: o administrador
+  com a ficha aberta recebe 409, e a Minha conta aberta recebe 409 depois que o
+  administrador salva.
+- O cache de 30 s do usuário da sessão é invalidado: o próximo `GET /api/auth/eu` já traz o nome novo.
+- Grava `USUARIO_ALTERADO` com detalhe "próprio perfil" (sem o telefone) no tenant do
+  usuário: o do superadmin fica na Plataforma e não aparece para o contratante.
+
+### Telefone do usuário
+
+`usuario.telefone` (migration 012), opcional, gravado **só com dígitos**: 10 (fixo) ou 11
+(celular), com DDD; o banco confere (`ck_usuario_telefone`). Entra em `UsuarioCreateDto`,
+`UsuarioUpdateDto` e `MeuPerfilUpdateDto` (vazio ou nulo = não informado, grava `NULL`) e sai
+em `UsuarioResponseDto` (ficha e lista) e `MeuPerfilResponseDto`. O front manda só dígitos e
+formata na tela. Dado pessoal: nunca vai para log nem para o detalhe de evento.
 
 ### Contrato do `TenantResponseDto`
 
@@ -230,6 +260,15 @@ A mesma regra vale para a auditoria do cadastro de usuários (`GET /api/usuarios
 ficha): dentro de um contratante, `createdBy`/`updatedBy` e `criadoPorNome`/`alteradoPorNome`
 saem vazios quando o autor é o superadmin (o admin inicial, cadastrado na plataforma, ou
 o que o suporte fez depois de acessar o contratante).
+
+`GET /api/auditoria/tipos` (`AUDITORIA_LER`) devolve todos os tipos na ordem do enum, como
+`[{ codigo, rotulo, categoria, categoriaRotulo, falha }]` (ex.: `CODIGO_LIMITE_ATINGIDO`,
+"Limite de códigos por hora atingido", `FALHAS`, "Falhas e bloqueios", `true`). O rótulo, a
+categoria e o `falha` ficam no próprio `TipoEventoSeguranca` (sem migration). Categorias
+(`CategoriaEvento`): `ACESSOS` "Acessos", `FALHAS` "Falhas e bloqueios", `SENHA` "Senha",
+`USUARIOS` "Usuários e permissões", `CONTRATANTES` "Contratantes", `SUPORTE` "Suporte da
+plataforma". A tela filtra por categoria mandando os códigos dela em `tipos`; "Contratantes"
+só aparece na visão de plataforma.
 
 `CODIGO_LIMITE_ATINGIDO`: alguém acertou a senha, mas o login foi barrado pelo limite de
 códigos por hora (429). No máximo um por usuário dentro da janela de 1 hora do limite.

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useOutlet } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { EstadoErro, GlassCard, Splash } from '../design-system/ui';
-import { TrocaDeArea } from '../motion/coreografia';
+import { PREFIXO_CASCA, TrocaDeArea, useCoreografiaDaArea } from '../motion/coreografia';
 import { useAparencia } from '../shared/aparencia/AparenciaProvider';
 import type { UsuarioLogado } from '../shared/api/tipos';
 import { useSessao } from '../shared/sessao';
+import { limparCacheAoTrocarDeArea } from './trocaDeContratante';
 
 /**
  * Raiz do app: abre a sessão (Splash) e alterna as áreas inteiras, login ↔ casca, com a TrocaDeArea.
@@ -41,13 +43,14 @@ function Areas() {
   const { pathname } = useLocation();
   const { usuario } = useSessao();
   const { definirContratante, definirTemaDoUsuario } = useAparencia();
+  const queryClient = useQueryClient();
 
   // A casca guarda o último usuário: ao sair ou expirar, a chave não muda até a rota ir para o login.
   const ultimo = useRef<UsuarioLogado | null>(usuario);
   if (usuario) ultimo.current = usuario;
 
   const noLogin = pathname === '/login' || pathname.startsWith('/login/');
-  const chave = noLogin ? 'login' : `casca:${ultimo.current?.tenantId ?? 'plataforma'}`;
+  const chave = noLogin ? 'login' : `${PREFIXO_CASCA}${ultimo.current?.tenantId ?? 'plataforma'}`;
   const aparencia = noLogin ? null : (ultimo.current?.aparencia ?? null);
   const tema = noLogin ? null : (ultimo.current?.temaPreferido ?? null);
   const atual = useRef({ chave, aparencia, tema });
@@ -56,10 +59,13 @@ function Areas() {
   /** Chave da área cuja aparência está aplicada (muda só quando a área nova entra). */
   const aplicada = useRef<string | null>(null);
   const aplicarArea = useCallback(() => {
+    // Entrou ou saiu de um contratante: a casca antiga terminou de sair e a nova ainda não montou. É a hora de
+    // esquecer o cache do contratante anterior (o SessaoProvider não limpa antes, para a casca que sai não piscar).
+    if (limparCacheAoTrocarDeArea(aplicada.current, atual.current.chave)) queryClient.clear();
     aplicada.current = atual.current.chave;
     definirContratante(atual.current.aparencia);
     definirTemaDoUsuario(atual.current.tema);
-  }, [definirContratante, definirTemaDoUsuario]);
+  }, [definirContratante, definirTemaDoUsuario, queryClient]);
 
   // Primeira montagem: não há área saindo, aplica direto. Ao desmontar (não acontece no app), volta ao padrão.
   useEffect(() => {
@@ -76,8 +82,17 @@ function Areas() {
     if (aplicada.current === chave) definirTemaDoUsuario(tema);
   }, [chave, tema, definirTemaDoUsuario]);
 
+  /*
+   * Superadmin entrando ou saindo de um contratante (casca → casca de outro tenant): coreografia `contexto`.
+   * A casca inteira se desfaz com a aparência que tinha (faixa, conteúdo, barra, menu); em `aoSairCompleto` entra a
+   * aparência do contratante novo: o fundo esmaece para o dele e, se o tema mudar, a troca de tema em vídeo roda
+   * (AparenciaProvider → motion/cena/trocarTema: a cena muda primeiro e a interface troca quando a casca nova
+   * terminou de montar). A casca nova monta depois da pausa curta do `contexto`.
+   */
+  const coreografia = useCoreografiaDaArea(chave);
+
   return (
-    <TrocaDeArea chave={chave} aoSairCompleto={aplicarArea}>
+    <TrocaDeArea chave={chave} coreografia={coreografia} aoSairCompleto={aplicarArea}>
       {outlet}
     </TrocaDeArea>
   );

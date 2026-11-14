@@ -14,6 +14,7 @@ export * from './Etapas';
 export * from './Tabs';
 export * from './Tabela';
 export * from './Combobox';
+export * from './Calendario';
 export * from './Alerta';
 export * from './Skeleton';
 export * from './Estados';

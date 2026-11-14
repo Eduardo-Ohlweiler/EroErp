@@ -1,6 +1,7 @@
 package com.api.ero_api.auth.mapper;
 
 import com.api.ero_api.auth.dtos.CodigoEnviadoDto;
+import com.api.ero_api.auth.dtos.MeuPerfilResponseDto;
 import com.api.ero_api.auth.dtos.UsuarioLogadoDto;
 import com.api.ero_api.auth.entity.CodigoVerificacao;
 import com.api.ero_api.compartilhado.util.LogSeguro;
@@ -10,6 +11,7 @@ import com.api.ero_api.seguranca.tenant.TenantContext;
 import com.api.ero_api.tenant.entity.Tenant;
 import com.api.ero_api.tenant.enums.TemaInterface;
 import com.api.ero_api.tenant.mapper.TenantMapper;
+import com.api.ero_api.usuario.entity.Usuario;
 import com.api.ero_api.usuario.enums.Papel;
 import java.time.Instant;
 import java.util.List;
@@ -39,6 +41,22 @@ public final class AuthMapper {
                 u.pendencia(),
                 List.copyOf(u.authorities()),
                 GrupoLiberacao.telasLiberadas(u.authorities()));
+    }
+
+    /**
+     * Os meus dados. {@code tenantNome}: contratante a que o usuário pertence (resolvido
+     * pelo service; "Plataforma" para o superadmin).
+     */
+    public static MeuPerfilResponseDto toMeuPerfilDto(Usuario u, String tenantNome) {
+        return new MeuPerfilResponseDto(
+                u.getId(),
+                u.getNome(),
+                u.getEmail(),
+                u.getTelefone(),
+                u.getPapel(),
+                tenantNome,
+                u.getTemaPreferido(),
+                u.getVersion());
     }
 
     /** Nunca leva o código: só para onde foi (mascarado), até quando vale e quando dá para reenviar. */

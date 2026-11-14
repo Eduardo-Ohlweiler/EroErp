@@ -1,6 +1,7 @@
 package com.api.ero_api.auditoria.controller;
 
 import com.api.ero_api.auditoria.dtos.EventoSegurancaResponseDto;
+import com.api.ero_api.auditoria.dtos.TipoEventoDto;
 import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import com.api.ero_api.auditoria.service.ConsultaEventoService;
 import com.api.ero_api.compartilhado.dtos.PaginaDto;
@@ -50,5 +51,12 @@ public class AuditoriaController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant ate,
             @PageableDefault(size = 20) Pageable pageable) {
         return service.listar(tipos, usuarioId, tenantId, de, ate, pageable);
+    }
+
+    @GetMapping("/tipos")
+    @PreAuthorize("hasAuthority('AUDITORIA_LER')")
+    @Operation(summary = "Tipos de evento com rótulo, categoria e se é falha (filtro e colunas da tela Logs)")
+    public List<TipoEventoDto> tipos() {
+        return service.listarTipos();
     }
 }

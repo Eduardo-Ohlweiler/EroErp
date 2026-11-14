@@ -1,7 +1,9 @@
 package com.api.ero_api.auditoria.mapper;
 
 import com.api.ero_api.auditoria.dtos.EventoSegurancaResponseDto;
+import com.api.ero_api.auditoria.dtos.TipoEventoDto;
 import com.api.ero_api.auditoria.entity.EventoSeguranca;
+import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,6 +33,10 @@ public final class EventoSegurancaMapper {
                 suporte ? null : e.getUserAgent(),
                 e.getDetalhe(),
                 e.getCreatedAt());
+    }
+
+    public static TipoEventoDto toTipoDto(TipoEventoSeguranca t) {
+        return new TipoEventoDto(t.name(), t.rotulo(), t.categoria().name(), t.categoria().rotulo(), t.falha());
     }
 
     private static String nome(Map<UUID, String> nomes, UUID id) {

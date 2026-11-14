@@ -4,3 +4,4 @@ export * from './Sidebar';
 export * from './Topbar';
 export * from './CommandPalette';
 export * from './MenuUsuario';
+export * from './SeletorContratante';

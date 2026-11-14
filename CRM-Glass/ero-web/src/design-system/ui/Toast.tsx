@@ -48,7 +48,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastCtx.Provider value={push}>
       {children}
       {createPortal(
-        <div className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[100] flex flex-col gap-2 w-[min(360px,calc(100vw-32px))] pointer-events-none">
+        // `--folga-inferior` (tokens.css): com a faixa do suporte na tela, a pilha sobe por cima dela em vez de cobrir o
+        // "Sair do contratante" (no celular os dois ficam no mesmo lugar, acima da barra inferior).
+        <div
+          data-pilha-toasts
+          className="fixed bottom-[calc(6rem+var(--folga-inferior))] md:bottom-[calc(1.5rem+var(--folga-inferior))] right-4 md:right-6 z-toast flex flex-col gap-2 w-[min(360px,calc(100vw-32px))] pointer-events-none"
+        >
           <AnimatePresence initial={false}>
             {items.map((i) => {
               const Icon = icons[i.tone];

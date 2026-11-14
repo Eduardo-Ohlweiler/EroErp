@@ -80,7 +80,7 @@ export function MedidorFps() {
   }, []);
 
   return (
-    <div className="fixed left-4 bottom-4 z-[70] glass-solid rounded-2xl px-3 py-2 text-xs flex items-center gap-3 shadow-lg">
+    <div className="fixed left-4 bottom-4 z-popover glass-solid rounded-2xl px-3 py-2 text-xs flex items-center gap-3 shadow-lg">
       <Gauge className="size-4 text-accent-text" aria-hidden />
       <span className="tabular-nums font-semibold w-14">{ao} fps</span>
       {resumo && (

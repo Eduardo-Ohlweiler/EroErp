@@ -4,6 +4,7 @@ import com.api.ero_api.compartilhado.entity.SqlNativoRevisado;
 import com.api.ero_api.tenant.enums.TemaInterface;
 import com.api.ero_api.usuario.dtos.UsuarioSelectDto;
 import com.api.ero_api.usuario.entity.Usuario;
+import com.api.ero_api.usuario.enums.Papel;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.Collection;
@@ -31,23 +32,46 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
             """)
     Optional<Usuario> buscarPorId(@Param("id") UUID id);
 
+    /**
+     * {@code bloqueado}: {@code true} = bloqueado por excesso de tentativas agora
+     * ({@code bloqueadoAte} depois de {@code agora}); {@code false} = não bloqueado
+     * (nunca foi ou o prazo já passou); {@code null} = tanto faz.
+     */
     @Query("""
             SELECT u FROM Usuario u
             WHERE u.papel <> com.api.ero_api.usuario.enums.Papel.SUPERADMIN
               AND (:ativo IS NULL OR u.ativo = :ativo)
+              AND (:papel IS NULL OR u.papel = :papel)
+              AND (:bloqueado IS NULL
+                   OR (:bloqueado = true AND u.bloqueadoAte > :agora)
+                   OR (:bloqueado = false AND (u.bloqueadoAte IS NULL OR u.bloqueadoAte <= :agora)))
               AND (:busca IS NULL
                    OR LOWER(u.nome) LIKE LOWER(CONCAT('%', CAST(:busca AS string), '%'))
                    OR LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:busca AS string), '%')))
             """)
-    Page<Usuario> buscarComFiltros(@Param("busca") String busca, @Param("ativo") Boolean ativo, Pageable pageable);
+    Page<Usuario> buscarComFiltros(@Param("busca") String busca, @Param("ativo") Boolean ativo,
+                                   @Param("papel") Papel papel, @Param("bloqueado") Boolean bloqueado,
+                                   @Param("agora") Instant agora, Pageable pageable);
 
+    /** Combos: só os ativos, ou também os inativos (filtro "Usuário" da tela Logs). */
     @Query("""
             SELECT u FROM Usuario u
-            WHERE u.ativo = true
+            WHERE (:incluirInativos = true OR u.ativo = true)
               AND u.papel <> com.api.ero_api.usuario.enums.Papel.SUPERADMIN
             ORDER BY u.nome
             """)
-    List<Usuario> buscarParaSelecao();
+    List<Usuario> buscarParaSelecao(@Param("incluirInativos") boolean incluirInativos);
+
+    /**
+     * Administradores ativos do contratante atual (filtro automático de tenant), para a
+     * regra de que o contratante nunca fica sem administrador. O superadmin não conta.
+     */
+    @Query("""
+            SELECT COUNT(u) FROM Usuario u
+            WHERE u.papel = com.api.ero_api.usuario.enums.Papel.ADMIN
+              AND u.ativo = true
+            """)
+    long contarAdminsAtivos();
 
     /**
      * Nomes de vários usuários numa consulta só (trilha de auditoria). Respeita o
