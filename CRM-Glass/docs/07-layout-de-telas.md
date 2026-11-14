@@ -714,6 +714,15 @@ export function ContratanteList() {                                     // troca
 
 - Ordem dos filtros: código → principal (nome, busca) → combos → período De ·
   Até (uma `TRow`, cada um na sua `TCol width="auto"`).
+- Código do registro (cadastro de negócio com `cod_<entidade>`, ver
+  `docs/01` "Código do registro"): filtro exato na primeira `TRow`,
+  `<TEntry name="codPessoa" label="Código" mascara="inteiro" width="codigo" maxLength={10} />`
+  (a máscara grava o texto com milhar, "1.500": o `paraConsulta` converte com
+  `paraNumero` antes de mandar `codPessoa` para a API, com teste no schema);
+  na grade, a primeira coluna
+  `{ chave: 'codPessoa', cabecalho: 'Código', numerica: true, className: 'w-px whitespace-nowrap', render: p => String(p.codPessoa) }`;
+  e primeiro também nas colunas exportadas (Exportar e Pdf). Contratantes e
+  usuários não têm código.
 - Ordem das colunas: código · principal · demais textos · datas (ex.: "Criado
   em", opcional) · valores (`numerica`) · situação (`TBadge`) por último —
   datas sempre antes dos valores. Código, data, valor e situação com
@@ -790,7 +799,10 @@ export function ContratanteForm() {                                     // troca
 
 Ordem fixa:
 
-1. Código (só leitura), quando a entidade tem.
+1. Código (só leitura), quando a entidade tem:
+   `<TEntry label="Código" value={salvo?.codPessoa ?? ''} placeholder="Automático" disabled width="codigo" />`.
+   No Novo fica vazio com "Automático"; o número aparece depois de salvar. Nunca
+   vai no corpo do POST nem do PUT.
 2. Campo principal (nome, descrição), depois os demais — **um por linha**.
 3. `TPanel` por assunto, na ordem em que se preenche (Administrador, Contatos,
    Endereços, Observações). Painel de um campo só se junta ao vizinho.

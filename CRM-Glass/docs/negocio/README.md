@@ -12,7 +12,7 @@ Regra de ouro: **aqui mora a regra de negócio (o quê e por quê); a implementa
 | [[usuarios-e-acesso]] | Papéis, regras do ADMIN, grupos LER/ESCREVER, Minha conta |
 | [[contratantes]] | Limite de usuários, aparência, tema por usuário, acessar contratante |
 | [[logs-e-auditoria]] | Trilha de segurança, categorias, retenção, o que o suporte esconde |
-| [[codigo-sequencial]] | `codigo` por contratante (aprovado, ainda não implementado) |
+| [[codigo-sequencial]] | `cod_<entidade>` por contratante nos cadastros de negócio (regra nos docs; nasce com pessoas) |
 | [[aparencia-e-movimento]] | Decisões visuais e de movimento do dono |
 | [[decisoes]] | Registro cronológico de tudo que o dono decidiu |
 | [[eroerp-referencias]] | O que já foi pesquisado no EroErp e no EroErp 2.0 |

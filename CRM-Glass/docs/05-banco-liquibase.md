@@ -41,11 +41,43 @@ ero-api/src/main/resources/db/changelog/
 <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
 ```
 
+### Código do registro em cadastro de negócio
+
+Cadastro de negócio usado pelo contratante (pessoa, emitente, pedido...) ganha o
+seu código sequencial por contratante, chamado `cod_<tabela>` (regra e uso no
+`01-arquitetura-backend.md`, seção "Código do registro"). Tabelas da plataforma e
+do Administrativo (`tenant`, `usuario`...) não têm.
+
+```xml
+<column name="cod_pessoa" type="BIGINT"><constraints nullable="false"/></column>
+...
+<createIndex tableName="pessoa" indexName="uk_pessoa_tenant_cod_pessoa" unique="true">
+    <column name="tenant_id"/>
+    <column name="cod_pessoa"/>
+</createIndex>
+<sql>ALTER TABLE pessoa ADD CONSTRAINT ck_pessoa_cod_pessoa CHECK (cod_pessoa &gt; 0)</sql>
+```
+
+O índice único é o que garante que o número não se repete quando dois salvam
+juntos; ele também serve à consulta do maior + 1 e ao filtro por código. Não há
+tabela de contadores nem sequence.
+
+Se uma tabela que **já tem dados** ganhar o código, a migration cria a coluna
+nula, preenche na ordem de criação e só então põe o `NOT NULL`, o único e o check:
+
+```sql
+UPDATE pessoa p SET cod_pessoa = n.num
+  FROM (SELECT id, row_number() OVER (PARTITION BY tenant_id ORDER BY created_at, id) AS num
+          FROM pessoa) n
+ WHERE p.id = n.id;
+```
+
 ## Nomes
 
 | Objeto | Padrão | Exemplo |
 |---|---|---|
 | tabela, coluna | `snake_case`, singular | `usuario_liberacao.usuario_id` |
+| código do registro | `cod_<tabela>` | `pessoa.cod_pessoa` |
 | PK | `pk_<tabela>` | `pk_usuario` |
 | FK | `fk_<tabela>_<referência>` | `fk_usuario_tenant` |
 | índice | `ix_<tabela>_<colunas>` | `ix_usuario_tenant_nome` |

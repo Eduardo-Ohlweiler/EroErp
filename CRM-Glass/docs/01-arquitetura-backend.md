@@ -163,10 +163,68 @@ mapa de nomes. Quando foi ele (o suporte da plataforma) quem cadastrou ou altero
 registro sai com `createdBy`/`updatedBy` e o nome **vazios**: o id do superadmin não sai
 para o contratante (mesma regra da trilha de logs). Na visão de plataforma tudo aparece.
 
+## Código do registro (`cod_<entidade>`)
+
+Todo cadastro de negócio usado pelo contratante (pessoa, emitente, pedido,
+estoque...) tem, além do UUID, um **número sequencial por contratante** que o
+usuário fala e imprime: `cod_pessoa` na tabela `pessoa`, `cod_emitente` em
+`emitente`, `cod_pedido` em `pedido`. Tabelas da plataforma e do Administrativo
+(`tenant`, `usuario`, permissões, logs) **não** têm. Decisão do dono:
+`docs/negocio/codigo-sequencial.md`.
+
+- O UUID continua sendo a chave, a FK e o id na URL. O código **nunca** é FK e
+  **nunca vem na entrada**: `CreateDto` e `UpdateDto` não têm o campo e o mapper
+  nunca o copia. Nunca muda depois de gravado. Não existe rota nem
+  `buscarPorCodigo` que leia ou altere pelo código; ele só aparece no filtro da lista.
+- Numeração: **maior + 1 do contratante, no salvar**. Sem tabela de contadores e
+  sem sequence do banco.
+- Banco: coluna, índice único e check conforme `05-banco-liquibase.md`.
+- Entidade: `private Long codPessoa;` com `@Column(name = "cod_pessoa", nullable = false, updatable = false)`.
+- Repository: uma consulta com nome, que já sai filtrada pelo tenant (`@TenantId`):
+  ```java
+  @Query("SELECT COALESCE(MAX(p.codPessoa), 0) + 1 FROM Pessoa p")
+  long buscarProximoCodigo();
+  ```
+- O `criar` começa com `SecurityUtils.exigirTenantSelecionado()` (como no
+  `usuario`): no contexto ROOT o `@TenantId` não filtra e o maior sairia o da
+  plataforma toda. `buscarProximoCodigo` nunca roda em `comoRoot`; fluxo de
+  plataforma usa `TenantContext.comoTenant(id, ...)`.
+- Depois de todas as validações e **imediatamente antes do `saveAndFlush`**,
+  `p.setCodPessoa(repository.buscarProximoCodigo())`. Assim uma recusa
+  (validação, duplicado) não chega a pedir número.
+- Dois salvando juntos: os dois leem o mesmo maior, e o índice único
+  `(tenant_id, cod_pessoa)` recusa o segundo. Aí o salvar roda de novo, até 3
+  vezes, e é assim que se faz (no PostgreSQL a violação aborta a transação, e a
+  entidade que falhou já tem `id` e `version`):
+  - o `criar` do service **não** leva `@Transactional`; ele chama a peça comum de
+    `compartilhado/util/` (ex.: `RepetirSeCodigoRepetido`), que roda o corpo num
+    `TransactionTemplate` **novo a cada tentativa** (chamar outro método do
+    próprio service não abre transação nova, porque passa por fora do proxy);
+  - cada tentativa remonta a entidade a partir do DTO (`toEntity`), valida e pede
+    o número de novo; nunca reaproveita a entidade da tentativa que falhou;
+  - só repete quando a causa é `org.hibernate.exception.ConstraintViolationException`
+    com `getConstraintName()` igual a `uk_<tabela>_tenant_cod_<tabela>` (como o
+    `TenantService.violou`); outra violação sobe na hora para o `GlobalExceptionHandler`;
+  - na 3ª recusa lança `ConflitoException("Não foi possível gerar o código. Tente salvar de novo.")` (409);
+  - evento de log (`eventos.registrar`) entra na transação da tentativa; e-mail e
+    outros efeitos de fora só depois do commit, para não sair em dobro.
+  A peça nasce junto com o primeiro cadastro (pessoas) e passa a ser usada por todos.
+- Como cadastro não tem DELETE físico (só inativa), o número não volta a ser usado.
+- `ResponseDto`: `codPessoa` logo depois de `id`. `SelectDto` e combos não levam o
+  código por enquanto.
+- Lista: filtro exato `@RequestParam(required = false) @Positive Long codPessoa`,
+  `AND (:codPessoa IS NULL OR p.codPessoa = :codPessoa)` no `buscarComFiltros` e
+  `"codPessoa"` na lista branca de ordenação.
+- Teste mínimo, além dos do módulo: o primeiro registro do contratante é 1 e o
+  seguinte é 2; dois contratantes numeram cada um do 1; `codPessoa` no corpo do
+  POST e do PUT é ignorado; o filtro não acha o código de outro contratante; dois
+  `criar` simultâneos no mesmo contratante terminam com 1 e 2, sem 409; violação
+  de outro índice único não é repetida.
+
 ## Passo a passo: módulo novo
 
 1. Planejar: campos, regras, telas e o **grupo de liberação** (ver `04-permissoes.md`).
-2. Migration `NNN-create-<tabela>.xml` (ver `05-banco-liquibase.md`) + linha no `changelog-master.xml`.
+2. Migration `NNN-create-<tabela>.xml` (ver `05-banco-liquibase.md`) + linha no `changelog-master.xml`. Cadastro de negócio já nasce com `cod_<entidade>` (seção "Código do registro").
 3. `entity/` estendendo `TenantEntity`.
 4. `repository/` com `buscarPorId`, `buscarComFiltros`, `buscarParaSelecao`.
 5. `dtos/` Create, Update (com `version`), Response, Select.

@@ -14,4 +14,5 @@ Data · decisão · porquê · nota
 - 14/11/2026 · Claro/escuro por usuário (revisa a decisão de 06/11) · preferência pessoal · [[contratantes]]
 - 14/11/2026 · Fatia 3 aprovada: ADMIN faz tudo no contratante, último ADMIN protegido, telefone, Minha conta, acessar contratante, Logs com Exportar e Pdf · fechar o Administrativo · [[usuarios-e-acesso]], [[logs-e-auditoria]]
 - 14/11/2026 · `codigo` sequencial por contratante em toda entidade com tela (entrega própria antes de pessoas) · número falável e imprimível · [[codigo-sequencial]]
+- 14/11/2026 · Código revisado: coluna `cod_<entidade>` só nos cadastros de negócio (pessoa, emitente, pedido...), maior + 1 por contratante com índice único, sem tabela de contadores; contratante e usuário sem código · simples, e o código é para quem contratou o sistema · [[codigo-sequencial]]
 - 14/11/2026 · Otimizações do custo do time aplicadas (um construtor por tela, Sonnet em frontend-modulos e revisor-ui, passada visual única) · custo alto · [[aparencia-e-movimento]]
