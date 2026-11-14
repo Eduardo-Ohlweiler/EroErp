@@ -32,7 +32,7 @@ createRoot(document.getElementById('root')!).render(
           <TQuestionProvider>
             <SessaoProvider>
               <LiveBackground />
-              <div className="relative z-10">
+              <div className="relative z-conteudo">
                 <RouterProvider router={roteador} />
               </div>
             </SessaoProvider>

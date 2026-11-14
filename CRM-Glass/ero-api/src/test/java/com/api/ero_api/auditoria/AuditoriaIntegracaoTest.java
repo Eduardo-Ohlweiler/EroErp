@@ -2,6 +2,7 @@ package com.api.ero_api.auditoria;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import com.api.ero_api.auditoria.service.RetencaoEventoService;
 import com.api.ero_api.support.IntegracaoTest;
 import java.time.Duration;
@@ -107,6 +108,33 @@ class AuditoriaIntegracaoTest extends IntegracaoTest {
         assertThat(status(get("/api/auditoria/eventos", comum.token()))).isEqualTo(403);
         liberar(c.admin().token(), u.id(), List.of(grupo("AUDITORIA", "LER")), Set.of());
         assertThat(status(get("/api/auditoria/eventos", comum.token()))).isEqualTo(200);
+    }
+
+    @Test
+    void tipos_parLerEDevolveRotuloCategoriaEFalha() {
+        assertThat(status(get("/api/auditoria/tipos", null))).isEqualTo(401);
+        Contratante c = novoContratante();
+        UsuarioCriado u = novoUsuario(c.admin());
+        Sessao comum = loginTrocandoSenha(u.email(), SENHA_FORTE, SENHA_FORTE_2);
+
+        assertThat(status(get("/api/auditoria/tipos", comum.token()))).as("sem AUDITORIA").isEqualTo(403);
+        liberar(c.admin().token(), u.id(), List.of(grupo("AUDITORIA", "LER")), Set.of());
+        MvcTestResult r = get("/api/auditoria/tipos", comum.token());
+        assertThat(status(r)).isEqualTo(200);
+
+        JsonNode tipos = corpo(r);
+        assertThat(tipos.size()).as("todos os tipos").isEqualTo(TipoEventoSeguranca.values().length);
+        assertThat(tipos.get(0).path("codigo").asString()).as("na ordem do enum").isEqualTo("LOGIN_SUCESSO");
+        JsonNode limite = tipos.valueStream().filter(t -> t.path("codigo").asString().equals("CODIGO_LIMITE_ATINGIDO"))
+                .findFirst().orElseThrow();
+        assertThat(limite.path("rotulo").asString()).isEqualTo("Limite de códigos por hora atingido");
+        assertThat(limite.path("categoria").asString()).isEqualTo("FALHAS");
+        assertThat(limite.path("categoriaRotulo").asString()).isEqualTo("Falhas e bloqueios");
+        assertThat(limite.path("falha").asBoolean()).isTrue();
+        JsonNode acessou = tipos.valueStream().filter(t -> t.path("codigo").asString().equals("SUPERADMIN_ACESSOU_TENANT"))
+                .findFirst().orElseThrow();
+        assertThat(acessou.path("categoriaRotulo").asString()).isEqualTo("Suporte da plataforma");
+        assertThat(acessou.path("falha").asBoolean()).isFalse();
     }
 
     // ------------------------------------------------------------ regras

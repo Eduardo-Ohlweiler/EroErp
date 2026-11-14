@@ -1,15 +1,34 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useIsPresent } from 'motion/react';
-import { Moon, Sun } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Building2, LogOut, Moon, Sun, UserRound } from 'lucide-react';
 import { useMessage } from '../../design-system/kit';
-import { ChipContratante, CommandPalette, MenuUsuario, MobileNav, Sidebar, Topbar, type Comando } from '../../design-system/shell';
-import { Button } from '../../design-system/ui';
+import {
+  ChipContratante,
+  CommandPalette,
+  MenuUsuario,
+  MobileNav,
+  SeletorContratante,
+  Sidebar,
+  Topbar,
+  type Comando,
+} from '../../design-system/shell';
+import { AvisoContexto, Button } from '../../design-system/ui';
 import { useAparencia } from '../../shared/aparencia/AparenciaProvider';
 import { casca } from '../../motion/tokens';
-import { RotaAnimada } from '../../motion/coreografia';
+import { FaixaDaCasca, RotaAnimada } from '../../motion/coreografia';
+import { ErroApi } from '../../shared/api/erros';
+import { selecaoApi } from '../../shared/api/selecao';
 import type { UsuarioLogado } from '../../shared/api/tipos';
-import { nomeDoContratante, rotaDoLogin, rotuloDoPapel, useSessao, UsuarioDaCascaProvider } from '../../shared/sessao';
+import {
+  naVisaoDePlataforma,
+  nomeDoContratante,
+  rotaDoLogin,
+  rotuloDoPapel,
+  useSessao,
+  UsuarioDaCascaProvider,
+} from '../../shared/sessao';
 import { cn } from '../../shared/util/utils';
 import { menuAdministrativo, menuDoUsuario, ROTULO_ADMINISTRATIVO, tituloDaRota } from '../menu';
 
@@ -26,8 +45,10 @@ export function CascaProtegida() {
   const navegar = useNavigate();
   const presente = useIsPresent();
 
+  // Só acompanha o usuário enquanto esta casca está presente: ao entrar ou sair de um contratante, a casca antiga
+  // se desfaz com o nome, o menu e a faixa que tinha (a sessão já é a do contratante novo, que é da casca nova).
   const ultimo = useRef<UsuarioLogado | null>(null);
-  if (estado.tipo === 'autenticado') ultimo.current = estado.usuario;
+  if (estado.tipo === 'autenticado' && (presente || !ultimo.current)) ultimo.current = estado.usuario;
 
   const destino =
     estado.tipo === 'autenticado'
@@ -54,7 +75,7 @@ export function CascaProtegida() {
  * Menu lateral (barra inferior no celular) → barra superior → conteúdo (RotaAnimada).
  *
  * Busca (Ctrl K): fica desligada até haver 3 telas ou mais no menu (os dois grupos somados); com uma só, ela não
- * leva a lugar nenhum. O grupo de baixo é o Administrativo (só o superadmin na plataforma).
+ * leva a lugar nenhum. O grupo de baixo é o Administrativo (Usuários, Logs e, na plataforma, Contratantes).
  * O Sair fica no menu lateral e no MenuUsuario (que também aparece no celular).
  * Barra inferior do celular: só com 2 telas ou mais, somando os dois grupos (com uma, ocupa espaço fixo à toa).
  */
@@ -83,22 +104,63 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
   };
 
   const tema = useAlternarTema();
+  const contexto = useTrocaDeContratante(usuario);
+  const minhaConta = () => navegar('/minha-conta');
 
   const comandos: Comando[] = [
     ...menu.map((i) => ({ grupo: 'Telas', rotulo: i.label, icone: i.icon, executar: () => navegar(i.to) })),
     ...administrativo.map((i) => ({ grupo: ROTULO_ADMINISTRATIVO, rotulo: i.label, icone: i.icon, executar: () => navegar(i.to) })),
+    { grupo: 'Ações', rotulo: 'Minha conta', dica: 'Meus dados, senha e sessões', icone: UserRound, executar: minhaConta },
+    // Superadmin: na plataforma, abre o seletor do chip (busca e lista dos contratantes ativos);
+    // dentro de um contratante, voltar à plataforma.
+    ...(naVisaoDePlataforma(usuario)
+      ? [{ grupo: 'Ações', rotulo: 'Acessar contratante…', icone: Building2, executar: () => contexto.setSeletorAberto(true) }]
+      : []),
+    ...(usuario.superadminAtuando
+      ? [{ grupo: 'Ações', rotulo: 'Sair do contratante', dica: 'Voltar à plataforma', icone: LogOut, executar: contexto.sair }]
+      : []),
     { grupo: 'Ações', rotulo: 'Alternar tema', dica: tema.rotulo, icone: tema.Icone, executar: tema.alternar },
   ];
+
+  // Só o superadmin troca de contratante: para os outros o chip não é clicável.
+  const chip =
+    usuario.papel === 'SUPERADMIN' ? (
+      <SeletorContratante
+        opcoes={contexto.opcoes}
+        carregando={contexto.carregando}
+        erro={contexto.erro}
+        atual={contexto.atual}
+        onEscolher={(id) => void contexto.acessar(id)}
+        onSair={() => void contexto.sair()}
+        aberto={contexto.seletorAberto}
+        onAbertoChange={contexto.setSeletorAberto}
+        ocupado={contexto.trocando}
+        nome={contratante}
+        detalhe={papel}
+      />
+    ) : (
+      <ChipContratante nome={contratante} detalhe={papel} />
+    );
 
   return (
     <>
       <Sidebar itens={menu} itensSistema={administrativo} rotuloSistema={ROTULO_ADMINISTRATIVO} onSair={fazerSair} />
       {comBarraInferior && <MobileNav itens={menu} itensSistema={administrativo} rotuloSistema={ROTULO_ADMINISTRATIVO} />}
-      <div className={cn('md:pl-[104px] px-3 md:pr-6 pt-4 md:pb-10', comBarraInferior ? 'pb-28' : 'pb-8')}>
+      {/*
+       * Espaço embaixo do conteúdo para o fim da tela não ficar escondido atrás do que é fixo: a barra inferior do
+       * celular e, com o superadmin dentro de um contratante, a faixa do suporte (bottom-24 no celular, onde ocupa
+       * duas linhas; bottom-5 a partir de md).
+       */}
+      <div
+        className={cn(
+          'md:pl-[104px] px-3 md:pr-6 pt-4',
+          usuario.superadminAtuando ? 'pb-52 md:pb-24' : comBarraInferior ? 'pb-28 md:pb-10' : 'pb-8 md:pb-10',
+        )}
+      >
         <div className="mx-auto max-w-[1680px]">
           <Topbar
             titulo={tituloDaRota(pathname)}
-            contratante={<ChipContratante nome={contratante} detalhe={papel} />}
+            contratante={chip}
             onBuscar={comBusca ? () => setBusca(true) : undefined}
             direita={
               <span className="flex items-center gap-1.5">
@@ -111,7 +173,14 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
                 >
                   <tema.Icone className="size-[18px]" aria-hidden />
                 </Button>
-                <MenuUsuario nome={usuario.nome} email={usuario.email} papel={papel} contexto={contratante} onSair={fazerSair} />
+                <MenuUsuario
+                  nome={usuario.nome}
+                  email={usuario.email}
+                  papel={papel}
+                  contexto={contratante}
+                  onMinhaConta={minhaConta}
+                  onSair={fazerSair}
+                />
               </span>
             }
           />
@@ -121,8 +190,66 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
         </div>
       </div>
       {comBusca && <CommandPalette aberto={busca} onAbertoChange={setBusca} comandos={comandos} />}
+      {/*
+       * Faixa do superadmin dentro de um contratante: entra depois da casca e sai antes dela (FaixaDaCasca, com o
+       * AvisoContexto SEM `flutuante`). Não imprime.
+       */}
+      {usuario.superadminAtuando && (
+        <FaixaDaCasca>
+          <AvisoContexto
+            tipo="superadmin"
+            acao={{ rotulo: 'Sair do contratante', onClick: () => void contexto.sair(), carregando: contexto.trocando }}
+          >
+            Você está dentro de <strong>{contratante}</strong> como suporte da plataforma
+          </AvisoContexto>
+        </FaixaDaCasca>
+      )}
     </>
   );
+}
+
+/**
+ * Entrar e sair de um contratante (só o superadmin): a lista do seletor (`GET /api/tenants/selecao`, buscada só com
+ * o seletor aberto), a troca pela sessão e a ida ao Início. A casca inteira troca em seguida (a raiz troca a área pela
+ * chave `casca:${tenantId}`), então o "trocando" vale até ela sair.
+ */
+function useTrocaDeContratante(usuario: UsuarioLogado) {
+  const { acessarContratante, sairDoContratante } = useSessao();
+  const navegar = useNavigate();
+  const mensagem = useMessage();
+  const [seletorAberto, setSeletorAberto] = useState(false);
+  const [trocando, setTrocando] = useState(false);
+  const superadmin = usuario.papel === 'SUPERADMIN';
+
+  const lista = useQuery({
+    queryKey: ['tenants', 'selecao'],
+    queryFn: selecaoApi.contratantes,
+    enabled: superadmin && seletorAberto,
+  });
+
+  const trocar = async (fazer: () => Promise<void>) => {
+    if (trocando) return;
+    setTrocando(true);
+    try {
+      await fazer();
+      navegar('/');
+    } catch (e) {
+      setTrocando(false);
+      mensagem.erroApi(e);
+    }
+  };
+
+  return {
+    opcoes: lista.data ?? [],
+    carregando: lista.isFetching,
+    erro: lista.error ? (lista.error instanceof ErroApi ? lista.error.detail : 'Não foi possível carregar os contratantes.') : undefined,
+    atual: usuario.superadminAtuando && usuario.tenantId ? { id: usuario.tenantId, nome: nomeDoContratante(usuario) } : null,
+    trocando,
+    seletorAberto,
+    setSeletorAberto,
+    acessar: (id: string) => trocar(() => acessarContratante(id)),
+    sair: () => trocar(sairDoContratante),
+  };
 }
 
 /**

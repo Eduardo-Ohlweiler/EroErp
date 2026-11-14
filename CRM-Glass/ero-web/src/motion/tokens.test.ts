@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ambiente, atrasoDoBloco, coreografias, kit, montagem, orquestrar, variaveisDeMovimento, type Papel } from './tokens';
+import { aba, ambiente, atrasoDoBloco, casca, coreografias, faixa, faixaContexto, kit, montagem, orquestrar, variaveisDeMovimento, type Papel } from './tokens';
 
 type ComDelay = { transition: { delayChildren: (i: number, n: number) => number; when?: string } };
 
@@ -110,5 +110,42 @@ describe('variáveis --mov-* do CSS', () => {
     expect(v['--mov-onda-2']).toBe(`${ambiente.ondas[1]}s`);
     expect(v['--mov-ease-ambiente']).toBe('cubic-bezier(0.42,0,0.58,1)');
     for (const [nome, valor] of Object.entries(v)) expect(valor, nome).toMatch(/^(\d+(\.\d+)?s|cubic-bezier\([\d.,-]+\))$/);
+  });
+});
+
+describe('troca de contexto e de aba (fatia 3)', () => {
+  const valores = (v: unknown) => (typeof v === 'function' ? v(0, {}, {}) : v) as Record<string, unknown>;
+  const PAPEIS: Papel[] = ['cartao', 'campo', 'rodape', 'grade', 'linhaGrade'];
+
+  it('a faixa entra depois da casca (menu e barra já entrando) e sai antes de a barra começar a sair', () => {
+    expect(faixa.atraso).toBeGreaterThan(casca.atrasoBarra);
+    expect(faixa.atraso).toBeLessThan(casca.entrada);
+    expect(faixa.saida).toBeLessThan(casca.saidaBarra);
+  });
+
+  it('a faixa (vidro) só anima opacidade e transform', () => {
+    for (const rotulo of ['hidden', 'show', 'exit']) {
+      const chaves = Object.keys(valores(faixaContexto[rotulo])).filter((k) => k !== 'transition');
+      expect(chaves.every((k) => ['opacity', 'x', 'y', 'scale'].includes(k)), rotulo).toBe(true);
+    }
+  });
+
+  it('a aba nova é um bloco curto: todos juntos, sem espera, em menos de 0,4 s', () => {
+    const c = coreografias.aba;
+    for (const p of PAPEIS) expect(c.variantes[p], `aba.${p}`).toBeDefined();
+    expect(c.ordem.entrada).toBe('junto');
+    expect(c.atraso).toBe(0);
+    expect(c.ritmo.inicio).toBe(0);
+    expect(aba.entrada).toBeLessThan(0.4);
+    // o cartão da aba não põe os campos em cascata: eles vêm com ele
+    const show = valores(c.variantes.cartao.show) as { transition?: { delayChildren?: unknown } };
+    expect(show.transition?.delayChildren).toBeUndefined();
+    expect(Object.keys(valores(c.variantes.campo.hidden))).toEqual([]);
+  });
+
+  it('a troca de contexto monta depois de uma pausa curta e começa a cascata cedo', () => {
+    const c = coreografias.contexto;
+    expect(c.atraso).toBeGreaterThan(0);
+    expect(c.atraso).toBeLessThan(0.3);
   });
 });

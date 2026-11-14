@@ -348,7 +348,7 @@ export function ModelosDoKit({ modelo, id }: { modelo: ModeloKit; id?: string })
   const { alvo, set } = useAparencia();
   const idEfetivo = modelo === 'editar' || modelo === 'leitura' ? (id ?? 'c2') : undefined;
   return (
-    <div className="relative z-10 px-3 md:px-8 pt-4 pb-16">
+    <div className="relative z-conteudo px-3 md:px-8 pt-4 pb-16">
       <div className="mx-auto max-w-[1680px]">
         <div className="glass mb-6 flex flex-wrap items-center gap-2 p-2 !rounded-2xl">
           <Button size="sm" variant="ghost" onClick={() => ir(null)}>

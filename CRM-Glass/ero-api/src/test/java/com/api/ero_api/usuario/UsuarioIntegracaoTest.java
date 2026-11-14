@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import tools.jackson.databind.JsonNode;
 
@@ -16,6 +18,9 @@ import tools.jackson.databind.JsonNode;
  * caminho feliz, validação recusada, isolamento entre tenants e o par LER/ESCREVER.
  */
 class UsuarioIntegracaoTest extends IntegracaoTest {
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     // ------------------------------------------------------------ obrigatórios
 
@@ -550,6 +555,214 @@ class UsuarioIntegracaoTest extends IntegracaoTest {
         Contratante c = novoContratante();
         assertThat(status(get("/api/usuarios?sort=senhaHash", c.admin().token()))).isEqualTo(422);
         assertThat(status(get("/api/usuarios?sort=nome,desc", c.admin().token()))).isEqualTo(200);
+    }
+
+    // ------------------------------------------------------------ telefone
+
+    @Test
+    void telefoneOpcionalSoComDigitosNoCadastroNaListaENaEdicao() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        String email = unico("telefone") + "@teste.local";
+
+        MvcTestResult criado = post("/api/usuarios", token, Map.of("nome", "Paula Reis", "email", email,
+                "telefone", "11987654321", "senha", SENHA_FORTE, "papel", "USUARIO"));
+        assertThat(status(criado)).isEqualTo(201);
+        JsonNode u = corpo(criado);
+        assertThat(u.path("telefone").asString()).isEqualTo("11987654321");
+        assertThat(corpo(get("/api/usuarios?busca=" + email, token)).path("conteudo").get(0).path("telefone").asString())
+                .as("lista também traz").isEqualTo("11987654321");
+
+        String id = u.path("id").asString();
+        MvcTestResult fixo = put("/api/usuarios/" + id, token, Map.of("nome", "Paula Reis", "email", email,
+                "telefone", "1133334444", "papel", "USUARIO", "version", u.path("version").asLong()));
+        assertThat(status(fixo)).as("fixo com 10 dígitos").isEqualTo(200);
+        assertThat(corpo(fixo).path("telefone").asString()).isEqualTo("1133334444");
+
+        MvcTestResult limpo = put("/api/usuarios/" + id, token, Map.of("nome", "Paula Reis", "email", email,
+                "telefone", "", "papel", "USUARIO", "version", corpo(fixo).path("version").asLong()));
+        assertThat(status(limpo)).as("campo limpo na tela").isEqualTo(200);
+        assertThat(corpo(limpo).path("telefone").isNull()).as("vazio grava nulo").isTrue();
+
+        MvcTestResult semTelefone = post("/api/usuarios", token, novoUsuarioBody("USUARIO"));
+        assertThat(status(semTelefone)).isEqualTo(201);
+        assertThat(corpo(semTelefone).path("telefone").isNull()).isTrue();
+    }
+
+    @Test
+    void telefoneInvalidoDa400NoCampoTelefone() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        for (String invalido : List.of("123", "119876543210", "(11) 98765-4321", "11 98765432a")) {
+            MvcTestResult r = post("/api/usuarios", token, Map.of("nome", "Paula Reis", "email", unico("tel") + "@teste.local",
+                    "telefone", invalido, "senha", SENHA_FORTE, "papel", "USUARIO"));
+            assertThat(status(r)).as(invalido).isEqualTo(400);
+            JsonNode erro = corpo(r).path("erros").get(0);
+            assertThat(erro.path("campo").asString()).isEqualTo("telefone");
+            assertThat(erro.path("mensagem").asString()).isEqualTo("Telefone deve ter 10 ou 11 dígitos");
+        }
+
+        UsuarioCriado u = novoUsuario(c.admin());
+        long versao = corpo(get("/api/usuarios/" + u.id(), token)).path("version").asLong();
+        MvcTestResult r = put("/api/usuarios/" + u.id(), token, Map.of("nome", "Bruno Rocha", "email", u.email(),
+                "telefone", "123", "papel", "USUARIO", "version", versao));
+        assertThat(status(r)).isEqualTo(400);
+        assertThat(corpo(r).path("erros").get(0).path("campo").asString()).isEqualTo("telefone");
+    }
+
+    // ------------------------------------------------------------ filtros da lista e seleção
+
+    @Test
+    void filtrosPapelEBloqueado() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        MvcTestResult outroAdmin = post("/api/usuarios", token, novoUsuarioBody("ADMIN"));
+        assertThat(status(outroAdmin)).isEqualTo(201);
+        String outroAdminEmail = corpo(outroAdmin).path("email").asString();
+        UsuarioCriado comum = novoUsuario(c.admin());
+        UsuarioCriado bloqueado = novoUsuario(c.admin());
+        for (int i = 0; i < 5; i++) {
+            tentarLogin(bloqueado.email(), "Senha-Errada-Total-" + i);
+        }
+
+        List<String> admins = emails(get("/api/usuarios?size=100&papel=ADMIN", token));
+        assertThat(admins).containsExactlyInAnyOrder(c.adminEmail(), outroAdminEmail);
+        List<String> usuarios = emails(get("/api/usuarios?size=100&papel=USUARIO", token));
+        assertThat(usuarios).containsExactlyInAnyOrder(comum.email(), bloqueado.email());
+
+        assertThat(emails(get("/api/usuarios?size=100&bloqueado=true", token))).containsExactly(bloqueado.email());
+        assertThat(emails(get("/api/usuarios?size=100&bloqueado=false", token)))
+                .containsExactlyInAnyOrder(c.adminEmail(), outroAdminEmail, comum.email());
+        assertThat(emails(get("/api/usuarios?size=100&bloqueado=true&papel=ADMIN", token))).as("filtros somam").isEmpty();
+        assertThat(status(get("/api/usuarios?papel=CHEFE", token))).as("papel fora do enum").isEqualTo(400);
+
+        // Prazo do bloqueio vencido (bloqueadoAte no passado): já não conta como bloqueado.
+        jdbc.update("UPDATE usuario SET bloqueado_ate = now() - interval '1 minute' WHERE id = ?", bloqueado.id());
+        assertThat(emails(get("/api/usuarios?size=100&bloqueado=true", token))).isEmpty();
+        assertThat(emails(get("/api/usuarios?size=100&bloqueado=false", token))).contains(bloqueado.email());
+    }
+
+    @Test
+    void selecaoPadraoSoAtivosEComInativosTrazOInativado() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        UsuarioCriado ativo = novoUsuario(c.admin());
+        UsuarioCriado inativado = novoUsuario(c.admin());
+        assertThat(status(patch("/api/usuarios/" + inativado.id() + "/inativar", token))).isEqualTo(204);
+
+        List<String> padrao = ids(get("/api/usuarios/selecao", token));
+        assertThat(padrao).contains(ativo.id().toString()).doesNotContain(inativado.id().toString());
+        assertThat(ids(get("/api/usuarios/selecao?inativos=false", token))).doesNotContain(inativado.id().toString());
+        assertThat(ids(get("/api/usuarios/selecao?inativos=true", token)))
+                .contains(ativo.id().toString(), inativado.id().toString());
+
+        String superadminId = loginSuperadmin().corpo().path("usuario").path("id").asString();
+        assertThat(ids(get("/api/usuarios/selecao?inativos=true", token))).as("superadmin nunca").doesNotContain(superadminId);
+    }
+
+    // ------------------------------------------------------------ último administrador
+
+    /**
+     * O contratante nunca fica sem administrador ativo: nem o superadmin (atuando lá
+     * dentro) rebaixa ou inativa o último. Com dois, o segundo consegue.
+     */
+    @Test
+    void ultimoAdministradorAtivoNaoERebaixadoNemInativado() {
+        Contratante c = novoContratante();
+        String adminId = c.admin().corpo().path("usuario").path("id").asString();
+        Sessao s = loginSuperadmin();
+        String dentro = corpo(post("/api/auth/superadmin/acessar/" + c.id(), s.token(), Map.of())).path("tokenAcesso").asString();
+        long versao = corpo(get("/api/usuarios/" + adminId, dentro)).path("version").asLong();
+
+        MvcTestResult rebaixar = put("/api/usuarios/" + adminId, dentro, Map.of(
+                "nome", "Ana Lima", "email", c.adminEmail(), "papel", "USUARIO", "version", versao));
+        assertThat(status(rebaixar)).isEqualTo(422);
+        assertThat(corpo(rebaixar).path("detail").asString())
+                .isEqualTo("O contratante precisa de pelo menos um administrador ativo.");
+        MvcTestResult inativar = patch("/api/usuarios/" + adminId + "/inativar", dentro);
+        assertThat(status(inativar)).isEqualTo(422);
+        assertThat(corpo(inativar).path("detail").asString())
+                .isEqualTo("O contratante precisa de pelo menos um administrador ativo.");
+        JsonNode intacto = corpo(get("/api/usuarios/" + adminId, dentro));
+        assertThat(intacto.path("papel").asString()).isEqualTo("ADMIN");
+        assertThat(intacto.path("ativo").asBoolean()).isTrue();
+
+        // Um segundo administrador ATIVO libera a regra; um inativo não conta.
+        MvcTestResult inativoBody = post("/api/usuarios", c.admin().token(), novoUsuarioBody("ADMIN"));
+        String adminInativo = corpo(inativoBody).path("id").asString();
+        assertThat(status(patch("/api/usuarios/" + adminInativo + "/inativar", c.admin().token()))).isEqualTo(204);
+        assertThat(status(patch("/api/usuarios/" + adminId + "/inativar", dentro))).as("admin inativo não conta").isEqualTo(422);
+
+        String segundoEmail = unico("segundo") + "@teste.local";
+        assertThat(status(post("/api/usuarios", c.admin().token(), Map.of("nome", "Caio Nunes", "email", segundoEmail,
+                "senha", SENHA_FORTE, "papel", "ADMIN")))).isEqualTo(201);
+        Sessao segundo = loginTrocandoSenha(segundoEmail, SENHA_FORTE, SENHA_FORTE_2);
+        String segundoId = segundo.corpo().path("usuario").path("id").asString();
+
+        MvcTestResult rebaixado = put("/api/usuarios/" + adminId, segundo.token(), Map.of(
+                "nome", "Ana Lima", "email", c.adminEmail(), "papel", "USUARIO", "version", versao));
+        assertThat(status(rebaixado)).as("com dois administradores, o segundo rebaixa o primeiro").isEqualTo(200);
+        assertThat(corpo(rebaixado).path("papel").asString()).isEqualTo("USUARIO");
+
+        // Agora o segundo é o último: ninguém o rebaixa nem inativa.
+        assertThat(status(patch("/api/usuarios/" + segundoId + "/inativar", dentro))).isEqualTo(422);
+        long versaoSegundo = corpo(get("/api/usuarios/" + segundoId, dentro)).path("version").asLong();
+        assertThat(status(put("/api/usuarios/" + segundoId, dentro, Map.of(
+                "nome", "Caio Nunes", "email", segundoEmail, "papel", "USUARIO", "version", versaoSegundo)))).isEqualTo(422);
+
+        // Inativar um usuário comum continua livre, e o ex-administrador agora é comum.
+        assertThat(status(patch("/api/usuarios/" + adminId + "/inativar", segundo.token()))).isEqualTo(204);
+    }
+
+    /**
+     * Dois administradores rebaixando um ao outro ao mesmo tempo: a linha do contratante
+     * é travada antes de contar, então só um passa e sobra exatamente um administrador.
+     */
+    @Test
+    void doisAdministradoresSeRebaixandoEmParaleloNaoZeramOContratante() throws Exception {
+        for (int rodada = 0; rodada < 5; rodada++) {
+            Contratante c = novoContratante();
+            String adminId = c.admin().corpo().path("usuario").path("id").asString();
+            String segundoEmail = unico("segundo") + "@teste.local";
+            assertThat(status(post("/api/usuarios", c.admin().token(), Map.of("nome", "Caio Nunes", "email", segundoEmail,
+                    "senha", SENHA_FORTE, "papel", "ADMIN")))).isEqualTo(201);
+            Sessao segundo = loginTrocandoSenha(segundoEmail, SENHA_FORTE, SENHA_FORTE_2);
+            String segundoId = segundo.corpo().path("usuario").path("id").asString();
+            long versaoAdmin = corpo(get("/api/usuarios/" + adminId, c.admin().token())).path("version").asLong();
+            long versaoSegundo = corpo(get("/api/usuarios/" + segundoId, c.admin().token())).path("version").asLong();
+
+            java.util.concurrent.CyclicBarrier largada = new java.util.concurrent.CyclicBarrier(2);
+            java.util.concurrent.Callable<Integer> rebaixaOSegundo = () -> {
+                largada.await();
+                return status(put("/api/usuarios/" + segundoId, c.admin().token(), Map.of(
+                        "nome", "Caio Nunes", "email", segundoEmail, "papel", "USUARIO", "version", versaoSegundo)));
+            };
+            java.util.concurrent.Callable<Integer> rebaixaOPrimeiro = () -> {
+                largada.await();
+                return status(put("/api/usuarios/" + adminId, segundo.token(), Map.of(
+                        "nome", "Ana Lima", "email", c.adminEmail(), "papel", "USUARIO", "version", versaoAdmin)));
+            };
+            List<Integer> resultados;
+            try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+                var primeiro = pool.submit(rebaixaOSegundo);
+                var outro = pool.submit(rebaixaOPrimeiro);
+                resultados = List.of(primeiro.get(30, TimeUnit.SECONDS), outro.get(30, TimeUnit.SECONDS));
+            }
+            // O perdedor recebe 422 (último administrador) ou 403 (já foi rebaixado quando a requisição chegou).
+            assertThat(resultados).as("rodada %d", rodada).containsOnlyOnce(200);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM usuario WHERE tenant_id = ? AND papel = 'ADMIN' AND ativo",
+                    Long.class, c.id())).as("rodada %d", rodada).isEqualTo(1);
+        }
+    }
+
+    private List<String> emails(MvcTestResult r) {
+        assertThat(status(r)).isEqualTo(200);
+        return corpo(r).path("conteudo").valueStream().map(n -> n.path("email").asString()).toList();
+    }
+
+    private List<String> ids(MvcTestResult r) {
+        assertThat(status(r)).isEqualTo(200);
+        return corpo(r).valueStream().map(n -> n.path("id").asString()).toList();
     }
 
     private static Map<String, String> novoUsuarioBody(String papel) {

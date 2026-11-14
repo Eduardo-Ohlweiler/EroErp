@@ -10,8 +10,9 @@ public enum Papel {
     SUPERADMIN,
 
     /**
-     * Administrador do contratante. Por enquanto recebe todos os grupos do
-     * contratante; regras específicas serão definidas depois (ver docs/04-permissoes.md).
+     * Administrador do contratante: recebe todos os grupos e ações do contratante e
+     * administra os usuários dele (nunca a si mesmo). O contratante tem sempre pelo
+     * menos um ADMIN ativo (ver docs/04-permissoes.md).
      */
     ADMIN,
 

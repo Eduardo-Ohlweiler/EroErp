@@ -38,6 +38,13 @@ public class Usuario extends TenantEntity {
     @Column(name = "email", nullable = false, length = 255)
     private String email;
 
+    /**
+     * Opcional. Só dígitos, com DDD: 10 (fixo) ou 11 (celular); o banco confere
+     * (ck_usuario_telefone). Dado pessoal: nunca em log nem em detalhe de evento.
+     */
+    @Column(name = "telefone", length = 20)
+    private String telefone;
+
     @Column(name = "senha_hash", nullable = false, length = 255)
     private String senhaHash;
 

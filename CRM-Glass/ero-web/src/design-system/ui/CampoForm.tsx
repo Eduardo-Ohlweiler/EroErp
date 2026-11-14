@@ -15,8 +15,13 @@ export type CampoFormProps = PropsBloco & {
   id?: string;
   /** marca visual de obrigatório (o `required` continua no controle) */
   obrigatorio?: boolean;
-  /** controle composto (Segmented, OtpInput, grupo de opções): rótulo vira legenda de um role=group */
-  grupo?: boolean;
+  /**
+   * Controle composto (Segmented, OtpInput, grupo de opções): o rótulo vira a legenda de um `role=group`
+   * (`'radiogroup'` no grupo de rádio do TRadio, que leva também o `ariaGrupo`).
+   */
+  grupo?: boolean | 'radiogroup';
+  /** estado do grupo para o leitor de tela (só com `grupo`): só leitura, obrigatório, inválido */
+  ariaGrupo?: { 'aria-readonly'?: boolean; 'aria-required'?: boolean; 'aria-invalid'?: boolean };
   /** ação ao lado do rótulo (ex.: "Gerar", "Copiar") */
   acao?: ReactNode;
   /**
@@ -52,6 +57,7 @@ export function CampoForm({
   id,
   obrigatorio,
   grupo,
+  ariaGrupo,
   acao,
   reservarErro = true,
   rotuloOculto,
@@ -87,7 +93,14 @@ export function CampoForm({
       variants={variantesBloco}
       className={className}
       {...dados}
-      {...(grupo ? { role: 'group', 'aria-labelledby': rotuloId, 'aria-describedby': temDesc ? descId : undefined } : {})}
+      {...(grupo
+        ? {
+            role: grupo === 'radiogroup' ? 'radiogroup' : 'group',
+            'aria-labelledby': rotuloId,
+            'aria-describedby': temDesc ? descId : undefined,
+            ...ariaGrupo,
+          }
+        : {})}
     >
       <div className={rotuloOculto && !acao ? 'sr-only' : 'flex items-center justify-between gap-2 mb-1.5'}>
         <Rotulo id={rotuloId} {...(grupo ? {} : { htmlFor: campoId })} className={rotuloOculto ? 'sr-only' : 'block text-xs font-medium text-muted'}>

@@ -40,6 +40,8 @@ correto?
 
 ## Formato da resposta
 
+Em **no máximo ~300 palavras**; o que está certo, em uma ou duas linhas.
+
 Uma lista de achados, cada um com:
 - **gravidade**: `bloqueia` (quebra regra inegociável ou está errado) /
   `corrigir` (deve mudar antes de entregar) / `sugestão`;

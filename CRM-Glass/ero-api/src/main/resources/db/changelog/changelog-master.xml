@@ -21,5 +21,6 @@
     <include file="changes/009-2fa-email-e-limite-usuarios.xml" relativeToChangelogFile="true"/>
     <include file="changes/010-add-tenant-desempenho-automatico.xml" relativeToChangelogFile="true"/>
     <include file="changes/011-add-usuario-tema-preferido.xml" relativeToChangelogFile="true"/>
+    <include file="changes/012-add-usuario-telefone.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

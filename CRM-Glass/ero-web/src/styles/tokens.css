@@ -15,6 +15,38 @@
    * 0,8 mantém o ícone ≥ 3:1 (WCAG 1.4.11) no vale da pulsação. Pior caso: ghost (texto muted) no tema claro,
    * 3,4:1 a 3,8:1 (com 0,7 cairia para 2,8:1); primary violeta 3,9:1; primary âmbar 4,8:1; danger claro 4,6:1. */
   --carregando-pulso-min: 0.8;
+
+  /*
+   * Camadas (z-index), de baixo para cima. Viram as classes `z-conteudo`, `z-barra`... (@theme inline em index.css).
+   * Nenhum componente usa `z-[NN]` solto: a ordem conteúdo < casca < faixa < popovers < modal < toast mora aqui.
+   * - faixa: a faixa do suporte (FaixaDaCasca/AvisoContexto flutuante), por cima do conteúdo e da casca, mas
+   *   embaixo de combo, data e menus: um combo perto do pé da tela abre por cima da pílula.
+   * - popover: lista do TCombo, calendário do TDate, seletor de contratante, menu do usuário.
+   * - modal: Dialogo, Gaveta (fundo e janela). Popover aberto de dentro de um modal sobe para `popover-sobre-modal`
+   *   (regra logo abaixo), senão abriria atrás da janela.
+   * - toast: sempre por cima de tudo (o erro de um Salvar no modal aparece por cima dele).
+   */
+  --z-conteudo: 10;
+  --z-barra: 30;
+  --z-menu: 40;
+  --z-splash: 60;
+  --z-faixa: 65;
+  --z-popover: 70;
+  --z-modal: 80;
+  --z-popover-sobre-modal: 85;
+  --z-paleta: 90;
+  --z-toast: 100;
+
+  /*
+   * Folga embaixo da pilha de toasts: altura da faixa flutuante do suporte (+ um respiro), escrita no <html> pelo
+   * AvisoContexto enquanto a faixa existe. Sem faixa, 0: os toasts ficam no lugar de sempre.
+   */
+  --folga-inferior: 0px;
+}
+
+/* Com um modal aberto (aria-modal), os popovers abertos de dentro dele ficam acima da janela. */
+body:has([aria-modal='true']) {
+  --z-popover: var(--z-popover-sobre-modal);
 }
 
 /* ---------- Tema escuro (padrão) ---------- */
@@ -464,6 +496,29 @@
   --success-strong: #4d7c0f;
   --success-2-strong: #3f6212;
   --on-success: #ffffff;
+}
+
+/* ---------- Kit de telas: caixa de marcar e rádio (TCheckBox, TRadio) ----------
+ * O próprio <input> (appearance: none) é a caixa: o fundo é --input-bg, como o de um campo editável; só leitura e
+ * desabilitada usam --input-bg-readonly (o medidor do docs/07 §7.1 compara o fundo do controle).
+ * Borda da caixa desmarcada ≥ 3:1 sobre o vidro sólido (WCAG 1.4.11), pior caso medido sobre o fundo mais claro
+ * de cada tema: escuro 4,2:1 · claro 3,4:1. Marcada: degradê do destaque (--accent-strong → --accent-2-strong), sinal
+ * em --on-accent (≥ 4,5:1, o mesmo par do botão Novo) e borda no tom de texto do destaque (--accent-text: claro
+ * no escuro, escuro no claro), que separa a caixa do vidro até no âmbar sobre o tema claro.
+ * Só leitura ou desabilitada, marcada: sinal em --fg-muted sobre --input-bg-readonly (5,75:1 escuro · 5,20:1 claro). */
+:root,
+[data-theme='dark'] {
+  --marca-borda: rgb(244 244 249 / 0.46);
+  --marca-borda-hover: rgb(244 244 249 / 0.7);
+}
+[data-theme='light'] {
+  --marca-borda: rgb(18 19 27 / 0.5);
+  --marca-borda-hover: rgb(18 19 27 / 0.7);
+}
+:root,
+[data-theme],
+[data-accent] {
+  --marca-borda-marcada: var(--accent-text);
 }
 
 /* Orb em tela estreita: ver --orb-pico (precisa vir depois do :root acima para valer). */

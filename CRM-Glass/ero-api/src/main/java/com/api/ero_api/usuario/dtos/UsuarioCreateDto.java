@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -25,6 +26,10 @@ public record UsuarioCreateDto(
         @Email(message = "E-mail inválido")
         @Size(max = 255, message = "E-mail deve ter no máximo 255 caracteres")
         String email,
+
+        @Schema(description = "Telefone com DDD, só dígitos (10 ou 11). Vazio ou nulo = não informado", example = "11987654321")
+        @Pattern(regexp = "^(\\d{10,11})?$", message = "Telefone deve ter 10 ou 11 dígitos")
+        String telefone,
 
         @Schema(description = "Senha temporária (mínimo 12 caracteres)")
         @NotBlank(message = "Senha é obrigatória")

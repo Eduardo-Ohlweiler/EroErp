@@ -52,14 +52,14 @@ export function Dialogo({
           <RadixDialog.Portal forceMount>
             <RadixDialog.Overlay asChild forceMount>
               <motion.div
-                className="dialog-overlay fixed inset-0 z-[80]"
+                className="dialog-overlay fixed inset-0 z-modal"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={spring.soft}
               />
             </RadixDialog.Overlay>
-            <div className="fixed inset-0 z-[80] grid place-items-center p-4 pointer-events-none">
+            <div className="fixed inset-0 z-modal grid place-items-center p-4 pointer-events-none">
               <RadixDialog.Content
                 asChild
                 forceMount

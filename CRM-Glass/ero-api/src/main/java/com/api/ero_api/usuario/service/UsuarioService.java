@@ -90,10 +90,11 @@ public class UsuarioService {
     // ---------------------------------------------------------------- leitura
 
     @Transactional(readOnly = true)
-    public PaginaDto<UsuarioResponseDto> listar(String busca, Boolean ativo, Pageable pageable) {
+    public PaginaDto<UsuarioResponseDto> listar(String busca, Boolean ativo, Papel papel, Boolean bloqueado,
+                                                Pageable pageable) {
         Pageable pagina = PaginacaoUtils.validar(pageable, ORDENAVEIS, ORDEM_PADRAO);
         String termo = busca == null || busca.isBlank() ? null : busca.trim();
-        Page<Usuario> usuarios = repository.buscarComFiltros(termo, ativo, pagina);
+        Page<Usuario> usuarios = repository.buscarComFiltros(termo, ativo, papel, bloqueado, Instant.now(), pagina);
         Map<UUID, String> autores = buscarNomes(idsDeAuditoria(usuarios.getContent()));
         boolean plataforma = naVisaoDePlataforma();
         return PaginaDto.de(usuarios, u -> UsuarioMapper.toResponseDto(u, autores, plataforma));
@@ -105,8 +106,8 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioSelectDto> buscarParaSelecao() {
-        return repository.buscarParaSelecao().stream().map(UsuarioMapper::toSelectDto).toList();
+    public List<UsuarioSelectDto> buscarParaSelecao(boolean incluirInativos) {
+        return repository.buscarParaSelecao(incluirInativos).stream().map(UsuarioMapper::toSelectDto).toList();
     }
 
     /**
@@ -189,6 +190,9 @@ public class UsuarioService {
                 throw new AcessoNegadoException("Você não pode alterar o próprio papel.");
             }
             validarPapelConcedido(dto.papel(), papelAnterior);
+            if (papelAnterior == Papel.ADMIN && u.isAtivo()) {
+                exigirOutroAdminAtivo(u);
+            }
         }
         String email = UsuarioMapper.normalizarEmail(dto.email());
         if (!email.equals(u.getEmail())) {
@@ -211,6 +215,9 @@ public class UsuarioService {
         garantirPodeAlterar(u);
         if (u.getId().equals(SecurityUtils.getUsuarioIdLogado())) {
             throw new AcessoNegadoException("Você não pode inativar a si mesmo.");
+        }
+        if (u.getPapel() == Papel.ADMIN && u.isAtivo()) {
+            exigirOutroAdminAtivo(u);
         }
         u.setAtivo(false);
         sessaoService.revogarTodasDoUsuario(u.getId(), MotivoRevogacao.USUARIO_INATIVADO, null);
@@ -308,6 +315,29 @@ public class UsuarioService {
             throw new ConflitoException("Este usuário foi alterado por outra pessoa. Recarregue e tente de novo.");
         }
         return buscarEntidade(id);
+    }
+
+    // ---------------------------------------------------------------- Minha conta (AuthService, contexto ROOT)
+
+    /**
+     * O próprio usuário altera nome e telefone. O id vem da sessão (o AuthService nunca
+     * o lê do corpo); e-mail e papel não passam por aqui. Sobe a {@code version} como
+     * qualquer edição do cadastro: se um administrador salvou a ficha antes, dá 409, e
+     * quem estiver com a ficha aberta recebe 409 depois. O nome do {@code /eu} vem do
+     * cache de 30 s do usuário da sessão: invalidar faz a barra mostrar o nome novo na hora.
+     * O evento não leva o telefone (dado pessoal).
+     */
+    @Transactional
+    public Usuario atualizarProprioPerfil(UUID id, String nome, String telefone, Long versaoVista) {
+        Usuario u = buscarEntidade(id);
+        if (!u.getVersion().equals(versaoVista)) {
+            throw new ConflitoException("Seus dados foram alterados em outro lugar. Recarregue e tente de novo.");
+        }
+        UsuarioMapper.atualizarPerfil(u, nome, telefone);
+        repository.saveAndFlush(u);
+        cache.invalidarUsuario(u.getId());
+        eventos.registrar(TipoEventoSeguranca.USUARIO_ALTERADO, u.getId(), u.getTenantId(), "próprio perfil");
+        return u;
     }
 
     // ---------------------------------------------------------------- login (AuthService, contexto ROOT)
@@ -411,9 +441,22 @@ public class UsuarioService {
         }
     }
 
+    /**
+     * O contratante nunca fica sem administrador ativo: rebaixar ou inativar o último dá
+     * 422 (vale também para o superadmin atuando no contratante, que não conta como
+     * administrador dele). Trava a linha do contratante antes de contar: dois
+     * administradores rebaixando um ao outro ao mesmo tempo não zeram o contratante.
+     */
+    private void exigirOutroAdminAtivo(Usuario adminAtivo) {
+        limiteUsuarios.travarELerLimite(adminAtivo.getTenantId());
+        if (repository.contarAdminsAtivos() <= 1) {
+            throw new RegraNegocioException("O contratante precisa de pelo menos um administrador ativo.");
+        }
+    }
+
     private Usuario criarComPapel(UUID tenantId, Papel papel, String nome, String email, String senha,
                                   boolean exigirTroca) {
-        Usuario u = UsuarioMapper.toEntity(new UsuarioCreateDto(nome, email, senha, papel));
+        Usuario u = UsuarioMapper.toEntity(new UsuarioCreateDto(nome, email, null, senha, papel));
         u.atribuirTenant(tenantId);
         u.setExigirTrocaSenha(exigirTroca);
         validarEmailLivre(u.getEmail(), null);

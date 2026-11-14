@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useOutlet, useParams } from 'react-router';
 import { ArrowLeft, ArrowRight, Building2, CalendarDays, Home, KeyRound, Mail, ShieldCheck, Sparkles, Users } from 'lucide-react';
-import { casca, coreografias, login, type NomeCoreografia } from '../../motion/tokens';
-import { Bloco, RotaAnimada, Tela, TrocaDeArea, TrocaEtapa } from '../../motion/coreografia';
+import { casca, coreografias, login } from '../../motion/tokens';
+import { Bloco, ConteudoDeAba, FaixaDaCasca, RotaAnimada, Tela, TrocaDeArea, TrocaEtapa, useCoreografiaDaArea } from '../../motion/coreografia';
 import { ParticleSphere } from '../../motion/cena/ParticleSphere';
 import { CountUp } from '../../motion/CountUp';
 import { useAparencia, type AparenciaApi } from '../../shared/aparencia/AparenciaProvider';
 import {
+  AvisoContexto,
   Avatar,
   Badge,
   BarraAcoes,
@@ -20,6 +21,8 @@ import {
   PageHeader,
   Progress,
   Tabela,
+  Tabs,
+  ConteudoAba,
   type ColunaTabela,
 } from '../ui';
 import { ChipContratante, MobileNav, Sidebar, Topbar, type ItemMenu } from '../shell';
@@ -73,11 +76,8 @@ export function DemoRaiz() {
   const [contratante, setContratante] = useState<IdContratante>('a');
   const area = pathname.endsWith('/login') ? 'login' : `casca:${contratante}`;
 
-  // Casca → casca de outro contratante = coreografia `contexto` (só quando a área muda).
-  const ultima = useRef<{ area: string; coreografia?: NomeCoreografia }>({ area });
-  if (ultima.current.area !== area) {
-    ultima.current = { area, coreografia: ultima.current.area.startsWith('casca') && area.startsWith('casca') ? 'contexto' : undefined };
-  }
+  // Casca → casca de outro contratante = coreografia `contexto` (só quando a área muda), como na Raiz do app.
+  const coreografia = useCoreografiaDaArea(area);
 
   /*
    * Login usa o padrão do sistema; dentro, vale a aparência do contratante (aqui, como prévia; no app real,
@@ -97,6 +97,7 @@ export function DemoRaiz() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Como acessar/sair de contratante no app: troca o contexto e leva ao Início.
   const trocar = () => {
     setContratante((c) => (c === 'a' ? 'b' : 'a'));
     nav(`${BASE}/inicio`);
@@ -104,7 +105,7 @@ export function DemoRaiz() {
 
   return (
     <>
-      <TrocaDeArea chave={area} coreografia={ultima.current.coreografia} aoSairCompleto={() => aplicarDaArea(areaAtual.current)}>
+      <TrocaDeArea chave={area} coreografia={coreografia} aoSairCompleto={() => aplicarDaArea(areaAtual.current)}>
         <DemoCtx.Provider value={{ contratante, trocar }}>{outlet}</DemoCtx.Provider>
       </TrocaDeArea>
       <MedidorFps />
@@ -251,6 +252,14 @@ export function DemoCasca() {
           </main>
         </div>
       </div>
+      {/* Em Demo Marina o "superadmin" está dentro do contratante: a faixa entra depois da casca e sai antes dela. */}
+      {contratante === 'b' && (
+        <FaixaDaCasca>
+          <AvisoContexto tipo="superadmin" acao={{ rotulo: 'Sair do contratante', onClick: trocar }}>
+            Você está dentro de <strong>{CONTRATANTES.b.nome}</strong> como suporte da plataforma
+          </AvisoContexto>
+        </FaixaDaCasca>
+      )}
     </>
   );
 }
@@ -355,31 +364,65 @@ export function DemoLista() {
   );
 }
 
+type Sessao = { id: string; navegador: string; ip: string; ultimoUso: string };
+const SESSOES: Sessao[] = [
+  { id: 's1', navegador: 'Chrome no Windows', ip: '177.20.14.8', ultimoUso: 'agora' },
+  { id: 's2', navegador: 'Safari no iPhone', ip: '187.64.2.110', ultimoUso: 'há 2 h' },
+  { id: 's3', navegador: 'Edge no Windows', ip: '200.150.9.31', ultimoUso: 'ontem' },
+];
+const COLUNAS_SESSAO: ColunaTabela<Sessao>[] = [
+  { chave: 'navegador', titulo: 'Navegador', celula: (s) => <span className="font-medium">{s.navegador}</span> },
+  { chave: 'ip', titulo: 'IP', esconderNoCelular: true, celula: (s) => <span className="text-muted">{s.ip}</span> },
+  { chave: 'uso', titulo: 'Último uso', celula: (s) => s.ultimoUso },
+];
+
 export function DemoDetalhe() {
   const { id } = useParams();
   const nav = useNavigate();
   const u = USUARIOS.find((x) => x.id === id) ?? USUARIOS[0];
+  const [aba, setAba] = useState('dados');
   return (
     <Tela coreografia="formulario">
       <PageHeader
         title={u.nome}
-        subtitle="Formulário: cascata curta, saída de uma vez; voltar desliza para a direita"
+        subtitle="Formulário: cascata curta, saída de uma vez; voltar desliza para a direita. Troque de aba: o conteúdo entra como um bloco curto."
         actions={
           <Button onClick={() => nav(`${BASE}/usuarios`)}>
             <ArrowLeft className="size-4" /> Voltar
           </Button>
         }
       />
-      <GlassCard level="solid">
-        <div className="grid md:grid-cols-2 gap-4">
-          <CampoForm rotulo="Nome" bloco={false}>
-            <Input defaultValue={u.nome} />
-          </CampoForm>
-          <CampoForm rotulo="E-mail" bloco={false}>
-            <Input type="email" defaultValue={u.email} />
-          </CampoForm>
-        </div>
-      </GlassCard>
+      {/* Abas: a pílula desliza (Tabs); o conteúdo vem por <ConteudoDeAba>, como o TTabPanel do kit fará. */}
+      <Tabs
+        rotulo="Ficha do usuário"
+        listaComoBloco
+        abas={[
+          { valor: 'dados', rotulo: 'Dados' },
+          { valor: 'sessoes', rotulo: 'Sessões' },
+        ]}
+        valor={aba}
+        onValorChange={setAba}
+      >
+        <ConteudoAba valor="dados">
+          <ConteudoDeAba>
+            <GlassCard level="solid">
+              <div className="grid md:grid-cols-2 gap-4">
+                <CampoForm rotulo="Nome" bloco={false}>
+                  <Input defaultValue={u.nome} />
+                </CampoForm>
+                <CampoForm rotulo="E-mail" bloco={false}>
+                  <Input type="email" defaultValue={u.email} />
+                </CampoForm>
+              </div>
+            </GlassCard>
+          </ConteudoDeAba>
+        </ConteudoAba>
+        <ConteudoAba valor="sessoes">
+          <ConteudoDeAba>
+            <Tabela rotulo="Sessões" colunas={COLUNAS_SESSAO} linhas={SESSOES} chaveLinha={(s) => s.id} />
+          </ConteudoDeAba>
+        </ConteudoAba>
+      </Tabs>
       <BarraAcoes className="mt-4">
         <Button onClick={() => nav(`${BASE}/usuarios`)}>Cancelar</Button>
         <Button variant="primary">Salvar</Button>

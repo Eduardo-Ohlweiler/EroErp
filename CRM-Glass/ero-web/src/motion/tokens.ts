@@ -325,6 +325,28 @@ export const blocoCurto: Variants = {
   exit: { opacity: 0, y: 4, transition: { duration: montagem.saida * 0.8, ease: ease.inOut } },
 };
 
+/**
+ * Troca de aba (TTabs → TTabPanel, via <ConteudoDeAba>): as abas trocam na hora (a pílula desliza) e o conteúdo da
+ * aba nova entra como UM bloco curto: tudo junto, sem cascata, sem esperar a aba antiga sair (ela sai na hora).
+ */
+export const aba = {
+  /** entrada do conteúdo da aba nova (s): curta, a pessoa trocou de aba para agir */
+  entrada: 0.3,
+  /** de onde o conteúdo sobe (px) */
+  distancia: 8,
+};
+
+/** Bloco da aba nova (cartão, grade ou bloco solto dentro do painel): só sobe um pouco e aparece. */
+export const blocoAba: Variants = {
+  hidden: { opacity: 0, y: aba.distancia },
+  show: { opacity: 1, y: 0, transition: { duration: aba.entrada, ease: ease.out } },
+  /** só quando a tela inteira sai com a aba aberta (troca de aba não espera saída) */
+  exit: { opacity: 0, y: aba.distancia / 2, transition: { duration: montagem.saida * 0.8, ease: ease.inOut } },
+};
+
+/** Não anima nada: o que está dentro de um bloco que já anima (campos dentro do cartão da aba) vem junto com ele. */
+export const parado: Variants = { hidden: {}, show: {}, exit: {} };
+
 /** Bloco com movimento reduzido: só esmaece. */
 export const blocoReduzido: Variants = {
   hidden: { opacity: 0 },
@@ -453,6 +475,38 @@ export function cascaBarra(atraso = 0): Variants {
   };
 }
 
+/* =====================================================================================
+ * Faixa da casca (AvisoContexto "Você está dentro de X" do superadmin): peça da casca, não da tela.
+ * Entra DEPOIS da casca (menu e barra já pousando) e sai ANTES dela (some antes de a barra começar a sair).
+ * Uso: <FaixaDaCasca> (motion/coreografia/FaixaDaCasca.tsx). Só opacidade e transform no próprio aviso de vidro.
+ * ===================================================================================== */
+export const faixa = {
+  /** espera depois do atraso herdado da área (s): o menu e a barra já percorreram boa parte da entrada */
+  atraso: casca.atrasoBarra + casca.entrada * 0.6,
+  /** de onde a faixa sobe ao entrar e para onde desce ao sair (px) */
+  distancia: 24,
+  distanciaSaida: 16,
+  /** saída (s): termina antes de a barra começar a sair (casca.saidaBarra), com folga para um quadro perdido */
+  saida: casca.saidaBarra * 0.75,
+};
+
+/** O próprio aviso de vidro: sobe encaixando (mola do bloco) e, ao sair, desce e some. */
+export const faixaContexto: Variants = {
+  hidden: { opacity: 0, y: faixa.distancia, scale: montagem.escala },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { ...encaixe, opacity: { duration: montagem.opacidade, ease: ease.out } },
+  },
+  exit: { opacity: 0, y: faixa.distanciaSaida, scale: montagem.escala, transition: { duration: faixa.saida, ease: ease.inOut } },
+};
+
+/** Contêiner da faixa: só orquestra (nada de opacidade nele: o aviso tem backdrop-filter). `atraso` em s. */
+export function orquestrarFaixa(atraso: number): Variants {
+  return { hidden: {}, show: { transition: { delayChildren: atraso } }, exit: {} };
+}
+
 /* ---------------- Microanimações e dados ---------------- */
 /** Título da tela na barra superior (chip sem vidro: pode desfocar; termina em filter none). */
 export const tituloTela: Variants = {
@@ -539,7 +593,7 @@ export function variaveisDeMovimento(): Record<`--mov-${string}`, string> {
  * `modo` é o do AnimatePresence que troca a tela: 'wait' (sai inteira, depois a outra monta);
  * 'sync' fica previsto para morph de elemento compartilhado (layoutId) entre telas.
  * ===================================================================================== */
-export type NomeCoreografia = 'login' | 'inicio' | 'padrao' | 'formulario' | 'etapa' | 'contexto';
+export type NomeCoreografia = 'login' | 'inicio' | 'padrao' | 'formulario' | 'etapa' | 'contexto' | 'aba';
 
 export type Coreografia = {
   ritmo: Ritmo;
@@ -563,6 +617,8 @@ const ritmoFormulario: Ritmo = { passo: 0.035, passoSaida: 0.015, limiteBlocos: 
 const ritmoEtapa: Ritmo = { passo: 0.04, passoSaida: 0.015, limiteBlocos: 8, limiteSaida: 4, inicio: 0.04 };
 /** Troca de contratante: momento raro, a casca inteira se desfaz com um pouco mais de cascata. */
 const ritmoContexto: Ritmo = { passo: 0.05, passoSaida: 0.03, limiteBlocos: 8, limiteSaida: 6, inicio: 0.02 };
+/** Conteúdo da aba nova: todos os blocos juntos, sem espera (é um bloco curto, não uma tela montando). */
+const ritmoAba: Ritmo = { passo: 0, passoSaida: 0, limiteBlocos: 0, limiteSaida: 0, inicio: 0 };
 
 /** Tempos do login (s). */
 export const login = {
@@ -684,4 +740,19 @@ export const coreografias: Record<NomeCoreografia, Coreografia> = {
    * Uso: <TrocaDeArea chave={`casca:${tenantId}`} coreografia="contexto">.
    */
   contexto: simples(ritmoContexto, reversa, 0.15, { bloco }),
+  /**
+   * Conteúdo da aba que a pessoa acabou de escolher (TTabs). Entra como UM bloco curto: o cartão (TForm) e a grade
+   * (TDataGrid) sobem alguns px e aparecem juntos; campos e rodapé do cartão vêm com ele (sem cascata própria).
+   * Linhas que chegam depois (a consulta terminou) entram com o `linhaGrade` de sempre.
+   * Só vale na TROCA de aba: na primeira montagem da tela, a aba inicial faz parte da coreografia da tela.
+   * Uso: <ConteudoDeAba> dentro do TTabPanel (motion/coreografia/ConteudoDeAba.tsx).
+   */
+  aba: simples(ritmoAba, { entrada: 'junto', saida: 'junto' }, 0, {
+    bloco: blocoAba,
+    cartao: blocoAba,
+    grade: blocoAba,
+    campo: parado,
+    rodape: parado,
+    linhaGrade,
+  }),
 };

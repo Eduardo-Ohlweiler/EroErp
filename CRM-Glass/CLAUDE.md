@@ -62,9 +62,9 @@ Rodar: `ero-api/run-dev.cmd` (Windows) ou `cd ero-api && ./mvnw spring-boot:run 
 ### Fluxo de uma tela nova (front)
 
 1. Tela de cadastro: o `planejador` diz qual modelo (List, Form ou FormList) ela copia e os campos com o componente do kit e a largura. Se o kit ainda não existe, a fase 0 (`glass-design-system`) vem antes.
-2. `frontend-modulos` levanta o que falta; `glass-design-system` e `motion-designer` criam (em paralelo, arquivos separados).
-3. `frontend-modulos` copia o modelo e troca nomes, rota, service, campos, máscaras e colunas.
-4. `revisor-ui` (visual) e `guardiao-layout` (forma) revisam em paralelo; os achados voltam para quem é dono do arquivo.
+2. Componente ou movimento que falta é **sempre criado** no kit pelo `glass-design-system` (e o movimento pelo `motion-designer`), nunca contornado na tela.
+3. `frontend-modulos` copia o modelo e troca nomes, rota, service, campos, máscaras e colunas (uma execução por tela; não abre navegador).
+4. `guardiao-layout` mede e fotografa (a única passada visual); o `revisor-ui` lê essas capturas quando a entrega mexeu no kit, no movimento ou numa tela fora do padrão. Os achados voltam para quem é dono do arquivo. Regras de custo do time: skill `timeero`.
 5. O dono do produto aprova visualmente rodando a tela.
 
 ## Regras que valem para todos

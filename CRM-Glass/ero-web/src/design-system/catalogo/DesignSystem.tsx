@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Building2, Home, KeyRound, Mail, Palette, Plus, ScrollText, Search, Trash2, UserRound, Users } from 'lucide-react';
@@ -46,10 +46,22 @@ import {
   useToast,
   type ColunaTabela,
 } from '../ui';
-import { ChipContratante, CommandPalette, MenuUsuario, MobileNav, Sidebar, Topbar, type Comando, type ItemMenu } from '../shell';
+import {
+  ChipContratante,
+  CommandPalette,
+  MenuUsuario,
+  MobileNav,
+  SeletorContratante,
+  Sidebar,
+  Topbar,
+  type Comando,
+  type ItemMenu,
+  type OpcaoContratante,
+} from '../shell';
 import { MedidorFps } from './MedidorFps';
 import { SecaoMovimento } from './SecaoMovimento';
 import { SecaoKit } from './SecaoKit';
+import { SecaoKitPecas } from './SecaoKitPecas';
 import { ModelosDoKit, type ModeloKit } from './KitModelos';
 
 /* ---------------- Dados fictícios só para o catálogo ---------------- */
@@ -77,6 +89,13 @@ const MENU: ItemMenu[] = [
   { to: '/design-system/usuarios', label: 'Usuários', icon: Users },
   { to: '/design-system/contratantes', label: 'Contratantes', icon: Building2 },
   { to: '/design-system/logs', label: 'Logs', icon: ScrollText },
+];
+const CONTRATANTES_DEMO: OpcaoContratante[] = [
+  { id: 't1', nome: 'Demo Solar', detalhe: '12.ABC.345/01DE-35' },
+  { id: 't2', nome: 'Demo Marina', detalhe: '11.222.333/0001-81' },
+  { id: 't3', nome: 'Clínica Bem Estar' },
+  { id: 't4', nome: 'Construtora Horizonte' },
+  { id: 't5', nome: 'Escola Ária' },
 ];
 const CORES = ['accent', 'accent-2', 'accent-3', 'success', 'warning', 'danger', 'info', 'fg'];
 
@@ -138,7 +157,17 @@ function Catalogo() {
   const [replay, setReplay] = useState(0);
   const [carregandoDemo, setCarregandoDemo] = useState(true);
   const [entrandoDemo, setEntrandoDemo] = useState(false);
-  const chipRef = useRef<HTMLButtonElement>(null);
+  const [dentroDe, setDentroDe] = useState<{ id: string; nome: string } | null>({ id: 't1', nome: 'Demo Solar' });
+  const [carregandoContratantes, setCarregandoContratantes] = useState(false);
+  // Seletor controlado, como na Casca: o chip e o comando "Acessar contratante…" da busca (Ctrl+K) abrem o mesmo.
+  const [seletorAberto, setSeletorAberto] = useState(false);
+  const mudarSeletor = useCallback((aberto: boolean) => {
+    setSeletorAberto(aberto);
+    // Simula a Casca: liga a consulta ao abrir (a lista chega depois de um instante).
+    if (!aberto) return;
+    setCarregandoContratantes(true);
+    setTimeout(() => setCarregandoContratantes(false), 700);
+  }, []);
 
   const colunas: ColunaTabela<UsuarioDemo>[] = [
     {
@@ -177,8 +206,9 @@ function Catalogo() {
     () => [
       ...MENU.map((m) => ({ grupo: 'Telas', rotulo: m.label, icone: m.icon, executar: () => toast({ title: `Abrir ${m.label}`, tone: 'info' }) })),
       { grupo: 'Conta', rotulo: 'Minha conta', icone: UserRound, executar: () => toast({ title: 'Minha conta', tone: 'info' }) },
+      { grupo: 'Ações', rotulo: 'Acessar contratante…', icone: Building2, executar: () => mudarSeletor(true) },
     ],
-    [toast],
+    [toast, mudarSeletor],
   );
 
   const mudarEditor = (v: ValorEditorAparencia) => {
@@ -212,7 +242,7 @@ function Catalogo() {
         initial="hidden"
         animate="show"
         variants={staggerGroup}
-        className={casca ? 'relative z-10 md:pl-[104px] px-3 md:pr-6 pt-4 pb-28 md:pb-10' : 'relative z-10 px-3 md:px-8 pt-6 pb-16'}
+        className={casca ? 'relative z-conteudo md:pl-[104px] px-3 md:pr-6 pt-4 pb-28 md:pb-10' : 'relative z-conteudo px-3 md:px-8 pt-6 pb-16'}
       >
         <div className="mx-auto max-w-[1680px]">
           <PageHeader
@@ -261,6 +291,7 @@ function Catalogo() {
 
             {/* ---------- Kit de telas (docs/07) ---------- */}
             <SecaoKit />
+            <SecaoKitPecas />
 
             {/* ---------- Fundamentos ---------- */}
             <Secao titulo="Níveis de vidro" subtitulo="glass-subtle, glass e glass-solid (tabelas, formulários, modais, menus)" className="col-span-12">
@@ -667,7 +698,26 @@ function Catalogo() {
             <Secao titulo="Casca: barra superior, menu do usuário, busca" subtitulo="Sem botão de tema, sem Novo e sem sino" className="col-span-12">
               <Topbar
                 titulo="Usuários"
-                contratante={<ChipContratante ref={chipRef} nome="Demo Solar" detalhe="Superadmin" onClick={() => toast({ title: 'Abrir seletor de contratante', tone: 'info' })} />}
+                contratante={
+                  <SeletorContratante
+                    opcoes={carregandoContratantes ? [] : CONTRATANTES_DEMO}
+                    carregando={carregandoContratantes}
+                    atual={dentroDe}
+                    detalhe="Superadmin"
+                    aberto={seletorAberto}
+                    onAbertoChange={mudarSeletor}
+                    onEscolher={(id) => {
+                      const c = CONTRATANTES_DEMO.find((o) => o.id === id);
+                      if (!c) return;
+                      setDentroDe({ id: c.id, nome: c.nome });
+                      toast({ title: `Acessou ${c.nome}`, tone: 'info' });
+                    }}
+                    onSair={() => {
+                      setDentroDe(null);
+                      toast({ title: 'Voltou à plataforma', tone: 'info' });
+                    }}
+                  />
+                }
                 onBuscar={() => setBusca(true)}
                 direita={
                   <MenuUsuario

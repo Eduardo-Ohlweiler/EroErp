@@ -212,11 +212,18 @@ barra superior e do menu) a 1440 px:
 MSYS_NO_PATHCONV=1 node .claude/skills/olhar-telas/medir-campos.mjs /admin/contratantes/novo
 MSYS_NO_PATHCONV=1 node .claude/skills/olhar-telas/medir-campos.mjs /admin/usuarios/42 --aba "Dados"
 MSYS_NO_PATHCONV=1 node .claude/skills/olhar-telas/medir-campos.mjs /login --sem-login
+MSYS_NO_PATHCONV=1 node .claude/skills/olhar-telas/medir-campos.mjs /admin/logs --espera '[data-kit="TDataGrid"] tbody tr'
 ```
+
+Antes de medir ele espera o 1º campo do kit aparecer (a tela pode estar no
+esqueleto enquanto a API responde) e a tela parar; `--espera "<seletor>"` troca
+o que se espera (até 15 s; sem aparecer, mede assim mesmo e avisa).
 
 Nos campos do kit ele lê o que o kit emite (doc 07 §7.1): `data-kit` (qual
 componente), `data-largura` (o token aplicado, ou `celula` fora de `TRow`) e
-`data-mascara`. Confere quatro coisas:
+`data-mascara`, e no `TCombo` o `data-rotulo-max` (maior rótulo: até 18
+caracteres pede `situacao`, até 36 `medio`). Rádio e grupo de caixas saem com o
+rótulo do grupo. Confere quatro coisas:
 
 | Marca | O quê |
 |---|---|

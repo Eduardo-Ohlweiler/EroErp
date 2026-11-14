@@ -1,5 +1,69 @@
 # 07 — Kit de telas: componentes, larguras e telas-modelo
 
+## Resumo para quem constrói tela (leia isto primeiro)
+
+Dá para construir ou conferir uma tela de cadastro padrão só com este resumo. O
+detalhe de cada assunto está na seção do índice: leia só ela, não o arquivo todo.
+
+**Os três modelos.** Toda tela de cadastro é um deles; copie a tela pronta e troque o que é `// troca`. Não cabe em nenhum: pare e pergunte ao Eduardo.
+
+| Modelo | Copie de | Blocos, de cima para baixo | Botões (esquerda → direita, embaixo) |
+|---|---|---|---|
+| List | `ero-web/src/modules/admin/pages/ContratanteList.tsx` | `TPage` (`padrao`) → `TForm` de filtros (código, principal, combos, De · Até) → `TFormFooter` → `TDataGrid` → `TDataGridFooter` | Buscar · Limpar · Novo · Exportar · Pdf |
+| Form | `ero-web/src/modules/admin/pages/ContratanteForm.tsx` | `TPage` (`formulario`) → `TForm`: código (só leitura) → principal → demais (um por `TRow`) → `TPanel` por assunto → Situação (só se a API de alterar recebe `ativo`) → `TAuditoria` → `TFormFooter` | Salvar · Novo · Voltar |
+| FormList | ainda não há tela pronta nem modelo no catálogo: siga o exemplo da §4.3 | `TPage` (`formulario`) → `TForm` curto → `TFormFooter` → `TDataGrid` (sem filtro, ativos e inativos) → `TDataGridFooter` | Salvar · Novo |
+
+**Kit `T*` que existe** (porta única `design-system/kit/index.ts`; largura padrão só vale dentro de `TRow`):
+- Estrutura: `TPage` (container, `breadcrumb`, `coreografia`) · `TForm` (cartão `glass-solid`, `somenteLeitura`) · `TFormFooter`/`TFormActionsLeft` (rodapé de botões) · `TRow` (uma linha) · `TCol` (coluna; sem `width` divide a linha) · `TPanel` (seção recolhível) · `TModal` (`sm` 448, `md` 672, `lg` 896) · `TTabs`/`TTabPanel` · `TRotulo` (rótulo do label ao lado).
+- Texto: `TEntry` (`metade`; com máscara, a do dado: cpf/telefone `cpf`, cnpj/cpfCnpj `cnpj`, cep `cep`, hora `hora`, moeda/decimal `valor`, inteiro `quantidade`) · `TDate` (`data`).
+- Escolha: `TCombo` (`situacao`, opções fixas; `SITUACAO_OPCOES`) · `TDBCombo` (`metade`, opções de `/selecao`) · `TRadio` e `TCheckBox` (largura do conteúdo).
+- Dados: `TDataGrid` (ações na 1ª coluna, cartões abaixo de `md`) · `TDataGridFooter` (lê o `PaginaDto`) · `TBadge` (situação) · `TAuditoria` (só na edição) · `TAcoesDeExportacao` (Exportar e Pdf).
+- Ação e aviso: `TButton` (`variant`: salvar, novo, buscar, limpar, voltar, exportar, pdf, editar, inativar, reativar + genéricas) · `useMessage()` · `useQuestion()` · `useSomenteLeitura(grupo?)`.
+- **Não existem** (peça ao `glass-design-system`): `TDateTime`, `TTextArea`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio`, `TCor`, `TFieldList`, `TBotaoImprimir`.
+
+**Escala de larguras** (`width`, só nomes da escala; dica: na dúvida, a menor):
+- Fixos (sm+): `uf` 80 · `codigo`/`hora`/`quantidade` 128 · `data`/`cep`/`valor` 160 · `cpf` 176 · `situacao` 192 · `cnpj` 208 · `dataHora`/`curto` 224 · `medio` 320.
+- Proporcionais, relativos à `TCol`: `metade` (texto livre sozinho na linha, mín. 256) · `longo` (divide a linha: cada campo na sua `TCol` com `longo`; ou ocupa a linha toda).
+- Critério de rótulo do `TCombo`: maior rótulo das opções (com o `vazio`) até 18 caracteres = `situacao`; de 19 a 36 = `medio`. O kit emite `data-rotulo-max` e o medidor confere.
+- `width` só entra quando o padrão não serve. Abaixo de 640 px tudo empilha e ocupa 100 %.
+
+**Proibido na página de cadastro:**
+- Elemento cru (`<input>`, `<select>`, `<textarea>`) e componente de interface fora do kit (`CampoForm`, `Input`, `Tabela`, `Button`, `Dialogo` direto). Importe só de `design-system/kit`.
+- `grid`, `col-span`, `w-*`, `sm:w-*` ou `"50%"`/`"200px"` na página: largura é `width` da escala.
+- Máscara no `onChange` (o `TEntry` com `mascara` já exibe e grava certo) e `useToast` direto (use `useMessage`).
+- Cor, sombra, desfoque, duração ou curva literal (vão para `tokens.css` e `motion/tokens.ts`).
+
+**Disposição.** Um campo por `TRow`. Lado a lado só nos grupos naturais: CNH · Categoria · Validade, De · Até, Dia · Das · Às, CEP · Número · Complemento, Bairro · Cidade · UF, Valor · Unidade, linha de `TFieldList`; ou quando o plano mandar dividir (cada um em `TCol` com `longo`). Campo curto nunca estica. Label em cima; ao lado só se o plano pedir (e então em toda a tela).
+
+**Permissão e só leitura.** `useSomenteLeitura('<GRUPO>')` (sem argumento para tela presa ao papel). Sem `<GRUPO>_ESCREVER`, o `TForm somenteLeitura` esconde Salvar, Novo, Inativar e Reativar; na List, `!somenteLeitura &&` no Novo e nas ações da grade. Inativar/reativar na grade com `useQuestion` quando a API de alterar não recebe `ativo`.
+
+**Dados e erro.** Edição manda `version`; lista lê `PaginaDto` (página base 0); `catch (e) { msg.erroApi(e, form) }` marca o campo no 400 e no 409 com `erros`, e oferece Recarregar no 409 sem `erros`. A exportação repete os filtros aplicados.
+
+**Modal e abas.** `TModal` com formulário: `TForm` sem cartão, botões no `TFormFooter`, foco no primeiro campo sem `autoFocus`. `TTabs`: os `TTabPanel` ficam dentro, só a ativa monta e o `useForm` de cada aba mora na tela.
+
+**Conferência.** Teste de código, `medir-campos.mjs` sem `✗` a 1440 px e olho a 1440/768/360 px nos dois temas; a lista final é o "Checklist".
+
+**Índice (leia só a seção que precisa):**
+
+| Assunto | Seção |
+|---|---|
+| Estado do kit, o que cada peça veste por baixo, decisões e diferenças do 2.0 (só leitura, `TDate`, `TRadio`, `TModal`, `TTabs`, `z-index`, impressão) | "0. Estado" |
+| Regra de disposição e lista dos grupos lado a lado | "1. A ideia" |
+| Tabelas das larguras, padrão de cada componente, `larguras.ts` | "2. Larguras" (2.1 a 2.4) |
+| Props de `TPage`, `TForm`, `TRow`, `TCol`, `TPanel`, `TModal`, `TTabs` | "3.1 Estrutura" |
+| Props e máscaras dos campos (`TEntry`, `TDate`, `TCombo`, `TDBCombo`, `TRadio`, `TCheckBox`, `TAuditoria`) | "3.2 Campos" |
+| `useMessage`, `useQuestion` e o que `erroApi` faz por resposta (400, 409, 429) | "3.3 Mensagens e confirmação" |
+| `TButton`, cor e ícone de cada ação, tokens de ação, campo só leitura, `useSomenteLeitura`, `TDataGrid`, exportação | "3.4 Botões e grade" |
+| De qual componente de `ui/` a tela migra para o kit; rodapé fora de `TForm`; telas fora do kit | "3.5 Do ero-web de hoje para o kit" |
+| Código completo dos modelos, ordem de filtros e colunas, rota `/novo` e `/:id`, erro ao carregar | "4.1 List", "4.2 Form", "4.3 FormList" |
+| Coreografia e montagem em blocos | "4.4 Montagem e desmontagem em blocos" |
+| Label ao lado | "5. Label ao lado" |
+| Modal com formulário | "6. Modal" |
+| Como se confere, scripts de medição e screenshots, atributos `data-*` do kit | "7. Como se confere" e "7.1 O que o kit expõe para o medidor" |
+| Lista final de conferência | "8. Checklist" |
+
+---
+
 > Leia antes de criar ou mexer em qualquer tela de cadastro: formulário,
 > listagem com filtros, FormList ou modal. **Este documento prevalece em tudo
 > que é forma de tela** — quais componentes montam a tela, onde cada campo fica
@@ -29,15 +93,26 @@
 > `useQuestion` (o `TQuestionProvider` está montado em `main.tsx`) e
 > `useSomenteLeitura`. Fora do kit: `shared/util/format.ts` e
 > `shared/api/pagina.ts` (`paginaSchema`, `PaginaDto`).
-> **Ainda não existem** (pedir ao `glass-design-system` antes de usar): `TDate`,
-> `TDateTime`, `TTextArea`, `TDBCombo`, `TDBComboMulti`, `TCheckBox`,
-> `TDBCheckBox`, `TRadio`, `TDBRadio`, `TCor`, `TFieldList`, `TModal`, `TTabs`,
-> `TBotaoImprimir` e o modelo FormList.
-> Catálogo: seção "Kit de telas" em `/design-system` e os modelos em tela cheia
+> **Entraram na fatia 3 (2026-11-14):** `TDate`, `TDBCombo`, `TRadio`,
+> `TCheckBox` (booleano e grupo), `TModal`, `TTabs` · `TTabPanel`, o
+> `somenteLeitura` do `TPanel` e o `acao` do `TEntry` (botão colado ao campo, o
+> "Gerar" da senha). Na casca (`design-system/shell`, fora do kit): o
+> `SeletorContratante` (popover do chip do contratante; aceita `aberto`/
+> `onAbertoChange` para o "Acessar contratante…" do Ctrl+K abri-lo). Por baixo, em `ui/`: o
+> `Calendario` (pt-BR) e, em `shared/util/datas.ts`, as datas `AAAA-MM-DD`.
+> **Ainda não existem** (pedir ao `glass-design-system` antes de usar):
+> `TDateTime`, `TTextArea`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio`, `TCor`,
+> `TFieldList`, `TBotaoImprimir` e o modelo FormList.
+> Catálogo: seção "Kit de telas" em `/design-system` (e "Kit de telas: peças da
+> fatia 3", com os interruptores de só leitura) e os modelos em tela cheia
 > em `/design-system?kit=lista`, `?kit=novo`, `?kit=editar&id=c2` e
 > `?kit=leitura&id=c2` (Contratantes de mentira; só em dev).
-> Telas de cadastro no kit: nenhuma ainda (a primeira é Contratantes). Login e
-> Início não são cadastro e ficam fora do kit (§3.5).
+> **Telas no kit (fatia 3, 2026-11-14):** Contratantes (`ContratanteList` +
+> `ContratanteForm`, modelos List e Form), Usuários (`UsuarioList` +
+> `UsuarioForm`, com as permissões por grupo em `TRadio`/`TCheckBox`), Logs
+> (`AuditoriaList`, List só de consulta) e Minha conta (`MinhaContaPage`, em
+> `TTabs`: dados, senha e sessões). Login e Início não são cadastro e ficam
+> fora do kit (§3.5).
 >
 > Diferenças do kit do 2.0, de pele e de plataforma:
 >
@@ -64,6 +139,60 @@
 >   `totalPaginas`) e aceita `carregando`.
 > - `TBadge` aceita os tons do 2.0 (`neutro`, `sucesso`, `alerta`, `erro`,
 >   `info`, `destaque`) e os do `Badge`; `ponto` põe a bolinha.
+> - `TDate` não usa o `<input type="date">` do navegador (que muda de cara e de
+>   idioma em cada sistema): é um campo de texto com máscara `DD/MM/AAAA`
+>   (teclado numérico) e o `Calendario` pt-BR num popover `glass-solid`
+>   (botão do calendário ou Alt+↓; semana começa no domingo; setas, PageUp/
+>   PageDown, Home/End). Grava `AAAA-MM-DD`; o `onChange` controlado recebe o
+>   texto ISO, não o evento. Data que não existe (31/02) volta ao valor
+>   anterior ao sair do campo. `min`/`max` travam os dias fora (o "Até" passa
+>   `min={de}`): o dia fora fica `aria-disabled` (apagado e riscado, sem
+>   `opacity`), continua focável pelas setas e o Enter não o escolhe.
+> - `TDBCombo` recebe `buscar(termo?)` com `{ id, nome }[]` (o `SelectDto` das
+>   rotas `/selecao`); busca ao abrir e, a cada termo, depois de 300 ms
+>   (`ESPERA_DA_BUSCA_MS`), descartando resposta velha. O `onChange` controlado
+>   recebe o `id`. Sem `vazio` e sem `required`, o X limpa (como no `TCombo`).
+> - `TRadio` e `TCheckBox` usam `<input>` nativos sem a aparência do sistema
+>   (classe `.marca`, tokens `--marca-*`): marcado é o degradê do destaque com o
+>   sinal em `--on-accent` (o âmbar sai com o sinal escuro). Só leitura:
+>   focável, `readOnly`/`aria-readonly`, o clique, o Espaço e as setas não
+>   mudam nada, fundo `--input-bg-readonly`. Desabilitado (`disabled` ou a opção
+>   `desabilitada`, ex.: "Liberar acesso" com o grupo em "Sem acesso"): o mesmo
+>   fundo `--input-bg-readonly`, sem `opacity` (a borda segue ≥ 3:1), rótulo em
+>   `--fg-muted`, fora do Tab. `opcoes` aceita `desabilitada` e
+>   `dica`: a dica vira o `title` da opção e entra, visível, na ajuda do grupo
+>   (depois da `ajuda`, sem repetir; no toque e no teclado o `title` não
+>   aparece). O `TRadio` é um `role="radiogroup"` com o rótulo. `TRadio` e
+>   `TCheckBox` (booleano ou grupo) **não reservam** a linha do erro: o erro
+>   aparece embaixo só quando existe (numa grade de permissões cada caixa
+>   cresceria 16 px, e a folga vazia afastava o grupo do campo de baixo).
+>   `TCheckBox` com `opcoes`, fora do `TForm`: `valores`/`onValoresChange`.
+> - `TModal`: o `TForm` de dentro **não desenha cartão** (o modal é o vidro); os
+>   botões vão no `TFormFooter` do formulário (embaixo, à esquerda) e o `acoes`
+>   do modal só serve ao modal sem formulário. Ao abrir, o foco vai para o
+>   primeiro campo (não use `autoFocus` dentro). `largura` `sm` (448, padrão),
+>   `md` (672), `lg` (896). O `submit` de um `TForm` não sobe para o `TForm` de
+>   fora (o modal está num portal, mas o evento do React subiria).
+> - `TTabs`: os `TTabPanel` vão **dentro** do `TTabs` (o Radix liga aba e painel
+>   pela raiz comum). Só a aba ativa fica montada; para o que foi digitado
+>   sobreviver à troca, o `useForm` de cada aba mora na tela, fora do
+>   `TTabPanel`. A aba escolhida entra como bloco curto (`ConteudoDeAba`, do
+>   `motion-designer`); a barra é bloco da montagem e não imprime
+>   (`nao-imprime`); o `rotulo` do painel vira o título dele no papel.
+> - `TPanel somenteLeitura`: só aquele painel fica como no `TForm somenteLeitura`
+>   (campos `readOnly`, sem Salvar/Novo/Inativar/Reativar dentro), com a marca
+>   "Só leitura" ao lado do título.
+> - `TPanel`: o primeiro do formulário não desenha a borda de cima (linha dupla
+>   com a borda do cartão); sem conteúdo (`{null}`), não tem corpo (só o título,
+>   sem o vão de 16 px) e não recolhe.
+> - Camadas (`z-index`) só pelos tokens `--z-*` de `tokens.css` (classes
+>   `z-conteudo`, `z-barra`, `z-menu`, `z-faixa`, `z-popover`, `z-modal`,
+>   `z-toast`...): conteúdo < casca < faixa do suporte < popovers (combo, data,
+>   menus) < modal < toast. Popover aberto de dentro de um modal sobe acima
+>   dele. Com a faixa do suporte na tela, os toasts sobem acima dela
+>   (`--folga-inferior`).
+> - Classes de impressão: `nao-imprime` (some no papel: a faixa do
+>   `AvisoContexto`, a barra do `TTabs`) e `so-impressao` (só no papel).
 > - `useMessage().erroApi(e, form?, { recarregar? })`: o Recarregar do 409 (só
 >   o 409 sem `erros`; com `erros` é duplicidade e marca o campo, como o 400), por
 >   padrão, relê as consultas ativas (`queryClient.invalidateQueries()`).
@@ -190,11 +319,11 @@ fica encostado à esquerda da coluna.
 | `cep` | CEP | `sm:w-40` | 160 |
 | `valor` | dinheiro e decimal com sufixo | `sm:w-40` | 160 |
 | `cpf` | CPF, telefone, celular | `sm:w-44` | 176 |
-| `situacao` | `TCombo` curto: situação, sim/não, tipo com 2–5 opções | `sm:w-48` | 192 |
+| `situacao` | `TCombo` curto: situação, sim/não, tipo com 2–5 opções, **maior rótulo até 18 caracteres** | `sm:w-48` | 192 |
 | `cnpj` | CNPJ, e o CPF/CNPJ que alterna | `sm:w-52` | 208 |
 | `dataHora` | data e hora | `sm:w-56` | 224 |
 | `curto` | texto curto livre: número do endereço, complemento, bairro, EAN | `sm:w-56` | 224 |
-| `medio` | `TCombo` de enum com rótulos longos, cidade | `sm:w-80` | 320 |
+| `medio` | `TCombo` de enum com rótulos longos (**maior rótulo de 19 a 36 caracteres**: em `situacao` sobram ~132 px úteis), cidade | `sm:w-80` | 320 |
 
 ### 2.2 Tokens proporcionais — como o percentual do antigo
 
@@ -313,9 +442,9 @@ para os componentes de baixo, que falam português (`loading` → `carregando`,
 | `TFormFooter` · `TFormActionsLeft` · `TFormActionsRight` | `children` | Rodapé do cartão, com borda no topo (`--line`): os botões ficam **embaixo do formulário, à esquerda**, na ordem do padrão (§3.4), o principal primeiro. No celular empilham na mesma ordem, o principal em cima. É um bloco (`BarraAcoes`). `TFormActionsRight` existe, mas nenhum modelo o usa. |
 | `TRow` | `children` | Uma linha: `flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start`. |
 | `TCol` | `width?: 'auto' \| 'rotulo' \| Largura`, `align?: 'left' \| 'right'` | Coluna da linha. **Sem `width`, divide a linha em partes iguais** (`sm:flex-1 sm:min-w-0 sm:basis-64`) — CNH · Categoria · Validade ficam um em cada terço. `auto` encolhe até o campo, para curtos ficarem colados. `rotulo` (`sm:w-48`, 192 px) é a coluna de labels do §5. |
-| `TPanel` | `title?`, `subtitle?`, `recolhido?`, `actions?` | Seção por assunto (Administrador, Endereços…), recolhível pelo título. **Sem vidro próprio**: está dentro do cartão `glass-solid` e a região não passa de duas camadas de `backdrop-filter` (DIRECAO-VISUAL §3, desempenho). Separa por borda `--line` e título (`CardHeader`), como o `.glass-flat`. |
-| `TModal` | `aberto`, `titulo`, `onFechar`, `acoes?`, `largura?` | Janela (`Dialogo`, `glass-solid`, fundo sem desfoque); nunca passa de `calc(100vw - 2rem)`. |
-| `TTabs` · `TTabPanel` | como no 2.0 | Abas (`Tabs` · `ConteudoAba`), quando o formulário é grande demais para painéis. |
+| `TPanel` | `title?`, `subtitle?`, `recolhido?`, `actions?`, **`somenteLeitura?`** | Seção por assunto (Administrador, Endereços…), recolhível pelo título. **Sem vidro próprio**: está dentro do cartão `glass-solid` e a região não passa de duas camadas de `backdrop-filter` (DIRECAO-VISUAL §3, desempenho). Separa por borda `--line` e título (`CardHeader`), como o `.glass-flat`. `somenteLeitura` deixa só este painel só leitura dentro de um formulário editável (marca "Só leitura" no título). |
+| `TModal` | `aberto`, `titulo`, `onFechar`, `acoes?`, `largura?: 'sm' \| 'md' \| 'lg'`, `descricao?`, `bloquearFechar?` | Janela (`Dialogo`, `glass-solid`, fundo sem desfoque); nunca passa de `calc(100vw - 2rem)`. Foco no primeiro campo ao abrir; o `TForm` de dentro não põe cartão (§6). |
+| `TTabs` · `TTabPanel` | `TTabs`: `abas: {id, rotulo, alerta?, icone?, desabilitada?}[]`, `ativa`, `onChange`, `label?`, `children`; `TTabPanel`: `id`, `rotulo?` | Abas (`Tabs` · `ConteudoAba`), quando o formulário é grande demais para painéis. Os painéis vão dentro do `TTabs`; só a ativa fica montada (o `useForm` mora na tela). |
 
 Campo **sem `TCol`** vai direto na `TRow` quando está sozinho na linha. Campo
 proporcional (`metade`, `longo`) que **divide** a linha vai sempre numa `TCol`
@@ -331,17 +460,17 @@ são os do `CampoForm`, e cada campo é um bloco da montagem.
 
 | Componente | Props próprias | O que faz |
 |---|---|---|
-| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?` | Texto (`Input`). Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado; CPF, CNPJ, CEP e telefone gravam só os dígitos, as numéricas gravam o texto da máscara** (§0) — com as funções de `shared/util/format.ts`. A tela nunca chama máscara no `onChange`. `type="password"` usa o `InputSenha` (mostrar/ocultar); `type="email"` põe `inputMode="email"` e `autoCapitalize="off"`. Aceita `maxLength` — use o mesmo limite do DTO (`@Size(max = 150)` → `maxLength={150}`); nas máscaras o kit já põe o tamanho do texto formatado. |
-| `TDate` | — | Data com calendário em pt-BR (no `Popover` glass) e botão de limpar. Grava `AAAA-MM-DD`; monta com `T00:00:00` para exibir; valor inicial `hojeIso()` quando o form pede hoje. A API manda ISO-8601 e o front formata. |
+| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?`, `acao?` | Texto (`Input`). `acao` é o botão colado ao campo, na altura dele (o "Gerar" da senha temporária), e some em só leitura. Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado; CPF, CNPJ, CEP e telefone gravam só os dígitos, as numéricas gravam o texto da máscara** (§0) — com as funções de `shared/util/format.ts`. A tela nunca chama máscara no `onChange`. `type="password"` usa o `InputSenha` (mostrar/ocultar); `type="email"` põe `inputMode="email"` e `autoCapitalize="off"`. Aceita `maxLength` — use o mesmo limite do DTO (`@Size(max = 150)` → `maxLength={150}`); nas máscaras o kit já põe o tamanho do texto formatado. |
+| `TDate` | `min?`, `max?` | Data com calendário em pt-BR (no popover glass) e botão de limpar. Digita-se `DD/MM/AAAA` ou escolhe-se no calendário. Grava `AAAA-MM-DD`; monta com `T00:00:00` para exibir; valor inicial `hojeIso()` quando o form pede hoje. A API manda ISO-8601 e o front formata. |
 | `TDateTime` | `passoMinutos?` (padrão 5) | Data e hora; grava `AAAA-MM-DDTHH:mm`. |
 | `TTextArea` | `linhas?`, `maxLength?` | Texto longo; mostra "máx. N caracteres". |
 | `TCombo` | `opcoes: {valor, rotulo}[]`, `vazio?` | **Opções fixas** — situação, tipo, enum (`Combobox` com a lista local). `vazio` é a opção "Todos"/"Selecione…". `SITUACAO_OPCOES` está pronto no kit. |
 | `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?`, `acao?` | **Opções do banco** (`Combobox` com `onBuscaChange` e `carregando`, debounce 300 ms) e o rótulo do valor salvo. No CRM as rotas de combo são `GET /api/<recurso>/selecao` (`SelectDto` com `id` e `nome`); hoje devolvem todos os ativos, sem termo — o `buscar` pode ignorar o termo e o `Combobox` filtra local. Quando a lista crescer, a rota ganha `?busca=` no backend. `acao` é o botão colado ao campo, na altura dele, para o **cadastro rápido** do que não está na lista (`<TButton variant="novo" label="" …/>`, que some para quem só lê). |
 | `TDBComboMulti` | `buscar`, `excluir?`, `maximo?` | Vários do banco. |
 | `TCor` | `cores?` | **Cor de identificação** de um registro: as `CORES_SUGERIDAS` em bolinhas e "Outra", com o seletor do sistema. Grava `#RRGGBB` em maiúsculas. As sugeridas saem de token, nunca de hex na tela. Nenhum cadastro do CRM pede ainda. |
-| `TCheckBox` | `opcoes?` | Sem `opcoes`, um booleano com o rótulo ao lado; com `opcoes`, um grupo fixo que grava a lista dos marcados. |
+| `TCheckBox` | `opcoes?`, `vertical?` | Sem `opcoes`, um booleano com o rótulo ao lado; com `opcoes` (`{valor, rotulo, desabilitada?, dica?}`), um grupo fixo que grava a lista dos marcados, na ordem das opções. |
 | `TDBCheckBox` | `buscar()`, `vertical?`, `altura?` | Grupo vindo do banco. |
-| `TRadio` | `opcoes`, `vertical?` | Escolha única fixa (`role="radiogroup"`, setas entre as opções). |
+| `TRadio` | `opcoes` (`{valor, rotulo, desabilitada?, dica?}`), `vertical?`, `vazio?` | Escolha única fixa (`role="radiogroup"`, setas entre as opções), lado a lado por padrão. `vazio` é a opção "Não informado" (valor `''`), no fim. |
 | `TDBRadio` | `buscar()`, `vertical?` | Escolha única vinda do banco. |
 | `TFieldList` | `name`, `colunas: {name, componente(campo, i, linha), width?}[]`, `novaLinha`, `minimo?`, `rotuloAdicionar?`, `vazio?`, `detalhe?(i, linha)` | **Lista filha editável** dentro do formulário (e-mails, telefones): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão e o remover no fim, botão Acrescentar no rodapé. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
 | `TRotulo` | `htmlFor`, `required?` | Só o rótulo, para a coluna de labels do §5. |
@@ -373,7 +502,7 @@ vivo, simulação), 400 é estado inline (`Alerta`), não mensagem.
 
 | Componente | Props | O que faz |
 |---|---|---|
-| `TButton` | `variant`, `label`, `loading?`, `size?`, `type?`, `icone?` | Variantes de ação **com ícone e cor prontos**: `salvar`, `novo`, `buscar`, `limpar`, `voltar`, `exportar`, `pdf`, `editar`, `inativar`, `reativar`; e as genéricas `primary`, `secondary`, `ghost`, `danger`. Cores por token, nunca hex. Dentro de `TForm somenteLeitura`, `salvar`, `novo`, `inativar` e `reativar` **não aparecem**. `label=""` deixa só o ícone (grade); o nome vira `aria-label` e dica. `loading` é o `carregando` do `Button`: continua focável e não muda de largura. `icone` (componente do `lucide-react`) dá ícone às genéricas (`<TButton variant="secondary" icone={Palette} label="Configurar aparência" />`); nas ações troca o padrão. Sem `size`, vale o que o contêiner impõe (`sm` no `acoes` do `TDataGrid`), senão `md`. |
+| `TButton` | `variant`, `label`, `loading?`, `size?`, `type?`, `icone?` | Variantes de ação **com ícone e cor prontos**: `salvar`, `novo`, `buscar`, `limpar`, `voltar`, `exportar`, `pdf`, `editar`, `inativar`, `reativar`; e as genéricas `primary`, `secondary`, `ghost`, `danger`. Cores por token, nunca hex. Dentro de `TForm somenteLeitura`, `salvar`, `novo`, `inativar` e `reativar` **não aparecem**. `label=""` deixa só o ícone em **qualquer** variante com ícone: botão quadrado, 32×32 na grade (`sm`) e 40×40 fora; nas ações o nome vira `aria-label` e dica, nas genéricas a tela passa `aria-label` (e `title`; sem ele a dica é o `aria-label`), ex.: `<TButton variant="secondary" icone={LogIn} label="" aria-label={'Acessar ' + t.nome} title="Acessar contratante" />`. `loading` é o `carregando` do `Button`: continua focável e não muda de largura. `icone` (componente do `lucide-react`) dá ícone às genéricas (`<TButton variant="secondary" icone={Palette} label="Configurar aparência" />`); nas ações troca o padrão. Sem `size`, vale o que o contêiner impõe (`sm` no `acoes` do `TDataGrid`), senão `md`. |
 | `TDataGrid` | `colunas`, `linhas`, `chaveDe`, `carregando?`, `onLinhaClick?`, `tituloCartao?`, `vazioTitulo?`, `vazioDescricao?`, `acoes?(linha)`, `erro?`, `onTentarDeNovo?` | A `Tabela` glass (`glass-solid`). Ações na **primeira coluna**, como no antigo. Vira cartões abaixo de `md`. `erro` mostra o `EstadoErro` no lugar das linhas, com "Tentar de novo". Coluna: `chave`, `cabecalho`, `render(linha)`, `numerica?`, `secundaria?`, `principal?`, `className?`. |
 | `TDataGridFooter` | `pagina` (o `PaginaDto`), `onPaginaChange` | "Exibindo X–Y de N registros" e a paginação (`Paginacao`). Lê `pagina`, `tamanho`, `totalElementos`, `totalPaginas`. |
 | `TAcoesDeExportacao` | como no 2.0 (`nome`, `colunas`, `carregar(limite, indice)`, `aoCarregarParaImprimir`) | Os botões **Exportar** (planilha CSV) e **Pdf** (a folha impressa). Repetem a consulta com os **filtros aplicados**, página a página, até o teto do 2.0 (`TETO_DE_EXPORTACAO`), e avisam se cortou. Na List, vão no rodapé do filtro, depois do Novo. |
@@ -858,6 +987,7 @@ recebe a classe de largura):
 | `data-kit` | o nome do componente: `TEntry`, `TDate`, `TDateTime`, `TTextArea`, `TCombo`, `TDBCombo`, `TDBComboMulti`, `TCheckBox`, `TDBCheckBox`, `TRadio`, `TDBRadio`, `TCor` | todo campo |
 | `data-largura` | o token **aplicado**: o `width` recebido ou o padrão do componente (§2.3); `celula` quando o campo está fora de uma `TRow` sem `width`; `conteudo` em caixa de marcar, rádio e cor | todo campo |
 | `data-mascara` | a máscara do `TEntry` (`cpf`, `moeda`...) | `TEntry` com máscara |
+| `data-rotulo-max` | caracteres do maior rótulo das opções (com o `vazio`): até 18 o medidor espera `situacao`, até 36 `medio` (§2.1) | `TCombo` |
 
 E, para o medidor e o screenshot apontarem o culpado pelo nome:
 
@@ -868,7 +998,8 @@ E, para o medidor e o screenshot apontarem o culpado pelo nome:
 - dentro do campo, um controle de verdade (`input`, `textarea`, `select` ou
   `[role="combobox"]`) ligado ao rótulo por `htmlFor`/`id` ou
   `aria-labelledby` — é por ele que o medidor e o `tres-vias.mjs` acham o campo
-  pelo rótulo;
+  pelo rótulo (rádio e grupo de caixas: o `role="radiogroup"`/`group` com
+  `aria-labelledby` no `div` de fora, e o medidor usa o rótulo do grupo);
 - o campo só leitura com `disabled`, `readOnly` ou `aria-readonly="true"` no
   controle, e o fundo no próprio controle (é ele que o medidor compara).
 

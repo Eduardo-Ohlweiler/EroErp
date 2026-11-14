@@ -32,3 +32,14 @@ export const CoreografiaDaTela = createContext<NomeCoreografia | null>(null);
 export function useCoreografiaDaTela() {
   return useContext(CoreografiaDaTela);
 }
+
+/**
+ * A <Tela> em volta já terminou a primeira montagem? (`current` vira true no primeiro efeito dela.)
+ * Quem nasce junto com a tela (current false) faz parte da coreografia dela; quem nasce depois (aba trocada,
+ * conteúdo que chegou) anima por conta própria. Fora de uma <Tela>, `null`. Uso: ConteudoDeAba.
+ */
+export const TelaMontada = createContext<{ readonly current: boolean } | null>(null);
+
+export function useTelaMontada() {
+  return useContext(TelaMontada);
+}

@@ -41,6 +41,9 @@ subir os próprios privilégios. Você não altera arquivos.
 
 ## Formato da resposta
 
+Em **no máximo ~400 palavras**. Não reproduza o checklist item por item: diga em
+uma linha o que foi conferido sem achado e gaste o texto nos achados.
+
 - Tabela do checklist (item | ✅/❌/não se aplica | evidência).
 - Achados, cada um com: **gravidade** (`bloqueia` para todo risco real de
   segurança, `sugestão` para endurecimento opcional), categoria OWASP,

@@ -26,6 +26,8 @@ Diferenças que importam ao trazer algo para o CRM Glass:
 
 ## Formato da resposta
 
+Em **no máximo ~500 palavras**.
+
 1. **Onde está**: arquivos e linhas relevantes em cada sistema.
 2. **A regra de negócio**, em linguagem simples: campos, validações, cálculos,
    estados e transições.

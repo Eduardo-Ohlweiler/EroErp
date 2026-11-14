@@ -56,9 +56,21 @@ que muda é a pele: tokens, vidro, destaque do contratante.
   `updatedAt` do ResponseDto; se faltarem na API, diga à sessão principal (é do
   `dev-backend`).
 - Mudou o comportamento de um componente do kit → atualize o docs/07 no mesmo
-  trabalho. Teste vitest para a lógica pura do kit (máscaras, larguras,
-  conversões).
+  trabalho (inclusive o resumo do topo, se a peça é nova). Teste vitest para a
+  lógica pura do kit (máscaras, larguras, conversões).
+- **Componente que falta para uma tela é criado no kit**, no padrão `T*` e com
+  entrada no `/design-system`. É assim que todas as telas continuam iguais; a
+  tela nunca resolve sozinha.
+
+## Como trabalhar
+
+- Leia do docs/07 o resumo do topo e só as seções da peça que vai mexer.
+- **Não abra navegador nem tire screenshot.** Contraste você confere pelos
+  números dos tokens (calcule a razão), e a conferência visual do catálogo e
+  das telas é feita uma vez só pelo `guardiao-layout`, nas capturas que o
+  `revisor-ui` também lê. Imagem é a parte mais cara do trabalho do time.
+- Fique no escopo pedido; não refatore o que não foi pedido.
 
 ## Entrega
 
-Responda com: o que criou ou alterou (arquivos), os tokens novos, a API dos componentes (props), como foi testado nos dois temas e com dois destaques (com screenshots abertos, quando possível), o resultado de build e testes, e qualquer componente que ficou faltando para a tela que motivou o pedido.
+Responda em **no máximo ~300 palavras**: o que criou ou alterou, os tokens novos com a razão de contraste nos dois temas, a API de cada peça nova (props e um exemplo de uma linha), o resultado de build e testes, e qualquer componente que ficou faltando. Não cole código.

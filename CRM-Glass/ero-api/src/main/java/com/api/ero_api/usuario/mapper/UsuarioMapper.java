@@ -29,6 +29,7 @@ public final class UsuarioMapper {
                 u.getId(),
                 u.getNome(),
                 u.getEmail(),
+                u.getTelefone(),
                 u.getPapel(),
                 u.isAtivo(),
                 u.isExigirTrocaSenha(),
@@ -52,6 +53,7 @@ public final class UsuarioMapper {
         Usuario u = new Usuario();
         u.setNome(dto.nome().trim());
         u.setEmail(normalizarEmail(dto.email()));
+        u.setTelefone(normalizarTelefone(dto.telefone()));
         u.setPapel(dto.papel());
         u.setAtivo(true);
         u.setExigirTrocaSenha(true);
@@ -61,11 +63,27 @@ public final class UsuarioMapper {
     public static void atualizarEntidade(Usuario u, UsuarioUpdateDto dto) {
         u.setNome(dto.nome().trim());
         u.setEmail(normalizarEmail(dto.email()));
+        u.setTelefone(normalizarTelefone(dto.telefone()));
         u.setPapel(dto.papel());
+    }
+
+    /** Minha conta: o próprio usuário só muda nome e telefone (e-mail e papel ficam com o administrador). */
+    public static void atualizarPerfil(Usuario u, String nome, String telefone) {
+        u.setNome(nome.trim());
+        u.setTelefone(normalizarTelefone(telefone));
     }
 
     public static String normalizarEmail(String email) {
         return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /** Grava só os dígitos; vazio (o front limpou o campo) vira {@code null} = não informado. */
+    public static String normalizarTelefone(String telefone) {
+        if (telefone == null) {
+            return null;
+        }
+        String digitos = telefone.replaceAll("\\D", "");
+        return digitos.isEmpty() ? null : digitos;
     }
 
     private static String nome(Map<UUID, String> nomes, UUID id) {

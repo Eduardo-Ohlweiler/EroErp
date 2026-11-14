@@ -52,7 +52,11 @@ export type TButtonProps = Omit<ButtonProps, 'variant' | 'size' | 'carregando' |
   size?: 'md' | 'sm';
   /** ação em andamento (o `carregando` do `Button`): continua focável, `aria-busy`, não muda de largura */
   loading?: boolean;
-  /** texto do botão; nas ações o padrão é o nome dela ("Salvar"). `label=""` deixa só o ícone (grade): o nome vira `aria-label` e dica */
+  /**
+   * texto do botão; nas ações o padrão é o nome dela ("Salvar"). `label=""` deixa só o ícone, em qualquer variante
+   * com ícone: botão quadrado (32×32 na grade, 40×40 fora). Nas ações o nome vira `aria-label` e dica; nas genéricas
+   * a tela passa `aria-label` (e `title`, a dica; sem ele, a dica é o próprio `aria-label`).
+   */
   label?: string;
   /** ícone (componente do lucide-react) para as genéricas, ex.: "Configurar aparência"; nas ações, troca o ícone padrão */
   icone?: Icone;
@@ -74,9 +78,12 @@ export function TButton({ variant = 'primary', size: sizeProp, loading, label, i
   if (acao?.escreve && somenteLeitura) return null;
 
   const texto = label ?? acao?.rotulo;
-  const soIcone = !!acao && texto === '' && children === undefined;
   const Icone = icone ?? acao?.icone;
+  // Só ícone em qualquer variante (ação ou genérica com `icone`): quadrado, 32×32 na grade (sm) e 40×40 no md.
+  const soIcone = !!Icone && texto === '' && children === undefined;
   const tamanho: ButtonProps['size'] = soIcone ? (size === 'sm' ? 'icon-sm' : 'icon') : size;
+  // O nome acessível: o que a tela passou; nas ações, o rótulo delas. Genérica só-ícone sem `aria-label` é erro da tela.
+  const nomeDoIcone = soIcone ? (rest['aria-label'] ?? acao?.rotulo) : undefined;
 
   return (
     <Button
@@ -85,8 +92,8 @@ export function TButton({ variant = 'primary', size: sizeProp, loading, label, i
       variant={acao ? acao.variante : GENERICAS[variant as Generica]}
       size={tamanho}
       carregando={!!loading}
-      aria-label={rest['aria-label'] ?? (soIcone ? acao.rotulo : undefined)}
-      title={title ?? (soIcone ? acao.rotulo : undefined)}
+      aria-label={rest['aria-label'] ?? nomeDoIcone}
+      title={title ?? (soIcone ? (acao?.rotulo ?? nomeDoIcone) : undefined)}
       data-kit="TButton"
       data-variante={variant}
       className={cn(acao?.classe, className)}

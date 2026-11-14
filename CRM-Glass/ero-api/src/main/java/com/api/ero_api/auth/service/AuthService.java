@@ -7,6 +7,8 @@ import com.api.ero_api.auth.dtos.CodigoEnviadoDto;
 import com.api.ero_api.auth.dtos.DoisFatoresReenviarDto;
 import com.api.ero_api.auth.dtos.DoisFatoresVerificarDto;
 import com.api.ero_api.auth.dtos.LoginDto;
+import com.api.ero_api.auth.dtos.MeuPerfilResponseDto;
+import com.api.ero_api.auth.dtos.MeuPerfilUpdateDto;
 import com.api.ero_api.auth.dtos.TrocarSenhaDto;
 import com.api.ero_api.auth.dtos.TrocarTemaDto;
 import com.api.ero_api.auth.dtos.UsuarioLogadoDto;
@@ -45,7 +47,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Login (senha + código enviado por e-mail), renovação, logout, troca da própria senha
+ * Login (senha + código enviado por e-mail), renovação, logout, os próprios dados (Minha conta), troca da própria senha
  * e do próprio tema e o "acessar contratante" do superadmin.
  *
  * <p>Por que não usa {@code @Transactional}: estes fluxos começam SEM tenant
@@ -282,6 +284,27 @@ public class AuthService {
         }
     }
 
+    // ---------------------------------------------------------------- Minha conta
+
+    /**
+     * Os meus dados. Lidos em ROOT pelo id da sessão: o superadmin pertence à Plataforma
+     * mesmo atuando num contratante (e lá dentro ele nem aparece no filtro de tenant).
+     */
+    public MeuPerfilResponseDto meuPerfil() {
+        UsuarioAutenticado eu = SecurityUtils.exigirUsuario();
+        return root(() -> toMeuPerfilDto(usuarioService.buscarEntidade(eu.usuarioId())));
+    }
+
+    /**
+     * Altera o meu nome e o meu telefone. O id vem sempre da sessão, nunca do corpo (que
+     * nem tem id, e-mail ou papel). A resposta já traz a {@code version} nova.
+     */
+    public MeuPerfilResponseDto atualizarMeuPerfil(MeuPerfilUpdateDto dto) {
+        UsuarioAutenticado eu = SecurityUtils.exigirUsuario();
+        return root(() -> toMeuPerfilDto(
+                usuarioService.atualizarProprioPerfil(eu.usuarioId(), dto.nome(), dto.telefone(), dto.version())));
+    }
+
     // ---------------------------------------------------------------- superadmin
 
     /** Superadmin passa a atuar dentro de um contratante. Fica registrado na auditoria. */
@@ -388,6 +411,11 @@ public class AuthService {
     private UsuarioLogadoDto usuarioLogado(UsuarioAutenticado u) {
         return root(() -> AuthMapper.toUsuarioLogadoDto(u, tenantService.buscarEntidade(u.tenantId()),
                 usuarioService.buscarTemaPreferido(u.usuarioId())));
+    }
+
+    /** Contratante a que o usuário pertence: para o superadmin é a Plataforma (tenant ROOT). */
+    private MeuPerfilResponseDto toMeuPerfilDto(Usuario u) {
+        return AuthMapper.toMeuPerfilDto(u, tenantService.buscarEntidade(u.getTenantId()).getNome());
     }
 
     private <T> T root(Supplier<T> acao) {

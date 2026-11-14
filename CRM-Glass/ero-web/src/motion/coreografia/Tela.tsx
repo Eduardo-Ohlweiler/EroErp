@@ -1,9 +1,9 @@
-import { forwardRef, useMemo, type ReactNode } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { motion, type HTMLMotionProps } from 'motion/react';
 import { useReduzirMovimento } from '../reduzir';
 import { coreografias, telaReduzida, type NomeCoreografia } from '../tokens';
 import { useMarcarMontagem } from './andamento';
-import { BlocoDaTela, CoreografiaDaTela, useAtrasoMontagem } from './contexto';
+import { BlocoDaTela, CoreografiaDaTela, TelaMontada, useAtrasoMontagem } from './contexto';
 
 export type TelaProps = Omit<HTMLMotionProps<'div'>, 'variants' | 'initial' | 'animate' | 'exit' | 'custom'> & {
   /** coreografia de entrada e saída (motion/tokens.ts, `coreografias`) */
@@ -38,6 +38,11 @@ export const Tela = forwardRef<HTMLDivElement, TelaProps>(function Tela(
   const total = herdado + c.atraso + atraso;
   const variants = useMemo(() => (reduzir ? telaReduzida : total === 0 ? c.variantes.tela : c.tela(total)), [reduzir, total, c]);
   const marca = useMarcarMontagem();
+  // Quem nasce depois da primeira montagem (aba trocada) sabe que anima sozinho (TelaMontada, ConteudoDeAba).
+  const montada = useRef(false);
+  useEffect(() => {
+    montada.current = true;
+  }, []);
 
   return (
     <motion.div
@@ -58,9 +63,11 @@ export const Tela = forwardRef<HTMLDivElement, TelaProps>(function Tela(
       }}
       {...rest}
     >
-      <CoreografiaDaTela.Provider value={coreografia}>
-        <BlocoDaTela.Provider value={c.variantes.bloco}>{children}</BlocoDaTela.Provider>
-      </CoreografiaDaTela.Provider>
+      <TelaMontada.Provider value={montada}>
+        <CoreografiaDaTela.Provider value={coreografia}>
+          <BlocoDaTela.Provider value={c.variantes.bloco}>{children}</BlocoDaTela.Provider>
+        </CoreografiaDaTela.Provider>
+      </TelaMontada.Provider>
     </motion.div>
   );
 });

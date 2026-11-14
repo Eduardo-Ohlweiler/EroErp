@@ -16,6 +16,7 @@ public record UsuarioResponseDto(
         UUID id,
         String nome,
         String email,
+        @Schema(description = "Telefone com DDD, só dígitos (nulo = não informado)") String telefone,
         Papel papel,
         boolean ativo,
         @Schema(description = "Precisa trocar a senha no próximo acesso") boolean exigirTrocaSenha,

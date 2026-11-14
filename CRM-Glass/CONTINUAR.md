@@ -1,6 +1,6 @@
 # Como continuar este projeto em outro computador
 
-Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 11/11/2026.
+Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 14/11/2026.
 
 ---
 
@@ -182,7 +182,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 3. **Conferir o que ficou sem verificar:** as telas da seção 4, o celular, e uma revisão com o agente `revisor-ui`.
 4. ~~Começar o backend~~ **Feito** (fundação, segurança, login, usuários e permissões).
 5. ~~Base do front definitivo~~ **Feito na fatia 1.** **Fatia 2:** as telas do `PLANO-FATIA-2.md` (login com código por e-mail e sessão em memória, casca com menu por permissão, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta), mais as pendências da seção 5 desse arquivo. Começar com `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
-6. **Definir as regras do papel ADMIN** (hoje recebe tudo do contratante; ver `docs/04-permissoes.md`).
+6. ~~Definir as regras do papel ADMIN~~ **Feito em 14/11/2026:** o ADMIN faz tudo dentro do contratante, e sempre sobra pelo menos um ADMIN ativo (`docs/negocio/usuarios-e-acesso.md`).
 7. **Primeiros módulos de negócio pelo `/timeero`:** cadastro de pessoas/clientes, empresas/filiais, produtos, funil de negócios e agenda.
 8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup. Checklist que o `seguranca` deixou para produção:
    - tirar o Swagger e o actuator do nginx, ou restringi-los por IP;
@@ -194,6 +194,28 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 10. **Só quando houver a 1ª cena exclusiva:** F1 (fotos em URL pública) e F12 (teste do 409 da cena exclusiva), do `PLANO-FATIA-2.md` §5.
 11. **Orçamento de desempenho:** decidir se o `qa` passa a medir fps (rolagem, troca de tela, tela parada) no build de produção em toda entrega e se reprova abaixo da meta. A proposta é 60 fps nas trocas, tela utilizável em menos de 500 ms e nenhuma tarefa acima de 50 ms. Avaliar também um fundo 3D pontual (ex.: login) com WebGL, medindo o fps.
 12. **Custo do `/timeero`:** na próxima entrega só de tela, medir de novo o gasto por agente e só então decidir as otimizações do time (o kit `T*` desta entrega foi um custo único).
+
+
+---
+
+## Formatar o computador
+
+**Antes:**
+
+- Conferir que a branch de trabalho foi enviada ao GitHub: `git log --branches --not --remotes` precisa sair vazio.
+- Copiar à mão, para um lugar seguro, os dois `.env`: `CRM-Glass/ero-api/.env` e `EroErp2.0/ero-erp-api/.env`. **Nunca no git.**
+- Guardar o zip `backup-claude-<data>.zip` com a memória do Claude (`C:\Users\Eduardo\.claude\projects\*\memory\`), os planos (`C:\Users\Eduardo\.claude\plans\`) e o `C:\Users\Eduardo\.claude\settings.json`.
+- Opcional: `pg_dump` do volume Docker `ero-api_ero_api_pg` (dados de demonstração).
+- Olhar o worktree `EroErp2.0/.claude/worktrees/layout-modulos-5abfc5`, que tem 1 arquivo sem commit.
+
+**Depois:**
+
+- Instalar Git, JDK 25 (com `JAVA_HOME`), Node 20+, Docker Desktop, Claude Code (app desktop) e Obsidian (`winget install Obsidian.Obsidian`; abrir `CRM-Glass/docs` como cofre e criar as notas novas em `negocio`).
+- Clonar o repo.
+- Restaurar os `.env` nos mesmos caminhos.
+- Descompactar a memória e os planos no mesmo caminho de `C:\Users\Eduardo\.claude\`.
+- `npm install` em `ero-web` e em `prototipo`.
+- Subir com `docker compose up --build -d` (na pasta `CRM-Glass`).
 
 ---
 

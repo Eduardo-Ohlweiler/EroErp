@@ -23,6 +23,11 @@ export type TEntryProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'width' | 
     casas?: number;
     /** unidade à direita ("kg", "%") */
     suffix?: ReactNode;
+    /**
+     * Botão colado ao campo, na altura dele (como o `acao` do `TDBCombo`): o "Gerar" da senha temporária
+     * (`<TButton variant="secondary" label="Gerar" …/>`). Some em só leitura.
+     */
+    acao?: ReactNode;
   };
 
 /**
@@ -56,7 +61,7 @@ function TEntryLigado(props: TEntryProps & { name: string }) {
 }
 
 const TEntryBase = forwardRef<HTMLInputElement, TEntryProps>(function TEntryBase(
-  { label, error, suffix, ajuda, mascara, casas, width, rotuloOculto, required, disabled, className, id, onChange, type, readOnly, ...rest },
+  { label, error, suffix, ajuda, mascara, casas, width, rotuloOculto, required, disabled, className, id, onChange, type, readOnly, acao, ...rest },
   ref,
 ) {
   // Só leitura do TForm: readOnly (focável, o leitor de tela lê o valor). `disabled` só para campo travado de verdade.
@@ -101,27 +106,35 @@ const TEntryBase = forwardRef<HTMLInputElement, TEntryProps>(function TEntryBase
       id={id}
       semReserva={somenteLeitura || !!disabled}
     >
-      {(ids) =>
-        type === 'password' ? (
-          <InputSenha icon={null} autoComplete="new-password" invalid={!!error} {...comum} {...ids} className={className} />
-        ) : (
-          <div className="relative">
-            <Input
-              type={type}
-              invalid={!!error}
-              right={suffix ? <span className="px-2 text-xs text-subtle">{suffix}</span> : undefined}
-              {...comum}
-              {...ids}
-              className={cn(moeda && 'pl-10', mascara && 'tabular-nums', className)}
-            />
-            {moeda && (
-              <span aria-hidden className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-xs text-subtle">
-                R$
-              </span>
-            )}
+      {(ids) => {
+        const controle =
+          type === 'password' ? (
+            <InputSenha icon={null} autoComplete="new-password" invalid={!!error} {...comum} {...ids} className={className} />
+          ) : (
+            <div className="relative">
+              <Input
+                type={type}
+                invalid={!!error}
+                right={suffix ? <span className="px-2 text-xs text-subtle">{suffix}</span> : undefined}
+                {...comum}
+                {...ids}
+                className={cn(moeda && 'pl-10', mascara && 'tabular-nums', className)}
+              />
+              {moeda && (
+                <span aria-hidden className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-xs text-subtle">
+                  R$
+                </span>
+              )}
+            </div>
+          );
+        if (!acao || somenteLeitura) return controle;
+        return (
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">{controle}</div>
+            <div className="flex h-11 shrink-0 items-center">{acao}</div>
           </div>
-        )
-      }
+        );
+      }}
     </CampoDoKit>
   );
 });

@@ -94,6 +94,9 @@ nunca commit na `main` e nunca `--force`.
 
 ## Relatório final
 
+Em **no máximo ~400 palavras** (o contrato das rotas novas pode ir numa tabela
+curta; não cole código):
+
 - Arquivos criados e alterados, agrupados por pasta.
 - Endpoints: método | rota | authority.
 - Número da migration.

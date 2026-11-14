@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="012-add-usuario-telefone" author="eduardo">
+        <comment>
+            Telefone opcional do usuário (cadastro, lista e Minha conta). Gravado só com dígitos:
+            10 (fixo) ou 11 (celular), com DDD. NULL = não informado. Sem índice: não é filtro de busca.
+            Dado pessoal (LGPD): nunca vai para log nem para o detalhe de evento de segurança.
+        </comment>
+        <addColumn tableName="usuario">
+            <column name="telefone" type="VARCHAR(20)"/>
+        </addColumn>
+        <sql>ALTER TABLE usuario ADD CONSTRAINT ck_usuario_telefone CHECK (telefone ~ '^[0-9]{10,11}$')</sql>
+    </changeSet>
+
+</databaseChangeLog>

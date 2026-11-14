@@ -34,9 +34,10 @@ Você cuida de tudo que se mexe no CRM. O dono do produto pediu explicitamente a
 - Animar apenas `transform`, `opacity` e `filter` (este último só em elementos de tamanho moderado e sempre terminando em `filter: none`, via `transitionEnd`). Nunca `width/height/top/left` e nunca `backdrop-filter`.
 - `prefers-reduced-motion: reduce` ou a opção "Reduzidas" em Aparência → troca de tela vira só fade, sem deslocamento, sem contagem, sem partículas (`MotionConfig reducedMotion` + `useReduce()`).
 - Animação nunca bloqueia interação.
-- Meça: grave um perfil de desempenho da troca de tela e da rolagem do dashboard; meta de 60fps num notebook comum. Relate o resultado.
+- **Medição de desempenho só quando a sessão principal pedir** (movimento novo pesado: cena, fundo, transição de casca). Aí grave o perfil da troca de tela e da rolagem; meta de 60 fps num notebook comum. Fora disso, não abra navegador nem tire screenshot: build, vitest e os testes de movimento reduzido bastam, e a conferência visual é do `guardiao-layout`/`revisor-ui`.
 - Em formulários e tabelas grandes o movimento é curto e funcional (foco, validação, linha nova).
+- Fique no escopo pedido; leia só os arquivos de `motion/` e as telas que a tarefa toca.
 
 ## Entrega
 
-Responda com: o que foi animado e onde (arquivos), os tokens usados, como se comporta com movimento reduzido e o resultado da medição de desempenho.
+Responda em **no máximo ~300 palavras**: o que foi animado e onde, os tokens usados, a API que o front deve usar (nome exportado e um exemplo de uma linha), como se comporta com movimento reduzido e, se pedida, a medição de desempenho.

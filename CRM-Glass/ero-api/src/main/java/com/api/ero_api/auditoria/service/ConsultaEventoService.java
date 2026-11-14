@@ -1,6 +1,7 @@
 package com.api.ero_api.auditoria.service;
 
 import com.api.ero_api.auditoria.dtos.EventoSegurancaResponseDto;
+import com.api.ero_api.auditoria.dtos.TipoEventoDto;
 import com.api.ero_api.auditoria.entity.EventoSeguranca;
 import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import com.api.ero_api.auditoria.mapper.EventoSegurancaMapper;
@@ -14,6 +15,7 @@ import com.api.ero_api.tenant.service.TenantService;
 import com.api.ero_api.usuario.service.UsuarioService;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -86,6 +88,14 @@ public class ConsultaEventoService {
         Map<UUID, String> nomesTenants = plataforma ? tenantService.buscarNomes(idsDeTenants(eventos)) : Map.of();
         return PaginaDto.de(eventos, e -> EventoSegurancaMapper.toResponseDto(e, nomesUsuarios, nomesTenants,
                 !plataforma && doSuporte(e, nomesUsuarios)));
+    }
+
+    /**
+     * Todos os tipos de evento, na ordem do enum, com rótulo e categoria (filtro e colunas
+     * da tela Logs). Não lê o banco. O front esconde "Contratantes" dentro de um contratante.
+     */
+    public List<TipoEventoDto> listarTipos() {
+        return Arrays.stream(TipoEventoSeguranca.values()).map(EventoSegurancaMapper::toTipoDto).toList();
     }
 
     /**
