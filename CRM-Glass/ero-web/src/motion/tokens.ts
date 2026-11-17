@@ -531,6 +531,122 @@ export const micro = {
   acenoAtraso: 0.8,
 };
 
+/* =====================================================================================
+ * Submenu flutuante da casca (shell/Submenu.tsx): abre do trilho para fora (à direita) ou da barra inferior para cima,
+ * com mola curta, e fecha mais rápido do que abriu. Opacidade e transform no próprio painel `glass-solid` (portal),
+ * nunca num contêiner em volta (o vidro precisa do backdrop-filter desde o primeiro quadro). Reduzido: só opacidade.
+ * ===================================================================================== */
+export const submenu = {
+  /** de onde o painel vem, a partir do botão do pai (px) */
+  distancia: 10,
+  /** escala com que começa (a origem é o lado do botão: --radix-popover-content-transform-origin) */
+  escala: 0.96,
+  /** mola curta: firme, assenta em ~0,2 s, sem quicar */
+  mola: { type: 'spring', stiffness: 620, damping: 40, mass: 0.7 } as Transition,
+  /** opacidade entrando (s): o texto fica legível antes de a mola assentar */
+  aparecer: 0.14,
+  /** fecha mais rápido do que abre (s) */
+  saida: micro.saidaRapida,
+};
+
+/** De que lado do botão o submenu abre: à direita do trilho (computador) ou acima da barra inferior (celular). */
+export type LadoDoSubmenu = 'direita' | 'acima';
+
+/** Variantes do painel do submenu (`hidden` → `show` → `exit`), conforme o lado e o movimento reduzido. */
+export function variantesDoSubmenu(lado: LadoDoSubmenu, reduzir: boolean): Variants {
+  if (reduzir) {
+    return {
+      hidden: { opacity: 0 },
+      show: { opacity: 1, transition: { duration: montagem.reduzida, ease: 'linear' } },
+      exit: { opacity: 0, transition: { duration: submenu.saida, ease: 'linear' } },
+    };
+  }
+  const x = lado === 'direita' ? -submenu.distancia : 0;
+  const y = lado === 'acima' ? submenu.distancia : 0;
+  return {
+    hidden: { opacity: 0, x, y, scale: submenu.escala },
+    show: { opacity: 1, x: 0, y: 0, scale: 1, transition: { ...submenu.mola, opacity: { duration: submenu.aparecer, ease: ease.out } } },
+    /** volta meio caminho para o botão e some, sem mola */
+    exit: { opacity: 0, x: x / 2, y: y / 2, scale: (1 + submenu.escala) / 2, transition: { duration: submenu.saida, ease: ease.inOut } },
+  };
+}
+
+/* =====================================================================================
+ * Linha de lista editável (TFieldList: telefones, endereços, vínculos) e troca de bloco no lugar (PF ↔ PJ do
+ * PessoaForm, <TrocaDeBlocos>). Uso: <LinhaDaLista> e <TrocaDeBlocos> (motion/coreografia/LinhaDaLista.tsx).
+ *
+ *  - Acrescentar: o espaço da linha abre (altura) e o conteúdo desce um pouco e aparece.
+ *  - Remover: o conteúdo some primeiro e depois a altura recolhe; o que está embaixo sobe sem pulo.
+ *  - Troca de bloco: o antigo some e recolhe enquanto o novo abre no lugar; a altura total vai de uma à outra.
+ *
+ * A altura anima só NESTA linha (bloco pequeno dentro do cartão, sem vidro dentro dela), com `overflow: hidden` só
+ * enquanto anima; nunca no cartão. Modo leve (aparelho fraco): sem altura, só opacidade e y. Reduzido: só opacidade.
+ * ===================================================================================== */
+export const linha = {
+  /** espaço da linha abrindo (s) */
+  abrir: 0.3,
+  /** conteúdo aparecendo (s), depois de `atrasoAparecer` (o espaço já começou a abrir) */
+  aparecer: 0.22,
+  atrasoAparecer: 0.06,
+  /** conteúdo sumindo antes de a altura recolher (s) */
+  sumir: 0.1,
+  /** altura recolhendo (s), começando quando o conteúdo já está quase sumido; a remoção inteira fica em ~0,24 s */
+  recolher: 0.18,
+  atrasoRecolher: 0.06,
+  /** de onde o conteúdo desce ao entrar (px) */
+  distancia: 6,
+};
+
+/** `completo`: com altura · `leve`: modo leve (sem altura) · `reduzido`: movimento reduzido (só opacidade). */
+export type ModoDaLinha = 'completo' | 'leve' | 'reduzido';
+
+/** Alvos de uma linha: objetos (não rótulos), para a linha não comandar as variantes dos campos de dentro. */
+export type AlvosDaLinha = { hidden: TargetAndTransition; show: TargetAndTransition; exit: TargetAndTransition };
+
+/** Saída instantânea: a troca de bloco sem altura não deixa os dois blocos empilhados enquanto o antigo some. */
+const sairNaHora: TargetAndTransition = { opacity: 0, transition: { duration: 0 } };
+
+/**
+ * Coreografia `linhaDaLista`. `saidaNaHora`: o bloco que sai some na hora quando não há altura animando (modo leve
+ * e reduzido da troca de bloco); com altura, ele recolhe enquanto o novo abre.
+ */
+export function linhaDaLista(modo: ModoDaLinha = 'completo', { saidaNaHora = false } = {}): AlvosDaLinha {
+  if (modo === 'reduzido') {
+    const t = { duration: montagem.reduzida, ease: 'linear' } as const;
+    return { hidden: { opacity: 0 }, show: { opacity: 1, transition: t }, exit: saidaNaHora ? sairNaHora : { opacity: 0, transition: t } };
+  }
+  if (modo === 'leve') {
+    return {
+      hidden: { opacity: 0, y: -linha.distancia },
+      show: { opacity: 1, y: 0, transition: { duration: linha.aparecer, ease: ease.out } },
+      exit: saidaNaHora ? sairNaHora : { opacity: 0, transition: { duration: linha.sumir, ease: ease.inOut } },
+    };
+  }
+  return {
+    hidden: { opacity: 0, y: -linha.distancia, height: 0, overflow: 'hidden' },
+    show: {
+      opacity: 1,
+      y: 0,
+      height: 'auto',
+      transitionEnd: { height: 'auto', overflow: 'visible' },
+      transition: {
+        height: { duration: linha.abrir, ease: ease.out },
+        y: { duration: linha.abrir, ease: ease.out },
+        opacity: { duration: linha.aparecer, delay: linha.atrasoAparecer, ease: ease.out },
+      },
+    },
+    exit: {
+      opacity: 0,
+      height: 0,
+      overflow: 'hidden',
+      transition: {
+        opacity: { duration: linha.sumir, ease: ease.inOut },
+        height: { duration: linha.recolher, delay: linha.atrasoRecolher, ease: ease.inOut },
+      },
+    },
+  };
+}
+
 /**
  * Fundo vivo em CSS (orbs, aurora, ondas): um ciclo de cada camada (s). Longos e diferentes entre si, para as
  * camadas nunca voltarem juntas ao mesmo ponto. Só transform; vão para o CSS pelas variáveis --mov-* abaixo.

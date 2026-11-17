@@ -1,31 +1,18 @@
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router';
 import * as RadixPopover from '@radix-ui/react-popover';
-import { AnimatePresence, motion, type Variants } from 'motion/react';
-import { micro, spring } from '../../motion/tokens';
+import { AnimatePresence, motion } from 'motion/react';
+import { variantesDoSubmenu, type LadoDoSubmenu } from '../../motion/tokens';
 import { useReduzirMovimento } from '../../motion/reduzir';
 import { cn } from '../../shared/util/utils';
 import { isActive, type ItemMenu } from './navegacao';
 
-/** De que lado do botão o submenu abre: à direita do trilho (computador) ou acima da barra inferior (celular). */
-export type LadoDoSubmenu = 'direita' | 'acima';
-
 /**
- * Ponto de encaixe do movimento (motion-designer): a coreografia `submenu` de `motion/tokens.ts` (abre do trilho para
- * fora com mola curta, fecha mais rápido; só opacidade no movimento reduzido) entra aqui. Até lá, o mesmo movimento
- * dos outros menus flutuantes (MenuUsuario, Popover), saindo do lado do botão.
+ * De que lado do botão o submenu abre: à direita do trilho (computador) ou acima da barra inferior (celular).
+ * O movimento é a coreografia `submenu` de motion/tokens.ts (`variantesDoSubmenu`): abre do trilho para fora com
+ * mola curta e fecha mais rápido; no movimento reduzido, só opacidade.
  */
-function variantesDoSubmenu(lado: LadoDoSubmenu, reduzir: boolean): Variants {
-  const saida = { duration: micro.saidaRapida };
-  if (reduzir) return { hidden: { opacity: 0 }, show: { opacity: 1, transition: saida }, exit: { opacity: 0, transition: saida } };
-  const x = lado === 'direita' ? -8 : 0;
-  const y = lado === 'acima' ? 8 : 0;
-  return {
-    hidden: { opacity: 0, x, y, scale: 0.96 },
-    show: { opacity: 1, x: 0, y: 0, scale: 1, transition: spring.snappy },
-    exit: { opacity: 0, x: x / 2, y: y / 2, scale: 0.98, transition: saida },
-  };
-}
+export type { LadoDoSubmenu };
 
 export type SubmenuProps = {
   /** o pai: `label` vira o título do submenu; `filhos`, os itens */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aba, ambiente, atrasoDoBloco, casca, coreografias, faixa, faixaContexto, kit, montagem, orquestrar, variaveisDeMovimento, type Papel } from './tokens';
+import { aba, ambiente, atrasoDoBloco, casca, coreografias, faixa, faixaContexto, kit, linha, linhaDaLista, montagem, orquestrar, submenu, variantesDoSubmenu, variaveisDeMovimento, type Papel } from './tokens';
 
 type ComDelay = { transition: { delayChildren: (i: number, n: number) => number; when?: string } };
 
@@ -147,5 +147,68 @@ describe('troca de contexto e de aba (fatia 3)', () => {
     const c = coreografias.contexto;
     expect(c.atraso).toBeGreaterThan(0);
     expect(c.atraso).toBeLessThan(0.3);
+  });
+});
+
+describe('linhaDaLista (TFieldList e troca PF ↔ PJ)', () => {
+  type Transicoes = Record<string, { duration?: number; delay?: number }>;
+  const chaves = (alvo: object) => Object.keys(alvo).filter((k) => k !== 'transition' && k !== 'transitionEnd');
+
+  it('completo: a linha abre e recolhe a altura, e termina em altura automática e sem corte', () => {
+    const l = linhaDaLista('completo');
+    expect(l.hidden).toMatchObject({ height: 0, opacity: 0, overflow: 'hidden' });
+    expect(l.show).toMatchObject({ height: 'auto', opacity: 1, transitionEnd: { height: 'auto', overflow: 'visible' } });
+    expect(l.exit).toMatchObject({ height: 0, opacity: 0, overflow: 'hidden' });
+  });
+
+  it('remover: o conteúdo some antes de a altura recolher, e tudo cabe em 0,3 s', () => {
+    const t = linhaDaLista('completo').exit.transition as Transicoes;
+    expect(t.opacity.duration!).toBeLessThanOrEqual(t.height.delay! + t.height.duration! / 2);
+    expect(t.height.delay! + t.height.duration!).toBeLessThanOrEqual(0.3);
+    expect(linha.atrasoRecolher + linha.recolher).toBeLessThan(linha.atrasoAparecer + linha.abrir);
+  });
+
+  it('modo leve: sem altura (só opacidade e y); reduzido: só opacidade', () => {
+    for (const alvo of Object.values(linhaDaLista('leve'))) expect(chaves(alvo).every((k) => ['opacity', 'y'].includes(k))).toBe(true);
+    for (const alvo of Object.values(linhaDaLista('reduzido'))) expect(chaves(alvo)).toEqual(['opacity']);
+  });
+
+  it('troca de bloco sem altura: o bloco que sai some na hora', () => {
+    for (const modo of ['leve', 'reduzido'] as const) {
+      const exit = linhaDaLista(modo, { saidaNaHora: true }).exit;
+      expect((exit.transition as { duration: number }).duration).toBe(0);
+    }
+  });
+
+  it('nunca anima filter (a linha fica dentro de um cartão de vidro)', () => {
+    for (const modo of ['completo', 'leve', 'reduzido'] as const)
+      for (const alvo of Object.values(linhaDaLista(modo))) expect(alvo).not.toHaveProperty('filter');
+  });
+});
+
+describe('submenu', () => {
+  const valores = (v: unknown) => (typeof v === 'function' ? v(0, {}, {}) : v) as Record<string, unknown>;
+  const chaves = (v: unknown) => Object.keys(valores(v)).filter((k) => k !== 'transition');
+
+  it('abre do trilho para fora (à direita) e da barra inferior para cima', () => {
+    expect(valores(variantesDoSubmenu('direita', false).hidden)).toMatchObject({ x: -submenu.distancia, y: 0 });
+    expect(valores(variantesDoSubmenu('acima', false).hidden)).toMatchObject({ x: 0, y: submenu.distancia });
+  });
+
+  it('abre com mola curta e fecha mais rápido, sem mola', () => {
+    const v = variantesDoSubmenu('direita', false);
+    expect((valores(v.show).transition as { type: string }).type).toBe('spring');
+    const saida = valores(v.exit).transition as { duration: number; type?: string };
+    expect(saida.type).toBeUndefined();
+    expect(saida.duration).toBeLessThan(submenu.aparecer);
+  });
+
+  it('o painel de vidro só anima opacidade e transform; reduzido, só opacidade', () => {
+    for (const lado of ['direita', 'acima'] as const) {
+      const v = variantesDoSubmenu(lado, false);
+      for (const r of ['hidden', 'show', 'exit']) expect(chaves(v[r]).every((k) => ['opacity', 'x', 'y', 'scale'].includes(k))).toBe(true);
+      const red = variantesDoSubmenu(lado, true);
+      for (const r of ['hidden', 'show', 'exit']) expect(chaves(red[r])).toEqual(['opacity']);
+    }
   });
 });

@@ -13,3 +13,4 @@ export { FaixaDaCasca, type FaixaDaCascaProps } from './FaixaDaCasca';
 export { ConteudoDeAba, type ConteudoDeAbaProps } from './ConteudoDeAba';
 export { coreografiaDaTroca, useCoreografiaDaArea, PREFIXO_CASCA } from './area';
 export { TelaMontada, useTelaMontada } from './contexto';
+export { LinhaDaLista, TrocaDeBlocos, useModoDaLinha, type LinhaDaListaProps, type TrocaDeBlocosProps } from './LinhaDaLista';

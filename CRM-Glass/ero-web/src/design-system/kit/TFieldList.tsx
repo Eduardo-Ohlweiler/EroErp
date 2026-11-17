@@ -1,6 +1,8 @@
 import { Fragment, useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { get, useFieldArray, useFormContext, useFormState, useWatch, type FieldValues } from 'react-hook-form';
+import { AnimatePresence } from 'motion/react';
 import { Plus, X } from 'lucide-react';
+import { LinhaDaLista } from '../../motion/coreografia';
 import { cn } from '../../shared/util/utils';
 import { linhaParaAcrescentar, linhasDasColunas, marcarPrincipal, principalDepoisDeRemover } from './fieldList';
 import type { Largura } from './larguras';
@@ -60,6 +62,11 @@ const FOCAVEL = 'input:not([type="radio"]):not([disabled]), textarea:not([disabl
  * mas não muda. O erro da lista inteira (`telefones` ou `telefones.root`, ex.: "Informe um telefone") vai embaixo.
  *
  * Teclado: acrescentar leva o foco ao primeiro campo da linha nova; remover devolve o foco ao Acrescentar.
+ *
+ * Movimento (coreografia `linhaDaLista`, motion/tokens.ts, via <LinhaDaLista>): a linha acrescentada abre o espaço e
+ * aparece; a removida some e recolhe, e o que está embaixo sobe sem pulo. Linhas que vêm com a tela ou com os dados
+ * não animam sozinhas (os campos delas seguem a cascata do cartão). A linha que sai fica `inert` até sumir, e o foco
+ * nunca vai para ela. A tela não escreve movimento.
  */
 export function TFieldList<L extends FieldValues>({
   name,
@@ -81,6 +88,9 @@ export function TFieldList<L extends FieldValues>({
   const grupo = useId();
   const raiz = useRef<HTMLDivElement>(null);
   const focar = useRef<number | 'acrescentar' | null>(null);
+  /** a próxima linha que nascer foi o usuário que acrescentou: ela anima (as da tela e dos dados, não) */
+  const animarNovas = useRef(false);
+  const entrarNovas = animarNovas.current;
 
   const grade = linhasDasColunas(colunas);
   const variasLinhas = grade.length > 1;
@@ -89,18 +99,23 @@ export function TFieldList<L extends FieldValues>({
 
   // Depois que a lista muda: o foco vai ao primeiro campo da linha nova, ou ao Acrescentar depois de remover.
   useEffect(() => {
+    animarNovas.current = false;
     const alvo = focar.current;
     if (alvo === null) return;
     focar.current = null;
+    // A linha que está saindo (inert, `data-saindo`) pode ter o mesmo índice da nova: procura só nas que ficam.
     const el =
       alvo === 'acrescentar'
         ? raiz.current?.querySelector<HTMLElement>('[data-acrescentar]')
-        : raiz.current?.querySelector(`[data-linha="${alvo}"]`)?.querySelector<HTMLElement>(FOCAVEL);
+        : raiz.current
+            ?.querySelector(`[data-linha-lista]:not([data-saindo]) [data-linha="${alvo}"]`)
+            ?.querySelector<HTMLElement>(FOCAVEL);
     el?.focus();
   }, [fields]);
 
   const acrescentar = () => {
     focar.current = fields.length;
+    animarNovas.current = true;
     append(linhaParaAcrescentar(base(), atuais(), principal), { shouldFocus: false });
   };
 
@@ -122,53 +137,58 @@ export function TFieldList<L extends FieldValues>({
     <div ref={raiz} data-kit="TFieldList" data-linhas={fields.length} className="flex min-w-0 flex-col gap-3">
       {fields.length === 0 && vazio && <p className="text-sm text-muted">{vazio}</p>}
 
-      {fields.map((campo, i) => {
-        const linha = linhas[i] ?? base();
-        const nome = rotuloLinha?.(i, linha) ?? `Linha ${i + 1}`;
-        const celula = (c: ColunaDaLista<L>) => {
-          const el = c.componente(`${name}.${i}.${c.name}`, i, linha);
-          if (c.width) return <TCol key={c.name} width={c.width}>{el}</TCol>;
-          if (c.dividir) return <TCol key={c.name}>{el}</TCol>;
-          return <Fragment key={c.name}>{el}</Fragment>;
-        };
-        return (
-          <ItemDaLista key={campo.id}>
-            <div
-              role="group"
-              aria-label={nome}
-              data-linha={i}
-              className={cn(
-                'flex min-w-0 flex-col',
-                variasLinhas
-                  ? 'gap-4 rounded-2xl border border-line p-4'
-                  : 'gap-2 border-b border-line pb-4 last:border-b-0 last:pb-0 sm:border-b-0 sm:pb-0',
-              )}
-            >
-              {grade.map((cols, l) => (
-                <TRow key={l}>
-                  {cols.map(celula)}
-                  {l === 0 && principal && (
-                    <ControleDaLinha>
-                      <RadioPrincipal
-                        grupo={grupo}
-                        marcado={!!(linha as Record<string, unknown>)[principal]}
-                        somenteLeitura={somenteLeitura}
-                        onEscolher={() => escolherPrincipal(i)}
-                      />
-                    </ControleDaLinha>
+      {/* O espaço entre as linhas fica DENTRO de cada uma (pb-3) e recolhe junto com ela; o -mb-3 tira o da última. */}
+      <div className="-mb-3 flex min-w-0 flex-col">
+        <AnimatePresence>
+          {fields.map((campo, i) => {
+            const linha = linhas[i] ?? base();
+            const nome = rotuloLinha?.(i, linha) ?? `Linha ${i + 1}`;
+            const celula = (c: ColunaDaLista<L>) => {
+              const el = c.componente(`${name}.${i}.${c.name}`, i, linha);
+              if (c.width) return <TCol key={c.name} width={c.width}>{el}</TCol>;
+              if (c.dividir) return <TCol key={c.name}>{el}</TCol>;
+              return <Fragment key={c.name}>{el}</Fragment>;
+            };
+            return (
+              <LinhaDaLista key={campo.id} entrar={entrarNovas} className="group/linha min-w-0 pb-3">
+                <div
+                  role="group"
+                  aria-label={nome}
+                  data-linha={i}
+                  className={cn(
+                    'flex min-w-0 flex-col',
+                    variasLinhas
+                      ? 'gap-4 rounded-2xl border border-line p-4'
+                      : 'gap-2 border-b border-line pb-4 group-last/linha:border-b-0 group-last/linha:pb-0 sm:border-b-0 sm:pb-0',
                   )}
-                  {l === 0 && podeRemover && (
-                    <ControleDaLinha className={variasLinhas ? 'sm:ml-auto' : undefined}>
-                      <TButton variant="ghost" icone={X} label="" aria-label={`Remover ${nome}`} title="Remover" onClick={() => remover(i)} />
-                    </ControleDaLinha>
-                  )}
-                </TRow>
-              ))}
-              {detalhe?.(i, linha)}
-            </div>
-          </ItemDaLista>
-        );
-      })}
+                >
+                  {grade.map((cols, l) => (
+                    <TRow key={l}>
+                      {cols.map(celula)}
+                      {l === 0 && principal && (
+                        <ControleDaLinha>
+                          <RadioPrincipal
+                            grupo={grupo}
+                            marcado={!!(linha as Record<string, unknown>)[principal]}
+                            somenteLeitura={somenteLeitura}
+                            onEscolher={() => escolherPrincipal(i)}
+                          />
+                        </ControleDaLinha>
+                      )}
+                      {l === 0 && podeRemover && (
+                        <ControleDaLinha className={variasLinhas ? 'sm:ml-auto' : undefined}>
+                          <TButton variant="ghost" icone={X} label="" aria-label={`Remover ${nome}`} title="Remover" onClick={() => remover(i)} />
+                        </ControleDaLinha>
+                      )}
+                    </TRow>
+                  ))}
+                  {detalhe?.(i, linha)}
+                </div>
+              </LinhaDaLista>
+            );
+          })}
+        </AnimatePresence>
+      </div>
 
       {erroDaLista && <p className="text-xs text-danger">{erroDaLista}</p>}
 
@@ -186,15 +206,6 @@ function mensagemDaLista(erro: unknown): string | undefined {
   const e = erro as { message?: unknown; root?: { message?: unknown } } | undefined;
   const m = e?.message ?? e?.root?.message;
   return typeof m === 'string' && m !== '' ? m : undefined;
-}
-
-/**
- * Ponto de encaixe do movimento (motion-designer): cada linha da lista passa por aqui. A coreografia `linhaDaLista`
- * (entrada ao acrescentar, recolhimento de altura ao remover; só opacidade no movimento reduzido) entra neste
- * componente, com o `AnimatePresence` em volta do `map` das linhas, sem a tela escrever movimento.
- */
-function ItemDaLista({ children }: { children: ReactNode }) {
-  return <>{children}</>;
 }
 
 /** Principal e remover: na altura do campo (abaixo do rótulo, a partir de `sm`). */

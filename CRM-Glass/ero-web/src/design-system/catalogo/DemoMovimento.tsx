@@ -27,6 +27,7 @@ import {
 } from '../ui';
 import { ChipContratante, MobileNav, Sidebar, Topbar, type ItemMenu } from '../shell';
 import { MedidorFps } from './MedidorFps';
+import { DemoContatos } from './DemoContatos';
 
 /*
  * Demonstração da montagem em blocos (só em desenvolvimento), com a mesma estrutura que o app real vai ter:
@@ -385,7 +386,7 @@ export function DemoDetalhe() {
     <Tela coreografia="formulario">
       <PageHeader
         title={u.nome}
-        subtitle="Formulário: cascata curta, saída de uma vez; voltar desliza para a direita. Troque de aba: o conteúdo entra como um bloco curto."
+        subtitle="Formulário: cascata curta, saída de uma vez; voltar desliza para a direita. Troque de aba: o conteúdo entra como um bloco curto. Em Contatos: linhas que abrem e recolhem e a troca Física ↔ Jurídica."
         actions={
           <Button onClick={() => nav(`${BASE}/usuarios`)}>
             <ArrowLeft className="size-4" /> Voltar
@@ -399,6 +400,7 @@ export function DemoDetalhe() {
         abas={[
           { valor: 'dados', rotulo: 'Dados' },
           { valor: 'sessoes', rotulo: 'Sessões' },
+          { valor: 'contatos', rotulo: 'Contatos' },
         ]}
         valor={aba}
         onValorChange={setAba}
@@ -420,6 +422,12 @@ export function DemoDetalhe() {
         <ConteudoAba valor="sessoes">
           <ConteudoDeAba>
             <Tabela rotulo="Sessões" colunas={COLUNAS_SESSAO} linhas={SESSOES} chaveLinha={(s) => s.id} />
+          </ConteudoDeAba>
+        </ConteudoAba>
+        {/* linhaDaLista: acrescentar/remover telefone (TFieldList) e a troca Física ↔ Jurídica (TrocaDeBlocos) */}
+        <ConteudoAba valor="contatos">
+          <ConteudoDeAba>
+            <DemoContatos />
           </ConteudoDeAba>
         </ConteudoAba>
       </Tabs>
