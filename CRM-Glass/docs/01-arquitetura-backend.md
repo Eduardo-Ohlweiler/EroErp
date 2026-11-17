@@ -24,7 +24,8 @@ ero-api/src/main/java/com/api/ero_api/
     entity/             BaseEntity, TenantEntity, @SqlNativoRevisado
     dtos/               PaginaDto, ErroCampoDto
     exception/          ApiException e filhas + GlobalExceptionHandler
-    util/               LogSeguro, PaginacaoUtils, HashUtils
+    util/               LogSeguro, PaginacaoUtils, HashUtils, TextoBusca (nome_busca sem acento),
+                        RestricaoViolada, RepetirSeCodigoRepetido (código), DocumentoValidator (CPF/CNPJ)
     web/                filtros HTTP (CorrelationId, limite de tamanho), ClienteRequisicao
     email/              EmailService (SMTP, modelos em resources/templates/email/)
     config/             auditoria JPA, OpenAPI, seed do superadmin, agendamento (@EnableScheduling)
@@ -137,6 +138,7 @@ por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora
 | Exceção | HTTP | `codigo` |
 |---|---|---|
 | validação de DTO ou de parâmetro (`erros[{campo, mensagem}]`: o campo do DTO, ex. `administrador.email`, ou o nome do parâmetro na URL; vale também quando a rota mistura `@Valid @RequestBody` com restrição em parâmetro) | 400 | `VALIDACAO` |
+| `CampoInvalidoException` (regra de campo que só o service vê: cidade inexistente, CEP fora de 8 dígitos...; `erros[{campo, mensagem}]` como acima) | 400 | `VALIDACAO` |
 | `AutenticacaoException` / token inválido | 401 | `NAO_AUTENTICADO` |
 | `/2fa/verificar`: desafio vencido, código vencido, já usado, substituído por login novo ou anterior à última troca de senha (voltar para a senha) | 401 | `DESAFIO_EXPIRADO` |
 | `/2fa/verificar`: código errado, ou conta bloqueada/inativa/contratante inativo, sem dizer qual (pode digitar de novo) | 401 | `CODIGO_INVALIDO` |
@@ -208,7 +210,7 @@ usuário fala e imprime: `cod_pessoa` na tabela `pessoa`, `cod_emitente` em
   - na 3ª recusa lança `ConflitoException("Não foi possível gerar o código. Tente salvar de novo.")` (409);
   - evento de log (`eventos.registrar`) entra na transação da tentativa; e-mail e
     outros efeitos de fora só depois do commit, para não sair em dobro.
-  A peça nasce junto com o primeiro cadastro (pessoas) e passa a ser usada por todos.
+  A peça é a `compartilhado/util/RepetirSeCodigoRepetido` (nasceu com os cadastros auxiliares) e é usada por todos.
 - Como cadastro não tem DELETE físico (só inativa), o número não volta a ser usado.
 - `ResponseDto`: `codPessoa` logo depois de `id`. `SelectDto` e combos não levam o
   código por enquanto.

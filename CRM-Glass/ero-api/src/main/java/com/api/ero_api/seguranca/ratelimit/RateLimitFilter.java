@@ -22,7 +22,8 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 /**
  * Limite de requisições por IP (OWASP A07 — força bruta; A06 — abuso).
  *
- * <p>Baldes separados para login, 2FA (verificar e reenviar o código), refresh e o resto da API. Guardados em
+ * <p>Baldes separados para login, 2FA (verificar e reenviar o código), refresh, consulta de CEP
+ * (cada uma é uma chamada ao ViaCEP; ver ViaCepService) e o resto da API. Guardados em
  * memória: com mais de uma instância atrás de balanceador, cada uma conta o seu
  * (aceitável; para limite global, trocar por Bucket4j + Redis/Postgres).
  *
@@ -59,6 +60,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else if (uri.startsWith("/api/auth/refresh")) {
             grupo = "refresh";
             limite = props.refresh();
+        } else if (uri.startsWith("/api/cep/")) {
+            grupo = "cep";
+            limite = props.cep();
         } else {
             grupo = "geral";
             limite = props.geral();

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
-@TestPropertySource(properties = {"app.rate-limit.login=3", "app.rate-limit.dois-fatores=3"})
+@TestPropertySource(properties = {"app.rate-limit.login=3", "app.rate-limit.dois-fatores=3", "app.rate-limit.cep=3"})
 class RateLimitIntegracaoTest extends IntegracaoTest {
 
     @Test
@@ -30,5 +30,17 @@ class RateLimitIntegracaoTest extends IntegracaoTest {
         MvcTestResult r = reenviarCodigo("desafio.invalido.x");
         assertThat(status(r)).isEqualTo(429);
         assertThat(r.getResponse().getHeader("Retry-After")).isNotBlank();
+    }
+
+    /** Consulta de CEP tem balde próprio: cada uma vira uma chamada ao ViaCEP (abuso e custo). */
+    @Test
+    void quartaConsultaDeCepNoMesmoMinutoDa429() {
+        for (int i = 0; i < 3; i++) {
+            assertThat(status(get("/api/cep/01001000", null))).as("sem sessão, mas conta").isEqualTo(401);
+        }
+        MvcTestResult r = get("/api/cep/01001000", null);
+        assertThat(status(r)).isEqualTo(429);
+        assertThat(r.getResponse().getHeader("Retry-After")).isNotBlank();
+        assertThat(status(get("/api/cidades/selecao", null))).as("o resto da API segue no balde geral").isEqualTo(401);
     }
 }

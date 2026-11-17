@@ -22,6 +22,14 @@ import java.util.Optional;
  */
 public enum GrupoLiberacao {
 
+    // Os de negócio vêm primeiro: é a ordem do "Acesso aos módulos" no cadastro de usuário.
+
+    /** Os 5 cadastros auxiliares da pessoa (menu Cadastros › Auxiliares). Os combos leem pelo /selecao, aberto a todos. */
+    CADASTROS_AUXILIARES("Cadastros auxiliares",
+            List.of(Tela.TIPO_CADASTRO_FORMLIST, Tela.TIPO_TELEFONE_FORMLIST, Tela.TIPO_EMAIL_FORMLIST,
+                    Tela.TIPO_ENDERECO_FORMLIST, Tela.TIPO_REDE_SOCIAL_FORMLIST),
+            List.of()),
+
     USUARIOS("Usuários",
             List.of(Tela.USUARIO_LIST, Tela.USUARIO_FORM),
             List.of(Acao.USUARIOS_LIBERAR_ACESSO)),

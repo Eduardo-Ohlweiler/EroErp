@@ -2,12 +2,15 @@ package com.api.ero_api.tenant.service;
 
 import com.api.ero_api.auditoria.enums.TipoEventoSeguranca;
 import com.api.ero_api.auditoria.service.EventoSegurancaService;
+import com.api.ero_api.auxiliar.service.ItensDoSistemaService;
 import com.api.ero_api.compartilhado.dtos.PaginaDto;
 import com.api.ero_api.compartilhado.exception.ConflitoCampoException;
 import com.api.ero_api.compartilhado.exception.ConflitoException;
 import com.api.ero_api.compartilhado.exception.NaoEncontradoException;
 import com.api.ero_api.compartilhado.exception.RegraNegocioException;
+import com.api.ero_api.compartilhado.util.DocumentoValidator;
 import com.api.ero_api.compartilhado.util.PaginacaoUtils;
+import com.api.ero_api.compartilhado.util.RestricaoViolada;
 import com.api.ero_api.seguranca.SecurityUtils;
 import com.api.ero_api.seguranca.autorizacao.AutorizacaoCache;
 import com.api.ero_api.seguranca.tenant.TenantContext;
@@ -22,7 +25,6 @@ import com.api.ero_api.tenant.entity.Tenant;
 import com.api.ero_api.tenant.enums.Fundo;
 import com.api.ero_api.tenant.mapper.TenantMapper;
 import com.api.ero_api.tenant.repository.TenantRepository;
-import com.api.ero_api.tenant.util.DocumentoValidator;
 import com.api.ero_api.usuario.service.UsuarioService;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,7 +36,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,13 +57,16 @@ public class TenantService {
 
     private final TenantRepository repository;
     private final UsuarioService usuarioService;
+    private final ItensDoSistemaService itensDoSistema;
     private final AutorizacaoCache cache;
     private final EventoSegurancaService eventos;
 
-    public TenantService(TenantRepository repository, UsuarioService usuarioService, AutorizacaoCache cache,
+    public TenantService(TenantRepository repository, UsuarioService usuarioService,
+                         ItensDoSistemaService itensDoSistema, AutorizacaoCache cache,
                          EventoSegurancaService eventos) {
         this.repository = repository;
         this.usuarioService = usuarioService;
+        this.itensDoSistema = itensDoSistema;
         this.cache = cache;
         this.eventos = eventos;
     }
@@ -154,6 +158,9 @@ public class TenantService {
             // E-mail em uso: no TenantCreateDto o campo fica dentro de "administrador".
             throw e.dentroDe("administrador");
         }
+        // Os itens do sistema dos cadastros auxiliares (Cliente, Celular...) nascem com o
+        // contratante, na mesma transação e pelo mesmo caminho do admin inicial (sessão ROOT).
+        itensDoSistema.semear(t.getId());
         // usuarioId = afetado (nenhum); quem fez fica em created_by do evento.
         eventos.registrar(TipoEventoSeguranca.TENANT_CRIADO, null, t.getId(), t.getNome());
         return toResponseDto(t);
@@ -196,7 +203,7 @@ public class TenantService {
         } catch (DataIntegrityViolationException e) {
             // Dois superadmins vinculando a mesma cena ao mesmo tempo: o índice único segura.
             // Outra violação segue para o tratamento global (409 genérico).
-            if (violou(e, UK_FUNDO_EXCLUSIVO)) {
+            if (RestricaoViolada.violou(e, UK_FUNDO_EXCLUSIVO)) {
                 throw new ConflitoCampoException("fundoExclusivo", MSG_CENA_DE_OUTRO);
             }
             throw e;
@@ -279,16 +286,6 @@ public class TenantService {
         if (t.getFundo().exclusiva() && t.getFundo() != exclusivo) {
             throw new RegraNegocioException("Este fundo não está disponível para este contratante.");
         }
-    }
-
-    /** A violação veio da constraint indicada? (o Hibernate extrai o nome da mensagem do Postgres) */
-    private static boolean violou(DataIntegrityViolationException e, String constraint) {
-        for (Throwable c = e; c != null; c = c.getCause()) {
-            if (c instanceof ConstraintViolationException cve && constraint.equalsIgnoreCase(cve.getConstraintName())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

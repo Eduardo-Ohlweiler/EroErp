@@ -15,6 +15,9 @@ O administrador libera **grupos** para cada usuário, com o nível **LER** ou
 Alguns grupos têm **ações extras**, concedidas uma a uma.
 
 ```
+GrupoLiberacao.CADASTROS_AUXILIARES   (os 5 cadastros auxiliares da pessoa; menu Cadastros › Auxiliares)
+  telas:  tipo-cadastro-formlist, tipo-telefone-formlist, tipo-email-formlist,
+          tipo-endereco-formlist, tipo-rede-social-formlist
 GrupoLiberacao.USUARIOS
   telas:  usuario-list, usuario-form
   ações:  USUARIOS_LIBERAR_ACESSO  ("Liberar acesso de outros usuários")
@@ -109,6 +112,10 @@ front. Renomear exige migration.
 | `PATCH /api/usuarios/{id}/redefinir-senha` e `/desbloquear` | `USUARIOS_ESCREVER` **e** papel ADMIN/SUPERADMIN (nunca em si mesmo). O `redefinir-2fa` saiu: não há app autenticador para resetar; quem perdeu o acesso ao e-mail tem o e-mail trocado pelo administrador. |
 | `GET /api/sessoes`, `PATCH /api/sessoes/{id}/encerrar`, `PATCH /api/sessoes/encerrar-outras` | `ACESSO_LIBERADO` (só as próprias sessões) |
 | `GET /api/auditoria/eventos`, `GET /api/auditoria/tipos` | `AUDITORIA_LER` |
+| `GET /api/tipos-cadastro?page=&size=&sort=` (o mesmo em `/api/tipos-telefone`, `/api/tipos-email`, `/api/tipos-endereco` e `/api/tipos-rede-social`; ordena por `nome` ou pelo código) | `CADASTROS_AUXILIARES_LER` |
+| `POST /api/tipos-cadastro`, `PUT /{id}`, `PATCH /{id}/inativar` e `/ativar` (idem nos outros 4; item do sistema: 422) | `CADASTROS_AUXILIARES_ESCREVER` |
+| `GET /api/tipos-cadastro/selecao?inativos=` (idem nos outros 4) | `ACESSO_LIBERADO` (combo da pessoa) |
+| `GET /api/cidades/selecao?busca=&uf=`, `GET /api/cep/{cep}` | `ACESSO_LIBERADO` (o CEP tem limite próprio por IP, `app.rate-limit.cep`) |
 | `GET /api/usuarios?busca=&ativo=&papel=&bloqueado=` (`papel` = `ADMIN`/`USUARIO`; `bloqueado=true` = bloqueado agora por tentativas, `false` = não bloqueado; todos opcionais e somados) | `USUARIOS_LER` |
 | `GET /api/usuarios/selecao?inativos=` | `ACESSO_LIBERADO` (`inativos=true` traz também os inativos; o superadmin nunca aparece) |
 | `GET /api/auth/eu/perfil`, `PUT /api/auth/eu/perfil` | `ACESSO_LIBERADO` (só os próprios dados) |

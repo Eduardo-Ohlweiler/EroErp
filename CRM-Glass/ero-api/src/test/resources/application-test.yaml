@@ -15,6 +15,7 @@ app:
     login: 10000
     dois-fatores: 10000
     refresh: 10000
+    cep: 10000
     geral: 100000
   # Os e-mails não saem: a CaixaDeEmailFake substitui o JavaMailSender e guarda as mensagens.
   email:

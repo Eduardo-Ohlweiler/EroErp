@@ -91,6 +91,20 @@ UPDATE pessoa p SET cod_pessoa = n.num
   Unicidade global só quando é regra do sistema todo, como o e-mail de login.
 - FK usada em filtro ou join ganha índice próprio.
 
+## Itens do sistema semeados por contratante
+
+Cadastro auxiliar com itens pré-cadastrados (ex.: `tipo_telefone` com Celular, WhatsApp...) grava esses itens **em cada contratante**, marcados pela coluna `chave` (nome da constante do enum `<Tipo>DoSistema`; nula = item do contratante). Padrão da migration 014:
+
+- índices únicos `uk_<t>_tenant_cod_<t>`, `uk_<t>_tenant_nome_busca` (nome único sem caixa nem acento, contando os do sistema), `uk_<t>_tenant_chave` (nulos não colidem) e `uk_<t>_id_tenant (id, tenant_id)`, alvo das FKs compostas;
+- `ck_<t>_sistema_ativo CHECK (chave IS NULL OR ativo)`: item do sistema nunca fica inativo;
+- semente para os contratantes que já existem com `INSERT ... SELECT ... FROM tenant t CROSS JOIN (VALUES ...)`, excluindo a Plataforma (`00000000-0000-0000-0000-000000000000`); os valores são iguais aos do enum (o `ItensDoSistemaMigrationTest` confere).
+
+**Item novo do sistema** = constante no **fim** do enum + migration nova que semeia os contratantes existentes. Se o contratante já tiver um item com o mesmo `nome_busca`, a migration **adota** o dele (`UPDATE ... SET chave = ...`) em vez de inserir (o índice de nome recusaria a linha nova).
+
+## FK composta para filha de contratante
+
+Tabela filha que aponta para um cadastro do contratante usa FK composta `(x_id, tenant_id) → x(id, tenant_id)`, com o índice único `uk_x_id_tenant (id, tenant_id)` na tabela referenciada. Assim o banco garante que o registro nunca aponta para o de outro contratante, além do filtro automático do service.
+
 ## Ambientes
 
 | Ambiente | Banco |

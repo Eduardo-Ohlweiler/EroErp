@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MockMvcTester.MockMvcRequestBuilder;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
@@ -50,6 +52,12 @@ public abstract class IntegracaoTest {
 
     @Autowired
     protected JsonMapper json;
+
+    /** O ViaCEP de mentira no lugar do verdadeiro (o mesmo em toda subclasse: o contexto continua compartilhado). */
+    @DynamicPropertySource
+    static void viaCepFake(DynamicPropertyRegistry registro) {
+        registro.add("app.cep.url", ViaCepFake::url);
+    }
 
     /** Uma sessão aberta: token de acesso + cookie de refresh. */
     public record Sessao(String token, String refresh, JsonNode corpo) {

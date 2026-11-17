@@ -11,7 +11,12 @@ public enum Tela {
 
     USUARIO_LIST("usuario-list", "Usuários — lista"),
     USUARIO_FORM("usuario-form", "Usuários — cadastro"),
-    AUDITORIA_LIST("auditoria-list", "Auditoria — eventos de segurança");
+    AUDITORIA_LIST("auditoria-list", "Auditoria — eventos de segurança"),
+    TIPO_CADASTRO_FORMLIST("tipo-cadastro-formlist", "Tipos de cadastro"),
+    TIPO_TELEFONE_FORMLIST("tipo-telefone-formlist", "Tipos de telefone"),
+    TIPO_EMAIL_FORMLIST("tipo-email-formlist", "Tipos de e-mail"),
+    TIPO_ENDERECO_FORMLIST("tipo-endereco-formlist", "Tipos de endereço"),
+    TIPO_REDE_SOCIAL_FORMLIST("tipo-rede-social-formlist", "Tipos de rede social");
 
     private final String codigo;
     private final String rotulo;
