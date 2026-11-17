@@ -6,6 +6,7 @@ import { rotasAuxiliares } from '../modules/auxiliares/routes';
 import { rotasAuth } from '../modules/auth/routes';
 import { rotasConta } from '../modules/conta/routes';
 import { rotasInicio } from '../modules/inicio/routes';
+import { rotasPessoas } from '../modules/pessoas/routes';
 import { CascaProtegida } from './casca/Casca';
 import { Raiz } from './Raiz';
 
@@ -17,6 +18,7 @@ const DesignSystem = import.meta.env.DEV ? lazy(() => import('../design-system/c
  *   /login                 área de login (pública)
  *   casca protegida        sem sessão → /login?voltar=<rota>; troca de senha pendente → /login
  *     /                    Início
+ *     /cadastros/pessoas/...     Pessoas: lista e ficha (modules/pessoas/routes.tsx)
  *     /cadastros/auxiliares/...  Cadastros auxiliares: FormList de tipos (modules/auxiliares/routes.tsx)
  *     /admin/...           Administrativo: Contratantes (superadmin na plataforma), Usuários e Logs (modules/admin/routes.tsx)
  *     /minha-conta         Minha conta (modules/conta/routes.tsx)
@@ -32,7 +34,14 @@ const rotas: RouteObject[] = [
       ...rotasAuth,
       {
         element: <CascaProtegida />,
-        children: [...rotasInicio, ...rotasAuxiliares, ...rotasAdmin, ...rotasConta, { path: '*', element: <Navigate to="/" replace /> }],
+        children: [
+          ...rotasInicio,
+          ...rotasPessoas,
+          ...rotasAuxiliares,
+          ...rotasAdmin,
+          ...rotasConta,
+          { path: '*', element: <Navigate to="/" replace /> },
+        ],
       },
     ],
   },

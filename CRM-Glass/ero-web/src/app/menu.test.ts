@@ -13,7 +13,7 @@ const AUXILIARES = [
   'tipo-endereco-formlist',
   'tipo-rede-social-formlist',
 ];
-const TODAS = ['usuario-list', 'usuario-form', 'auditoria-list', ...AUXILIARES];
+const TODAS = ['usuario-list', 'usuario-form', 'auditoria-list', 'pessoa-list', 'pessoa-form', ...AUXILIARES];
 
 const PERFIS: Record<string, Perfil> = {
   usuarioSemGrupo: { papel: 'USUARIO', superadminAtuando: false, telas: [] },
@@ -65,9 +65,11 @@ describe('seção Cadastros do menu', () => {
     expect(menuDeCadastros(PERFIS.usuarioComAuditoria)).toEqual([]);
   });
 
-  it('ADMIN vê o pai "Cadastros auxiliares" com os 5 filhos, na ordem do submenu', () => {
-    const [pai, ...resto] = menuDeCadastros(PERFIS.admin);
+  it('ADMIN vê Pessoas e depois o pai "Cadastros auxiliares" com os 5 filhos, na ordem do submenu', () => {
+    const [pessoas, pai, ...resto] = menuDeCadastros(PERFIS.admin);
     expect(resto).toEqual([]);
+    expect(pessoas.to).toBe('/cadastros/pessoas');
+    expect(pessoas.filhos).toBeUndefined();
     expect(pai.to).toBe('/cadastros/auxiliares');
     expect(filhos(PERFIS.admin)).toEqual([
       '/cadastros/auxiliares/tipos-de-cadastro',
@@ -76,6 +78,11 @@ describe('seção Cadastros do menu', () => {
       '/cadastros/auxiliares/tipos-de-endereco',
       '/cadastros/auxiliares/tipos-de-rede-social',
     ]);
+  });
+
+  it('usuário só com Pessoas vê só Pessoas, sem o pai dos auxiliares', () => {
+    const so: Perfil = { papel: 'USUARIO', superadminAtuando: false, telas: ['pessoa-list', 'pessoa-form'] };
+    expect(menuDeCadastros(so).map((i) => i.to)).toEqual(['/cadastros/pessoas']);
   });
 
   it('usuário com só um auxiliar liberado vê só o pai, com esse filho', () => {
@@ -97,6 +104,8 @@ describe('título da barra superior', () => {
     expect(tituloDaRota('/admin/contratantes/abc/aparencia')).toBe('Contratantes');
     expect(tituloDaRota('/admin/usuarios/abc')).toBe('Usuários');
     expect(tituloDaRota('/admin/logs')).toBe('Logs');
+    expect(tituloDaRota('/cadastros/pessoas')).toBe('Pessoas');
+    expect(tituloDaRota('/cadastros/pessoas/abc')).toBe('Pessoas');
     expect(tituloDaRota('/cadastros/auxiliares/tipos-de-cadastro')).toBe('Tipos de cadastro');
     expect(tituloDaRota('/cadastros/auxiliares/tipos-de-email')).toBe('Tipos de e-mail');
     expect(tituloDaRota('/minha-conta')).toBe('Minha conta');
