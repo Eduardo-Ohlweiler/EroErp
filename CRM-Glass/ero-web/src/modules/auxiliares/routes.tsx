@@ -8,8 +8,7 @@ import { RAIZ_DOS_AUXILIARES, TELAS_AUXILIARES } from './telas';
  * tela (ExigeTela, dentro de um contratante). Os caminhos e os códigos das telas vêm de `telas.ts`.
  *   /cadastros/auxiliares                              → abre o primeiro auxiliar liberado
  *   /cadastros/auxiliares/tipos-de-cadastro            FormList  (tipo-cadastro-formlist)  ← o modelo
- *   /cadastros/auxiliares/tipos-de-telefone | -email | -endereco | -rede-social
- *                                                      provisórias (EmConstrucao) até a E4a copiar o modelo
+ *   /cadastros/auxiliares/tipos-de-telefone | -email | -endereco | -rede-social   FormList (cópias do modelo)
  */
 const caminhoDe = (tela: string) => TELAS_AUXILIARES.find((t) => t.tela === tela)!.to.slice(1);
 
@@ -22,14 +21,32 @@ export const rotasAuxiliares: RouteObject[] = [
       return { element: <ExigeTela tela="tipo-cadastro-formlist" escopo="contratante"><TipoCadastroFormList /></ExigeTela> };
     },
   },
-  ...TELAS_AUXILIARES.filter((t) => t.tela !== 'tipo-cadastro-formlist').map(
-    (t): RouteObject => ({
-      path: t.to.slice(1),
-      lazy: async () => {
-        // troca (E4a): cada cópia vira `const { TipoXFormList } = await import('./pages/TipoXFormList')`
-        const { EmConstrucao } = await import('./pages/EmConstrucao');
-        return { element: <ExigeTela tela={t.tela} escopo="contratante"><EmConstrucao titulo={t.label} /></ExigeTela> };
-      },
-    }),
-  ),
+  {
+    path: caminhoDe('tipo-telefone-formlist'),
+    lazy: async () => {
+      const { TipoTelefoneFormList } = await import('./pages/TipoTelefoneFormList');
+      return { element: <ExigeTela tela="tipo-telefone-formlist" escopo="contratante"><TipoTelefoneFormList /></ExigeTela> };
+    },
+  },
+  {
+    path: caminhoDe('tipo-email-formlist'),
+    lazy: async () => {
+      const { TipoEmailFormList } = await import('./pages/TipoEmailFormList');
+      return { element: <ExigeTela tela="tipo-email-formlist" escopo="contratante"><TipoEmailFormList /></ExigeTela> };
+    },
+  },
+  {
+    path: caminhoDe('tipo-endereco-formlist'),
+    lazy: async () => {
+      const { TipoEnderecoFormList } = await import('./pages/TipoEnderecoFormList');
+      return { element: <ExigeTela tela="tipo-endereco-formlist" escopo="contratante"><TipoEnderecoFormList /></ExigeTela> };
+    },
+  },
+  {
+    path: caminhoDe('tipo-rede-social-formlist'),
+    lazy: async () => {
+      const { TipoRedeSocialFormList } = await import('./pages/TipoRedeSocialFormList');
+      return { element: <ExigeTela tela="tipo-rede-social-formlist" escopo="contratante"><TipoRedeSocialFormList /></ExigeTela> };
+    },
+  },
 ];
