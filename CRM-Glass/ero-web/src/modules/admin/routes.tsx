@@ -1,5 +1,5 @@
 import type { RouteObject } from 'react-router';
-import { ExigeTela } from './components/ExigeTela';
+import { ExigeTela } from '../../shared/sessao';
 import { SoPlataforma } from './components/SoPlataforma';
 
 /*

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { Splash } from '../design-system/ui/Splash';
 import { rotasAdmin } from '../modules/admin/routes';
+import { rotasAuxiliares } from '../modules/auxiliares/routes';
 import { rotasAuth } from '../modules/auth/routes';
 import { rotasConta } from '../modules/conta/routes';
 import { rotasInicio } from '../modules/inicio/routes';
@@ -16,6 +17,7 @@ const DesignSystem = import.meta.env.DEV ? lazy(() => import('../design-system/c
  *   /login                 área de login (pública)
  *   casca protegida        sem sessão → /login?voltar=<rota>; troca de senha pendente → /login
  *     /                    Início
+ *     /cadastros/auxiliares/...  Cadastros auxiliares: FormList de tipos (modules/auxiliares/routes.tsx)
  *     /admin/...           Administrativo: Contratantes (superadmin na plataforma), Usuários e Logs (modules/admin/routes.tsx)
  *     /minha-conta         Minha conta (modules/conta/routes.tsx)
  *     *                    → Início
@@ -30,7 +32,7 @@ const rotas: RouteObject[] = [
       ...rotasAuth,
       {
         element: <CascaProtegida />,
-        children: [...rotasInicio, ...rotasAdmin, ...rotasConta, { path: '*', element: <Navigate to="/" replace /> }],
+        children: [...rotasInicio, ...rotasAuxiliares, ...rotasAdmin, ...rotasConta, { path: '*', element: <Navigate to="/" replace /> }],
       },
     ],
   },

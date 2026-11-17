@@ -32,7 +32,7 @@ import {
   UsuarioDaCascaProvider,
 } from '../../shared/sessao';
 import { cn } from '../../shared/util/utils';
-import { menuAdministrativo, menuDoUsuario, ROTULO_ADMINISTRATIVO, tituloDaRota } from '../menu';
+import { menuAdministrativo, menuDeCadastros, menuDoUsuario, ROTULO_ADMINISTRATIVO, ROTULO_CADASTROS, tituloDaRota } from '../menu';
 
 /**
  * Casca protegida: só com sessão autenticada. Sem sessão → /login?voltar=<rota>; com a troca de senha
@@ -77,7 +77,7 @@ export function CascaProtegida() {
  * Menu lateral (barra inferior no celular) → barra superior → conteúdo (RotaAnimada).
  *
  * Busca (Ctrl K): fica desligada até haver 3 telas ou mais no menu (as seções somadas, com os filhos dos submenus); com uma só, ela não
- * leva a lugar nenhum. O grupo de baixo é o Administrativo (Usuários, Logs e, na plataforma, Contratantes).
+ * leva a lugar nenhum. A seção do meio é Cadastros (Cadastros auxiliares, com submenu); a de baixo, o Administrativo (Usuários, Logs e, na plataforma, Contratantes).
  * O Sair fica no menu lateral e no MenuUsuario (que também aparece no celular).
  * Barra inferior do celular: só com 2 telas ou mais, somando os dois grupos (com uma, ocupa espaço fixo à toa).
  */
@@ -92,14 +92,16 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
   const saindo = useRef(false);
 
   const menu = useMemo(() => menuDoUsuario(usuario), [usuario]);
+  const cadastros = useMemo(() => menuDeCadastros(usuario), [usuario]);
   const administrativo = useMemo(() => menuAdministrativo(usuario), [usuario]);
   // Seções do menu, de cima para baixo (seção vazia não aparece). Item com `filhos` abre o submenu flutuante.
   const secoes = useMemo<SecaoMenu[]>(
     () => [
       { rotulo: 'Principal', itens: menu },
+      { rotulo: ROTULO_CADASTROS, itens: cadastros },
       { rotulo: ROTULO_ADMINISTRATIVO, itens: administrativo },
     ],
-    [menu, administrativo],
+    [menu, cadastros, administrativo],
   );
   // As telas com os filhos dos submenus achatados ("Cadastros auxiliares › Tipos de telefone"): Ctrl+K e contagem.
   const telas = useMemo(() => telasDoMenu(secoes), [secoes]);

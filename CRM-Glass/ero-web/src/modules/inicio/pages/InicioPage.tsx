@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { ChevronRight, UserRound } from 'lucide-react';
-import { menuAdministrativo, menuDoUsuario, type ItemDoMenu } from '../../../app/menu';
+import { menuAdministrativo, menuDeCadastros, menuDoUsuario, ROTULO_CADASTROS, type ItemDoMenu } from '../../../app/menu';
+import { telasDoMenu } from '../../../design-system/shell';
 import { Avatar, Badge, CardHeader, GlassCard, PageHeader } from '../../../design-system/ui';
 import { Tela } from '../../../motion/coreografia';
 import { nomeDoContratante, rotuloDoPapel, useUsuarioAtual } from '../../../shared/sessao';
@@ -16,13 +17,26 @@ const MINHA_CONTA: ItemDoMenu = {
   descricao: 'Seus dados, a sua senha e os navegadores conectados.',
 };
 
+/** Os cadastros nos atalhos: os filhos do submenu achatados, cada um com o caminho do pai quando não tem descrição. */
+function atalhosDeCadastros(usuario: ReturnType<typeof useUsuarioAtual>): ItemDoMenu[] {
+  return telasDoMenu([{ rotulo: ROTULO_CADASTROS, itens: menuDeCadastros(usuario) }]).map(({ item, rotulo }) => ({
+    ...item,
+    descricao: (item as ItemDoMenu).descricao ?? rotulo,
+  }));
+}
+
 /** Início: saudação, contratante, data e os atalhos para as telas liberadas (as mesmas do menu). */
 export function InicioPage() {
   const usuario = useUsuarioAtual();
   const agora = useAgora(); // a saudação e a data acompanham o relógio (a tela pode ficar aberta o dia todo)
   const contratante = nomeDoContratante(usuario);
   const atalhos = useMemo(
-    () => [...menuDoUsuario(usuario).filter((i) => i.to !== '/'), ...menuAdministrativo(usuario), MINHA_CONTA],
+    () => [
+      ...menuDoUsuario(usuario).filter((i) => i.to !== '/'),
+      ...atalhosDeCadastros(usuario),
+      ...menuAdministrativo(usuario),
+      MINHA_CONTA,
+    ],
     [usuario],
   );
 
