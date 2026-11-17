@@ -18,6 +18,25 @@ export function maiorRotulo(opcoes: OpcaoSelect[]): number {
 }
 
 /**
+ * Até quantos caracteres o maior rótulo cabe em cada largura do `TCombo` (docs/07 §2.1): `situacao` (192 px, ~132 px
+ * úteis depois do X e da seta) e `medio` (320 px). O mesmo `ROTULO_MAX` do `medir-campos.mjs`: mudam juntos.
+ */
+export const ROTULO_MAX_DO_COMBO = { situacao: 18, medio: 36 } as const;
+
+/**
+ * Largura automática do `TCombo` sem `width` (dentro de `TRow`), pelo maior rótulo das opções com o `vazio`: até 18
+ * caracteres `situacao`; até 36 `medio` (tipos do banco com o " (inativo)" do valor gravado); acima, `metade`.
+ * Necessária porque as opções dos tipos vêm do banco: a tela não sabe o tamanho do maior nome.
+ */
+export function larguraDoCombo(rotuloMax: number): 'situacao' | 'medio' | 'metade' {
+  if (rotuloMax <= ROTULO_MAX_DO_COMBO.situacao) return 'situacao';
+  return rotuloMax <= ROTULO_MAX_DO_COMBO.medio ? 'medio' : 'metade';
+}
+
+/** O rótulo de uma opção inativa já gravada no registro: aparece no combo, mas o combo não a oferece a quem escolhe de novo. */
+export const rotuloInativo = (nome: string) => `${nome} (inativo)`;
+
+/**
  * Situação de cadastro, com os valores que o filtro `ativo` da API entende (`true`/`false`).
  * No filtro de lista, com `vazio="Todas"`.
  */

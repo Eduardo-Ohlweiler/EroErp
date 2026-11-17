@@ -233,8 +233,8 @@ export function DemoCasca() {
 
   return (
     <>
-      <Sidebar itens={MENU} onSair={() => nav(`${BASE}/login`)} />
-      <MobileNav itens={MENU} />
+      <Sidebar secoes={[{ rotulo: 'Principal', itens: MENU }]} onSair={() => nav(`${BASE}/login`)} />
+      <MobileNav secoes={[{ rotulo: 'Principal', itens: MENU }]} />
       <div className="md:pl-[104px] px-3 md:pr-6 pt-4 pb-28 md:pb-10">
         <div className="mx-auto max-w-[1680px]">
           <Topbar

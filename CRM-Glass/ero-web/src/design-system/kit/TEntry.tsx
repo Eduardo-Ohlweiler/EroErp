@@ -1,4 +1,4 @@
-import { forwardRef, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useRef, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from 'react';
 import { useController } from 'react-hook-form';
 import { Input } from '../ui/Bits';
 import { InputSenha } from '../ui/InputSenha';
@@ -9,6 +9,7 @@ import {
   larguraPadraoDoEntry,
   TAMANHO_MAXIMO,
   teclado,
+  valorCompleto,
   valorParaExibir,
   valorParaGravar,
   type Mascara,
@@ -28,6 +29,12 @@ export type TEntryProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'width' | 
      * (`<TButton variant="secondary" label="Gerar" …/>`). Some em só leitura.
      */
     acao?: ReactNode;
+    /**
+     * Chamado com o valor cru quando a máscara fica completa ao digitar ou colar (CEP com 8 dígitos, CPF com 11,
+     * CNPJ com 14, celular com 11): é a consulta do CEP. Uma vez por valor completo; apagar um dígito e completar de
+     * novo chama outra vez. Vem depois do `onChange`: o formulário já tem o valor novo.
+     */
+    onCompletar?: (cru: string) => void;
   };
 
 /**
@@ -61,18 +68,23 @@ function TEntryLigado(props: TEntryProps & { name: string }) {
 }
 
 const TEntryBase = forwardRef<HTMLInputElement, TEntryProps>(function TEntryBase(
-  { label, error, suffix, ajuda, mascara, casas, width, rotuloOculto, required, disabled, className, id, onChange, type, readOnly, acao, ...rest },
+  { label, error, suffix, ajuda, mascara, casas, width, rotuloOculto, required, disabled, className, id, onChange, type, readOnly, acao, onCompletar, ...rest },
   ref,
 ) {
   // Só leitura do TForm: readOnly (focável, o leitor de tela lê o valor). `disabled` só para campo travado de verdade.
   const somenteLeitura = useSomenteLeituraDoForm() || !!readOnly;
 
+  // O último valor completo avisado: o onCompletar não repete para o mesmo CEP (nem a cada tecla que não muda nada).
+  const avisado = useRef<string | null>(null);
   const aoDigitar = !mascara
     ? onChange
     : (e: ChangeEvent<HTMLInputElement>) => {
         const colou = (e.nativeEvent as InputEvent).inputType === 'insertFromPaste';
         e.target.value = aplicarMascara(mascara, e.target.value, { casas, colou });
         onChange?.(e);
+        const completo = valorCompleto(mascara, e.target.value);
+        if (completo !== null && completo !== avisado.current) onCompletar?.(completo);
+        avisado.current = completo;
       };
 
   const doc = mascara === 'cnpj' || mascara === 'cpfCnpj';

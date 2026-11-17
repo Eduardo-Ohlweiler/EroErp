@@ -11,20 +11,23 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 |---|---|---|---|
 | List | `ero-web/src/modules/admin/pages/ContratanteList.tsx` | `TPage` (`padrao`) → `TForm` de filtros (código, principal, combos, De · Até) → `TFormFooter` → `TDataGrid` → `TDataGridFooter` | Buscar · Limpar · Novo · Exportar · Pdf |
 | Form | `ero-web/src/modules/admin/pages/ContratanteForm.tsx` | `TPage` (`formulario`) → `TForm`: código (só leitura) → principal → demais (um por `TRow`) → `TPanel` por assunto → Situação (só se a API de alterar recebe `ativo`) → `TAuditoria` → `TFormFooter` | Salvar · Novo · Voltar |
-| FormList | ainda não há tela pronta nem modelo no catálogo: siga o exemplo da §4.3 | `TPage` (`formulario`) → `TForm` curto → `TFormFooter` → `TDataGrid` (sem filtro, ativos e inativos) → `TDataGridFooter` | Salvar · Novo |
+| FormList | `ero-web/src/modules/auxiliares/pages/TipoCadastroFormList.tsx` (nasce no cadastro de Pessoas; enquanto não existir, o exemplo da §4.3) | `TPage` (`formulario`) → `TForm` curto → `TFormFooter` → `TDataGrid` (sem filtro, ativos e inativos) → `TDataGridFooter` | Salvar · Novo |
 
 **Kit `T*` que existe** (porta única `design-system/kit/index.ts`; largura padrão só vale dentro de `TRow`):
 - Estrutura: `TPage` (container, `breadcrumb`, `coreografia`) · `TForm` (cartão `glass-solid`, `somenteLeitura`) · `TFormFooter`/`TFormActionsLeft` (rodapé de botões) · `TRow` (uma linha) · `TCol` (coluna; sem `width` divide a linha) · `TPanel` (seção recolhível) · `TModal` (`sm` 448, `md` 672, `lg` 896) · `TTabs`/`TTabPanel` · `TRotulo` (rótulo do label ao lado).
 - Texto: `TEntry` (`metade`; com máscara, a do dado: cpf/telefone `cpf`, cnpj/cpfCnpj `cnpj`, cep `cep`, hora `hora`, moeda/decimal `valor`, inteiro `quantidade`) · `TDate` (`data`).
-- Escolha: `TCombo` (`situacao`, opções fixas; `SITUACAO_OPCOES`) · `TDBCombo` (`metade`, opções de `/selecao`) · `TRadio` e `TCheckBox` (largura do conteúdo).
+- Texto longo: `TTextArea` (`longo`, 3 linhas, contador com `maxLength`).
+- Escolha: `TCombo` (largura **automática** pelo maior rótulo: `situacao`/`medio`/`metade`; opções fixas ou carregadas do banco, o inativo gravado com `inativo: true`; `SITUACAO_OPCOES`) · `TDBCombo` (`metade`, busca no servidor, opções de `/selecao`) · `TRadio` e `TCheckBox` (largura do conteúdo).
+- Lista filha: `TFieldList` (telefones, e-mails, endereços em várias linhas, vínculos; `principal` exclusivo; só leitura sem botões).
 - Dados: `TDataGrid` (ações na 1ª coluna, cartões abaixo de `md`) · `TDataGridFooter` (lê o `PaginaDto`) · `TBadge` (situação) · `TAuditoria` (só na edição) · `TAcoesDeExportacao` (Exportar e Pdf).
 - Ação e aviso: `TButton` (`variant`: salvar, novo, buscar, limpar, voltar, exportar, pdf, editar, inativar, reativar + genéricas) · `useMessage()` · `useQuestion()` · `useSomenteLeitura(grupo?)`.
-- **Não existem** (peça ao `glass-design-system`): `TDateTime`, `TTextArea`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio`, `TCor`, `TFieldList`, `TBotaoImprimir`.
+- **Não existem** (peça ao `glass-design-system`): `TDateTime`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio`, `TCor`, `TBotaoImprimir`.
+- Casca (fora do kit, `design-system/shell`): o menu é feito de **seções** (`secoes: {rotulo, itens}[]`); item com `filhos` abre o **submenu flutuante** no trilho e na barra inferior (§0, "Casca").
 
 **Escala de larguras** (`width`, só nomes da escala; dica: na dúvida, a menor):
 - Fixos (sm+): `uf` 80 · `codigo`/`hora`/`quantidade` 128 · `data`/`cep`/`valor` 160 · `cpf` 176 · `situacao` 192 · `cnpj` 208 · `dataHora`/`curto` 224 · `medio` 320.
 - Proporcionais, relativos à `TCol`: `metade` (texto livre sozinho na linha, mín. 256) · `longo` (divide a linha: cada campo na sua `TCol` com `longo`; ou ocupa a linha toda).
-- Critério de rótulo do `TCombo`: maior rótulo das opções (com o `vazio`) até 18 caracteres = `situacao`; de 19 a 36 = `medio`. O kit emite `data-rotulo-max` e o medidor confere.
+- Critério de rótulo do `TCombo`: maior rótulo das opções (com o `vazio` e o " (inativo)") até 18 caracteres = `situacao`; de 19 a 36 = `medio`; acima, `metade`. **O `TCombo` sem `width` já escolhe sozinho** (dentro de `TRow`); a tela não passa `width` por causa do rótulo. O kit emite `data-rotulo-max` e o medidor confere.
 - `width` só entra quando o padrão não serve. Abaixo de 640 px tudo empilha e ocupa 100 %.
 
 **Proibido na página de cadastro:**
@@ -51,7 +54,7 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 | Regra de disposição e lista dos grupos lado a lado | "1. A ideia" |
 | Tabelas das larguras, padrão de cada componente, `larguras.ts` | "2. Larguras" (2.1 a 2.4) |
 | Props de `TPage`, `TForm`, `TRow`, `TCol`, `TPanel`, `TModal`, `TTabs` | "3.1 Estrutura" |
-| Props e máscaras dos campos (`TEntry`, `TDate`, `TCombo`, `TDBCombo`, `TRadio`, `TCheckBox`, `TAuditoria`) | "3.2 Campos" |
+| Props e máscaras dos campos (`TEntry`, `TDate`, `TTextArea`, `TCombo`, `TDBCombo`, `TRadio`, `TCheckBox`, `TFieldList`, `TAuditoria`) | "3.2 Campos" |
 | `useMessage`, `useQuestion` e o que `erroApi` faz por resposta (400, 409, 429) | "3.3 Mensagens e confirmação" |
 | `TButton`, cor e ícone de cada ação, tokens de ação, campo só leitura, `useSomenteLeitura`, `TDataGrid`, exportação | "3.4 Botões e grade" |
 | De qual componente de `ui/` a tela migra para o kit; rodapé fora de `TForm`; telas fora do kit | "3.5 Do ero-web de hoje para o kit" |
@@ -100,11 +103,20 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 > `SeletorContratante` (popover do chip do contratante; aceita `aberto`/
 > `onAbertoChange` para o "Acessar contratante…" do Ctrl+K abri-lo). Por baixo, em `ui/`: o
 > `Calendario` (pt-BR) e, em `shared/util/datas.ts`, as datas `AAAA-MM-DD`.
+> **Entraram no cadastro de Pessoas (2026-11-16):** `TTextArea` (contador),
+> `TFieldList` (uma ou várias linhas por item, `principal` exclusivo, `dividir`,
+> qualquer campo do kit na coluna, inclusive `TDBCombo` com `acao`), o `TCombo`
+> com largura automática e a opção `inativo` (o valor gravado que deixou de
+> valer), o `TEntry.onCompletar` (CEP completo) e o `erroApi` que lê
+> `telefones[0].numero` como `telefones.0.numero`. Na casca: o menu em **seções**
+> e o **submenu flutuante** (ver "Casca" abaixo).
 > **Ainda não existem** (pedir ao `glass-design-system` antes de usar):
-> `TDateTime`, `TTextArea`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio`, `TCor`,
-> `TFieldList`, `TBotaoImprimir` e o modelo FormList.
+> `TDateTime`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio`, `TCor` e
+> `TBotaoImprimir`. O modelo FormList nasce com a `TipoCadastroFormList`.
 > Catálogo: seção "Kit de telas" em `/design-system` (e "Kit de telas: peças da
-> fatia 3", com os interruptores de só leitura) e os modelos em tela cheia
+> fatia 3" e "Kit de telas: peças de Pessoas", com os interruptores de só
+> leitura; o submenu está no trilho da própria página, em "Cadastros
+> auxiliares") e os modelos em tela cheia
 > em `/design-system?kit=lista`, `?kit=novo`, `?kit=editar&id=c2` e
 > `?kit=leitura&id=c2` (Contratantes de mentira; só em dev).
 > **Telas no kit (fatia 3, 2026-11-14):** Contratantes (`ContratanteList` +
@@ -198,6 +210,30 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 >   padrão, relê as consultas ativas (`queryClient.invalidateQueries()`).
 > - O `documento` da `TPage` imprime sozinho por CSS (`@media print` em
 >   `index.css`: some tudo o que não é a folha), sem classe `nao-imprime`.
+> - `TFieldList`: o rádio **Principal** é a mesma `.marca` do `TRadio` (os
+>   rádios das linhas têm o mesmo `name`, as setas andam entre eles); a linha é
+>   um `role="group"` com `aria-label` (`rotuloLinha`, padrão "Linha N"), e o
+>   remover diz qual ("Remover Telefone 2"). Acrescentar leva o foco ao 1º campo
+>   da linha nova; remover devolve o foco ao Acrescentar. Item em várias linhas
+>   fica num quadro com borda `--line` (sem vidro próprio: está no cartão). O
+>   erro da lista inteira (`telefones` ou `telefones.root`) aparece embaixo.
+> - `TTextArea`: o contador entra na linha da ajuda ("máx. 500 caracteres",
+>   "120 de 500 caracteres", `--fg-subtle`: 4,3:1 no escuro e 3,4:1 no claro
+>   sobre o vidro sólido, texto secundário ≥ 3:1) e some em só leitura.
+> - **Casca** (`design-system/shell`): `Sidebar` e `MobileNav` recebem
+>   `secoes: SecaoMenu[]` (`{ rotulo, itens }`), cada seção um
+>   `<nav aria-label>` separado por uma linha `--line`; seção vazia some. Item
+>   com `filhos` vira um botão (`aria-haspopup="menu"`, `aria-expanded`), ativo
+>   quando a rota está sob ele ou num filho, que abre o **submenu flutuante**
+>   (`Submenu`, Radix Popover num portal, `glass-solid`, `z-popover`): à direita
+>   do trilho no computador, acima da barra no celular; título = rótulo do pai,
+>   filhos com ícone e texto. Teclado de menu-button: Enter, Espaço, ↓ (e → no
+>   trilho) abrem no 1º filho, ↑ no último; ↑ ↓ Home End andam; Esc, Tab, ← (no
+>   trilho) e o clique fora fecham, e o foco volta ao botão. A dica do pai some
+>   com o submenu aberto. A barra inferior mostra até 5 itens
+>   (`MAXIMO_NA_BARRA_INFERIOR`), contando as seções na ordem (o pai conta 1).
+>   `telasDoMenu(secoes)` achata para o Ctrl+K e o Início: o filho entra como
+>   "Cadastros auxiliares › Tipos de telefone".
 >
 > O kit **não duplica** o que o `ero-web` já tem: cada peça veste um componente
 > de `ero-web/src/design-system/ui/` (exportados pelo `index.ts` de lá) ou da
@@ -359,7 +395,7 @@ Na dúvida entre duas, a menor — campo largo demais é o que destoa.
 | `TEntry mascara="inteiro"` | `quantidade` |
 | `TDate` | `data` |
 | `TDateTime` | `dataHora` |
-| `TCombo` | `situacao` |
+| `TCombo` | automático pelo maior rótulo (com o `vazio` e o " (inativo)"): até 18 caracteres `situacao`, até 36 `medio`, acima `metade` |
 | `TDBCombo` · `TDBComboMulti` | `metade` |
 | `TTextArea` | `longo` |
 | `TCheckBox` · `TDBCheckBox` · `TRadio` · `TDBRadio` · `TCor` | o conteúdo |
@@ -460,11 +496,11 @@ são os do `CampoForm`, e cada campo é um bloco da montagem.
 
 | Componente | Props próprias | O que faz |
 |---|---|---|
-| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?`, `acao?` | Texto (`Input`). `acao` é o botão colado ao campo, na altura dele (o "Gerar" da senha temporária), e some em só leitura. Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado; CPF, CNPJ, CEP e telefone gravam só os dígitos, as numéricas gravam o texto da máscara** (§0) — com as funções de `shared/util/format.ts`. A tela nunca chama máscara no `onChange`. `type="password"` usa o `InputSenha` (mostrar/ocultar); `type="email"` põe `inputMode="email"` e `autoCapitalize="off"`. Aceita `maxLength` — use o mesmo limite do DTO (`@Size(max = 150)` → `maxLength={150}`); nas máscaras o kit já põe o tamanho do texto formatado. |
+| `TEntry` | `mascara?`, `casas?`, `suffix?`, `type?`, `acao?` | Texto (`Input`). `acao` é o botão colado ao campo, na altura dele (o "Gerar" da senha temporária), e some em só leitura. Máscaras: `cpf`, `cnpj`, `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal`. **Exibe formatado; CPF, CNPJ, CEP e telefone gravam só os dígitos, as numéricas gravam o texto da máscara** (§0) — com as funções de `shared/util/format.ts`. A tela nunca chama máscara no `onChange`. `onCompletar?(cru)` é chamado quando a máscara fica completa ao digitar ou colar (CEP com 8 dígitos, CPF 11, CNPJ 14, celular 11, hora `HH:MM`), uma vez por valor, depois do `onChange` (o formulário já tem o valor): é a consulta do CEP. `type="password"` usa o `InputSenha` (mostrar/ocultar); `type="email"` põe `inputMode="email"` e `autoCapitalize="off"`. Aceita `maxLength` — use o mesmo limite do DTO (`@Size(max = 150)` → `maxLength={150}`); nas máscaras o kit já põe o tamanho do texto formatado. |
 | `TDate` | `min?`, `max?` | Data com calendário em pt-BR (no popover glass) e botão de limpar. Digita-se `DD/MM/AAAA` ou escolhe-se no calendário. Grava `AAAA-MM-DD`; monta com `T00:00:00` para exibir; valor inicial `hojeIso()` quando o form pede hoje. A API manda ISO-8601 e o front formata. |
 | `TDateTime` | `passoMinutos?` (padrão 5) | Data e hora; grava `AAAA-MM-DDTHH:mm`. |
-| `TTextArea` | `linhas?`, `maxLength?` | Texto longo; mostra "máx. N caracteres". |
-| `TCombo` | `opcoes: {valor, rotulo}[]`, `vazio?` | **Opções fixas** — situação, tipo, enum (`Combobox` com a lista local). `vazio` é a opção "Todos"/"Selecione…". `SITUACAO_OPCOES` está pronto no kit. |
+| `TTextArea` | `linhas?` (padrão 3), `maxLength?` | Texto longo (observação), com a pele do `.input` e o puxador vertical. Com `maxLength`, o contador na linha da ajuda: "máx. 500 caracteres" vazio, "120 de 500 caracteres" ao digitar. Só leitura: `readOnly`, sem contador. |
+| `TCombo` | `opcoes: {valor, rotulo, inativo?}[]`, `vazio?` | **Opções numa lista local** — situação, enum, ou os tipos que a tela carregou do banco (`/selecao`) sem busca no servidor (`Combobox`). `vazio` é a opção "Todos"/"Selecione…". `inativo: true` marca o valor **já gravado** que deixou de valer: aparece como "Nome (inativo)"; quem monta as opções põe os ativos mais os inativos gravados no registro. **Largura automática** sem `width` (§2.3). `SITUACAO_OPCOES` está pronto no kit. |
 | `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?`, `acao?` | **Opções do banco** (`Combobox` com `onBuscaChange` e `carregando`, debounce 300 ms) e o rótulo do valor salvo. No CRM as rotas de combo são `GET /api/<recurso>/selecao` (`SelectDto` com `id` e `nome`); hoje devolvem todos os ativos, sem termo — o `buscar` pode ignorar o termo e o `Combobox` filtra local. Quando a lista crescer, a rota ganha `?busca=` no backend. `acao` é o botão colado ao campo, na altura dele, para o **cadastro rápido** do que não está na lista (`<TButton variant="novo" label="" …/>`, que some para quem só lê). |
 | `TDBComboMulti` | `buscar`, `excluir?`, `maximo?` | Vários do banco. |
 | `TCor` | `cores?` | **Cor de identificação** de um registro: as `CORES_SUGERIDAS` em bolinhas e "Outra", com o seletor do sistema. Grava `#RRGGBB` em maiúsculas. As sugeridas saem de token, nunca de hex na tela. Nenhum cadastro do CRM pede ainda. |
@@ -472,7 +508,7 @@ são os do `CampoForm`, e cada campo é um bloco da montagem.
 | `TDBCheckBox` | `buscar()`, `vertical?`, `altura?` | Grupo vindo do banco. |
 | `TRadio` | `opcoes` (`{valor, rotulo, desabilitada?, dica?}`), `vertical?`, `vazio?` | Escolha única fixa (`role="radiogroup"`, setas entre as opções), lado a lado por padrão. `vazio` é a opção "Não informado" (valor `''`), no fim. |
 | `TDBRadio` | `buscar()`, `vertical?` | Escolha única vinda do banco. |
-| `TFieldList` | `name`, `colunas: {name, componente(campo, i, linha), width?}[]`, `novaLinha`, `minimo?`, `rotuloAdicionar?`, `vazio?`, `detalhe?(i, linha)` | **Lista filha editável** dentro do formulário (e-mails, telefones): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão e o remover no fim, botão Acrescentar no rodapé. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
+| `TFieldList` | `name`, `colunas: ColunaDaLista[]` (uma linha) ou `ColunaDaLista[][]` (item em várias linhas), `novaLinha` (objeto ou função), `minimo?`, `rotuloAdicionar?` (padrão "Acrescentar"), `vazio?`, `detalhe?(i, linha)`, `principal?`, `rotuloLinha?(i, linha)`. Coluna: `{name, componente(campo, i, linha), width?, dividir?}` | **Lista filha editável** dentro do formulário (telefones, e-mails, redes, endereços, vínculos): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão, o Principal e o remover no fim da 1ª linha, Acrescentar embaixo. `componente` recebe o `name` completo (`telefones.0.numero`) e serve a qualquer campo do kit (inclusive `TDBCombo` com `acao`, o cadastro rápido). `width` põe o campo numa `TCol` daquela largura; `dividir`, numa `TCol` sem largura (divide o resto da linha). `principal` = nome do booleano da linha: rádio exclusivo, a 1ª linha acrescentada já vem principal, remover a principal passa a marca para a 1ª. Só leitura: sem Acrescentar nem remover, o rádio travado. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
 | `TRotulo` | `htmlFor`, `required?` | Só o rótulo, para a coluna de labels do §5. |
 | `TAuditoria` | `registro` | Só na edição, no fim do formulário: Criado por · Criado em, Alterado por · Alterado em, só leitura. Lê `criadoPorNome`, `createdAt`, `alteradoPorNome`, `updatedAt` do `ResponseDto` (datas ISO-8601 em UTC, formatadas em pt-BR no fuso do navegador). Linha sem dado não aparece. O backend publica `criadoPorNome`/`alteradoPorNome` em Contratantes e Usuários (cadastro novo segue o mesmo modelo, `docs/01`, "Auditoria de registro"). Dentro de um contratante, o que o superadmin (suporte) cadastrou ou alterou chega com o nome vazio: a linha mostra só a data. |
 
@@ -488,7 +524,7 @@ e faz o que cada resposta pede:
 
 | Resposta | O que a tela mostra |
 |---|---|
-| 400 com `erros[{campo, mensagem}]` | **erro no campo**: `form.setError(campo, { message })`, foco no primeiro. O `campo` é o caminho do DTO (`administrador.email`), que é o `name` do campo quando o schema espelha o DTO. Campo que a tela não tem cai no toast. |
+| 400 com `erros[{campo, mensagem}]` | **erro no campo**: `form.setError(campo, { message })`, foco no primeiro. O `campo` é o caminho do DTO (`administrador.email`), que é o `name` do campo quando o schema espelha o DTO; a posição numa lista vem entre colchetes e o kit troca por ponto (`telefones[0].numero` → `telefones.0.numero`, o `name` do `TFieldList`). Campo que a tela não tem cai no toast. |
 | 409 com `erros[{campo, mensagem}]` (`CONFLITO` de duplicidade: e-mail, documento já usado) | **igual ao 400**: erro no campo pelo caminho do DTO (`administrador.email`, `documento`, `email`), foco no primeiro, **sem** Recarregar (recarregar não resolve duplicidade). Se nenhum campo existe no form, o `detail` vai num toast de erro comum, também sem Recarregar. |
 | 409 sem `erros` (`CONFLITO`, `version` desatualizada) | toast de erro com o botão **Recarregar** (relê o registro e refaz o `form.reset`) |
 | 429 | aviso com o `retryAfter` em segundos |
@@ -840,8 +876,11 @@ Formulário em cima, grade embaixo, na mesma tela — grupos, categorias, tipos.
 É o modelo que mais se copia: entre duas telas FormList só mudam o nome, a API
 e os campos.
 
-> Exemplo **hipotético**: o CRM ainda não tem tabela de apoio. Nomes, rota e
-> campos abaixo são só para mostrar a forma.
+> **O modelo FormList é a `TipoCadastroFormList`**
+> (`ero-web/src/modules/auxiliares/pages/TipoCadastroFormList.tsx`, cadastro de
+> Pessoas, `PLANO-PESSOAS.md` §4.3): copie dela. O exemplo abaixo é o
+> **hipotético** que a originou (nomes, rota e campos só mostram a forma) e
+> vale enquanto a tela não existir.
 
 ```tsx
 export function CategoriaFormList() {                                   // troca (exemplo)
@@ -999,13 +1038,14 @@ recebe a classe de largura):
 | `data-kit` | o nome do componente: `TEntry`, `TDate`, `TDateTime`, `TTextArea`, `TCombo`, `TDBCombo`, `TDBComboMulti`, `TCheckBox`, `TDBCheckBox`, `TRadio`, `TDBRadio`, `TCor` | todo campo |
 | `data-largura` | o token **aplicado**: o `width` recebido ou o padrão do componente (§2.3); `celula` quando o campo está fora de uma `TRow` sem `width`; `conteudo` em caixa de marcar, rádio e cor | todo campo |
 | `data-mascara` | a máscara do `TEntry` (`cpf`, `moeda`...) | `TEntry` com máscara |
-| `data-rotulo-max` | caracteres do maior rótulo das opções (com o `vazio`): até 18 o medidor espera `situacao`, até 36 `medio` (§2.1) | `TCombo` |
+| `data-rotulo-max` | caracteres do maior rótulo das opções (com o `vazio` e o " (inativo)"): até 18 o medidor espera `situacao`, até 36 `medio` (§2.1); é o mesmo número com que o `TCombo` escolhe a largura automática | `TCombo` |
 
 E, para o medidor e o screenshot apontarem o culpado pelo nome:
 
 - `data-kit` também em `TRow`, `TCol` (com `data-largura` quando há `width`),
-  `TForm`, `TPanel`, `TFieldList`, `TFormFooter`, `TDataGrid` e `TButton`
-  (com `data-variante`);
+  `TForm`, `TPanel`, `TFieldList` (com `data-linhas`, e cada linha com
+  `data-linha="<índice>"`; o rádio Principal em `data-kit="TFieldList-principal"`),
+  `TFormFooter`, `TDataGrid` e `TButton` (com `data-variante`);
 - a folha impressa do `documento` da `TPage` dentro de `[data-kit="folha"]`;
 - dentro do campo, um controle de verdade (`input`, `textarea`, `select` ou
   `[role="combobox"]`) ligado ao rótulo por `htmlFor`/`id` ou

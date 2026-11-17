@@ -258,6 +258,19 @@
     outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
   }
+  /* Texto longo (TTextArea): a mesma pele do .input, com altura pelas linhas e só o puxador vertical. */
+  .input.input-area {
+    height: auto;
+    min-height: 44px;
+    padding: 10px 14px;
+    line-height: 1.5;
+    resize: vertical;
+    display: block;
+  }
+  .input.input-area:read-only,
+  .input.input-area:disabled {
+    resize: none;
+  }
   .kbd {
     font-size: 11px;
     line-height: 1;
