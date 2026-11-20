@@ -1,6 +1,6 @@
 # Código sequencial por contratante
 
-**Status: regra fechada em 14/11/2026 e escrita nos docs técnicos. O primeiro cadastro a usar é pessoas.**
+**Status: regra fechada em 14/11/2026 e escrita nos docs técnicos. Em uso desde 20/11/2026, em [[pessoas]] e nos [[cadastros-auxiliares]].**
 
 ## Regras vigentes
 
@@ -18,9 +18,12 @@
 - 14/11/2026: código sequencial por contratante em todo cadastro com tela.
 - 14/11/2026 (revisão no mesmo dia): coluna `cod_<entidade>` (e não `codigo`), sem tabela de contadores, numerada por maior + 1 com índice único. Contratante e usuário ficam sem código. Combos e buscas de texto não aceitam o código por enquanto; combo "código · nome" pode entrar com pessoas.
 
+- 16/11/2026: os cadastros auxiliares também têm código (`cod_tipo_telefone` etc.). Os itens do sistema recebem 1..N na ordem do enum, e o primeiro item do contratante continua do N+1.
+- 20/11/2026: o combo "código · nome" entrou na seleção de pessoas (`PessoaSelectDto` leva `codPessoa`).
+
 ## Em aberto
 
-- A peça comum que repete o salvar quando o índice único recusa nasce com o cadastro de pessoas.
+- Nada por enquanto. A peça comum que repete o salvar quando o índice único recusa nasceu (`RepetirSeCodigoRepetido`, até 3 tentativas).
 
 ## Doc técnico
 

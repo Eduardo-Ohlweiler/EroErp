@@ -34,6 +34,11 @@ Como cada risco está coberto no `ero-api` e o checklist que o agente
   - fixar as imagens base do `Dockerfile` por digest;
   - rodar `mvnw verify -Pseguranca` com `NVD_API_KEY` (ainda não rodado);
   - o `FOR UPDATE` do login só trava quando o e-mail existe: sob requisições simultâneas, o tempo de resposta denuncia se o e-mail existe e cada uma segura uma conexão pelo tempo do Argon2. Trocar por `pg_advisory_xact_lock(hashtext(email))` com timeout curto;
+  - **Pessoas (20/11/2026):**
+    - o CPF vai na query string de `GET /api/pessoas?documento=` e o `access_log` do nginx grava. Antes de produção, `log_format` sem `$args` no `/api/`; conferir também o access log do Tomcat;
+    - o `SqlExceptionHelper` do Hibernate registra em ERROR o `Detail` do PostgreSQL, com o CPF, na corrida de duplicidade. Desligar o logger ou usar `logServerErrorDetail=false`;
+    - o `resolverDeToken` do `SecurityConfig` compara a URI crua. Alinhar com `RateLimitFilter.caminho()` (caminho decodificado). É consistência, não brecha;
+    - quando o link de rede social virar clicável, usar `rel="noopener noreferrer"` e conferir http(s) também na hora de mostrar;
   - a invalidação do cache por usuário não enxerga uma carga em andamento (janela de milissegundos). Se preciso, usar um contador de geração por usuário.
 - **Chave de criptografia** (`APP_CRIPTO_CHAVE`): perder ou trocar a chave torna ilegíveis os campos cifrados gravados (hoje, os códigos de verificação pendentes, que valem 10 min). Guarde a chave num cofre e, por contratante, junto com o backup do banco.
 

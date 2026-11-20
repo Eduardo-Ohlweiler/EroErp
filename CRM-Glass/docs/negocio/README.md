@@ -12,6 +12,8 @@ Regra de ouro: **aqui mora a regra de negócio (o quê e por quê); a implementa
 | [[usuarios-e-acesso]] | Papéis, regras do ADMIN, grupos LER/ESCREVER, Minha conta |
 | [[contratantes]] | Limite de usuários, aparência, tema por usuário, acessar contratante |
 | [[logs-e-auditoria]] | Trilha de segurança, categorias, retenção, o que o suporte esconde |
+| [[pessoas]] | Cadastro de pessoas: física e jurídica, contatos, endereços, vínculos, cadastro rápido |
+| [[cadastros-auxiliares]] | Os 5 tipos (cadastro, telefone, e-mail, endereço, rede social), itens do sistema e do contratante |
 | [[codigo-sequencial]] | `cod_<entidade>` por contratante nos cadastros de negócio (regra nos docs; nasce com pessoas) |
 | [[aparencia-e-movimento]] | Decisões visuais e de movimento do dono |
 | [[decisoes]] | Registro cronológico de tudo que o dono decidiu |
