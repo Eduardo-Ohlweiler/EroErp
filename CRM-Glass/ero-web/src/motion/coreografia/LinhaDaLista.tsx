@@ -64,9 +64,13 @@ export function LinhaDaLista({ entrar, saidaNaHora = false, className, ref, chil
 export type TrocaDeBlocosProps = {
   /** o que está aparecendo (`FISICA` | `JURIDICA`): trocar a chave troca o bloco */
   chave: string;
+  /** classes de cada bloco (substitui o padrão `flex flex-col gap-4`, a mesma pilha do `TForm`) */
   className?: string;
   children: ReactNode;
 };
+
+/** Pilha padrão de cada bloco: a mesma do `TForm`, para as linhas de dentro terem o espaçamento do formulário. */
+const PILHA_DO_BLOCO = 'flex flex-col gap-4';
 
 /**
  * Troca de um bloco por outro no mesmo lugar (PF ↔ PJ do PessoaForm), com a coreografia `linhaDaLista`: o bloco
@@ -74,13 +78,18 @@ export type TrocaDeBlocosProps = {
  * desliza). O bloco da primeira montagem não anima por conta própria: os campos dele entram na cascata do cartão.
  * Modo leve e reduzido: o antigo sai na hora e o novo aparece (só opacidade; no leve, desce alguns px).
  *
+ * Os dois blocos ficam dentro de um `<div>` próprio, SEM gap: para o pai (o `TForm`, `flex flex-col gap-4`) a troca
+ * é um filho só, então o espaço até o vizinho de baixo é o mesmo antes, durante e depois (sem o vão extra entre o
+ * bloco que sai e o que entra, que sumiria de uma vez no fim da saída). Cada bloco já é uma pilha `flex flex-col
+ * gap-4`: as linhas vão direto, num fragmento, sem `<div>` em volta.
+ *
  *   <TrocaDeBlocos chave={tipo}>
- *     {tipo === 'FISICA' ? <TRow>…CPF, RG, nascimento…</TRow> : <TRow>…CNPJ, IE, IM…</TRow>}
+ *     {tipo === 'FISICA' ? <><TRow>…CPF…</TRow><TRow>…RG…</TRow></> : <><TRow>…CNPJ…</TRow><TRow>…IE…</TRow></>}
  *   </TrocaDeBlocos>
  *
  * A tela só escolhe o conteúdo; limpar os campos do outro tipo continua sendo da tela.
  */
-export function TrocaDeBlocos({ chave, className, children }: TrocaDeBlocosProps) {
+export function TrocaDeBlocos({ chave, className = PILHA_DO_BLOCO, children }: TrocaDeBlocosProps) {
   // A partir da primeira troca, todo bloco que nasce anima (inclusive voltar ao primeiro).
   const [anterior, setAnterior] = useState(chave);
   const [trocou, setTrocou] = useState(false);
@@ -90,10 +99,12 @@ export function TrocaDeBlocos({ chave, className, children }: TrocaDeBlocosProps
   }
   const modo = useModoDaLinha();
   return (
-    <AnimatePresence>
-      <LinhaDaLista key={chave} entrar={trocou || chave !== anterior} saidaNaHora={modo !== 'completo'} className={className}>
-        {children}
-      </LinhaDaLista>
-    </AnimatePresence>
+    <div data-troca-blocos="">
+      <AnimatePresence>
+        <LinhaDaLista key={chave} entrar={trocou || chave !== anterior} saidaNaHora={modo !== 'completo'} className={className}>
+          {children}
+        </LinhaDaLista>
+      </AnimatePresence>
+    </div>
   );
 }

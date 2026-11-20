@@ -199,7 +199,7 @@ export function PessoaForm() {
           <TEntry name="nome" label={fisica ? 'Nome' : 'Razão social'} required autoFocus={!somenteLeitura} maxLength={255} />
         </TRow>
 
-        <TrocaDeBlocos chave={tipo} className="flex flex-col gap-4">
+        <TrocaDeBlocos chave={tipo}>
           {fisica ? (
             <>
               <TRow>

@@ -51,14 +51,14 @@ export function DemoContatos() {
             <TEntry name="rg" label="RG" maxLength={10} width="curto" />
           </TRow>
         ) : (
-          <div className="flex flex-col gap-4">
+          <>
             <TRow>
               <TEntry name="cnpj" label="CNPJ" mascara="cnpj" />
             </TRow>
             <TRow>
               <TEntry name="ie" label="Inscrição estadual" maxLength={20} width="curto" />
             </TRow>
-          </div>
+          </>
         )}
       </TrocaDeBlocos>
       <TPanel title="Telefones" subtitle="Acrescente e remova: a linha abre e recolhe; o foco acompanha">

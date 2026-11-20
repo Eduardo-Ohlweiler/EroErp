@@ -154,6 +154,33 @@ describe('TrocaDeBlocos (PF ↔ PJ)', () => {
     await esperar(0.6);
   });
 
+  it('para o pai a troca é um filho só: os dois blocos ficam no mesmo contêiner, sem vão entre eles', async () => {
+    const c = montar(<Troca />);
+    const contem = c.querySelector<HTMLElement>('[data-troca-blocos]')!;
+    expect(c.children).toHaveLength(1);
+    expect(c.firstElementChild).toBe(contem);
+    expect(contem.className).toBe('');
+    // cada bloco é a pilha do formulário por padrão
+    expect(bloco(c, 'FISICA').className).toBe('flex flex-col gap-4');
+
+    act(() => trocar('JURIDICA'));
+    // durante a troca, os dois blocos estão dentro do contêiner, que continua sendo o único filho do pai
+    expect(c.children).toHaveLength(1);
+    expect(Array.from(contem.children)).toEqual([bloco(c, 'FISICA'), bloco(c, 'JURIDICA')]);
+    await esperar(0.6);
+    expect(c.children).toHaveLength(1);
+    expect(Array.from(contem.children)).toEqual([bloco(c, 'JURIDICA')]);
+  });
+
+  it('className substitui a pilha padrão do bloco', () => {
+    const c = montar(
+      <TrocaDeBlocos chave="FISICA" className="grid">
+        <span data-bloco="FISICA" />
+      </TrocaDeBlocos>,
+    );
+    expect(bloco(c, 'FISICA').className).toBe('grid');
+  });
+
   it('movimento reduzido: o antigo sai na hora e o novo só esmaece', async () => {
     const c = montar(<Troca reduzido />);
     act(() => trocar('JURIDICA'));
