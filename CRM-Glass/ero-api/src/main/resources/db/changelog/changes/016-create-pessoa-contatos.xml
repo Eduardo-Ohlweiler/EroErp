@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Telefones, e-mails e redes sociais da pessoa. Filhas sem id na entrada: a lista
+        que chega no salvar é o estado completo e substitui a anterior (ordem = posição
+        na lista).
+
+        - FK composta (pessoa_id, tenant_id) para a pessoa e (tipo_x_id, tenant_id) para
+          o cadastro auxiliar: nunca a pessoa ou o tipo de outro contratante.
+        - No máximo um principal por pessoa (índice parcial). Telefone sem código do país.
+    -->
+    <changeSet id="016-create-pessoa-contatos-telefone" author="eduardo">
+        <createTable tableName="pessoa_telefone">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_pessoa_telefone"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_pessoa_telefone_tenant" references="tenant(id)"/>
+            </column>
+            <column name="pessoa_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="ordem" type="INTEGER"><constraints nullable="false"/></column>
+            <column name="tipo_telefone_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="numero" type="VARCHAR(11)"><constraints nullable="false"/></column>
+            <column name="observacao" type="VARCHAR(255)"/>
+            <column name="principal" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="fk_pessoa_telefone_pessoa"
+                                 baseTableName="pessoa_telefone" baseColumnNames="pessoa_id,tenant_id"
+                                 referencedTableName="pessoa" referencedColumnNames="id,tenant_id"/>
+        <addForeignKeyConstraint constraintName="fk_pessoa_telefone_tipo"
+                                 baseTableName="pessoa_telefone" baseColumnNames="tipo_telefone_id,tenant_id"
+                                 referencedTableName="tipo_telefone" referencedColumnNames="id,tenant_id"/>
+        <createIndex tableName="pessoa_telefone" indexName="ix_pessoa_telefone_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+        <createIndex tableName="pessoa_telefone" indexName="ix_pessoa_telefone_tipo">
+            <column name="tipo_telefone_id"/>
+        </createIndex>
+        <sql>CREATE UNIQUE INDEX uk_pessoa_telefone_principal ON pessoa_telefone (pessoa_id) WHERE principal</sql>
+        <sql>ALTER TABLE pessoa_telefone ADD CONSTRAINT ck_pessoa_telefone_numero CHECK (numero ~ '^[0-9]{10,11}$')</sql>
+    </changeSet>
+
+    <changeSet id="016-create-pessoa-contatos-email" author="eduardo">
+        <createTable tableName="pessoa_email">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_pessoa_email"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_pessoa_email_tenant" references="tenant(id)"/>
+            </column>
+            <column name="pessoa_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="ordem" type="INTEGER"><constraints nullable="false"/></column>
+            <column name="tipo_email_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="email" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="observacao" type="VARCHAR(255)"/>
+            <column name="principal" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="fk_pessoa_email_pessoa"
+                                 baseTableName="pessoa_email" baseColumnNames="pessoa_id,tenant_id"
+                                 referencedTableName="pessoa" referencedColumnNames="id,tenant_id"/>
+        <addForeignKeyConstraint constraintName="fk_pessoa_email_tipo"
+                                 baseTableName="pessoa_email" baseColumnNames="tipo_email_id,tenant_id"
+                                 referencedTableName="tipo_email" referencedColumnNames="id,tenant_id"/>
+        <createIndex tableName="pessoa_email" indexName="ix_pessoa_email_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+        <createIndex tableName="pessoa_email" indexName="ix_pessoa_email_tipo">
+            <column name="tipo_email_id"/>
+        </createIndex>
+        <sql>CREATE UNIQUE INDEX uk_pessoa_email_principal ON pessoa_email (pessoa_id) WHERE principal</sql>
+        <sql>ALTER TABLE pessoa_email ADD CONSTRAINT ck_pessoa_email_minusculo CHECK (email = lower(email))</sql>
+    </changeSet>
+
+    <changeSet id="016-create-pessoa-contatos-rede-social" author="eduardo">
+        <createTable tableName="pessoa_rede_social">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_pessoa_rede_social"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_pessoa_rede_social_tenant" references="tenant(id)"/>
+            </column>
+            <column name="pessoa_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="ordem" type="INTEGER"><constraints nullable="false"/></column>
+            <column name="tipo_rede_social_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="usuario" type="VARCHAR(255)"/>
+            <column name="url" type="VARCHAR(500)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="fk_pessoa_rede_social_pessoa"
+                                 baseTableName="pessoa_rede_social" baseColumnNames="pessoa_id,tenant_id"
+                                 referencedTableName="pessoa" referencedColumnNames="id,tenant_id"/>
+        <addForeignKeyConstraint constraintName="fk_pessoa_rede_social_tipo"
+                                 baseTableName="pessoa_rede_social" baseColumnNames="tipo_rede_social_id,tenant_id"
+                                 referencedTableName="tipo_rede_social" referencedColumnNames="id,tenant_id"/>
+        <createIndex tableName="pessoa_rede_social" indexName="ix_pessoa_rede_social_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+        <createIndex tableName="pessoa_rede_social" indexName="ix_pessoa_rede_social_tipo">
+            <column name="tipo_rede_social_id"/>
+        </createIndex>
+        <sql>ALTER TABLE pessoa_rede_social ADD CONSTRAINT ck_pessoa_rede_social_preenchida CHECK (usuario IS NOT NULL OR url IS NOT NULL)</sql>
+        <sql>ALTER TABLE pessoa_rede_social ADD CONSTRAINT ck_pessoa_rede_social_url CHECK (url IS NULL OR url ~ '^https?://')</sql>
+    </changeSet>
+
+</databaseChangeLog>

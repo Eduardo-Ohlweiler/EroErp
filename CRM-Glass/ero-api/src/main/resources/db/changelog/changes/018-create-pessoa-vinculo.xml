@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Vínculo entre duas pessoas do mesmo contratante. Uma linha serve os dois cadastros:
+        "destino é <tipo> de origem" (ex.: tipo DEPENDENTE = o destino é dependente da
+        origem; vista do destino, a origem é RESPONSAVEL dele).
+
+        - Orientação canônica: origem < destino na ordem do uuid do PostgreSQL
+          (ck_pessoa_vinculo_ordem). Garante também que ninguém se vincula a si mesmo e,
+          com uk_pessoa_vinculo_par, que o par só aparece uma vez. O Java usa a mesma
+          ordem (OrdemUuid.COMO_NO_BANCO).
+        - Lista fechada de tipos (P1 do dono, 16/11/2026): os 4 do EroErp 2.0 e
+          Contato/Empresa (o lado Empresa é sempre pessoa jurídica).
+    -->
+    <changeSet id="018-create-pessoa-vinculo" author="eduardo">
+        <createTable tableName="pessoa_vinculo">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_pessoa_vinculo"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_pessoa_vinculo_tenant" references="tenant(id)"/>
+            </column>
+            <column name="pessoa_origem_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="pessoa_destino_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="tipo" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="observacao" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="fk_pessoa_vinculo_origem"
+                                 baseTableName="pessoa_vinculo" baseColumnNames="pessoa_origem_id,tenant_id"
+                                 referencedTableName="pessoa" referencedColumnNames="id,tenant_id"/>
+        <addForeignKeyConstraint constraintName="fk_pessoa_vinculo_destino"
+                                 baseTableName="pessoa_vinculo" baseColumnNames="pessoa_destino_id,tenant_id"
+                                 referencedTableName="pessoa" referencedColumnNames="id,tenant_id"/>
+        <createIndex tableName="pessoa_vinculo" indexName="uk_pessoa_vinculo_par" unique="true">
+            <column name="tenant_id"/>
+            <column name="pessoa_origem_id"/>
+            <column name="pessoa_destino_id"/>
+        </createIndex>
+        <createIndex tableName="pessoa_vinculo" indexName="ix_pessoa_vinculo_origem">
+            <column name="pessoa_origem_id"/>
+        </createIndex>
+        <createIndex tableName="pessoa_vinculo" indexName="ix_pessoa_vinculo_destino">
+            <column name="pessoa_destino_id"/>
+        </createIndex>
+        <sql>ALTER TABLE pessoa_vinculo ADD CONSTRAINT ck_pessoa_vinculo_ordem CHECK (pessoa_origem_id &lt; pessoa_destino_id)</sql>
+        <sql>
+            ALTER TABLE pessoa_vinculo ADD CONSTRAINT ck_pessoa_vinculo_tipo
+                CHECK (tipo IN ('RESPONSAVEL', 'DEPENDENTE', 'CONJUGE', 'FAMILIAR', 'CONTATO', 'EMPRESA'))
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
