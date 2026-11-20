@@ -4,7 +4,7 @@ import { act, useState, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MotionConfig } from 'motion/react';
 import { useForm } from 'react-hook-form';
-import { TEntry, TFieldList, TForm } from '../../design-system/kit';
+import { TCombo, TEntry, TFieldList, TForm } from '../../design-system/kit';
 import { Tela } from './Tela';
 import { TrocaDeBlocos } from './LinhaDaLista';
 
@@ -120,6 +120,65 @@ describe('linhaDaLista no TFieldList', () => {
     expect(opacidade(nova)).toBe(0);
     await esperar(0.4);
     expect(opacidade(nova)).toBe(1);
+  });
+});
+
+/*
+ * Pessoa reaberta (achado do QA): o TForm monta vazio e o `reset` com os dados vem depois, quando a cascata do cartão
+ * já rodou. As linhas nascem com `entrar=false`; os campos delas não podem ficar presos no `hidden` da cascata.
+ */
+type Contato = { tipo: string; numero: string };
+let preencher: () => void = () => {};
+function ListaCarregada({ reduzido = false }: { reduzido?: boolean }) {
+  const form = useForm<{ contatos: Contato[] }>({ defaultValues: { contatos: [] } });
+  preencher = () => form.reset({ contatos: [{ tipo: 'C', numero: '51999887766' }, { tipo: 'R', numero: '5133224455' }] });
+  return (
+    <MotionConfig reducedMotion={reduzido ? 'always' : 'never'}>
+      <Tela coreografia="formulario">
+        <TForm form={form} onSubmit={() => {}}>
+          <TFieldList<Contato>
+            name="contatos"
+            novaLinha={{ tipo: '', numero: '' }}
+            colunas={[
+              {
+                name: 'tipo',
+                componente: (c) => (
+                  <TCombo name={c} label="Tipo" opcoes={[{ valor: 'C', rotulo: 'Celular' }, { valor: 'R', rotulo: 'Residencial' }]} />
+                ),
+              },
+              { name: 'numero', componente: (c) => <TEntry name={c} label="Número" mascara="telefone" /> },
+            ]}
+          />
+        </TForm>
+      </Tela>
+    </MotionConfig>
+  );
+}
+const camposDasLinhas = (c: HTMLElement) =>
+  Array.from(c.querySelectorAll<HTMLElement>('[data-linha-lista] [data-kit="TEntry"], [data-linha-lista] [data-kit="TCombo"]'));
+
+describe('linhas que chegam com os dados depois da cascata do cartão (pessoa reaberta)', () => {
+  for (const reduzido of [false, true]) {
+    it(`os campos terminam no estado final${reduzido ? ' (movimento reduzido)' : ''}`, async () => {
+      const c = montar(<ListaCarregada reduzido={reduzido} />);
+      await esperar(1.5); // a cascata do cartão já rodou
+      act(() => preencher());
+      await esperar(1);
+      const campos = camposDasLinhas(c);
+      expect(campos).toHaveLength(4);
+      for (const campo of campos) {
+        expect(opacidade(campo)).toBe(1);
+        expect(['', 'none']).toContain(campo.style.transform);
+      }
+    });
+  }
+
+  it('movimento reduzido: os campos da linha acrescentada também terminam visíveis', async () => {
+    const c = montar(<Lista reduzido naTela />);
+    await esperar(1.5);
+    clicar(acrescentar(c));
+    await esperar(0.6);
+    expect(opacidade(linhas(c)[2].querySelector('[data-kit="TEntry"]'))).toBe(1);
   });
 });
 

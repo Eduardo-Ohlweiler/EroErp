@@ -65,7 +65,8 @@ const FOCAVEL = 'input:not([type="radio"]):not([disabled]), textarea:not([disabl
  *
  * Movimento (coreografia `linhaDaLista`, motion/tokens.ts, via <LinhaDaLista>): a linha acrescentada abre o espaço e
  * aparece; a removida some e recolhe, e o que está embaixo sobe sem pulo. Linhas que vêm com a tela ou com os dados
- * não animam sozinhas (os campos delas seguem a cascata do cartão). A linha que sai fica `inert` até sumir, e o foco
+ * não animam sozinhas: as da tela seguem a cascata do cartão; as que chegam com os dados depois dela aparecem já
+ * prontas (pessoa reaberta). A linha que sai fica `inert` até sumir, e o foco
  * nunca vai para ela. A tela não escreve movimento.
  */
 export function TFieldList<L extends FieldValues>({
