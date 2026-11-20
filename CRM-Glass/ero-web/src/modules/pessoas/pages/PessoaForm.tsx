@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   TAuditoria,
+  TBadge,
   TButton,
   TCheckBox,
   TCombo,
@@ -29,26 +30,30 @@ import { chaveDaSelecao, opcoesDeTipo, selecionarTipos, type RecursoAuxiliar } f
 import { buscarCidades, consultarCep, rotuloDaCidade } from '../../../shared/api/localidade';
 import { ROTULO_CADASTROS } from '../../../shared/sessao';
 import { hojeIso } from '../../../shared/util/format';
-import { pessoasApi } from '../api/pessoas';
+import { PessoaRapidaModal } from '../components/PessoaRapidaModal';
+import { pessoasApi, rotuloDaPessoa, type PessoaResponse } from '../api/pessoas';
 import {
   CAMPOS_DA_FISICA,
   CAMPOS_DA_JURIDICA,
+  criarSchema,
   NOVA_REDE_SOCIAL,
   NOVO_ENDERECO,
   NOVO_EMAIL,
   NOVO_TELEFONE,
+  NOVO_VINCULO,
   opcoesDosTiposDeCadastro,
   paraCorpo,
   paraForm,
   SEXO_OPCOES,
-  schema,
   TIPO_PESSOA_OPCOES,
+  TIPO_VINCULO_OPCOES,
   VAZIO,
   type Dados,
   type EmailForm,
   type EnderecoForm,
   type RedeSocialForm,
   type TelefoneForm,
+  type VinculoForm,
 } from '../schemas/pessoa';
 
 /** Cópia do modelo Form (docs/07 §4.2), a partir do UsuarioForm (o modelo com painéis). Difere dele só no que é `// troca`. */
@@ -67,7 +72,9 @@ export function PessoaForm() {
   const somenteLeitura = useSomenteLeitura('PESSOAS'); // troca: grupo PESSOAS
   const msg = useMessage();
   const queryClient = useQueryClient();
+  const schema = useMemo(() => criarSchema(id), [id]); // troca: a pessoa aberta não se vincula a si mesma
   const form = useForm<Dados>({ resolver: zodResolver(schema), defaultValues: VAZIO }); // troca: o schema espelha o Create/UpdateDto
+  const [rapida, setRapida] = useState<number | null>(null); // troca: a linha de vínculo que abriu o cadastro rápido
   const salvo = useQuery({ queryKey: ['pessoas', id], queryFn: () => pessoasApi.buscar(id!), enabled: !!id }); // troca
 
   // troca: as opções dos 5 tipos vêm dos cadastros auxiliares (só ativos; o inativo já gravado entra por `opcoesDeTipo`)
@@ -148,6 +155,18 @@ export function PessoaForm() {
         msg.erroApi(e);
       }
     }
+  };
+
+  // troca: o combo de pessoa do vínculo (sem a própria pessoa) e o cadastro rápido, que devolve a pessoa criada à linha
+  const buscarPessoas = async (termo?: string) =>
+    (await pessoasApi.selecionar(termo, id)).map((p) => ({ id: p.id, nome: rotuloDaPessoa(p) }));
+  const vincularCriada = (nova: PessoaResponse) => {
+    if (rapida === null) return;
+    const campo = <C extends keyof VinculoForm>(c: C) => `vinculos.${rapida}.${c}` as const;
+    form.setValue(campo('pessoaRotulo'), rotuloDaPessoa(nova), { shouldDirty: true });
+    form.setValue(campo('pessoaAtiva'), true, { shouldDirty: true });
+    form.setValue(campo('pessoaId'), nova.id, { shouldDirty: true, shouldValidate: true });
+    setRapida(null);
   };
 
   // troca: sem PESSOAS_ESCREVER não há cadastro novo
@@ -302,8 +321,38 @@ export function PessoaForm() {
           />
         </TPanel>
 
-        {/* E5: aqui entra o painel "Vínculos" (PLANO-PESSOAS §4.6). Enquanto isso, `vinculos` segue no estado do
-            formulário e volta no PUT, para a edição não apagar os vínculos que a pessoa já tem. */}
+        <TPanel title="Vínculos">
+          <TFieldList<VinculoForm>
+            name="vinculos"
+            rotuloAdicionar="Acrescentar vínculo"
+            vazio="Nenhum vínculo."
+            rotuloLinha={(i) => `Vínculo ${i + 1}`}
+            novaLinha={NOVO_VINCULO}
+            colunas={[
+              {
+                name: 'pessoaId',
+                componente: (campo, i, linha) => (
+                  <TDBCombo
+                    name={campo}
+                    label="Pessoa"
+                    required
+                    width="medio"
+                    buscar={buscarPessoas}
+                    rotuloInicial={linha.pessoaRotulo}
+                    ajuda={linha.pessoaAtiva ? undefined : <TBadge tom="alerta">Inativa</TBadge>}
+                    acao={
+                      !somenteLeitura && (
+                        <TButton variant="novo" label="" aria-label="Cadastrar pessoa" title="Cadastrar pessoa" onClick={() => setRapida(i)} />
+                      )
+                    }
+                  />
+                ),
+              },
+              { name: 'tipo', componente: (campo) => <TCombo name={campo} label="É o quê desta pessoa" required opcoes={TIPO_VINCULO_OPCOES} /> },
+              { name: 'observacao', dividir: true, componente: (campo) => <TEntry name={campo} label="Observação" maxLength={255} /> },
+            ]}
+          />
+        </TPanel>
 
         {/* Sem Situação: a Situação fica na grade (inativar e reativar), como nos outros cadastros. */}
         <TAuditoria registro={salvo.data} />
@@ -316,6 +365,17 @@ export function PessoaForm() {
           </TFormActionsLeft>
         </TFormFooter>
       </TForm>
+
+      {/* Fora do TForm da pessoa: o modal tem o formulário dele (o submit de um não pode chegar ao outro). */}
+      {!somenteLeitura && (
+        <PessoaRapidaModal
+          aberto={rapida !== null}
+          onFechar={() => setRapida(null)}
+          onCriada={vincularCriada}
+          tiposCadastro={tiposCadastro.data ?? []}
+          tiposTelefone={tiposTelefone.data ?? []}
+        />
+      )}
     </TPage>
   );
 }

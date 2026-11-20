@@ -45,6 +45,9 @@ export type PessoaLista = z.infer<typeof pessoaListaSchema>;
 export const pessoaSelectSchema = z.object({ id: z.string(), codPessoa: z.number().int(), nome: z.string() });
 export type PessoaSelect = z.infer<typeof pessoaSelectSchema>;
 
+/** "9 · Solar Energia Ltda.": como a pessoa aparece no combo de vínculos e no rótulo do que já está escolhido. */
+export const rotuloDaPessoa = (p: Pick<PessoaSelect, 'codPessoa' | 'nome'>): string => `${p.codPessoa} · ${p.nome}`;
+
 /** PessoaResponseDto: a ficha. As filhas voltam ordenadas; o tipo de cada uma vem como `<X>SelectDto`. */
 export const pessoaSchema = z.object({
   id: z.string(),

@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import type { PessoaResponse } from '../api/pessoas';
-import { opcoesDosTiposDeCadastro, paraCorpo, paraForm, schema, VAZIO, type Dados } from './pessoa';
+import { rotuloDaPessoa, type PessoaResponse } from '../api/pessoas';
+import {
+  criarSchema,
+  NOVO_VINCULO,
+  opcoesDosTiposDeCadastro,
+  paraCorpo,
+  paraForm,
+  problemasDeVinculos,
+  schema,
+  VAZIO,
+  type Dados,
+  type VinculoForm,
+} from './pessoa';
 
 const tipo = (id: string, nome: string, ativo = true) => ({ id, nome, chave: null, ativo });
 
@@ -145,6 +156,71 @@ describe('paraForm e paraCorpo', () => {
     expect(c.telefones[0]).toEqual({ tipoId: 'tt1', numero: '11987654321', observacao: null, principal: true });
     expect(c.enderecos[0]).toMatchObject({ cep: '90610000', rua: null, numero: null, cidadeId: 'c1' });
     expect(c.enderecos[0]).not.toHaveProperty('cidadeRotulo');
+  });
+});
+
+describe('vínculos no formulário', () => {
+  const linha = (pessoaId: string, tipo: VinculoForm['tipo'] = 'FAMILIAR'): VinculoForm => ({
+    pessoaId,
+    pessoaRotulo: pessoaId,
+    pessoaAtiva: true,
+    tipo,
+    observacao: '',
+  });
+
+  it('a linha acrescentada nasce vazia e o schema pede a pessoa e o tipo', () => {
+    const r = schema.safeParse(valido({ vinculos: [NOVO_VINCULO] }));
+    expect(r.success).toBe(false);
+    const caminhos = r.error?.issues.map((i) => i.path.join('.'));
+    expect(caminhos).toContain('vinculos.0.pessoaId');
+    expect(caminhos).toContain('vinculos.0.tipo');
+  });
+
+  it('recusa a própria pessoa no caminho da linha', () => {
+    const r = criarSchema('eu').safeParse(valido({ vinculos: [linha('outra'), linha('eu')] }));
+    expect(r.success).toBe(false);
+    const erro = r.error?.issues.find((i) => i.path.join('.') === 'vinculos.1.pessoaId');
+    expect(erro?.message).toBe('Uma pessoa não pode ser vinculada a ela mesma.');
+  });
+
+  it('sem pessoa aberta (cadastro novo) não há "ela mesma" a recusar', () => {
+    expect(problemasDeVinculos([linha('a')])).toEqual([]);
+  });
+
+  it('recusa o par repetido, apontando a segunda ocorrência', () => {
+    expect(problemasDeVinculos([linha('a'), linha('b'), linha('a', 'CONJUGE')], 'eu')).toEqual([
+      { indice: 2, mensagem: 'Esta pessoa já está na lista.' },
+    ]);
+    const r = schema.safeParse(valido({ vinculos: [linha('a'), linha('a')] }));
+    expect(r.error?.issues.map((i) => i.path.join('.'))).toContain('vinculos.1.pessoaId');
+  });
+
+  it('linhas sem pessoa não contam como repetidas (o campo obrigatório avisa)', () => {
+    expect(problemasDeVinculos([linha(''), linha('')], 'eu')).toEqual([]);
+  });
+
+  it('a observação tem o limite da API', () => {
+    const longa = { ...linha('a'), observacao: 'x'.repeat(256) };
+    expect(schema.safeParse(valido({ vinculos: [longa] })).success).toBe(false);
+  });
+
+  it('paraCorpo manda pessoa, tipo e observação (sem rótulo nem situação) e texto vazio vira null', () => {
+    const c = paraCorpo(valido({ vinculos: [{ ...linha('a', 'DEPENDENTE'), observacao: ' filho ' }, linha('b', 'CONTATO')] }));
+    expect(c.vinculos).toEqual([
+      { pessoaId: 'a', tipo: 'DEPENDENTE', observacao: 'filho' },
+      { pessoaId: 'b', tipo: 'CONTATO', observacao: null },
+    ]);
+  });
+
+  it('paraForm guarda se a pessoa vinculada está inativa', () => {
+    const f = paraForm(
+      ficha({ vinculos: [{ pessoa: { id: 'p3', codPessoa: 4, nome: 'Antiga' }, pessoaAtiva: false, tipo: 'FAMILIAR', observacao: 'tio' }] }),
+    );
+    expect(f.vinculos[0]).toEqual({ pessoaId: 'p3', pessoaRotulo: '4 · Antiga', pessoaAtiva: false, tipo: 'FAMILIAR', observacao: 'tio' });
+  });
+
+  it('o rótulo do combo é "código · nome"', () => {
+    expect(rotuloDaPessoa({ codPessoa: 12, nome: 'Marina Souza' })).toBe('12 · Marina Souza');
   });
 });
 

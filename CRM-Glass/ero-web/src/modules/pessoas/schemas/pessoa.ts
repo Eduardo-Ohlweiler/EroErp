@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { OpcaoCheckBox, OpcaoCombo, OpcaoRadio } from '../../../design-system/kit';
 import { documentoCru, soDigitos } from '../../../shared/util/format';
 import { rotuloDaCidade } from '../../../shared/api/localidade';
-import type { PessoaCreate, PessoaResponse } from '../api/pessoas';
+import { rotuloDaPessoa, type PessoaCreate, type PessoaResponse } from '../api/pessoas';
 
 /*
  * Formulário da pessoa: espelha o PessoaCreateDto / PessoaUpdateDto da ero-api, com os mesmos caminhos de campo
@@ -11,8 +11,8 @@ import type { PessoaCreate, PessoaResponse } from '../api/pessoas';
  *
  * O formulário guarda os dois blocos (física e jurídica); o `paraCorpo` manda `null` nos campos do outro tipo.
  * `cidadeRotulo` e `pessoaRotulo` só alimentam o `TDBCombo` (o nome do que já está escolhido) e não vão para a API.
- * `vinculos` vive no estado e volta no PUT sem a tela mexer: a lista enviada é o estado completo, e sem ela uma
- * edição apagaria os vínculos da pessoa (o painel é da E5).
+ * `vinculos` é o estado completo e volta no PUT: a API substitui a lista (o que sai da tela é apagado). `tipo` é o que a
+ * OUTRA pessoa é desta; a orientação e o inverso a API resolve. `pessoaAtiva` só alimenta o aviso "Inativa".
  */
 
 /** Física e Jurídica: o mesmo enum do filtro da lista. */
@@ -75,14 +75,15 @@ const endereco = z.object({
 });
 
 const vinculo = z.object({
-  pessoaId: z.string(),
+  pessoaId: z.string().min(1, 'Escolha a pessoa.'),
   pessoaRotulo: z.string(),
-  tipo: z.enum(TIPOS_VINCULO),
-  observacao: z.string(),
+  pessoaAtiva: z.boolean(),
+  /** `''` = linha nova ainda sem escolha (o `: boolean` evita que o TS infira o predicado e tire o `''` do tipo) */
+  tipo: z.enum(['', ...TIPOS_VINCULO]).refine((v): boolean => v !== '', 'Escolha o tipo.'),
+  observacao: z.string().max(255, 'No máximo 255 caracteres.'),
 });
 
-export const schema = z
-  .object({
+const base = z.object({
     tipoPessoa: z.enum(['FISICA', 'JURIDICA'], 'Escolha o tipo de pessoa.'),
     nome: z.string().trim().min(1, 'Informe o nome.').max(255, 'No máximo 255 caracteres.'),
     // Só física
@@ -104,21 +105,59 @@ export const schema = z
     redesSociais: z.array(redeSocial),
     enderecos: z.array(endereco),
     vinculos: z.array(vinculo),
-  })
-  .superRefine((d, ctx) => {
-    if (d.tipoPessoa === 'FISICA' && d.cpf !== '' && documentoCru(d.cpf).length !== 11) {
-      ctx.addIssue({ code: 'custom', path: ['cpf'], message: 'CPF incompleto.' });
+});
+
+/** Só confere o documento do tipo escolhido (conforto: CPF e CNPJ válidos e únicos são da API). */
+export function conferirDocumento(d: { tipoPessoa: 'FISICA' | 'JURIDICA'; cpf: string; cnpj: string }, ctx: z.RefinementCtx): void {
+  if (d.tipoPessoa === 'FISICA' && d.cpf !== '' && documentoCru(d.cpf).length !== 11) {
+    ctx.addIssue({ code: 'custom', path: ['cpf'], message: 'CPF incompleto.' });
+  }
+  if (d.tipoPessoa === 'JURIDICA' && d.cnpj !== '' && documentoCru(d.cnpj).length !== 14) {
+    ctx.addIssue({ code: 'custom', path: ['cnpj'], message: 'CNPJ incompleto.' });
+  }
+}
+
+/** Um erro na pessoa de uma linha de vínculo (`vinculos.<indice>.pessoaId`). */
+export type ProblemaDeVinculo = { indice: number; mensagem: string };
+
+/**
+ * O que o formulário recusa antes de ir à API nos vínculos: a própria pessoa e a pessoa repetida na lista (o par é
+ * único). Conforto: a API repete as duas regras (400 no mesmo campo) e confere o resto (empresa PJ, inativa nova...).
+ * Linha sem pessoa escolhida fica para o `min(1)` do campo.
+ */
+export function problemasDeVinculos(vinculos: readonly { pessoaId: string }[], idAberta?: string): ProblemaDeVinculo[] {
+  const vistas = new Set<string>();
+  const problemas: ProblemaDeVinculo[] = [];
+  vinculos.forEach((v, indice) => {
+    if (!v.pessoaId) return;
+    if (idAberta && v.pessoaId === idAberta) {
+      problemas.push({ indice, mensagem: 'Uma pessoa não pode ser vinculada a ela mesma.' });
+    } else if (vistas.has(v.pessoaId)) {
+      problemas.push({ indice, mensagem: 'Esta pessoa já está na lista.' });
     }
-    if (d.tipoPessoa === 'JURIDICA' && d.cnpj !== '' && documentoCru(d.cnpj).length !== 14) {
-      ctx.addIssue({ code: 'custom', path: ['cnpj'], message: 'CNPJ incompleto.' });
+    vistas.add(v.pessoaId);
+  });
+  return problemas;
+}
+
+/** O schema do formulário; `idAberta` é a pessoa em edição (ela não se vincula a si mesma). */
+export function criarSchema(idAberta?: string) {
+  return base.superRefine((d, ctx) => {
+    conferirDocumento(d, ctx);
+    for (const p of problemasDeVinculos(d.vinculos, idAberta)) {
+      ctx.addIssue({ code: 'custom', path: ['vinculos', p.indice, 'pessoaId'], message: p.mensagem });
     }
   });
+}
 
-export type Dados = z.infer<typeof schema>;
+export const schema = criarSchema();
+
+export type Dados = z.infer<typeof base>;
 export type TelefoneForm = Dados['telefones'][number];
 export type EmailForm = Dados['emails'][number];
 export type RedeSocialForm = Dados['redesSociais'][number];
 export type EnderecoForm = Dados['enderecos'][number];
+export type VinculoForm = Dados['vinculos'][number];
 
 /** Uma pessoa nova: física, sem nada marcado e sem nenhuma lista. */
 export const VAZIO: Dados = {
@@ -156,6 +195,7 @@ export const NOVO_ENDERECO: EnderecoForm = {
   cidadeId: '',
   cidadeRotulo: '',
 };
+export const NOVO_VINCULO: VinculoForm = { pessoaId: '', pessoaRotulo: '', pessoaAtiva: true, tipo: '', observacao: '' };
 
 /** Os campos do outro tipo de pessoa: quem troca Física ↔ Jurídica limpa os do bloco que saiu. */
 export const CAMPOS_DA_FISICA = ['cpf', 'rg', 'dataNascimento', 'sexo'] as const;
@@ -192,7 +232,8 @@ export function paraForm(p: PessoaResponse): Dados {
     })),
     vinculos: p.vinculos.map((v) => ({
       pessoaId: v.pessoa.id,
-      pessoaRotulo: `${v.pessoa.codPessoa} · ${v.pessoa.nome}`,
+      pessoaRotulo: rotuloDaPessoa(v.pessoa),
+      pessoaAtiva: v.pessoaAtiva,
       tipo: v.tipo,
       observacao: v.observacao ?? '',
     })),
@@ -233,7 +274,8 @@ export function paraCorpo(d: Dados): PessoaCreate {
       complemento: texto(e.complemento),
       principal: e.principal,
     })),
-    vinculos: d.vinculos.map((v) => ({ pessoaId: v.pessoaId, tipo: v.tipo, observacao: texto(v.observacao) })),
+    // linha sem tipo escolhido nem chega aqui (o schema recusa); o `flatMap` só tira o `''` do tipo
+    vinculos: d.vinculos.flatMap((v) => (v.tipo === '' ? [] : [{ pessoaId: v.pessoaId, tipo: v.tipo, observacao: texto(v.observacao) }])),
   };
 }
 
