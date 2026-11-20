@@ -6,7 +6,6 @@ import { ExigeTela } from '../../shared/sessao';
  * (ExigeTela, dentro de um contratante; docs/04-permissoes.md, grupo PESSOAS).
  *   /cadastros/pessoas            lista                       (ExigeTela pessoa-list)
  *   /cadastros/pessoas/novo · /:id  ficha                     (ExigeTela pessoa-form)
- *                                 provisória (PessoaEmConstrucao) até a E4b trazer o PessoaForm
  */
 export const rotasPessoas: RouteObject[] = [
   {
@@ -19,16 +18,15 @@ export const rotasPessoas: RouteObject[] = [
   {
     path: 'cadastros/pessoas/novo',
     lazy: async () => {
-      // troca (E4b): `const { PessoaForm } = await import('./pages/PessoaForm')`
-      const { PessoaEmConstrucao } = await import('./pages/PessoaEmConstrucao');
-      return { element: <ExigeTela tela="pessoa-form" escopo="contratante"><PessoaEmConstrucao /></ExigeTela> };
+      const { PessoaForm } = await import('./pages/PessoaForm');
+      return { element: <ExigeTela tela="pessoa-form" escopo="contratante"><PessoaForm /></ExigeTela> };
     },
   },
   {
     path: 'cadastros/pessoas/:id',
     lazy: async () => {
-      const { PessoaEmConstrucao } = await import('./pages/PessoaEmConstrucao');
-      return { element: <ExigeTela tela="pessoa-form" escopo="contratante"><PessoaEmConstrucao /></ExigeTela> };
+      const { PessoaForm } = await import('./pages/PessoaForm');
+      return { element: <ExigeTela tela="pessoa-form" escopo="contratante"><PessoaForm /></ExigeTela> };
     },
   },
 ];
