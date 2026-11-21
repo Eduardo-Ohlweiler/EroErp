@@ -3,7 +3,8 @@ package com.api.ero_api.compartilhado.util;
 import java.util.Locale;
 
 /**
- * CPF (11 dígitos) ou CNPJ (14 posições), com dígito verificador.
+ * CPF (11 dígitos) ou CNPJ (14 posições), com dígito verificador. Também a CNH da pessoa
+ * física (11 dígitos, {@link #cnhValida}).
  *
  * <p>Aceita o CNPJ alfanumérico da Receita (IN RFB 2.229/2024, emitido desde
  * julho/2026): as 12 primeiras posições podem ter letras e as 2 últimas são
@@ -53,6 +54,42 @@ public final class DocumentoValidator {
         }
         return digitoCnpj(doc, PESOS_CNPJ_1) == doc.charAt(12) - '0'
                 && digitoCnpj(doc, PESOS_CNPJ_2) == doc.charAt(13) - '0';
+    }
+
+    /**
+     * CNH: 11 dígitos com os dois verificadores do DETRAN (o mesmo cálculo da biblioteca
+     * {@code validate-docbr}); recusa sequência repetida. Já normalizada (só dígitos).
+     * <ul>
+     *   <li>DV1 = soma(d[i] × (9 − i)), i de 0 a 8, mod 11. Se der 10 ou mais, DV1 = 0 e o
+     *       desconto do DV2 passa a 2;</li>
+     *   <li>DV2 = (soma(d[i] × (i + 1)) mod 11) − desconto. Menor que 0: soma 11. 10 ou mais: 0.</li>
+     * </ul>
+     */
+    public static boolean cnhValida(String cnh) {
+        if (cnh == null || !cnh.matches("\\d{11}") || repetido(cnh)) {
+            return false;
+        }
+        int soma1 = 0;
+        int soma2 = 0;
+        for (int i = 0; i < 9; i++) {
+            int d = cnh.charAt(i) - '0';
+            soma1 += d * (9 - i);
+            soma2 += d * (i + 1);
+        }
+        int dv1 = soma1 % 11;
+        int desconto = 0;
+        if (dv1 >= 10) {
+            dv1 = 0;
+            desconto = 2;
+        }
+        int dv2 = soma2 % 11 - desconto;
+        if (dv2 < 0) {
+            dv2 += 11;
+        }
+        if (dv2 >= 10) {
+            dv2 = 0;
+        }
+        return dv1 == cnh.charAt(9) - '0' && dv2 == cnh.charAt(10) - '0';
     }
 
     private static boolean repetido(String doc) {

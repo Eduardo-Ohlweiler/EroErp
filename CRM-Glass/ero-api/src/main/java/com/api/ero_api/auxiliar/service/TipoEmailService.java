@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Tipos de e-mail do contratante (cadastro auxiliar; tela FormList). Cópia do
- * TipoCadastroService (o modelo dos 5 auxiliares), só com a troca de nomes.
+ * TipoCadastroService (o modelo dos 7 auxiliares), só com a troca de nomes.
  *
  * <ul>
  *   <li>todo método começa com {@code exigirTenantSelecionado()}: na visão de plataforma

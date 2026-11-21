@@ -18,7 +18,9 @@ public enum Tela {
     TIPO_TELEFONE_FORMLIST("tipo-telefone-formlist", "Tipos de telefone"),
     TIPO_EMAIL_FORMLIST("tipo-email-formlist", "Tipos de e-mail"),
     TIPO_ENDERECO_FORMLIST("tipo-endereco-formlist", "Tipos de endereço"),
-    TIPO_REDE_SOCIAL_FORMLIST("tipo-rede-social-formlist", "Tipos de rede social");
+    TIPO_REDE_SOCIAL_FORMLIST("tipo-rede-social-formlist", "Tipos de rede social"),
+    ESTADO_CIVIL_FORMLIST("estado-civil-formlist", "Estados civis"),
+    PROFISSAO_FORMLIST("profissao-formlist", "Profissões");
 
     private final String codigo;
     private final String rotulo;

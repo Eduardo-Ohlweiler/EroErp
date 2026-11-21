@@ -78,6 +78,35 @@ Fonte: EroErp 2.0 (`EroErp2.0/ero-erp-api` e `EroErp2.0/ero`). Detalhes de regra
 - Filhas (telefone, e-mail...) casadas por `id`: aqui a lista é o estado completo e substitui a anterior.
 - Tenant filtrado à mão em cada consulta.
 
+## Pesquisa de 20/11/2026: dados complementares de Pessoas
+
+Caminhos relativos a `ero-erp-api/src/main/java/com/api/ero_erp` (antigo) e `EroErp2.0` (2.0).
+
+**Conclusão:** o antigo (`ero/`, `ero-erp-api/`) só tinha CNH, Categoria e Validade. O 2.0 não tinha nada disso. Estado civil, profissão, nacionalidade, naturalidade, filiação, representante legal, banco, PIX, CNAE e regime tributário não existem em nenhum dos dois: são projeto novo, sem cópia.
+
+**O que veio do antigo**
+- CNH: `pessoa.cnh`, `cnh_categoria` e `cnh_validade` (migration 012 de lá), só pessoa física.
+
+**O que não foi copiado**
+- Categoria da CNH em texto livre (VARCHAR 5): aqui é enum (A, B, AB, C, D, E, AC, AD, AE).
+- CNH sem dígito verificador, só "11 dígitos": aqui o DV é conferido.
+- O "só grava se preenchido" do `PessoaService`, que não deixava limpar o campo.
+- CNH no filtro da lista: aqui fica só na ficha (LGPD).
+- A `razao_social` separada do nome (decisão de 16/11: o Nome vira "Razão social").
+- Título de eleitor, PIS, CTPS e escolaridade (só RH), limite de crédito, condição de pagamento e vendedor (pertencem ao pedido), foto e anexos (módulo de arquivos).
+
+**Ficou para depois**
+- Fiscais (regime, contribuinte de ICMS, CNAE principal e secundários): quando houver nota fiscal. O `docs/09` do 2.0 diz o mesmo.
+- Bancários e PIX: quando houver cobrança, em tabela ligada, com número da conta e chave PIX cifrados.
+
+**Gerador de contratos do antigo (referência futura)**
+- `ModeloDocumento`: nome, descrição, `conteudo` (TEXT) e ativo.
+- `Documento`: modelo, emitente, pessoa cliente, valores, forma de pagamento, parcelas, status e **`conteudoGerado`**, o texto final congelado na emissão. O contrato emitido não muda se o modelo mudar.
+- `DocumentoTagService` troca tags por `String.replace`: `[cliente_pessoa_nome]`, `_cpf`, `_rg`, `_razao_social`, `[emitente_pessoa_*]`, `[contrato_valor_final]`, `[data_atual]`.
+- Faltavam tags de endereço, telefone, e-mail, estado civil, profissão, CNH e representante: exatamente os campos novos.
+- Defeitos a evitar: tag desconhecida fica no texto sem aviso; `replace` em cadeia (valor com colchetes vira tag); CPF sem máscara; número do contrato igual ao id.
+- Aqui, a flexão "(a)" virá do sexo e da `chave` do estado civil.
+
 ## Pesquisa de 20/11/2026: Filiais
 
 Fonte: `EroErp2.0/docs/09-modulo-filiais.md` (e `10` a `12`, que usam filial) e o código do 2.0. Próximo módulo do CRM Glass (ver `CONTINUAR.md`).

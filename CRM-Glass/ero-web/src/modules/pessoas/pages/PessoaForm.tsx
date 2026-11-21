@@ -8,6 +8,7 @@ import {
   TBadge,
   TButton,
   TCheckBox,
+  TCol,
   TCombo,
   TDate,
   TDBCombo,
@@ -27,7 +28,7 @@ import {
 import { TrocaDeBlocos } from '../../../motion/coreografia';
 import { ErroApi } from '../../../shared/api/erros';
 import { chaveDaSelecao, opcoesDeTipo, selecionarTipos, type RecursoAuxiliar } from '../../../shared/api/auxiliares';
-import { buscarCidades, consultarCep, rotuloDaCidade } from '../../../shared/api/localidade';
+import { buscarCidades, CHAVE_ESTADOS, consultarCep, listarEstados, opcoesDeUf, rotuloDaCidade } from '../../../shared/api/localidade';
 import { ROTULO_CADASTROS } from '../../../shared/sessao';
 import { hojeIso } from '../../../shared/util/format';
 import { PessoaRapidaModal } from '../components/PessoaRapidaModal';
@@ -35,6 +36,8 @@ import { pessoasApi, rotuloDaPessoa, type PessoaResponse } from '../api/pessoas'
 import {
   CAMPOS_DA_FISICA,
   CAMPOS_DA_JURIDICA,
+  CNH_CATEGORIA_OPCOES,
+  cnhVencida,
   criarSchema,
   NOVA_REDE_SOCIAL,
   NOVO_ENDERECO,
@@ -83,8 +86,18 @@ export function PessoaForm() {
   const tiposEmail = useTipos('tipos-email');
   const tiposEndereco = useTipos('tipos-endereco');
   const tiposRedeSocial = useTipos('tipos-rede-social');
+  const estadosCivis = useTipos('estados-civis');
+  const profissoes = useTipos('profissoes');
+  const estados = useQuery({ queryKey: CHAVE_ESTADOS, queryFn: listarEstados, staleTime: Infinity }); // a UF do órgão emissor do RG
   const tiposCarregando =
-    tiposCadastro.isLoading || tiposTelefone.isLoading || tiposEmail.isLoading || tiposEndereco.isLoading || tiposRedeSocial.isLoading;
+    tiposCadastro.isLoading ||
+    tiposTelefone.isLoading ||
+    tiposEmail.isLoading ||
+    tiposEndereco.isLoading ||
+    tiposRedeSocial.isLoading ||
+    estadosCivis.isLoading ||
+    profissoes.isLoading ||
+    estados.isLoading;
 
   const inicial = useMemo(() => (id ? (salvo.data ? paraForm(salvo.data) : undefined) : VAZIO), [id, salvo.data]);
   useEffect(() => {
@@ -178,7 +191,12 @@ export function PessoaForm() {
   const opcoesEmail = opcoesDeTipo(tiposEmail.data ?? [], salvo.data?.emails.map((e) => e.tipo));
   const opcoesEndereco = opcoesDeTipo(tiposEndereco.data ?? [], salvo.data?.enderecos.map((e) => e.tipo));
   const opcoesRedeSocial = opcoesDeTipo(tiposRedeSocial.data ?? [], salvo.data?.redesSociais.map((r) => r.tipo));
+  const opcoesEstadoCivil = opcoesDeTipo(estadosCivis.data ?? [], salvo.data?.estadoCivil ? [salvo.data.estadoCivil] : []);
+  const opcoesProfissao = opcoesDeTipo(profissoes.data ?? [], salvo.data?.profissao ? [salvo.data.profissao] : []);
+  const opcoesUf = opcoesDeUf(estados.data ?? []);
   const fisica = tipo === 'FISICA';
+  const vencida = cnhVencida(form.watch('cnhValidade') ?? '');
+  const naturalidadeRotulo = form.watch('naturalidadeRotulo');
 
   return (
     <TPage
@@ -206,14 +224,61 @@ export function PessoaForm() {
                 <TEntry name="cpf" label="CPF" mascara="cpf" />
               </TRow>
               <TRow>
-                <TEntry name="rg" label="RG" maxLength={20} width="cpf" />
-              </TRow>
-              <TRow>
                 <TDate name="dataNascimento" label="Data de nascimento" max={hojeIso()} />
               </TRow>
               <TRow>
                 <TRadio name="sexo" label="Sexo" opcoes={SEXO_OPCOES} vazio="Não informado" />
               </TRow>
+
+              {/* troca: os campos de um documento ficam na mesma linha (docs/07 §1), cada um na sua TCol (largura do próprio campo) */}
+              <TPanel title="Documentos">
+                <TRow>
+                  <TCol width="auto">
+                    <TEntry name="rg" label="RG" maxLength={20} width="cpf" />
+                  </TCol>
+                  <TCol width="auto">
+                    <TEntry name="rgOrgaoEmissor" label="Órgão emissor" maxLength={15} width="codigo" />
+                  </TCol>
+                  <TCol width="auto">
+                    <TCombo name="rgEstadoId" label="UF" opcoes={opcoesUf} vazio="" width="uf" />
+                  </TCol>
+                  <TCol width="auto">
+                    <TDate name="rgDataEmissao" label="Emissão" max={hojeIso()} />
+                  </TCol>
+                </TRow>
+                <TRow>
+                  <TCol width="auto">
+                    <TEntry name="cnh" label="CNH" mascara="cnh" />
+                  </TCol>
+                  <TCol width="auto">
+                    <TCombo name="cnhCategoria" label="Categoria" opcoes={CNH_CATEGORIA_OPCOES} vazio="" width="uf" />
+                  </TCol>
+                  <TCol width="auto">
+                    <TDate name="cnhValidade" label="Validade" ajuda={vencida ? <TBadge tom="alerta">Vencida</TBadge> : undefined} />
+                  </TCol>
+                </TRow>
+              </TPanel>
+
+              <TPanel title="Dados civis">
+                <TRow>
+                  <TCombo name="estadoCivilId" label="Estado civil" opcoes={opcoesEstadoCivil} />
+                </TRow>
+                <TRow>
+                  <TCombo name="profissaoId" label="Profissão" opcoes={opcoesProfissao} />
+                </TRow>
+                <TRow>
+                  <TEntry name="nacionalidade" label="Nacionalidade" maxLength={40} width="curto" />
+                </TRow>
+                <TRow>
+                  <TDBCombo name="naturalidadeId" label="Naturalidade" width="medio" buscar={buscarCidades} rotuloInicial={naturalidadeRotulo} />
+                </TRow>
+                <TRow>
+                  <TEntry name="nomeMae" label="Nome da mãe" maxLength={255} />
+                </TRow>
+                <TRow>
+                  <TEntry name="nomePai" label="Nome do pai" maxLength={255} />
+                </TRow>
+              </TPanel>
             </>
           ) : (
             <>
@@ -222,6 +287,9 @@ export function PessoaForm() {
               </TRow>
               <TRow>
                 <TEntry name="cnpj" label="CNPJ" mascara="cnpj" />
+              </TRow>
+              <TRow>
+                <TDate name="dataAbertura" label="Data de abertura" max={hojeIso()} />
               </TRow>
               <TRow>
                 <TEntry name="inscricaoEstadual" label="Inscrição estadual" maxLength={20} width="curto" />

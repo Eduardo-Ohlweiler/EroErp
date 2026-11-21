@@ -1,24 +1,26 @@
 # Cadastros auxiliares
 
-**Status: entregue em 20/11/2026 junto com [[pessoas]].**
+**Status: entregue em 20/11/2026 junto com [[pessoas]]. Estado civil e Profissão entraram em 21/11/2026 (migration 019).**
 
 São as listas de tipos que a pessoa escolhe. Menu: **Cadastros › Auxiliares**.
 
 ## Regras vigentes
 
-- Cinco cadastros, cada um com a sua tabela e a sua tela (modelo FormList):
+- Sete cadastros, cada um com a sua tabela e a sua tela (modelo FormList):
   - Tipo de cadastro: Cliente, Fornecedor, Funcionário, Lead, Outros;
   - Tipo de telefone: Celular, WhatsApp, Residencial, Comercial;
   - Tipo de e-mail: Particular, Comercial;
   - Tipo de endereço: Residencial, Comercial, Cobrança;
-  - Tipo de rede social: Instagram, Facebook, LinkedIn, TikTok, X.
+  - Tipo de rede social: Instagram, Facebook, LinkedIn, TikTok, X;
+  - Estado civil: Solteiro(a), Casado(a), União estável, Separado(a), Divorciado(a), Viúvo(a);
+  - Profissão: Autônomo(a), Empresário(a), Servidor(a) público(a), Profissional liberal, Aposentado(a), Estudante, Do lar. Sem a tabela CBO.
 - **Itens do sistema** vêm pré-cadastrados em cada contratante. Não se editam, não se inativam (imutáveis, com trava no banco).
 - **Itens do contratante**: ele cria, edita e inativa. "Excluir" é inativar; não há exclusão física.
-- Nome de 1 a 25 caracteres, único no contratante sem diferenciar maiúsculas nem acento ("celular" = "Celular"), contando os do sistema.
+- Nome de 1 a 25 caracteres (na **profissão, até 40**, porque "Técnico em segurança do trabalho" não cabe em 25), único no contratante sem diferenciar maiúsculas nem acento ("celular" = "Celular"), contando os do sistema.
 - Item inativo some dos combos e continua aparecendo nas pessoas que já o usam, como "Nome (inativo)". Só aquela pessoa pode mantê-lo; tipo inativo novo é recusado.
 - Código por tipo (`cod_tipo_telefone`, etc.): os do sistema são 1..N na ordem do enum, e o primeiro do contratante continua do N+1 ([[codigo-sequencial]]).
-- Um grupo de permissão só, `CADASTROS_AUXILIARES`, com as 5 telas (LER e ESCREVER). Os combos leem pela rota `/selecao`, aberta a quem tem acesso liberado.
-- Menu: o ícone "Auxiliares" abre um submenu flutuante com as 5 telas; a rota `/cadastros/auxiliares` sozinha leva à primeira tela liberada.
+- Um grupo de permissão só, `CADASTROS_AUXILIARES`, com as 7 telas (LER e ESCREVER). Quem já tinha o grupo ganhou as duas novas sozinho. Os combos leem pela rota `/selecao`, aberta a quem tem acesso liberado.
+- Menu: o ícone "Auxiliares" abre um submenu flutuante com as 7 telas; a rota `/cadastros/auxiliares` sozinha leva à primeira tela liberada.
 
 ## Item novo do sistema
 
@@ -29,6 +31,7 @@ São as listas de tipos que a pessoa escolhe. Menu: **Cadastros › Auxiliares**
 
 - 16/11/2026: itens do sistema imutáveis, itens do contratante editáveis e inativáveis; tipo de pessoa fica em enum e os outros cinco viram auxiliares.
 - 16/11/2026 (P2): item do sistema não pode ser inativado.
+- 20/11/2026: estado civil e profissão com itens do sistema e sem a tabela CBO; profissão com nome até 40 caracteres. Um grupo de permissão só para todos os auxiliares.
 
 ## Doc técnico
 

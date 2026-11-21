@@ -19,14 +19,14 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import tools.jackson.databind.JsonNode;
 
 /**
- * Os 5 cadastros auxiliares. Cada teste roda nas 5 rotas: as 4 cópias do TipoCadastro
+ * Os 7 cadastros auxiliares. Cada teste roda nas 7 rotas: as 6 cópias do TipoCadastro
  * não escapam sem teste. Além dos 4 obrigatórios, o código ({@code cod_<tabela>}) e as
  * regras dos itens do sistema.
  */
 class AuxiliarIntegracaoTest extends IntegracaoTest {
 
-    /** Uma rota de auxiliar: o campo do código e os itens do sistema na ordem do código. */
-    record Auxiliar(String rota, String campoCodigo, List<String> chaves, List<String> nomes) {
+    /** Uma rota de auxiliar: o campo do código, o tamanho máximo do nome e os itens do sistema na ordem do código. */
+    record Auxiliar(String rota, String campoCodigo, int maximoNome, List<String> chaves, List<String> nomes) {
 
         int quantosDoSistema() {
             return chaves.size();
@@ -40,21 +40,29 @@ class AuxiliarIntegracaoTest extends IntegracaoTest {
 
     static Stream<Auxiliar> auxiliares() {
         return Stream.of(
-                new Auxiliar("/api/tipos-cadastro", "codTipoCadastro",
+                new Auxiliar("/api/tipos-cadastro", "codTipoCadastro", 25,
                         List.of("CLIENTE", "FORNECEDOR", "FUNCIONARIO", "LEAD", "OUTROS"),
                         List.of("Cliente", "Fornecedor", "Funcionário", "Lead", "Outros")),
-                new Auxiliar("/api/tipos-telefone", "codTipoTelefone",
+                new Auxiliar("/api/tipos-telefone", "codTipoTelefone", 25,
                         List.of("CELULAR", "WHATSAPP", "RESIDENCIAL", "COMERCIAL"),
                         List.of("Celular", "WhatsApp", "Residencial", "Comercial")),
-                new Auxiliar("/api/tipos-email", "codTipoEmail",
+                new Auxiliar("/api/tipos-email", "codTipoEmail", 25,
                         List.of("PARTICULAR", "COMERCIAL"),
                         List.of("Particular", "Comercial")),
-                new Auxiliar("/api/tipos-endereco", "codTipoEndereco",
+                new Auxiliar("/api/tipos-endereco", "codTipoEndereco", 25,
                         List.of("RESIDENCIAL", "COMERCIAL", "COBRANCA"),
                         List.of("Residencial", "Comercial", "Cobrança")),
-                new Auxiliar("/api/tipos-rede-social", "codTipoRedeSocial",
+                new Auxiliar("/api/tipos-rede-social", "codTipoRedeSocial", 25,
                         List.of("INSTAGRAM", "FACEBOOK", "LINKEDIN", "TIKTOK", "X"),
-                        List.of("Instagram", "Facebook", "LinkedIn", "TikTok", "X")));
+                        List.of("Instagram", "Facebook", "LinkedIn", "TikTok", "X")),
+                new Auxiliar("/api/estados-civis", "codEstadoCivil", 25,
+                        List.of("SOLTEIRO", "CASADO", "UNIAO_ESTAVEL", "SEPARADO", "DIVORCIADO", "VIUVO"),
+                        List.of("Solteiro(a)", "Casado(a)", "União estável", "Separado(a)", "Divorciado(a)", "Viúvo(a)")),
+                new Auxiliar("/api/profissoes", "codProfissao", 40,
+                        List.of("AUTONOMO", "EMPRESARIO", "SERVIDOR_PUBLICO", "PROFISSIONAL_LIBERAL", "APOSENTADO",
+                                "ESTUDANTE", "DO_LAR"),
+                        List.of("Autônomo(a)", "Empresário(a)", "Servidor(a) público(a)", "Profissional liberal",
+                                "Aposentado(a)", "Estudante", "Do lar")));
     }
 
     // ------------------------------------------------------------ obrigatórios
@@ -111,13 +119,14 @@ class AuxiliarIntegracaoTest extends IntegracaoTest {
 
         assertThat(campos(post(a.rota(), token, Map.of("nome", "")))).containsExactly("nome");
         assertThat(campos(post(a.rota(), token, Map.of("nome", "   ")))).containsExactly("nome");
-        assertThat(campos(post(a.rota(), token, Map.of("nome", "A".repeat(26))))).containsExactly("nome");
-        assertThat(status(post(a.rota(), token, Map.of("nome", unico("Teto").substring(0, 13) + "B".repeat(12)))))
-                .as("25 caracteres cabem").isEqualTo(201);
+        assertThat(campos(post(a.rota(), token, Map.of("nome", "A".repeat(a.maximoNome() + 1))))).containsExactly("nome");
+        assertThat(status(post(a.rota(), token,
+                Map.of("nome", unico("Teto").substring(0, 13) + "B".repeat(a.maximoNome() - 13)))))
+                .as("%d caracteres cabem", a.maximoNome()).isEqualTo(201);
 
         String id = corpo(post(a.rota(), token, Map.of("nome", unico("Valido")))).path("id").asString();
         assertThat(campos(put(a.rota() + "/" + id, token, Map.of("nome", "Sem versao")))).containsExactly("version");
-        assertThat(campos(put(a.rota() + "/" + id, token, Map.of("nome", "B".repeat(26), "version", 0))))
+        assertThat(campos(put(a.rota() + "/" + id, token, Map.of("nome", "B".repeat(a.maximoNome() + 1), "version", 0))))
                 .containsExactly("nome");
         assertThat(status(get(a.rota() + "?sort=chave", token))).as("ordenação fora da lista branca").isEqualTo(422);
     }
@@ -312,6 +321,30 @@ class AuxiliarIntegracaoTest extends IntegracaoTest {
             assertThat(erro.path("campo").asString()).isEqualTo("nome");
             assertThat(erro.path("mensagem").asString()).isEqualTo("Já existe um tipo de telefone com este nome.");
         }
+    }
+
+    /** As 2 cópias novas falam no gênero certo: "um estado civil", "uma profissão". */
+    @Test
+    void mensagensNoGeneroCerto_estadoCivilEProfissao() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        String inexistente = java.util.UUID.randomUUID().toString();
+
+        MvcTestResult civil = post("/api/estados-civis", token, Map.of("nome", "uniao ESTÁVEL"));
+        assertThat(status(civil)).isEqualTo(409);
+        assertThat(corpo(civil).path("erros").get(0).path("mensagem").asString())
+                .isEqualTo("Já existe um estado civil com este nome.");
+        MvcTestResult civilNaoAchado = put("/api/estados-civis/" + inexistente, token, Map.of("nome", unico("X"), "version", 0));
+        assertThat(status(civilNaoAchado)).isEqualTo(404);
+        assertThat(corpo(civilNaoAchado).path("detail").asString()).isEqualTo("Estado civil não encontrado.");
+
+        MvcTestResult profissao = post("/api/profissoes", token, Map.of("nome", "SERVIDOR(A) PUBLICO(A)"));
+        assertThat(status(profissao)).isEqualTo(409);
+        assertThat(corpo(profissao).path("erros").get(0).path("mensagem").asString())
+                .isEqualTo("Já existe uma profissão com este nome.");
+        MvcTestResult profissaoNaoAchada = patch("/api/profissoes/" + inexistente + "/inativar", token);
+        assertThat(status(profissaoNaoAchada)).isEqualTo(404);
+        assertThat(corpo(profissaoNaoAchada).path("detail").asString()).isEqualTo("Profissão não encontrada.");
     }
 
     @ParameterizedTest

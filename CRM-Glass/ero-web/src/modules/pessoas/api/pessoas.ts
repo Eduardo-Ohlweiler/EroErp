@@ -11,18 +11,42 @@ import { tipoSelectSchema } from '../../../shared/api/auxiliares';
  *   POST  /api/pessoas                            → 201 PessoaResponseDto (PESSOAS_ESCREVER)
  *   PUT   /api/pessoas/{id}                       → com `version` (409 = alterada por outra pessoa; também por vínculo)
  *   PATCH /api/pessoas/{id}/inativar | /ativar    → 204
- * Datas em ISO-8601 (a de nascimento é só data, `yyyy-MM-dd`). CPF, CNPJ e telefone chegam só com dígitos.
+ * Datas em ISO-8601 (nascimento, emissão do RG, validade da CNH e abertura são só data, `yyyy-MM-dd`). CPF, CNPJ, CNH e
+ * telefone chegam só com dígitos. Os dados complementares (RG com órgão/UF/emissão, CNH, estado civil, profissão,
+ * nacionalidade, naturalidade, filiação, abertura) só estão na ficha: a lista e a exportação (`PessoaListaDto`) não os têm.
  */
 
 export type TipoPessoa = 'FISICA' | 'JURIDICA';
 export type Sexo = 'MASCULINO' | 'FEMININO';
 /** "B é <tipo> de A": o inverso (RESPONSAVEL ↔ DEPENDENTE, CONTATO ↔ EMPRESA) a API já resolve na visão da pessoa aberta. */
-export type TipoVinculo = 'RESPONSAVEL' | 'DEPENDENTE' | 'CONJUGE' | 'FAMILIAR' | 'CONTATO' | 'EMPRESA';
+export type TipoVinculo =
+  | 'RESPONSAVEL'
+  | 'DEPENDENTE'
+  | 'CONJUGE'
+  | 'FAMILIAR'
+  | 'CONTATO'
+  | 'EMPRESA'
+  | 'REPRESENTANTE_LEGAL'
+  | 'REPRESENTADA';
+/** Categorias da CNH (enum `CategoriaCnh` da API). */
+export const CATEGORIAS_CNH = ['A', 'B', 'AB', 'C', 'D', 'E', 'AC', 'AD', 'AE'] as const;
+export type CategoriaCnh = (typeof CATEGORIAS_CNH)[number];
 
 const tipoPessoaSchema = z.enum(['FISICA', 'JURIDICA']);
 const sexoSchema = z.enum(['MASCULINO', 'FEMININO']);
-const tipoVinculoSchema = z.enum(['RESPONSAVEL', 'DEPENDENTE', 'CONJUGE', 'FAMILIAR', 'CONTATO', 'EMPRESA']);
+const tipoVinculoSchema = z.enum([
+  'RESPONSAVEL',
+  'DEPENDENTE',
+  'CONJUGE',
+  'FAMILIAR',
+  'CONTATO',
+  'EMPRESA',
+  'REPRESENTANTE_LEGAL',
+  'REPRESENTADA',
+]);
 const cidadeSchema = z.object({ id: z.string(), nome: z.string(), uf: z.string() });
+/** EstadoSelectDto (a UF do órgão emissor do RG). */
+const estadoSchema = z.object({ id: z.string(), sigla: z.string(), nome: z.string() });
 
 /** PessoaListaDto: a lista e a exportação (sem nascimento, RG nem auditoria). */
 export const pessoaListaSchema = z.object({
@@ -58,10 +82,23 @@ export const pessoaSchema = z.object({
   cpf: z.string().nullable().optional(),
   rg: z.string().nullable().optional(),
   dataNascimento: z.string().nullable().optional(),
+  rgOrgaoEmissor: z.string().nullable().optional(),
+  rgUf: estadoSchema.nullable().optional(),
+  rgDataEmissao: z.string().nullable().optional(),
+  cnh: z.string().nullable().optional(),
+  cnhCategoria: z.enum(CATEGORIAS_CNH).nullable().optional(),
+  cnhValidade: z.string().nullable().optional(),
+  estadoCivil: tipoSelectSchema.nullable().optional(),
+  profissao: tipoSelectSchema.nullable().optional(),
+  nacionalidade: z.string().nullable().optional(),
+  naturalidade: cidadeSchema.nullable().optional(),
+  nomeMae: z.string().nullable().optional(),
+  nomePai: z.string().nullable().optional(),
   sexo: sexoSchema.nullable().optional(),
   cnpj: z.string().nullable().optional(),
   inscricaoEstadual: z.string().nullable().optional(),
   inscricaoMunicipal: z.string().nullable().optional(),
+  dataAbertura: z.string().nullable().optional(),
   observacao: z.string().nullable().optional(),
   ativo: z.boolean(),
   tiposCadastro: z.array(tipoSelectSchema),
@@ -119,8 +156,42 @@ export type PessoaEnderecoItem = {
 /** `tipo` = o que a OUTRA pessoa é desta. */
 export type PessoaVinculoItem = { pessoaId: string; tipo: TipoVinculo; observacao: string | null };
 
+/** Os dados complementares (PLANO-PESSOAS-COMPLEMENTO §3.4). Os de PF (todos menos `dataAbertura`) a API recusa na PJ. */
+export type PessoaComplementos = {
+  rgOrgaoEmissor: string | null;
+  rgEstadoId: string | null;
+  rgDataEmissao: string | null;
+  cnh: string | null;
+  cnhCategoria: CategoriaCnh | null;
+  cnhValidade: string | null;
+  estadoCivilId: string | null;
+  profissaoId: string | null;
+  nacionalidade: string | null;
+  naturalidadeId: string | null;
+  nomeMae: string | null;
+  nomePai: string | null;
+  dataAbertura: string | null;
+};
+
+/** Sem nenhum complemento: o cadastro rápido e quem não os tem. */
+export const SEM_COMPLEMENTOS: PessoaComplementos = {
+  rgOrgaoEmissor: null,
+  rgEstadoId: null,
+  rgDataEmissao: null,
+  cnh: null,
+  cnhCategoria: null,
+  cnhValidade: null,
+  estadoCivilId: null,
+  profissaoId: null,
+  nacionalidade: null,
+  naturalidadeId: null,
+  nomeMae: null,
+  nomePai: null,
+  dataAbertura: null,
+};
+
 /** PessoaCreateDto (código e auditoria nascem na API). */
-export type PessoaCreate = {
+export type PessoaCreate = PessoaComplementos & {
   tipoPessoa: TipoPessoa;
   nome: string;
   cpf: string | null;

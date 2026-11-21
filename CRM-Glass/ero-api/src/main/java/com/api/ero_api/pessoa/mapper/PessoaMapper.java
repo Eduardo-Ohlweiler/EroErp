@@ -1,11 +1,15 @@
 package com.api.ero_api.pessoa.mapper;
 
 import com.api.ero_api.auxiliar.dtos.TipoCadastroSelectDto;
+import com.api.ero_api.auxiliar.entity.EstadoCivil;
+import com.api.ero_api.auxiliar.entity.Profissao;
 import com.api.ero_api.auxiliar.entity.TipoCadastro;
 import com.api.ero_api.auxiliar.entity.TipoEmail;
 import com.api.ero_api.auxiliar.entity.TipoEndereco;
 import com.api.ero_api.auxiliar.entity.TipoRedeSocial;
 import com.api.ero_api.auxiliar.entity.TipoTelefone;
+import com.api.ero_api.auxiliar.mapper.EstadoCivilMapper;
+import com.api.ero_api.auxiliar.mapper.ProfissaoMapper;
 import com.api.ero_api.auxiliar.mapper.TipoCadastroMapper;
 import com.api.ero_api.auxiliar.mapper.TipoEmailMapper;
 import com.api.ero_api.auxiliar.mapper.TipoEnderecoMapper;
@@ -14,6 +18,7 @@ import com.api.ero_api.auxiliar.mapper.TipoTelefoneMapper;
 import com.api.ero_api.compartilhado.util.DocumentoValidator;
 import com.api.ero_api.compartilhado.util.TextoBusca;
 import com.api.ero_api.localidade.entity.Cidade;
+import com.api.ero_api.localidade.entity.Estado;
 import com.api.ero_api.localidade.mapper.LocalidadeMapper;
 import com.api.ero_api.pessoa.dtos.PessoaCreateDto;
 import com.api.ero_api.pessoa.dtos.PessoaEmailItemDto;
@@ -52,7 +57,8 @@ import java.util.UUID;
  * <ul>
  *   <li>a entrada é normalizada aqui: {@code trim}, vazio vira {@code null}, documentos
  *       pelo {@link DocumentoValidator#normalizar}, RG em maiúsculas sem ponto, hífen nem
- *       espaço, inscrições sem máscara, e-mail minúsculo;</li>
+ *       espaço, órgão emissor em maiúsculas, CNH só com os dígitos, inscrições sem
+ *       máscara, e-mail minúsculo;</li>
  *   <li>o campo do outro tipo de pessoa é gravado {@code null} (o service recusa antes
  *       quando ele vem preenchido);</li>
  *   <li>o código ({@code codPessoa}) nunca é copiado da entrada.</li>
@@ -71,21 +77,30 @@ public final class PessoaMapper {
     /** O PUT tem os mesmos campos do POST mais a versão: as regras do service olham um formato só. */
     public static PessoaCreateDto dados(PessoaUpdateDto dto) {
         return new PessoaCreateDto(dto.tipoPessoa(), dto.nome(), dto.cpf(), dto.rg(), dto.dataNascimento(),
-                dto.sexo(), dto.cnpj(), dto.nomeFantasia(), dto.inscricaoEstadual(), dto.inscricaoMunicipal(),
-                dto.observacao(), dto.tiposCadastroIds(), dto.telefones(), dto.emails(), dto.redesSociais(),
-                dto.enderecos(), dto.vinculos());
+                dto.sexo(), dto.rgOrgaoEmissor(), dto.rgEstadoId(), dto.rgDataEmissao(), dto.cnh(),
+                dto.cnhCategoria(), dto.cnhValidade(), dto.estadoCivilId(), dto.profissaoId(), dto.nacionalidade(),
+                dto.naturalidadeId(), dto.nomeMae(), dto.nomePai(), dto.cnpj(), dto.nomeFantasia(),
+                dto.inscricaoEstadual(), dto.inscricaoMunicipal(), dto.dataAbertura(), dto.observacao(),
+                dto.tiposCadastroIds(), dto.telefones(), dto.emails(), dto.redesSociais(), dto.enderecos(),
+                dto.vinculos());
     }
 
-    public static Pessoa toEntity(PessoaCreateDto dto) {
+    /**
+     * {@code rgEstado}, {@code estadoCivil}, {@code profissao} e {@code naturalidade}: as
+     * referências que o DTO traz por id, já conferidas pelo service ({@code null} = não informada).
+     */
+    public static Pessoa toEntity(PessoaCreateDto dto, Estado rgEstado, EstadoCivil estadoCivil, Profissao profissao,
+                                  Cidade naturalidade) {
         Pessoa p = new Pessoa();
-        preencher(p, dto);
+        preencher(p, dto, rgEstado, estadoCivil, profissao, naturalidade);
         p.setAtivo(true);
         return p;
     }
 
     /** Trocar o tipo limpa os campos do anterior. O código e a situação não mudam aqui. */
-    public static void atualizarEntidade(Pessoa p, PessoaUpdateDto dto) {
-        preencher(p, dados(dto));
+    public static void atualizarEntidade(Pessoa p, PessoaUpdateDto dto, Estado rgEstado, EstadoCivil estadoCivil,
+                                         Profissao profissao, Cidade naturalidade) {
+        preencher(p, dados(dto), rgEstado, estadoCivil, profissao, naturalidade);
     }
 
     /** {@code nome_busca}: nome e fantasia sem acento e sem caixa (a busca da lista e do combo). */
@@ -97,6 +112,16 @@ public final class PessoaMapper {
     /** RG em maiúsculas, sem ponto, hífen nem espaço; vazio vira {@code null}. */
     public static String normalizarRg(String rg) {
         return textoOuNulo(rg == null ? null : rg.toUpperCase(Locale.ROOT).replaceAll("[.\\-\\s]", ""));
+    }
+
+    /** Órgão emissor do RG em maiúsculas ("ssp" → "SSP"); vazio vira {@code null}. */
+    public static String normalizarOrgaoEmissor(String orgao) {
+        return textoOuNulo(orgao == null ? null : orgao.toUpperCase(Locale.ROOT));
+    }
+
+    /** CNH sem ponto, hífen nem espaço; vazio vira {@code null}. Letras ficam: o service recusa (DV). */
+    public static String normalizarCnh(String cnh) {
+        return textoOuNulo(cnh == null ? null : cnh.replaceAll("[.\\-\\s]", ""));
     }
 
     /** Inscrição sem a máscara (ponto, hífen, barra, espaço); vazio vira {@code null}. Letras ficam: o service recusa. */
@@ -219,9 +244,22 @@ public final class PessoaMapper {
                 p.getRg(),
                 p.getDataNascimento(),
                 p.getSexo(),
+                p.getRgOrgaoEmissor(),
+                p.getRgEstado() == null ? null : LocalidadeMapper.toEstadoSelectDto(p.getRgEstado()),
+                p.getRgDataEmissao(),
+                p.getCnh(),
+                p.getCnhCategoria(),
+                p.getCnhValidade(),
+                p.getEstadoCivil() == null ? null : EstadoCivilMapper.toSelectDto(p.getEstadoCivil()),
+                p.getProfissao() == null ? null : ProfissaoMapper.toSelectDto(p.getProfissao()),
+                p.getNacionalidade(),
+                p.getNaturalidade() == null ? null : LocalidadeMapper.toSelectDto(p.getNaturalidade()),
+                p.getNomeMae(),
+                p.getNomePai(),
                 p.getCnpj(),
                 p.getInscricaoEstadual(),
                 p.getInscricaoMunicipal(),
+                p.getDataAbertura(),
                 p.getObservacao(),
                 p.isAtivo(),
                 tiposCadastro(tipos),
@@ -294,7 +332,8 @@ public final class PessoaMapper {
 
     // ---------------------------------------------------------------- apoio
 
-    private static void preencher(Pessoa p, PessoaCreateDto dto) {
+    private static void preencher(Pessoa p, PessoaCreateDto dto, Estado rgEstado, EstadoCivil estadoCivil,
+                                  Profissao profissao, Cidade naturalidade) {
         boolean fisica = dto.tipoPessoa() == TipoPessoa.FISICA;
         p.setTipoPessoa(dto.tipoPessoa());
         p.setNome(dto.nome().trim());
@@ -303,10 +342,23 @@ public final class PessoaMapper {
         p.setRg(fisica ? normalizarRg(dto.rg()) : null);
         p.setDataNascimento(fisica ? dto.dataNascimento() : null);
         p.setSexo(fisica ? dto.sexo() : null);
+        p.setRgOrgaoEmissor(fisica ? normalizarOrgaoEmissor(dto.rgOrgaoEmissor()) : null);
+        p.setRgEstado(fisica ? rgEstado : null);
+        p.setRgDataEmissao(fisica ? dto.rgDataEmissao() : null);
+        p.setCnh(fisica ? normalizarCnh(dto.cnh()) : null);
+        p.setCnhCategoria(fisica ? dto.cnhCategoria() : null);
+        p.setCnhValidade(fisica ? dto.cnhValidade() : null);
+        p.setEstadoCivil(fisica ? estadoCivil : null);
+        p.setProfissao(fisica ? profissao : null);
+        p.setNacionalidade(fisica ? textoOuNulo(dto.nacionalidade()) : null);
+        p.setNaturalidade(fisica ? naturalidade : null);
+        p.setNomeMae(fisica ? textoOuNulo(dto.nomeMae()) : null);
+        p.setNomePai(fisica ? textoOuNulo(dto.nomePai()) : null);
         p.setCnpj(fisica ? null : DocumentoValidator.normalizar(dto.cnpj()));
         p.setNomeFantasia(fisica ? null : textoOuNulo(dto.nomeFantasia()));
         p.setInscricaoEstadual(fisica ? null : normalizarInscricao(dto.inscricaoEstadual()));
         p.setInscricaoMunicipal(fisica ? null : normalizarInscricao(dto.inscricaoMunicipal()));
+        p.setDataAbertura(fisica ? null : dto.dataAbertura());
     }
 
     private static List<TipoCadastroSelectDto> tiposCadastro(List<PessoaTipoCadastro> tipos) {

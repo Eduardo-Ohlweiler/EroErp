@@ -16,12 +16,16 @@ import type { Largura } from './larguras';
 /**
  * Máscaras do `TEntry` (docs/07 §3.2), funções puras.
  * - Documento, CEP e telefone: exibem pontuado e **gravam cru** (dígitos; o CNPJ alfanumérico grava as letras em
- *   maiúsculas, sem pontuação).
+ *   maiúsculas, sem pontuação). A CNH não tem pontuação: só dígitos, até 11, com o zero à esquerda (o dígito
+ *   verificador é conferido pela API).
  * - Numéricas: gravam o **texto** da máscara ("72,50"), que o `paraCorpo` da tela converte com `paraNumero`;
  *   vazio continua vazio.
  */
 export type MascaraNumerica = 'decimal' | 'inteiro' | 'decimalComSinal' | 'moeda';
-export type MascaraDeDocumento = 'cpf' | 'cnpj' | 'cpfCnpj' | 'telefone' | 'celular' | 'cep';
+export type MascaraDeDocumento = 'cpf' | 'cnpj' | 'cpfCnpj' | 'telefone' | 'celular' | 'cep' | 'cnh';
+
+/** CNH: só dígitos, até 11, sem pontuação (exibe e grava igual). */
+const cnhCru = (v: string) => soDigitos(v).slice(0, 11);
 export type Mascara = MascaraNumerica | MascaraDeDocumento | 'hora';
 
 const EXIBIR: Record<MascaraDeDocumento, (v: string) => string> = {
@@ -31,6 +35,7 @@ const EXIBIR: Record<MascaraDeDocumento, (v: string) => string> = {
   telefone: mascararTelefone,
   celular: mascararTelefone,
   cep: mascararCep,
+  cnh: cnhCru,
 };
 
 const CRU: Record<MascaraDeDocumento, (v: string) => string> = {
@@ -40,6 +45,7 @@ const CRU: Record<MascaraDeDocumento, (v: string) => string> = {
   telefone: (v) => soDigitos(v).slice(0, 11),
   celular: (v) => soDigitos(v).slice(0, 11),
   cep: (v) => soDigitos(v).slice(0, 8),
+  cnh: cnhCru,
 };
 
 export const ehNumerica = (m?: Mascara): m is MascaraNumerica =>
@@ -84,6 +90,7 @@ const COMPLETA_COM: Partial<Record<Mascara, number>> = {
   telefone: 11,
   celular: 11,
   cep: 8,
+  cnh: 11,
   hora: 5,
 };
 
@@ -106,6 +113,7 @@ export const TAMANHO_MAXIMO: Partial<Record<Mascara, number>> = {
   telefone: 15,
   celular: 15,
   cep: 9,
+  cnh: 11,
   hora: 5,
 };
 
@@ -114,7 +122,7 @@ export function teclado(mascara?: Mascara): 'numeric' | 'decimal' | 'tel' | unde
   if (!mascara) return undefined;
   if (mascara === 'cnpj' || mascara === 'cpfCnpj') return undefined;
   if (mascara === 'telefone' || mascara === 'celular') return 'tel';
-  if (mascara === 'inteiro' || mascara === 'cpf' || mascara === 'cep' || mascara === 'hora') return 'numeric';
+  if (mascara === 'inteiro' || mascara === 'cpf' || mascara === 'cep' || mascara === 'cnh' || mascara === 'hora') return 'numeric';
   return 'decimal';
 }
 
@@ -124,6 +132,7 @@ export function larguraPadraoDoEntry(mascara?: Mascara): Largura {
     case 'cpf':
     case 'telefone':
     case 'celular':
+    case 'cnh':
       return 'cpf';
     case 'cnpj':
     case 'cpfCnpj':

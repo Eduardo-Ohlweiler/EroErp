@@ -16,6 +16,8 @@ export const TITULOS: [RegExp, string][] = [
   [/^\/cadastros\/auxiliares\/tipos-de-email(\/|$)/, 'Tipos de e-mail'],
   [/^\/cadastros\/auxiliares\/tipos-de-endereco(\/|$)/, 'Tipos de endereço'],
   [/^\/cadastros\/auxiliares\/tipos-de-rede-social(\/|$)/, 'Tipos de rede social'],
+  [/^\/cadastros\/auxiliares\/estados-civis(\/|$)/, 'Estados civis'],
+  [/^\/cadastros\/auxiliares\/profissoes(\/|$)/, 'Profissões'],
   [/^\/minha-conta(\/|$)/, 'Minha conta'],
 ];
 

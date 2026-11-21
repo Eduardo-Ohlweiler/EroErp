@@ -29,10 +29,11 @@ public enum GrupoLiberacao {
             List.of(Tela.PESSOA_LIST, Tela.PESSOA_FORM),
             List.of()),
 
-    /** Os 5 cadastros auxiliares da pessoa (menu Cadastros › Auxiliares). Os combos leem pelo /selecao, aberto a todos. */
+    /** Os 7 cadastros auxiliares da pessoa (menu Cadastros › Auxiliares). Os combos leem pelo /selecao, aberto a todos. */
     CADASTROS_AUXILIARES("Cadastros auxiliares",
             List.of(Tela.TIPO_CADASTRO_FORMLIST, Tela.TIPO_TELEFONE_FORMLIST, Tela.TIPO_EMAIL_FORMLIST,
-                    Tela.TIPO_ENDERECO_FORMLIST, Tela.TIPO_REDE_SOCIAL_FORMLIST),
+                    Tela.TIPO_ENDERECO_FORMLIST, Tela.TIPO_REDE_SOCIAL_FORMLIST,
+                    Tela.ESTADO_CIVIL_FORMLIST, Tela.PROFISSAO_FORMLIST),
             List.of()),
 
     USUARIOS("Usuários",

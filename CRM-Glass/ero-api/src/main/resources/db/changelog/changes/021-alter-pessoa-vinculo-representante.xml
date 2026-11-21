@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Representante legal como tipo de vínculo (PLANO-PESSOAS-COMPLEMENTO §3.1, P1 aprovada
+        em 20/11/2026): REPRESENTANTE_LEGAL e o inverso REPRESENTADA. O representante é
+        sempre pessoa física e a representada, jurídica (regra no Java); uma empresa pode ter
+        vários, e o par continua único (uk_pessoa_vinculo_par da 018).
+
+        O CHECK da 018 é recriado com os 2 tipos a mais (DROP + ADD na mesma changeSet). Os
+        dois cabem no VARCHAR(20) da coluna.
+    -->
+    <changeSet id="021-alter-pessoa-vinculo-representante" author="eduardo">
+        <sql>ALTER TABLE pessoa_vinculo DROP CONSTRAINT ck_pessoa_vinculo_tipo</sql>
+        <sql>
+            ALTER TABLE pessoa_vinculo ADD CONSTRAINT ck_pessoa_vinculo_tipo
+                CHECK (tipo IN ('RESPONSAVEL', 'DEPENDENTE', 'CONJUGE', 'FAMILIAR', 'CONTATO', 'EMPRESA',
+                                'REPRESENTANTE_LEGAL', 'REPRESENTADA'))
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

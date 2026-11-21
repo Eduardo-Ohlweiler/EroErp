@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TipoSelect } from '../../../shared/api/auxiliares';
+import { SEM_COMPLEMENTOS } from '../api/pessoas';
 import { paraCorpoRapido, schemaRapido, vazioRapido, type DadosRapidos } from './pessoaRapida';
 
 const tipo = (id: string, nome: string, chave: string | null = null, ativo = true): TipoSelect => ({ id, nome, chave, ativo });
@@ -65,6 +66,7 @@ describe('paraCorpoRapido', () => {
       redesSociais: [],
       enderecos: [],
       vinculos: [],
+      ...SEM_COMPLEMENTOS,
     });
   });
 

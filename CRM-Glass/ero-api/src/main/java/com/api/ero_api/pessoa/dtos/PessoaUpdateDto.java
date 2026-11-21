@@ -1,5 +1,6 @@
 package com.api.ero_api.pessoa.dtos;
 
+import com.api.ero_api.pessoa.enums.CategoriaCnh;
 import com.api.ero_api.pessoa.enums.Sexo;
 import com.api.ero_api.pessoa.enums.TipoPessoa;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -46,6 +47,48 @@ public record PessoaUpdateDto(
         @Schema(description = "Só física. MASCULINO, FEMININO ou nulo (não informado)")
         Sexo sexo,
 
+        @Schema(description = "Só física, e só com o RG. Sigla do órgão (ex.: SSP, DETRAN); vai em maiúsculas", example = "SSP")
+        @Size(max = 15, message = "Órgão emissor deve ter no máximo 15 caracteres")
+        String rgOrgaoEmissor,
+
+        @Schema(description = "Só física, e só com o RG. Id da UF do órgão emissor (/api/estados)")
+        UUID rgEstadoId,
+
+        @Schema(description = "Só física, e só com o RG. Entre 1900 (e o nascimento) e hoje", example = "2008-03-10")
+        @PastOrPresent(message = "Data de emissão não pode ser no futuro")
+        LocalDate rgDataEmissao,
+
+        @Schema(description = "Só física. 11 dígitos com o verificador do DETRAN; aceita espaço e ponto", example = "02650306461")
+        @Size(max = 14, message = "CNH deve ter no máximo 14 caracteres")
+        String cnh,
+
+        @Schema(description = "Só física, opcional, e só com o número da CNH")
+        CategoriaCnh cnhCategoria,
+
+        @Schema(description = "Só física, opcional, e só com o número da CNH. Vencida é aceita (de 1900 a hoje + 15 anos)", example = "2031-08-20")
+        LocalDate cnhValidade,
+
+        @Schema(description = "Só física. Id do estado civil (/api/estados-civis/selecao)")
+        UUID estadoCivilId,
+
+        @Schema(description = "Só física. Id da profissão (/api/profissoes/selecao)")
+        UUID profissaoId,
+
+        @Schema(description = "Só física. De 2 a 40 caracteres", example = "Brasileira")
+        @Size(max = 40, message = "Nacionalidade deve ter no máximo 40 caracteres")
+        String nacionalidade,
+
+        @Schema(description = "Só física. Id da cidade onde nasceu (/api/cidades/selecao)")
+        UUID naturalidadeId,
+
+        @Schema(description = "Só física")
+        @Size(max = 255, message = "Nome da mãe deve ter no máximo 255 caracteres")
+        String nomeMae,
+
+        @Schema(description = "Só física")
+        @Size(max = 255, message = "Nome do pai deve ter no máximo 255 caracteres")
+        String nomePai,
+
         @Schema(description = "Só jurídica. Com ou sem máscara; aceita o CNPJ alfanumérico", example = "11.222.333/0001-81")
         @Size(max = 18, message = "CNPJ deve ter no máximo 18 caracteres")
         String cnpj,
@@ -61,6 +104,10 @@ public record PessoaUpdateDto(
         @Schema(description = "Só jurídica. De 5 a 12 dígitos (a máscara é ignorada)")
         @Size(max = 20, message = "Inscrição municipal deve ter no máximo 20 caracteres")
         String inscricaoMunicipal,
+
+        @Schema(description = "Só jurídica. De 1800 a hoje", example = "2015-06-01")
+        @PastOrPresent(message = "Data de abertura não pode ser no futuro")
+        LocalDate dataAbertura,
 
         @Size(max = 500, message = "Observação deve ter no máximo 500 caracteres")
         String observacao,
@@ -89,7 +136,7 @@ public record PessoaUpdateDto(
         @NotNull(message = "Versão é obrigatória")
         Long version) {
 
-    /** CPF, RG, nascimento e contatos são dados pessoais: fora de qualquer log. */
+    /** CPF, RG, CNH, nascimento, filiação, estado civil e contatos são dados pessoais: fora de qualquer log. */
     @Override
     public String toString() {
         return "PessoaUpdateDto[tipoPessoa=" + tipoPessoa + ", nome=" + nome + ", version=" + version + "]";

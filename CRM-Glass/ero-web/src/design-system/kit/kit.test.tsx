@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ErroApi, erroDeProblemDetail } from '../../shared/api/erros';
-import { classeDaLargura, CLASSE_LARGURA, LARGURA_PADRAO, larguraAplicada } from './larguras';
-import { aplicarMascara, larguraPadraoDoEntry, valorParaExibir, valorParaGravar } from './mascaras';
+import { classeDaLargura, CLASSE_LARGURA, LARGURA_PADRAO, larguraAplicada, larguraEstreita } from './larguras';
+import { aplicarMascara, larguraPadraoDoEntry, TAMANHO_MAXIMO, teclado, valorCompleto, valorParaExibir, valorParaGravar } from './mascaras';
 import { somenteLeituraPara, SomenteLeituraDoForm } from './somenteLeitura';
 import { avisoDosCampos, textoDeEspera, tratarErroApi } from './erroApi';
 import { celulaCsv, montarCsv, nomeDeArquivo } from './planilha';
@@ -59,6 +59,7 @@ describe('larguras (docs/07 §2)', () => {
     expect(larguraPadraoDoEntry('cnpj')).toBe('cnpj');
     expect(larguraPadraoDoEntry('cpfCnpj')).toBe('cnpj');
     expect(larguraPadraoDoEntry('cep')).toBe('cep');
+    expect(larguraPadraoDoEntry('cnh')).toBe('cpf');
     expect(larguraPadraoDoEntry('hora')).toBe('hora');
     expect(larguraPadraoDoEntry('moeda')).toBe('valor');
     expect(larguraPadraoDoEntry('decimal')).toBe('valor');
@@ -118,6 +119,32 @@ describe('máscaras do TEntry', () => {
     expect(aplicarMascara('decimal', '1234', { casas: 3 })).toBe('1,234');
     expect(valorParaExibir(undefined, null)).toBe('');
     expect(valorParaExibir('inteiro', 5)).toBe('5');
+  });
+
+  it('cnh: só dígitos, até 11, sem pontuação, grava cru com o zero à esquerda', () => {
+    expect(aplicarMascara('cnh', '0123.456 789-01')).toBe('01234567890');
+    expect(aplicarMascara('cnh', '012345678901234')).toBe('01234567890');
+    expect(aplicarMascara('cnh', 'abc')).toBe('');
+    expect(valorParaGravar('cnh', '01234567890')).toBe('01234567890');
+    expect(valorParaGravar('cnh', '0123 4567 890')).toBe('01234567890');
+    expect(valorParaExibir('cnh', '01234567890')).toBe('01234567890');
+    expect(valorParaExibir('cnh', null)).toBe('');
+    expect(TAMANHO_MAXIMO.cnh).toBe(11);
+    expect(teclado('cnh')).toBe('numeric');
+    expect(valorCompleto('cnh', '0123456789')).toBeNull();
+    expect(valorCompleto('cnh', '01234567890')).toBe('01234567890');
+  });
+
+  it('cnh no TRow: largura cpf, data-mascara e teclado numérico (cabe com Categoria uf e Validade data)', () => {
+    const linha = html(
+      <TRow>
+        <TEntry label="CNH" mascara="cnh" value="01234567890" onChange={() => {}} />
+      </TRow>,
+    );
+    expect(linha).toMatch(/data-kit="TEntry"[^>]*data-largura="cpf"/);
+    expect(linha).toContain('data-mascara="cnh"');
+    expect(linha).toContain('inputMode="numeric"');
+    expect(linha).toContain('maxLength="11"');
   });
 });
 
@@ -369,6 +396,27 @@ describe('volta 1: só leitura, grade e ícone', () => {
     expect(h).toContain('aria-readonly="true"');
     expect(h).not.toMatch(/role="combobox"[^>]*\sdisabled=""/);
     expect(h).not.toContain('Limpar seleção');
+    expect(h).not.toMatch(/role="combobox"[^>]*class="[^"]*\bpr-/);
+  });
+
+  it('combo estreito (uf) com valor não reserva o X: a sigla cabe com o chevron; nas largas o X segue', () => {
+    const UF = [{ valor: 'RS', rotulo: 'RS' }, { valor: 'SC', rotulo: 'SC' }];
+    const estreito = html(<TCombo label="UF" width="uf" opcoes={UF} value="RS" onChange={() => {}} />);
+    expect(estreito).not.toContain('Limpar seleção');
+    expect(estreito).toMatch(/role="combobox"[^>]*class="[^"]*\bpr-10\b/);
+    expect(estreito).not.toContain('pr-[72px]');
+    // a tela do PessoaForm (vazio="") também: só o chevron
+    expect(html(<TCombo label="UF" width="uf" opcoes={UF} vazio="" value="RS" onChange={() => {}} />)).not.toContain('pr-[72px]');
+    expect(larguraEstreita('uf')).toBe(true);
+    expect(larguraEstreita('quantidade')).toBe(true);
+    expect(larguraEstreita('data')).toBe(false);
+    expect(larguraEstreita(undefined)).toBe(false);
+
+    const largo = html(<TCombo label="Tipo" width="situacao" opcoes={UF} value="RS" onChange={() => {}} />);
+    expect(largo).toContain('Limpar seleção');
+    expect(largo).toContain('pr-[72px]');
+    // sem valor, o X não aparece e o espaço dele não fica reservado
+    expect(html(<TCombo label="Tipo" width="situacao" opcoes={UF} value="" onChange={() => {}} />)).toMatch(/role="combobox"[^>]*class="[^"]*\bpr-10\b/);
   });
 
   it('TButton: ícone para genérica; tamanho imposto pelo contêiner quando a tela não passa size', () => {

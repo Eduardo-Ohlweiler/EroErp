@@ -4,11 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Contact, TriangleAlert } from 'lucide-react';
 import { erroDeProblemDetail } from '../../shared/api/erros';
+import { hojeIso } from '../../shared/util/format';
 import { Toggle } from '../ui/Bits';
 import {
   TBadge,
   TButton,
   TCombo,
+  TDate,
   TDBCombo,
   TEntry,
   TFieldList,
@@ -56,6 +58,8 @@ const PESSOAS: OpcaoDoBanco[] = [
   { id: 'p2', nome: '27 · Bruno Carvalho' },
   { id: 'p3', nome: '31 · Solar Energia Ltda.' },
 ];
+/** As categorias da CNH (no produto, o enum `CategoriaCnh` da API). Rótulo de 1 ou 2 letras: combo em `uf`. */
+const CATEGORIAS_CNH: OpcaoCombo[] = ['A', 'B', 'AB', 'C', 'D', 'E', 'AC', 'AD', 'AE'].map((c) => ({ valor: c, rotulo: c }));
 const demora = <T,>(v: T) => new Promise<T>((r) => setTimeout(() => r(v), 500));
 const filtrar = (lista: OpcaoDoBanco[]) => (termo?: string) =>
   demora(termo ? lista.filter((o) => o.nome.toLowerCase().includes(termo.toLowerCase())) : lista);
@@ -79,6 +83,10 @@ const vinculo = z.object({ pessoaId: z.string().min(1, 'Escolha a pessoa.'), pes
 const schema = z.object({
   tipoPessoa: z.string(),
   observacao: z.string().max(500, 'Até 500 caracteres.'),
+  // O front só confere os 11 dígitos; o dígito verificador é da API (400 em `cnh`).
+  cnh: z.string().refine((v) => v === '' || v.length === 11, 'A CNH tem 11 dígitos.'),
+  cnhCategoria: z.string(),
+  cnhValidade: z.string(),
   telefones: z.array(telefone).min(1, 'Informe ao menos um telefone.'),
   enderecos: z.array(endereco),
   vinculos: z.array(vinculo),
@@ -91,6 +99,9 @@ type Vinculo = z.infer<typeof vinculo>;
 const INICIAL: Dados = {
   tipoPessoa: 'FISICA',
   observacao: 'Prefere contato pela manhã.',
+  cnh: '01234567890',
+  cnhCategoria: 'AB',
+  cnhValidade: '2024-03-15',
   telefones: [
     { tipoId: 't1', numero: '51999887766', observacao: '', principal: true },
     { tipoId: 't9', numero: '5133224455', observacao: 'Só em horário comercial', principal: false },
@@ -122,6 +133,8 @@ export function SecaoKitPessoas() {
   const [soLeitura, setSoLeitura] = useState(false);
   const form = useForm<Dados>({ resolver: zodResolver(schema), defaultValues: INICIAL });
   const pj = form.watch('tipoPessoa') === 'JURIDICA';
+  const validadeCnh = form.watch('cnhValidade');
+  const cnhVencida = !!validadeCnh && validadeCnh < hojeIso();
 
   const completarCep = async (i: number, cep: string) => {
     const achado = await consultarCep(cep);
@@ -150,7 +163,7 @@ export function SecaoKitPessoas() {
             <Contact className="size-4" aria-hidden /> Kit de telas: peças de Pessoas
           </h2>
           <p className="text-xs text-muted">
-            TFieldList · TTextArea · TCombo automático · TEntry onCompletar · erroApi com colchetes · submenu no trilho (Cadastros auxiliares)
+            TFieldList · TTextArea · TCombo automático · TEntry onCompletar · máscara cnh · erroApi com colchetes · submenu no trilho (Cadastros auxiliares)
           </p>
         </div>
         <Toggle checked={soLeitura} onChange={setSoLeitura} label="TForm somenteLeitura" />
@@ -170,6 +183,16 @@ export function SecaoKitPessoas() {
         <TRow>
           <TTextArea name="observacao" label={pj ? 'Observação sobre a empresa' : 'Observação'} maxLength={500} />
         </TRow>
+
+        {!pj && (
+          <TPanel title="Documentos" subtitle="Grupo natural numa TRow: CNH (máscara cnh, 11 dígitos, largura cpf) · Categoria (uf) · Validade (data); o DV é da API">
+            <TRow>
+              <TEntry name="cnh" label="CNH" mascara="cnh" />
+              <TCombo name="cnhCategoria" label="Categoria" opcoes={CATEGORIAS_CNH} vazio="" width="uf" />
+              <TDate name="cnhValidade" label="Validade" ajuda={cnhVencida ? <TBadge tom="alerta">Vencida</TBadge> : undefined} />
+            </TRow>
+          </TPanel>
+        )}
 
         <TPanel title="Telefones" subtitle="Uma linha por item; Principal exclusivo; o tipo inativo gravado aparece como (inativo) e o combo vai a medio">
           <TFieldList<Telefone>
@@ -262,7 +285,7 @@ export function SecaoKitPessoas() {
         <TFormFooter>
           <TFormActionsLeft>
             <TButton variant="salvar" type="submit" loading={form.formState.isSubmitting} />
-            <TButton variant="novo" onClick={() => form.reset({ ...INICIAL, telefones: [], enderecos: [], vinculos: [], observacao: '' })} />
+            <TButton variant="novo" onClick={() => form.reset({ ...INICIAL, telefones: [], enderecos: [], vinculos: [], observacao: '', cnh: '', cnhCategoria: '', cnhValidade: '' })} />
             <TButton variant="secondary" icone={TriangleAlert} label="Simular 400 em telefones[0].numero" onClick={simular400} />
           </TFormActionsLeft>
         </TFormFooter>

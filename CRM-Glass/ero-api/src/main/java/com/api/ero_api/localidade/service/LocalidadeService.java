@@ -5,13 +5,17 @@ import com.api.ero_api.compartilhado.exception.NaoEncontradoException;
 import com.api.ero_api.compartilhado.util.TextoBusca;
 import com.api.ero_api.localidade.dtos.CepResponseDto;
 import com.api.ero_api.localidade.dtos.CidadeSelectDto;
+import com.api.ero_api.localidade.dtos.EstadoSelectDto;
 import com.api.ero_api.localidade.dtos.ViaCepRespostaDto;
 import com.api.ero_api.localidade.entity.Cidade;
+import com.api.ero_api.localidade.entity.Estado;
 import com.api.ero_api.localidade.mapper.LocalidadeMapper;
 import com.api.ero_api.localidade.repository.CidadeRepository;
+import com.api.ero_api.localidade.repository.EstadoRepository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -32,12 +36,26 @@ public class LocalidadeService {
     private static final Pattern CEP = Pattern.compile("\\d{8}");
     private static final Pattern CODIGO_IBGE = Pattern.compile("\\d{7}");
 
+    private final EstadoRepository estados;
     private final CidadeRepository cidades;
     private final ViaCepService viaCep;
 
-    public LocalidadeService(CidadeRepository cidades, ViaCepService viaCep) {
+    public LocalidadeService(EstadoRepository estados, CidadeRepository cidades, ViaCepService viaCep) {
+        this.estados = estados;
         this.cidades = cidades;
         this.viaCep = viaCep;
+    }
+
+    /** As 27 UFs, por sigla (o combo da UF do RG). */
+    @Transactional(readOnly = true)
+    public List<EstadoSelectDto> listarEstados() {
+        return estados.buscarTodos().stream().map(LocalidadeMapper::toEstadoSelectDto).toList();
+    }
+
+    /** Para outros services (a UF do RG da pessoa). Id inexistente = vazio. */
+    @Transactional(readOnly = true)
+    public Optional<Estado> buscarEstado(UUID id) {
+        return estados.buscarPorId(id);
     }
 
     /** {@code busca} sem acento e sem caixa ("sao paulo" acha "São Paulo"); {@code uf} vazia = todas. */

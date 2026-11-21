@@ -50,6 +50,30 @@ class LocalidadeIntegracaoTest extends IntegracaoTest {
                 .isEqualTo(com.api.ero_api.compartilhado.util.TextoBusca.normalizar(n[0])));
     }
 
+    // ------------------------------------------------------------ estados
+
+    /** O combo da UF do RG: as 27, por sigla, só id, sigla e nome; de todo usuário liberado. */
+    @Test
+    void estados27PorSigla() {
+        MvcTestResult r = get("/api/estados", token);
+        assertThat(status(r)).as("usuário sem nenhum grupo").isEqualTo(200);
+        JsonNode estados = corpo(r);
+        assertThat(estados.size()).isEqualTo(27);
+        List<String> siglas = estados.valueStream().map(n -> n.path("sigla").asString()).toList();
+        assertThat(siglas).isSorted().contains("AC", "RS", "SP", "TO").doesNotHaveDuplicates();
+        JsonNode sp = estados.valueStream().filter(n -> n.path("sigla").asString().equals("SP")).findFirst().orElseThrow();
+        assertThat(sp.path("nome").asString()).isEqualTo("São Paulo");
+        assertThat(jdbc.queryForObject("SELECT sigla FROM estado WHERE id = ?", String.class,
+                UUID.fromString(sp.path("id").asString()))).isEqualTo("SP");
+        assertThat(sp.size()).as("só id, sigla e nome").isEqualTo(3);
+
+        assertThat(status(get("/api/estados", null))).isEqualTo(401);
+        Contratante c = novoContratante();
+        UsuarioCriado u = novoUsuario(c.admin());
+        assertThat(status(get("/api/estados", loginComCodigo(u.email(), SENHA_FORTE).token())))
+                .as("pendência (senha temporária): sem ACESSO_LIBERADO").isEqualTo(403);
+    }
+
     // ------------------------------------------------------------ cidades
 
     @Test

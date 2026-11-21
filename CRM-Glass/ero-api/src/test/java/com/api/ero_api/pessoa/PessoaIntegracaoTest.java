@@ -1,6 +1,7 @@
 package com.api.ero_api.pessoa;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.api.ero_api.support.IntegracaoTest;
 import jakarta.persistence.EntityManagerFactory;
@@ -21,18 +22,23 @@ import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import tools.jackson.databind.JsonNode;
 
 /**
  * Pessoas: os 4 obrigatórios, o código por contratante, documentos, filhas, filtros, tipos
- * auxiliares, vínculos (os dois lados, trava e versão) e o combo. Cada teste usa um
- * contratante novo: CPF e código são por contratante.
+ * auxiliares, vínculos (os dois lados, trava e versão), o combo, os dados complementares
+ * (documentos, dados civis, abertura; PLANO-PESSOAS-COMPLEMENTO) e o representante legal.
+ * Cada teste usa um contratante novo: CPF e código são por contratante.
  */
 class PessoaIntegracaoTest extends IntegracaoTest {
 
     @Autowired
     private EntityManagerFactory emf;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     /** Ids do contratante: itens do sistema dos auxiliares e duas cidades. */
     record Tipos(String cliente, String fornecedor, String celular, String whatsapp, String particular,
@@ -902,7 +908,580 @@ class PessoaIntegracaoTest extends IntegracaoTest {
         assertThat(ids(get("/api/pessoas/selecao?busca=" + prefixo, ca.admin().token()))).containsExactly(deA);
     }
 
+    // ------------------------------------------------------------ dados complementares
+
+    /** Todos os campos novos da física, normalizados, na ida e na volta (POST, GET, PUT). */
+    @Test
+    void complemento_caminhoFelizPF() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        Civis cv = civis(token);
+        Map<String, Object> corpo = com(completaPF(unico("Completa"), t, cv),
+                "rgOrgaoEmissor", " ssp/sp ", "cnh", "026.503.064-61", "nacionalidade", "  Brasileira ",
+                "nomeMae", " Maria da Silva ", "nomePai", "  ");
+
+        JsonNode p = criar(token, corpo);
+        assertThat(p.path("rg").asString()).isEqualTo("12345678X");
+        assertThat(p.path("rgOrgaoEmissor").asString()).as("maiúsculas, sem espaço nas pontas").isEqualTo("SSP/SP");
+        assertThat(p.path("rgUf").path("id").asString()).isEqualTo(cv.ufSp());
+        assertThat(p.path("rgUf").path("sigla").asString()).isEqualTo("SP");
+        assertThat(p.path("rgUf").path("nome").asString()).isEqualTo("São Paulo");
+        assertThat(p.path("rgDataEmissao").asString()).isEqualTo("2008-03-10");
+        assertThat(p.path("cnh").asString()).as("só os dígitos").isEqualTo("02650306461");
+        assertThat(p.path("cnhCategoria").asString()).isEqualTo("AB");
+        assertThat(p.path("cnhValidade").asString()).isEqualTo("2031-08-20");
+        assertThat(p.path("estadoCivil").path("id").asString()).isEqualTo(cv.casado());
+        assertThat(p.path("estadoCivil").path("nome").asString()).isEqualTo("Casado(a)");
+        assertThat(p.path("estadoCivil").path("chave").asString()).isEqualTo("CASADO");
+        assertThat(p.path("estadoCivil").path("ativo").asBoolean()).isTrue();
+        assertThat(p.path("profissao").path("chave").asString()).isEqualTo("AUTONOMO");
+        assertThat(p.path("nacionalidade").asString()).isEqualTo("Brasileira");
+        assertThat(p.path("naturalidade").path("id").asString()).isEqualTo(t.outraCidade());
+        assertThat(p.path("naturalidade").path("nome").asString()).isEqualTo("Campinas");
+        assertThat(p.path("naturalidade").path("uf").asString()).isEqualTo("SP");
+        assertThat(p.path("nomeMae").asString()).isEqualTo("Maria da Silva");
+        assertThat(p.path("nomePai").isNull()).as("só espaços = não informado").isTrue();
+        assertThat(p.path("dataAbertura").isNull()).isTrue();
+
+        String id = p.path("id").asString();
+        JsonNode ficha = corpo(get("/api/pessoas/" + id, token));
+        for (String campo : List.of("rgOrgaoEmissor", "rgUf", "rgDataEmissao", "cnh", "cnhCategoria", "cnhValidade",
+                "estadoCivil", "profissao", "nacionalidade", "naturalidade", "nomeMae", "nomePai")) {
+            assertThat(ficha.path(campo)).as(campo).isEqualTo(p.path(campo));
+        }
+
+        JsonNode al = corpo(put("/api/pessoas/" + id, token, versao(com(corpo,
+                "estadoCivilId", cv.solteiro(), "rgEstadoId", cv.ufRs(), "cnhCategoria", "B", "naturalidadeId", null,
+                "nomePai", "João da Silva"), ficha)));
+        assertThat(al.path("estadoCivil").path("chave").asString()).isEqualTo("SOLTEIRO");
+        assertThat(al.path("rgUf").path("sigla").asString()).isEqualTo("RS");
+        assertThat(al.path("cnhCategoria").asString()).isEqualTo("B");
+        assertThat(al.path("naturalidade").isNull()).as("limpar = mandar nulo").isTrue();
+        assertThat(al.path("nomePai").asString()).isEqualTo("João da Silva");
+        assertThat(al.path("version").asLong()).isGreaterThan(ficha.path("version").asLong());
+    }
+
+    @Test
+    void complemento_caminhoFelizPJ() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        JsonNode p = criar(token, com(pj(unico("Aberta SA"), t), "dataAbertura", "2015-06-01"));
+        assertThat(p.path("dataAbertura").asString()).isEqualTo("2015-06-01");
+        assertThat(p.path("cnh").isNull()).isTrue();
+        assertThat(p.path("estadoCivil").isNull()).isTrue();
+        assertThat(p.path("rgUf").isNull()).isTrue();
+        assertThat(p.path("naturalidade").isNull()).isTrue();
+
+        JsonNode al = corpo(put("/api/pessoas/" + p.path("id").asString(), token,
+                versao(com(pj(p.path("nome").asString(), t), "dataAbertura", null), p)));
+        assertThat(al.path("dataAbertura").isNull()).isTrue();
+    }
+
+    /** Cada um dos 12 campos novos da física, sozinho numa jurídica: 400 nele (antes de qualquer busca). */
+    @Test
+    void campoDePfNaPj400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        Map<String, Object> camposDaFisica = new java.util.LinkedHashMap<>();
+        camposDaFisica.put("rgOrgaoEmissor", "SSP");
+        camposDaFisica.put("rgEstadoId", UUID.randomUUID().toString());
+        camposDaFisica.put("rgDataEmissao", "2008-03-10");
+        camposDaFisica.put("cnh", "02650306461");
+        camposDaFisica.put("cnhCategoria", "B");
+        camposDaFisica.put("cnhValidade", "2031-08-20");
+        camposDaFisica.put("estadoCivilId", UUID.randomUUID().toString());
+        camposDaFisica.put("profissaoId", UUID.randomUUID().toString());
+        camposDaFisica.put("nacionalidade", "Brasileira");
+        camposDaFisica.put("naturalidadeId", t.cidade());
+        camposDaFisica.put("nomeMae", "Maria");
+        camposDaFisica.put("nomePai", "João");
+        assertThat(camposDaFisica).hasSize(12);
+        camposDaFisica.forEach((campo, valor) ->
+                assertThat(campos(post("/api/pessoas", token, com(pj("X", t), campo, valor)))).as(campo)
+                        .containsExactly(campo));
+        assertThat(mensagem(post("/api/pessoas", token, com(pj("X", t), "cnh", "02650306461"))))
+                .isEqualTo("Pessoa jurídica não tem CNH.");
+        assertThat(mensagem(post("/api/pessoas", token, com(pj("X", t), "nomeMae", "Maria"))))
+                .isEqualTo("Pessoa jurídica não tem filiação.");
+        assertThat(status(post("/api/pessoas", token, com(pj(unico("Vazios"), t), "cnh", " ", "nomeMae", ""))))
+                .as("vazio conta como não informado").isEqualTo(201);
+    }
+
+    @Test
+    void dataAberturaNaPf400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        MvcTestResult r = post("/api/pessoas", token, com(pf("X", t), "dataAbertura", "2015-06-01"));
+        assertThat(campos(r)).containsExactly("dataAbertura");
+        assertThat(mensagem(r)).isEqualTo("Pessoa física não tem data de abertura.");
+    }
+
+    /** PF completa vira PJ: todas as colunas da física ficam nulas no banco, e o contrário. */
+    @Test
+    void trocaDeTipoLimpaComplementos() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        Civis cv = civis(token);
+        JsonNode fisica = criar(token, completaPF(unico("Vira PJ"), t, cv));
+        String id = fisica.path("id").asString();
+
+        JsonNode juridica = corpo(put("/api/pessoas/" + id, token,
+                versao(com(pj(unico("Vira PJ SA"), t), "dataAbertura", "2015-06-01"), fisica)));
+        assertThat(juridica.path("tipoPessoa").asString()).isEqualTo("JURIDICA");
+        Map<String, Object> linha = jdbc.queryForMap("""
+                SELECT rg_orgao_emissor, rg_estado_id, rg_data_emissao, cnh, cnh_categoria, cnh_validade,
+                       estado_civil_id, profissao_id, nacionalidade, naturalidade_id, nome_mae, nome_pai, data_abertura
+                FROM pessoa WHERE id = ?""", UUID.fromString(id));
+        assertThat(linha).hasSize(13);
+        linha.forEach((coluna, valor) -> {
+            if (!coluna.equals("data_abertura")) {
+                assertThat(valor).as(coluna).isNull();
+            }
+        });
+        assertThat(linha.get("data_abertura")).isNotNull();
+
+        corpo(put("/api/pessoas/" + id, token, versao(pf(unico("Volta"), t), juridica)));
+        assertThat(jdbc.queryForObject("SELECT data_abertura FROM pessoa WHERE id = ?", java.sql.Date.class,
+                UUID.fromString(id))).isNull();
+    }
+
+    @Test
+    void cnhDvInvalido400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        for (String errada : List.of("02650306462", "00000000000", "0265030646", "0265030646A")) {
+            MvcTestResult r = post("/api/pessoas", token, com(pf("X", t), "cnh", errada));
+            assertThat(campos(r)).as(errada).containsExactly("cnh");
+            assertThat(mensagem(r)).isEqualTo("CNH inválida.");
+        }
+        assertThat(campos(post("/api/pessoas", token, com(pf("X", t), "cnh", "0".repeat(15))))).containsExactly("cnh");
+    }
+
+    /** Decisão do dono (20/11/2026): o número da CNH pode ir sozinho. */
+    @Test
+    void cnhSozinhaAceita() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        JsonNode p = criar(token, com(pf(unico("Só CNH"), t), "cnh", "60192922408"));
+        assertThat(p.path("cnh").asString()).isEqualTo("60192922408");
+        assertThat(p.path("cnhCategoria").isNull()).isTrue();
+        assertThat(p.path("cnhValidade").isNull()).isTrue();
+        assertThat(criar(token, com(pf(unico("Com categoria"), t), "cnh", "76269908502", "cnhCategoria", "D"))
+                .path("cnhValidade").isNull()).isTrue();
+    }
+
+    @Test
+    void categoriaOuValidadeSemNumero400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        MvcTestResult categoria = post("/api/pessoas", token, com(pf("X", t), "cnhCategoria", "B"));
+        assertThat(campos(categoria)).containsExactly("cnh");
+        assertThat(mensagem(categoria)).isEqualTo("Informe o número da CNH.");
+        MvcTestResult validade = post("/api/pessoas", token, com(pf("X", t), "cnh", "  ", "cnhValidade", "2030-01-01"));
+        assertThat(campos(validade)).containsExactly("cnh");
+        assertThat(mensagem(validade)).isEqualTo("Informe o número da CNH.");
+    }
+
+    @Test
+    void cnhCategoriaForaDoEnum400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        assertThat(status(post("/api/pessoas", token, com(pf("X", t), "cnh", "02650306461", "cnhCategoria", "Z"))))
+                .isEqualTo(400);
+        assertThat(status(post("/api/pessoas", token, com(pf("X", t), "cnh", "02650306461", "cnhCategoria", "ab"))))
+                .isEqualTo(400);
+    }
+
+    /** Vencida é aceita (a tela mostra "Vencida"); o limite é só contra erro de digitação. */
+    @Test
+    void cnhVencidaAceita200() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        JsonNode p = criar(token, com(pf(unico("Vencida"), t), "cnh", "02650306461", "cnhValidade", "2001-01-01"));
+        assertThat(p.path("cnhValidade").asString()).isEqualTo("2001-01-01");
+
+        String longe = java.time.LocalDate.now().plusYears(16).toString();
+        MvcTestResult futura = post("/api/pessoas", token, com(pf("X", t), "cnh", "02650306461", "cnhValidade", longe));
+        assertThat(campos(futura)).containsExactly("cnhValidade");
+        assertThat(mensagem(futura)).isEqualTo("Validade da CNH inválida.");
+        assertThat(campos(post("/api/pessoas", token, com(pf("X", t), "cnh", "02650306461", "cnhValidade", "1899-12-31"))))
+                .containsExactly("cnhValidade");
+        String quase = java.time.LocalDate.now().plusYears(15).toString();
+        assertThat(status(post("/api/pessoas", token, com(pf(unico("Teto"), t), "cnh", "02650306461",
+                "cnhValidade", quase)))).as("hoje + 15 anos ainda passa").isEqualTo(201);
+    }
+
+    @Test
+    void rgComplementoSemRg400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        Civis cv = civis(token);
+        for (Object[] par : List.of(new Object[] {"rgOrgaoEmissor", "SSP"}, new Object[] {"rgEstadoId", cv.ufSp()},
+                new Object[] {"rgDataEmissao", "2008-03-10"})) {
+            MvcTestResult r = post("/api/pessoas", token, com(pf("X", t), "rg", " ", par[0], par[1]));
+            assertThat(campos(r)).as((String) par[0]).containsExactly("rg");
+            assertThat(mensagem(r)).isEqualTo("Informe o número do RG.");
+        }
+        MvcTestResult orgao = post("/api/pessoas", token, com(pf("X", t), "rg", "1234567", "rgOrgaoEmissor", "SSP#1"));
+        assertThat(campos(orgao)).containsExactly("rgOrgaoEmissor");
+        assertThat(mensagem(orgao)).isEqualTo("Órgão emissor inválido.");
+        assertThat(campos(post("/api/pessoas", token, com(pf("X", t), "rg", "1234567", "rgOrgaoEmissor", "S"))))
+                .containsExactly("rgOrgaoEmissor");
+        assertThat(campos(post("/api/pessoas", token, com(pf("X", t), "rg", "1234567", "rgOrgaoEmissor", "S".repeat(16)))))
+                .containsExactly("rgOrgaoEmissor");
+        assertThat(criar(token, com(pf(unico("Rg so"), t), "rg", "1234567")).path("rgUf").isNull())
+                .as("o RG continua podendo ir sozinho").isTrue();
+    }
+
+    @Test
+    void emissaoFutura400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        MvcTestResult r = post("/api/pessoas", token, com(pf("X", t), "rg", "1234567", "rgDataEmissao", "2999-01-01"));
+        assertThat(campos(r)).containsExactly("rgDataEmissao");
+        assertThat(mensagem(r)).isEqualTo("Data de emissão não pode ser no futuro");
+        assertThat(campos(post("/api/pessoas", token, com(pf("X", t), "rg", "1234567", "rgDataEmissao", "1899-12-31"))))
+                .containsExactly("rgDataEmissao");
+    }
+
+    @Test
+    void emissaoAntesDoNascimento400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        MvcTestResult r = post("/api/pessoas", token, com(pf("X", t), "rg", "1234567",
+                "dataNascimento", "1990-05-17", "rgDataEmissao", "1990-05-16"));
+        assertThat(campos(r)).containsExactly("rgDataEmissao");
+        assertThat(mensagem(r)).isEqualTo("A emissão não pode ser anterior ao nascimento.");
+        assertThat(status(post("/api/pessoas", token, com(pf(unico("No dia"), t), "rg", "1234567",
+                "dataNascimento", "1990-05-17", "rgDataEmissao", "1990-05-17")))).isEqualTo(201);
+    }
+
+    @Test
+    void aberturaFutura400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        MvcTestResult r = post("/api/pessoas", token, com(pj("X", t), "dataAbertura", "2999-01-01"));
+        assertThat(campos(r)).containsExactly("dataAbertura");
+        assertThat(mensagem(r)).isEqualTo("Data de abertura não pode ser no futuro");
+        MvcTestResult antiga = post("/api/pessoas", token, com(pj("X", t), "dataAbertura", "1799-12-31"));
+        assertThat(campos(antiga)).containsExactly("dataAbertura");
+        assertThat(mensagem(antiga)).isEqualTo("Data de abertura inválida.");
+    }
+
+    @Test
+    void nacionalidadeForaDoTamanho400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        MvcTestResult curta = post("/api/pessoas", token, com(pf("X", t), "nacionalidade", " B "));
+        assertThat(campos(curta)).containsExactly("nacionalidade");
+        assertThat(mensagem(curta)).isEqualTo("Nacionalidade deve ter de 2 a 40 caracteres.");
+        assertThat(campos(post("/api/pessoas", token, com(pf("X", t), "nacionalidade", "N".repeat(41)))))
+                .containsExactly("nacionalidade");
+        assertThat(campos(post("/api/pessoas", token, com(pf("X", t), "nomeMae", "M".repeat(256)))))
+                .containsExactly("nomeMae");
+    }
+
+    /** IDOR: o id do estado civil (ou da profissão) de outro contratante é "não encontrado". */
+    @Test
+    void estadoCivilDeOutroContratante400() {
+        Contratante ca = novoContratante();
+        Contratante cb = novoContratante();
+        String tokenA = ca.admin().token();
+        Tipos ta = tipos(tokenA);
+        Civis deB = civis(cb.admin().token());
+        String proprioDeB = corpo(post("/api/estados-civis", cb.admin().token(), Map.of("nome", unico("Noivo"))))
+                .path("id").asString();
+
+        for (String alheio : List.of(deB.casado(), proprioDeB, UUID.randomUUID().toString())) {
+            MvcTestResult r = post("/api/pessoas", tokenA, com(pf("X", ta), "estadoCivilId", alheio));
+            assertThat(campos(r)).containsExactly("estadoCivilId");
+            assertThat(mensagem(r)).isEqualTo("Estado civil não encontrado.");
+        }
+        MvcTestResult profissao = post("/api/pessoas", tokenA, com(pf("X", ta), "profissaoId", deB.autonomo()));
+        assertThat(campos(profissao)).containsExactly("profissaoId");
+        assertThat(mensagem(profissao)).isEqualTo("Profissão não encontrada.");
+    }
+
+    @Test
+    void profissaoInativaNova400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        MvcTestResult profissao = post("/api/pessoas", token, com(pf("X", t), "profissaoId", tipoInativo(token, "/api/profissoes")));
+        assertThat(campos(profissao)).containsExactly("profissaoId");
+        assertThat(mensagem(profissao)).isEqualTo("Profissão inativa.");
+        MvcTestResult estadoCivil = post("/api/pessoas", token, com(pf("X", t), "estadoCivilId",
+                tipoInativo(token, "/api/estados-civis")));
+        assertThat(campos(estadoCivil)).containsExactly("estadoCivilId");
+        assertThat(mensagem(estadoCivil)).isEqualTo("Estado civil inativo.");
+    }
+
+    @Test
+    void profissaoInativaJaGravadaContinuaAceita() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        String profissao = corpo(post("/api/profissoes", token, Map.of("nome", unico("Ferreiro")))).path("id").asString();
+        String estadoCivil = corpo(post("/api/estados-civis", token, Map.of("nome", unico("Noivo")))).path("id").asString();
+        Map<String, Object> corpo = com(pf(unico("Antiga"), t), "profissaoId", profissao, "estadoCivilId", estadoCivil);
+        JsonNode p = criar(token, corpo);
+        assertThat(status(patch("/api/profissoes/" + profissao + "/inativar", token))).isEqualTo(204);
+        assertThat(status(patch("/api/estados-civis/" + estadoCivil + "/inativar", token))).isEqualTo(204);
+
+        JsonNode ficha = corpo(get("/api/pessoas/" + p.path("id").asString(), token));
+        assertThat(ficha.path("profissao").path("ativo").asBoolean()).as("aparece como inativa").isFalse();
+        assertThat(ficha.path("estadoCivil").path("ativo").asBoolean()).isFalse();
+        MvcTestResult mesma = put("/api/pessoas/" + p.path("id").asString(), token,
+                versao(com(corpo, "observacao", "mudou"), ficha));
+        assertThat(status(mesma)).as(texto(mesma)).isEqualTo(200);
+
+        assertThat(mensagem(post("/api/pessoas", token, com(pf("Nova", t), "profissaoId", profissao))))
+                .isEqualTo("Profissão inativa.");
+    }
+
+    @Test
+    void ufInexistente400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        MvcTestResult r = post("/api/pessoas", token, com(pf("X", t), "rg", "1234567", "rgEstadoId", UUID.randomUUID().toString()));
+        assertThat(campos(r)).containsExactly("rgEstadoId");
+        assertThat(mensagem(r)).isEqualTo("UF não encontrada.");
+    }
+
+    @Test
+    void naturalidadeInexistente400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        MvcTestResult r = post("/api/pessoas", token, com(pf("X", t), "naturalidadeId", UUID.randomUUID().toString()));
+        assertThat(campos(r)).containsExactly("naturalidadeId");
+        assertThat(mensagem(r)).isEqualTo("Cidade não encontrada.");
+    }
+
+    /** LGPD: a lista (e por ela o Exportar e o Pdf) e o combo não levam nenhum dado complementar. */
+    @Test
+    void listaEExportacaoSemComplementos() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        String nome = unico("Sigilo");
+        String id = criar(token, completaPF(nome, t, civis(token))).path("id").asString();
+
+        JsonNode linha = item(get("/api/pessoas?busca=" + nome, token), id);
+        JsonNode combo = corpo(get("/api/pessoas/selecao?busca=" + nome, token)).get(0);
+        for (String campo : List.of("cnh", "cnhCategoria", "cnhValidade", "nomeMae", "nomePai", "estadoCivil",
+                "profissao", "rgOrgaoEmissor", "rgUf", "rgDataEmissao", "nacionalidade", "naturalidade")) {
+            assertThat(linha.has(campo)).as("lista: " + campo).isFalse();
+            assertThat(combo.has(campo)).as("combo: " + campo).isFalse();
+        }
+        assertThat(texto(get("/api/pessoas?busca=" + nome, token))).doesNotContain("02650306461", "Maria da Silva");
+    }
+
+    // ------------------------------------------------------------ representante legal
+
+    /** PJ A põe PF B como representante legal; B vê A como empresa representada. */
+    @Test
+    void representante_apareceNosDoisLados() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        JsonNode empresa = criar(token, pj(unico("Acme SA"), t));
+        JsonNode fulano = criar(token, pf(unico("Fulano"), t));
+        String idEmpresa = empresa.path("id").asString();
+        String idFulano = fulano.path("id").asString();
+
+        JsonNode al = corpo(put("/api/pessoas/" + idEmpresa, token, versao(com(pj(empresa.path("nome").asString(), t),
+                "vinculos", List.of(vinculo(idFulano, "REPRESENTANTE_LEGAL", "sócio-administrador"))), empresa)));
+        assertThat(al.path("vinculos").get(0).path("tipo").asString()).isEqualTo("REPRESENTANTE_LEGAL");
+
+        JsonNode vistoDeFulano = corpo(get("/api/pessoas/" + idFulano, token)).path("vinculos").get(0);
+        assertThat(vistoDeFulano.path("pessoa").path("id").asString()).isEqualTo(idEmpresa);
+        assertThat(vistoDeFulano.path("tipo").asString()).isEqualTo("REPRESENTADA");
+        assertThat(vistoDeFulano.path("observacao").asString()).isEqualTo("sócio-administrador");
+
+        // Pelo lado da PF: Beltrano diz que a empresa é a representada dele.
+        JsonNode beltrano = criar(token, com(pf(unico("Beltrano"), t), "vinculos",
+                List.of(vinculo(idEmpresa, "REPRESENTADA", null))));
+        JsonNode vistoDaEmpresa = corpo(get("/api/pessoas/" + idEmpresa, token)).path("vinculos");
+        assertThat(vistoDaEmpresa.valueStream()
+                .filter(v -> v.path("pessoa").path("id").asString().equals(beltrano.path("id").asString()))
+                .findFirst().orElseThrow().path("tipo").asString()).isEqualTo("REPRESENTANTE_LEGAL");
+    }
+
+    @Test
+    void representantePJ400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        String outraPj = criar(token, pj(unico("Holding SA"), t)).path("id").asString();
+        MvcTestResult r = post("/api/pessoas", token, com(pj("X", t), "vinculos",
+                List.of(vinculo(outraPj, "REPRESENTANTE_LEGAL", null))));
+        assertThat(campos(r)).containsExactly("vinculos[0].tipo");
+        assertThat(mensagem(r)).isEqualTo("O representante legal precisa ser pessoa física.");
+
+        String empresa = criar(token, pj(unico("Acme SA"), t)).path("id").asString();
+        MvcTestResult pjRepresentante = post("/api/pessoas", token, com(pj("X", t), "vinculos",
+                List.of(vinculo(empresa, "REPRESENTADA", null))));
+        assertThat(campos(pjRepresentante)).containsExactly("vinculos[0].tipo");
+        assertThat(mensagem(pjRepresentante)).isEqualTo("O representante legal precisa ser pessoa física.");
+    }
+
+    @Test
+    void representanteEmPF400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        String fulano = criar(token, pf(unico("Fulano"), t)).path("id").asString();
+        MvcTestResult r = post("/api/pessoas", token, com(pf("X", t), "vinculos",
+                List.of(vinculo(fulano, "REPRESENTANTE_LEGAL", null))));
+        assertThat(campos(r)).containsExactly("vinculos[0].tipo");
+        assertThat(mensagem(r)).isEqualTo("Só pessoa jurídica tem representante legal.");
+    }
+
+    @Test
+    void representadaPF400() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        String fulano = criar(token, pf(unico("Fulano"), t)).path("id").asString();
+        MvcTestResult r = post("/api/pessoas", token, com(pf("X", t), "vinculos",
+                List.of(vinculo(fulano, "REPRESENTADA", null))));
+        assertThat(campos(r)).containsExactly("vinculos[0].tipo");
+        assertThat(mensagem(r)).isEqualTo("A empresa representada precisa ser pessoa jurídica.");
+    }
+
+    @Test
+    void variosRepresentantes200() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        String um = criar(token, pf(unico("Sócio A"), t)).path("id").asString();
+        String dois = criar(token, pf(unico("Sócio B"), t)).path("id").asString();
+        String contato = criar(token, pf(unico("Contato"), t)).path("id").asString();
+        JsonNode empresa = criar(token, com(pj(unico("Dupla SA"), t), "vinculos", List.of(
+                vinculo(um, "REPRESENTANTE_LEGAL", null), vinculo(dois, "REPRESENTANTE_LEGAL", null),
+                vinculo(contato, "CONTATO", null))));
+        assertThat(empresa.path("vinculos").valueStream().map(v -> v.path("tipo").asString()).toList())
+                .containsExactlyInAnyOrder("REPRESENTANTE_LEGAL", "REPRESENTANTE_LEGAL", "CONTATO");
+    }
+
+    /** As restrições do banco seguram mesmo sem passar pelo Java (as linhas antigas da 015 continuam valendo). */
+    @Test
+    void checksDoBanco() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        Civis cv = civis(token);
+        UUID semCnh = UUID.fromString(criar(token, com(pf(unico("Sem CNH"), t), "rg", "1234567")).path("id").asString());
+        UUID completa = UUID.fromString(criar(token, completaPF(unico("Completa"), t, cv)).path("id").asString());
+        UUID empresa = UUID.fromString(criar(token, pj(unico("Empresa"), t)).path("id").asString());
+
+        assertThatThrownBy(() -> jdbc.update("UPDATE pessoa SET cnh_categoria = 'B' WHERE id = ?", semCnh))
+                .as("categoria sem número").hasMessageContaining("ck_pessoa_cnh_complemento");
+        assertThatThrownBy(() -> jdbc.update("UPDATE pessoa SET cnh_validade = DATE '2030-01-01' WHERE id = ?", semCnh))
+                .hasMessageContaining("ck_pessoa_cnh_complemento");
+        assertThat(jdbc.update("UPDATE pessoa SET cnh = '02650306461' WHERE id = ?", semCnh)).as("número sozinho").isEqualTo(1);
+        assertThatThrownBy(() -> jdbc.update("UPDATE pessoa SET cnh = '1234' WHERE id = ?", semCnh))
+                .hasMessageContaining("ck_pessoa_cnh");
+        assertThatThrownBy(() -> jdbc.update("UPDATE pessoa SET cnh_categoria = 'Z' WHERE id = ?", semCnh))
+                .hasMessageContaining("ck_pessoa_cnh_categoria");
+        assertThatThrownBy(() -> jdbc.update("UPDATE pessoa SET rg = NULL WHERE id = ?", completa))
+                .as("órgão, UF e emissão sem RG").hasMessageContaining("ck_pessoa_rg_complemento");
+        assertThatThrownBy(() -> jdbc.update("UPDATE pessoa SET data_abertura = DATE '2015-06-01' WHERE id = ?", semCnh))
+                .as("abertura na física").hasMessageContaining("ck_pessoa_campos_do_tipo");
+        for (String coluna : List.of("nome_mae = 'Maria'", "nacionalidade = 'Brasileira'", "cnh = '02650306461'")) {
+            assertThatThrownBy(() -> jdbc.update("UPDATE pessoa SET " + coluna + " WHERE id = ?", empresa))
+                    .as(coluna).hasMessageContaining("ck_pessoa_campos_do_tipo");
+        }
+
+        String definicao = jdbc.queryForObject(
+                "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = 'ck_pessoa_vinculo_tipo'", String.class);
+        assertThat(definicao).contains("REPRESENTANTE_LEGAL", "REPRESENTADA", "CONTATO", "EMPRESA");
+    }
+
+    /**
+     * A ficha lê a UF do RG, o estado civil, a profissão e a naturalidade (com a UF dela) dentro
+     * da transação: no máximo 5 comandos a mais que a ficha sem complementos, nunca um por item.
+     */
+    @Test
+    void fichaSemNMais1() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        Tipos t = tipos(token);
+        String outra = criar(token, pf(unico("Parente"), t)).path("id").asString();
+        String id = criar(token, com(completaPF(unico("Ficha"), t, civis(token)),
+                "tiposCadastroIds", List.of(t.cliente(), t.fornecedor()),
+                "telefones", List.of(telefone(t.celular(), "11987654321", true), telefone(t.whatsapp(), "11912345678", false)),
+                "emails", List.of(email(t.particular(), "f@x.com", true)),
+                "redesSociais", List.of(rede(t.instagram(), "@f", null)),
+                "enderecos", List.of(endereco(t.residencial(), t.cidade(), true)),
+                "vinculos", List.of(vinculo(outra, "FAMILIAR", null)))).path("id").asString();
+        String simples = criar(token, pf(unico("Simples"), t)).path("id").asString();
+
+        Statistics estatisticas = emf.unwrap(SessionFactory.class).getStatistics();
+        boolean ligadas = estatisticas.isStatisticsEnabled();
+        estatisticas.setStatisticsEnabled(true);
+        try {
+            estatisticas.clear();
+            assertThat(status(get("/api/pessoas/" + simples, token))).isEqualTo(200);
+            long semComplementos = estatisticas.getPrepareStatementCount();
+            estatisticas.clear();
+            assertThat(status(get("/api/pessoas/" + id, token))).isEqualTo(200);
+            long completa = estatisticas.getPrepareStatementCount();
+            assertThat(completa - semComplementos).as("UF do RG, estado civil, profissão, naturalidade e a UF dela")
+                    .isLessThanOrEqualTo(5);
+            assertThat(completa).as("hoje: 8 sem complementos, 11 com").isLessThanOrEqualTo(12);
+        } finally {
+            estatisticas.setStatisticsEnabled(ligadas);
+        }
+    }
+
     // ------------------------------------------------------------ apoio
+
+    /** Ids do contratante para os dados civis: itens do sistema e duas UFs. */
+    record Civis(String casado, String solteiro, String autonomo, String ufSp, String ufRs) {
+    }
+
+    private Civis civis(String token) {
+        JsonNode estados = corpo(get("/api/estados", token));
+        return new Civis(
+                chave(token, "/api/estados-civis", "CASADO"),
+                chave(token, "/api/estados-civis", "SOLTEIRO"),
+                chave(token, "/api/profissoes", "AUTONOMO"),
+                uf(estados, "SP"),
+                uf(estados, "RS"));
+    }
+
+    private static String uf(JsonNode estados, String sigla) {
+        return estados.valueStream().filter(n -> sigla.equals(n.path("sigla").asString()))
+                .findFirst().orElseThrow().path("id").asString();
+    }
+
+    /** Física com todos os documentos e dados civis (CNH 026.503.064-61, naturalidade Campinas). */
+    private static Map<String, Object> completaPF(String nome, Tipos t, Civis cv) {
+        return com(pf(nome, t),
+                "rg", "12.345.678-x", "dataNascimento", "1990-05-17",
+                "rgOrgaoEmissor", "SSP", "rgEstadoId", cv.ufSp(), "rgDataEmissao", "2008-03-10",
+                "cnh", "02650306461", "cnhCategoria", "AB", "cnhValidade", "2031-08-20",
+                "estadoCivilId", cv.casado(), "profissaoId", cv.autonomo(), "nacionalidade", "Brasileira",
+                "naturalidadeId", t.outraCidade(), "nomeMae", "Maria da Silva", "nomePai", "João da Silva");
+    }
 
     private Tipos tipos(String token) {
         return new Tipos(

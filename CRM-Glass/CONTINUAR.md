@@ -1,6 +1,6 @@
 # Como continuar este projeto em outro computador
 
-Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 20/11/2026.
+Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 21/11/2026.
 
 ---
 
@@ -163,6 +163,13 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
   - **Testes:** 274 no backend e 422 no front.
   - **Revisões:** revisor-backend, seguranca, revisor-ui e guardiao-layout aprovaram, e o QA aprovou. Regras em `docs/negocio/pessoas.md` e `docs/negocio/cadastros-auxiliares.md`.
   - **Pendências:** seção "Pendências de Pessoas" no fim da seção 5; as de segurança também em `docs/02`.
+  - A `timeero/pessoas` já foi mesclada na `main` local, **sem push**.
+- **Pessoas: dados complementares (21/11/2026, branch `timeero/pessoas-complemento`):**
+  - PF: RG com órgão, UF e emissão; CNH (DV conferido; categoria e validade opcionais, só com o número; vencida aceita); estado civil, profissão, nacionalidade, naturalidade, nome da mãe e do pai. PJ: data de abertura. Representante legal como vínculo (PF, vários por empresa).
+  - Dois auxiliares novos, Estado civil e Profissão (7 no total), `GET /api/estados` e a máscara `cnh` no kit. Migrations 019 a 021.
+  - LGPD: CNH, filiação e estado civil só na ficha, fora da lista, do Exportar e do Pdf.
+  - Camadas flutuantes com opacidade e desfoque mínimos que a Aparência não baixa; combo estreito sem o X de limpar.
+  - 335 testes no backend, 458 no front; revisões e QA aprovados. Push e merge são do dono. Doc: `docs/negocio/pessoas.md`.
 - **Protótipo** em `prototipo/` (congelado; detalhes no `prototipo/README.md`):
   - login com esfera de partículas;
   - dashboard com números que contam, gráficos que se desenham, medidor, rosca e ranking;
@@ -191,7 +198,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 4. ~~Começar o backend~~ **Feito** (fundação, segurança, login, usuários e permissões).
 5. ~~Base do front definitivo~~ **Feito na fatia 1.** **Fatia 2:** as telas do `PLANO-FATIA-2.md` (login com código por e-mail e sessão em memória, casca com menu por permissão, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta), mais as pendências da seção 5 desse arquivo. Começar com `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
 6. ~~Definir as regras do papel ADMIN~~ **Feito em 14/11/2026:** o ADMIN faz tudo dentro do contratante, e sempre sobra pelo menos um ADMIN ativo (`docs/negocio/usuarios-e-acesso.md`).
-7. **Próximo: Filiais, como no EroErp 2.0** (a pesquisa já está feita em `docs/negocio/eroerp-referencias.md`, "Pesquisa de 20/11/2026: Filiais"). A filial aponta para uma Pessoa, com matriz, tipo e cor. Antes de planejar, o dono decide duas coisas: se o usuário fica preso a uma filial e como a cor da filial convive com a regra de tokens. Depois: produtos, funil de negócios e agenda. (Pessoas e cadastros auxiliares: feitos em 20/11/2026.)
+7. **Próximo: Filiais, como no EroErp 2.0** (a pesquisa já está feita em `docs/negocio/eroerp-referencias.md`, "Pesquisa de 20/11/2026: Filiais"). A filial aponta para uma Pessoa, com matriz, tipo e cor. Antes de planejar, o dono decide duas coisas: se o usuário fica preso a uma filial e como a cor da filial convive com a regra de tokens. A migration dela será a **022**. Depois: produtos, funil de negócios e agenda. (Pessoas, cadastros auxiliares e os dados complementares de Pessoas: feitos em 20 e 21/11/2026.)
 8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup. Checklist que o `seguranca` deixou para produção:
    - tirar o Swagger e o actuator do nginx, ou restringi-los por IP;
    - HSTS no terminador TLS, `server_tokens off` e `Permissions-Policy`;
@@ -209,18 +216,23 @@ Achados menores das revisões e do QA, deixados para depois. Nenhum bloqueia a e
 
 **Segurança** (o texto completo está em `docs/02`, "Pendências conhecidas")
 - CPF na query string de `GET /api/pessoas?documento=` vai para o `access_log` do nginx. Antes de produção: `log_format` sem `$args` no `/api/` e conferir o access log do Tomcat.
-- O `SqlExceptionHelper` do Hibernate grava o CPF no ERROR da corrida de duplicidade: desligar o logger ou `logServerErrorDetail=false`.
+- O `SqlExceptionHelper` do Hibernate grava o CPF no ERROR da corrida de duplicidade: desligar o logger ou `logServerErrorDetail=false`. Risco maior desde 21/11: um CHECK violado da `pessoa` leva CNH e filiação ao log.
 - O `resolverDeToken` do `SecurityConfig` compara a URI crua: alinhar com `RateLimitFilter.caminho()`. É consistência, não brecha.
 - Link de rede social clicável: `rel="noopener noreferrer"` e conferir http(s) também na hora de mostrar.
 
 **Backend**
 - `PessoaService.buscarEntidade` é público e sem uso: deixar `private`.
 - Índice GIN `pg_trgm` em `nome_busca` quando o volume justificar.
+- Índice em `rg_estado_id` só se houver filtro por UF do RG.
+- Renomear `NASCIMENTO_MINIMO` para `DATA_MINIMA` no `PessoaService` (já serve a emissão do RG e a validade da CNH).
+- Categoria da CNH fora do enum dá 400 genérico, sem o campo.
 - O PUT que muda campo da pessoa sobe a `version` em 2. É inofensivo.
 
 **UI**
 - A borda do `.input` (`--line`, 8%) fica abaixo de 3:1. Criar o token `--input-border`.
 - A dica do trilho (`ComDica`, `Sidebar.tsx`) não respeita movimento reduzido.
+- O combo Pessoa do vínculo (320 px) corta nome longo.
+- O "×" do `TFieldList` fica sozinho numa linha a 768 e 360 px.
 - O `Submenu` não consulta o modo leve.
 
 **Dados**

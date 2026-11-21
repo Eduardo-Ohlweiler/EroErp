@@ -11,6 +11,7 @@ ero-api/src/main/resources/db/changelog/
 - Próximo número livre, com três dígitos. Arquivo novo entra no **fim** do `changelog-master.xml`.
 - `changeSet id` = nome do arquivo (sem `.xml`). Se o arquivo tiver mais de um changeSet, acrescente um sufixo. `author="eduardo"`.
 - **Migration aplicada nunca é editada.** Corrigir = migration nova.
+- **CHECK que muda** (ex.: coluna nova no `ck_pessoa_campos_do_tipo`, tipo novo no `ck_pessoa_vinculo_tipo`): `DROP CONSTRAINT` + `ADD CONSTRAINT` com o mesmo nome, na mesma changeSet de uma migration nova (ver 020 e 021). Coluna nova nasce nula, então as linhas antigas passam no CHECK recriado.
 - O Hibernate só **valida** o schema (`ddl-auto: validate`). Coluna esquecida faz a aplicação não subir.
 
 ## Tipos
@@ -93,7 +94,7 @@ UPDATE pessoa p SET cod_pessoa = n.num
 
 ## Itens do sistema semeados por contratante
 
-Cadastro auxiliar com itens pré-cadastrados (ex.: `tipo_telefone` com Celular, WhatsApp...) grava esses itens **em cada contratante**, marcados pela coluna `chave` (nome da constante do enum `<Tipo>DoSistema`; nula = item do contratante). Padrão da migration 014:
+Cadastro auxiliar com itens pré-cadastrados (ex.: `tipo_telefone` com Celular, WhatsApp...) grava esses itens **em cada contratante**, marcados pela coluna `chave` (nome da constante do enum `<Tipo>DoSistema`; nula = item do contratante). Padrão da migration 014 (repetido na 019):
 
 - índices únicos `uk_<t>_tenant_cod_<t>`, `uk_<t>_tenant_nome_busca` (nome único sem caixa nem acento, contando os do sistema), `uk_<t>_tenant_chave` (nulos não colidem) e `uk_<t>_id_tenant (id, tenant_id)`, alvo das FKs compostas;
 - `ck_<t>_sistema_ativo CHECK (chave IS NULL OR ativo)`: item do sistema nunca fica inativo;

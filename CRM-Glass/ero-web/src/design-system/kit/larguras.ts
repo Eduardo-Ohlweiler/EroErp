@@ -41,6 +41,14 @@ export const CLASSE_LARGURA: Record<Largura, string> = {
   longo: 'sm:w-full sm:min-w-64',
 };
 
+/**
+ * Larguras abaixo de 160 px, onde o combo não comporta o texto mais o X de limpar e o chevron (80 px − 14 − 72 = nada;
+ * 128 px deixa 40 px). Nelas o `TCombo`/`TDBCombo` não tem X: limpa-se escolhendo o `vazio` ou outra opção.
+ */
+export function larguraEstreita(width: Largura | undefined): boolean {
+  return width === 'uf' || width === 'codigo' || width === 'hora' || width === 'quantidade';
+}
+
 /** O que o `data-largura` diz: o token aplicado, `celula` (fora de `TRow`, sem `width`) ou `conteudo`. */
 export type LarguraAplicada = Largura | 'celula' | 'conteudo';
 

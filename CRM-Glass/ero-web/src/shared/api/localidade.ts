@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { api } from './cliente';
-import type { OpcaoDoBanco } from '../../design-system/kit';
+import type { OpcaoCombo, OpcaoDoBanco } from '../../design-system/kit';
 
 /*
  * Localidades (ero-api, módulo `localidade`; as duas rotas valem para qualquer usuário sem pendência — ACESSO_LIBERADO):
@@ -39,3 +39,16 @@ export type CepResposta = z.infer<typeof cepSchema>;
 /** `cep` só com os 8 dígitos. Erro da API (404, 503) sobe como `ErroApi`: quem chama mostra e deixa preencher à mão. */
 export const consultarCep = (cep: string): Promise<CepResposta> =>
   api.requisitar(`/api/cep/${encodeURIComponent(cep)}`, { schema: cepSchema });
+
+/** EstadoSelectDto: os 27 estados (tabela do IBGE, iguais para todos os contratantes). */
+const estadoSchema = z.object({ id: z.string(), sigla: z.string(), nome: z.string() });
+export type Estado = z.infer<typeof estadoSchema>;
+
+/** `GET /api/estados` (ACESSO_LIBERADO): os 27, por sigla. Alimenta o `TCombo` de UF (órgão emissor do RG, naturalidade). */
+export const listarEstados = (): Promise<Estado[]> => api.requisitar('/api/estados', { schema: z.array(estadoSchema) });
+
+/** Chave do TanStack Query da lista de estados (não muda: `staleTime` infinito nas telas). */
+export const CHAVE_ESTADOS = ['estados'] as const;
+
+/** Opções do `TCombo` de UF: o valor é o id do estado e o rótulo é a sigla ("RS"). */
+export const opcoesDeUf = (lista: readonly Estado[]): OpcaoCombo[] => lista.map((e) => ({ valor: e.id, rotulo: e.sigla }));
