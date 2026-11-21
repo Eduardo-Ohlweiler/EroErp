@@ -995,6 +995,10 @@ describe('Filiais: TCor e TCorMarca (cor de registro)', () => {
     expect(radios(l)[1]).toContain('aria-checked="true"');
     const d = html(<TCor label="Cor" value="#10B981" onChange={() => {}} disabled />);
     expect(radios(d).every((b) => b.includes('disabled=""'))).toBe(true);
+    // desabilitado se vê, como o TRadio e o TCheckBox: fundo --input-bg-readonly, todos os nomes em --fg-muted
+    expect(d).toContain('bg-[var(--input-bg-readonly)]');
+    expect(radios(d).every((b) => b.includes('text-muted') && !b.includes('text-fg'))).toBe(true);
+    expect(html(<TCor label="Cor" value="#10B981" onChange={() => {}} />)).not.toMatch(/rounded-2xl bg-\[var\(--input-bg-readonly\)\]/);
   });
 
   it('TCorMarca: rótulo vira title e aria-label; sem ele, aria-hidden; tamanhos; anel sempre; inválida neutra', () => {

@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, type KeyboardEvent, type Ref } from 'react';
+import { useEffect, useId, useMemo, useRef, type FocusEvent, type KeyboardEvent, type Ref } from 'react';
 import { useController } from 'react-hook-form';
 import { motion } from 'motion/react';
 import { Pipette } from 'lucide-react';
@@ -26,7 +26,12 @@ export type TCorProps = PropsDeCampo & {
  * Um `role="radiogroup"` com o rótulo do campo e nove `role="radio"`: setas, Home e End andam (e escolhem a sugerida;
  * em "Outra" só focam: Enter ou Espaço abrem o seletor). Só leitura (`TForm somenteLeitura`): continua focável, a
  * escolhida marcada, sem clique nem setas, `aria-readonly`. Largura: o conteúdo (`data-largura="conteudo"`). Não
- * reserva a linha do erro, como o `TRadio`.
+ * reserva a linha do erro, como o `TRadio`. Desabilitado: o grupo no fundo `--input-bg-readonly` e os nomes em
+ * `--fg-muted`, como o `TRadio` e o `TCheckBox`.
+ *
+ * `onBlur` é do grupo: andar entre as opções não toca o campo, só o foco sair do grupo. Com o seletor do sistema aberto
+ * o campo continua em uso: o `onBlur` espera ele fechar. O seletor grava só no `change` nativo (ao fechar ou
+ * confirmar), nunca a cada arrasto (o `input`, que é o `onChange` do React).
  *
  * A cor vinda do banco só entra pela variável `--cor-do-registro`, conferida antes; o anel `--line-strong` vem sempre.
  */
@@ -81,6 +86,9 @@ function TCorBase({
   const somenteLeitura = useSomenteLeituraDoForm();
   const reduzir = useReduzirMovimento();
   const seletor = useRef<HTMLInputElement>(null);
+  const grupo = useRef<HTMLDivElement>(null);
+  // O seletor do sistema aberto: o foco sai da página, mas o campo continua em uso.
+  const seletorAberto = useRef(false);
   // Os tokens são os mesmos nos dois temas: lê uma vez por montagem.
   const sugeridas = useMemo(() => lerCoresSugeridas(), []);
 
@@ -101,6 +109,7 @@ function TCorBase({
     if (!podeEscolher) return;
     const s = seletor.current;
     if (!s) return;
+    seletorAberto.current = true;
     if (typeof s.showPicker === 'function') {
       try {
         s.showPicker();
@@ -111,6 +120,65 @@ function TCorBase({
     }
     s.click();
   };
+
+  // Os listeners nativos leem sempre as props atuais.
+  const atual = useRef({ onChange, onBlur, podeEscolher });
+  atual.current = { onChange, onBlur, podeEscolher };
+
+  const focoSaiu = (e: FocusEvent<HTMLDivElement>) => {
+    const destino = e.relatedTarget as Node | null;
+    if (destino && e.currentTarget.contains(destino)) return; // de uma opção para outra, ou para o seletor
+    if (seletorAberto.current) return; // o seletor do sistema abriu: o onBlur espera ele fechar
+    onBlur?.();
+  };
+  const focoEntrou = (e: FocusEvent<HTMLDivElement>) => {
+    // o foco voltou a uma opção: o seletor fechou (cancelar não dispara `change`)
+    if ((e.target as HTMLElement).getAttribute('role') === 'radio') seletorAberto.current = false;
+  };
+
+  // A cor que o seletor mostra segue o valor, mas sem ser controlada (o React desfaria o arrasto a cada `input`).
+  const corDoSeletor = (cor ?? sugeridas[0]?.hex ?? '').toLowerCase();
+  useEffect(() => {
+    const s = seletor.current;
+    if (s && corDoSeletor && s.value !== corDoSeletor) s.value = corDoSeletor;
+  }, [corDoSeletor]);
+
+  useEffect(() => {
+    const s = seletor.current;
+    if (!s) return;
+    /** Depois de o navegador devolver (ou não) o foco: se ele não está no grupo, o campo foi tocado. */
+    const conferirSaida = () => {
+      setTimeout(() => {
+        const g = grupo.current;
+        if (g && !seletorAberto.current && !g.contains(document.activeElement)) atual.current.onBlur?.();
+      }, 0);
+    };
+    // `change` nativo: o seletor fechou com a cor escolhida.
+    const gravar = () => {
+      seletorAberto.current = false;
+      const nova = normalizarCor(s.value);
+      if (nova && atual.current.podeEscolher) atual.current.onChange?.(nova);
+      conferirSaida();
+    };
+    // Fechou sem `change` e sem devolver o foco a uma opção: a janela recebe o foco de volta, ou o foco vai para fora.
+    const fechou = () => {
+      if (!seletorAberto.current) return;
+      seletorAberto.current = false;
+      conferirSaida();
+    };
+    const focoNaPagina = (e: Event) => {
+      const g = grupo.current;
+      if (g && !g.contains(e.target as Node)) fechou();
+    };
+    s.addEventListener('change', gravar);
+    window.addEventListener('focus', fechou);
+    document.addEventListener('focusin', focoNaPagina);
+    return () => {
+      s.removeEventListener('change', gravar);
+      window.removeEventListener('focus', fechou);
+      document.removeEventListener('focusin', focoNaPagina);
+    };
+  }, []);
 
   const tecla = (e: KeyboardEvent<HTMLButtonElement>, atual: number) => {
     const proxima = PROXIMA[e.key];
@@ -132,14 +200,15 @@ function TCorBase({
         aria-hidden
         layoutId={reduzir ? undefined : `${anel}-anel`}
         transition={spring.snappy}
-        className="absolute inset-0 rounded-full border-2 border-fg/70"
+        className={cn('absolute inset-0 rounded-full border-2', travado ? 'border-muted' : 'border-fg/70')}
       />
     ) : null;
 
   const classeDoBotao = (on: boolean) =>
     cn(
       CLASSE_DA_OPCAO,
-      on ? 'font-semibold text-fg' : 'text-muted',
+      on && 'font-semibold',
+      on && !travado ? 'text-fg' : 'text-muted', // desabilitado: todos os nomes em --fg-muted, como o TRadio
       podeEscolher && 'hover:bg-[var(--chip)]',
       somenteLeitura && 'cursor-default',
     );
@@ -167,7 +236,14 @@ function TCorBase({
       }}
     >
       {() => (
-        <div className="flex flex-wrap items-start gap-1">
+        <div
+          ref={grupo}
+          onBlur={focoSaiu}
+          onFocus={focoEntrou}
+          // Desabilitado: o fundo de campo que não se edita (--input-bg-readonly), o mesmo da marca do TRadio e do
+          // TCheckBox desabilitados; os nomes em --fg-muted passam de 4,5:1 sobre ele (5,75 escuro · 5,20 claro).
+          className={cn('flex flex-wrap items-start gap-1 rounded-2xl', travado && 'bg-[var(--input-bg-readonly)]')}
+        >
           {sugeridas.map((s, i) => {
             const on = i === marcada;
             return (
@@ -182,7 +258,6 @@ function TCorBase({
                 data-cor={s.nome}
                 onClick={() => escolher(i)}
                 onKeyDown={(e) => tecla(e, i)}
-                onBlur={onBlur}
                 className={classeDoBotao(on)}
               >
                 <span className="relative grid size-9 place-items-center">
@@ -204,7 +279,6 @@ function TCorBase({
               data-cor="Outra"
               onClick={abrirSeletor}
               onKeyDown={(e) => tecla(e, sugeridas.length)}
-              onBlur={onBlur}
               className={classeDoBotao(outra)}
             >
               <span className="relative grid size-9 place-items-center">
@@ -227,12 +301,8 @@ function TCorBase({
               tabIndex={-1}
               aria-hidden
               disabled={!podeEscolher}
-              // sem cor, o seletor abre na 1ª sugerida
-              value={(cor ?? sugeridas[0]?.hex ?? '').toLowerCase()}
-              onChange={(e) => {
-                const nova = normalizarCor(e.target.value);
-                if (nova && podeEscolher) onChange?.(nova);
-              }}
+              // sem cor, o seletor abre na 1ª sugerida; grava no `change` nativo (efeito acima), não a cada arrasto
+              defaultValue={corDoSeletor}
               // Invisível, mas é o controle que o medidor do docs/07 §7.1 acha: o fundo segue o de campo editável ou
               // só leitura, como o do TRadio, para a regra "só leitura com fundo de editável" valer aqui também.
               className={cn(

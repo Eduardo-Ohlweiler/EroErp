@@ -40,11 +40,12 @@ export function SecaoKitFiliais() {
   return (
     <div className="col-span-12 flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        {/* a legenda quebra a linha (min-w-0 + flex-1): nada cortado no 1440 nem no 360 */}
+        <div className="min-w-0 flex-1 basis-64">
           <h2 className="text-[15px] font-semibold flex items-center gap-2">
             <Palette className="size-4" aria-hidden /> Kit de telas: peças de Filiais
           </h2>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-muted text-pretty break-words">
             TCor (radiogroup: setas, Home, End; Enter em Outra abre o seletor) · TCorMarca (sm 12 px, md 16 px, anel --line-strong) ·
             barra inferior com "Mais" (celular, abaixo de 768 px)
           </p>
@@ -94,7 +95,8 @@ export function SecaoKitFiliais() {
                   <li key={m.nome} className="flex items-center gap-2 min-w-0">
                     <TCorMarca cor={m.cor} tamanho="sm" />
                     <TCorMarca cor={m.cor} rotulo={`Cor: ${m.nome}`} />
-                    <span aria-hidden className="truncate">{m.nome}</span>
+                    {/* quebra a linha em vez de cortar: o hex de "Outra (#A1B2C3)" fica visível no 360 */}
+                    <span aria-hidden className="min-w-0 break-words">{m.nome}</span>
                   </li>
                 ))}
               </ul>
