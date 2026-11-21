@@ -125,6 +125,20 @@ public class FilialService {
                 .stream().map(FilialMapper::toSelectDto).toList();
     }
 
+    /**
+     * Para outros services (as filiais onde o serviço é prestado): várias de uma vez, com a
+     * pessoa, filtradas pelo tenant. Ativas e inativas (quem chama decide o que aceita). Id
+     * de outro contratante ou inexistente fica fora do mapa.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, Filial> buscarPorIds(Collection<UUID> ids) {
+        SecurityUtils.exigirTenantSelecionado();
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return repository.buscarPorIds(ids).stream().collect(Collectors.toMap(Filial::getId, f -> f));
+    }
+
     // ---------------------------------------------------------------- escrita
 
     /**

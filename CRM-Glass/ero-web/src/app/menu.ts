@@ -1,4 +1,4 @@
-import { Building2, Contact, Home, ScrollText, Store, Tags, Users } from 'lucide-react';
+import { Building2, ConciergeBell, Contact, Home, ScrollText, Store, Tags, Users } from 'lucide-react';
 import type { ItemMenu } from '../design-system/shell';
 import { RAIZ_DOS_AUXILIARES, TELAS_AUXILIARES } from '../modules/auxiliares/telas';
 import type { UsuarioLogado } from '../shared/api/tipos';
@@ -12,6 +12,7 @@ export const TITULOS: [RegExp, string][] = [
   [/^\/admin\/logs(\/|$)/, 'Logs'],
   [/^\/cadastros\/pessoas(\/|$)/, 'Pessoas'],
   [/^\/cadastros\/filiais(\/|$)/, 'Filiais'],
+  [/^\/cadastros\/servicos(\/|$)/, 'Serviços'],
   [/^\/cadastros\/auxiliares\/tipos-de-cadastro(\/|$)/, 'Tipos de cadastro'],
   [/^\/cadastros\/auxiliares\/tipos-de-telefone(\/|$)/, 'Tipos de telefone'],
   [/^\/cadastros\/auxiliares\/tipos-de-email(\/|$)/, 'Tipos de e-mail'],
@@ -19,6 +20,7 @@ export const TITULOS: [RegExp, string][] = [
   [/^\/cadastros\/auxiliares\/tipos-de-rede-social(\/|$)/, 'Tipos de rede social'],
   [/^\/cadastros\/auxiliares\/estados-civis(\/|$)/, 'Estados civis'],
   [/^\/cadastros\/auxiliares\/profissoes(\/|$)/, 'Profissões'],
+  [/^\/cadastros\/auxiliares\/categorias-de-servico(\/|$)/, 'Categorias de serviço'],
   [/^\/minha-conta(\/|$)/, 'Minha conta'],
 ];
 
@@ -74,6 +76,14 @@ export const TELAS_DE_CADASTRO: TelaDoMenu[] = [
     escopo: 'contratante',
     descricao: 'Matrizes e filiais do contratante.',
   },
+  {
+    tela: 'servico-list',
+    to: '/cadastros/servicos',
+    label: 'Serviços',
+    icon: ConciergeBell,
+    escopo: 'contratante',
+    descricao: 'O que você presta, onde e por quanto.',
+  },
 ];
 
 /** Contratantes: presa ao papel (superadmin na visão de plataforma), sem grupo (docs/04 "Telas sem grupo"). */
@@ -94,7 +104,7 @@ export { ROTULO_CADASTROS };
 
 /**
  * Seção Cadastros: o pai "Cadastros auxiliares", que abre o submenu com os auxiliares liberados (só dentro de um
- * contratante: o superadmin na plataforma não vê a seção). Sem filho liberado, o pai some. Pessoas e Filiais vêm antes do pai.
+ * contratante: o superadmin na plataforma não vê a seção). Sem filho liberado, o pai some. Pessoas, Filiais e Serviços vêm antes do pai.
  * Esconder é conforto: quem barra é a API.
  */
 export function menuDeCadastros(usuario: Pick<UsuarioLogado, 'papel' | 'superadminAtuando' | 'telas'>): ItemDoMenu[] {

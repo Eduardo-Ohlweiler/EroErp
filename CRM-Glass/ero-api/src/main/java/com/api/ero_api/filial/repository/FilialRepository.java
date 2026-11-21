@@ -82,6 +82,18 @@ public interface FilialRepository extends JpaRepository<Filial, UUID> {
                                    @Param("ignorarId") UUID ignorarId, Pageable limite);
 
     /**
+     * Várias de uma vez, com a pessoa (o nome do {@code FilialSelectDto}), para os outros
+     * cadastros que apontam para filiais (a lista de filiais do serviço). Ativas e
+     * inativas: quem chama decide. Id de outro contratante não volta.
+     */
+    @Query("""
+            SELECT f FROM Filial f
+            JOIN FETCH f.pessoa
+            WHERE f.id IN :ids
+            """)
+    List<Filial> buscarPorIds(@Param("ids") Collection<UUID> ids);
+
+    /**
      * Trava as filiais (SELECT ... FOR UPDATE) em ordem de id: criar uma filial em M,
      * inativar M e transformar M em filial travam a linha de M antes de conferir, sempre na
      * mesma ordem (sem deadlock). Sem fetch: o PostgreSQL recusa {@code FOR UPDATE} no lado

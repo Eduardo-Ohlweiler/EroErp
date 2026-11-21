@@ -4,7 +4,7 @@ import { api } from './cliente';
 import { paginaSchema, type PaginaDto } from './pagina';
 
 /*
- * Cadastros auxiliares (ero-api, módulo `auxiliar`; grupo CADASTROS_AUXILIARES — docs/04-permissoes.md). São 7, todos
+ * Cadastros auxiliares (ero-api, módulo `auxiliar`; grupo CADASTROS_AUXILIARES — docs/04-permissoes.md). São 8, todos
  * com a mesma forma; o que muda é o recurso (a rota) e o nome do campo do código (`codTipoCadastro`...):
  *
  *   GET   /api/<recurso>?page&size&sort        → PaginaDto<ResponseDto>   (CADASTROS_AUXILIARES_LER; ativos e inativos)
@@ -17,7 +17,7 @@ import { paginaSchema, type PaginaDto } from './pagina';
  * Fica em `shared/` porque é usado pelas telas dos auxiliares e pelo cadastro de Pessoas.
  */
 
-/** Os 7 recursos (a rota depois de `/api/`). */
+/** Os 8 recursos (a rota depois de `/api/`). */
 export type RecursoAuxiliar =
   | 'tipos-cadastro'
   | 'tipos-telefone'
@@ -25,7 +25,8 @@ export type RecursoAuxiliar =
   | 'tipos-endereco'
   | 'tipos-rede-social'
   | 'estados-civis'
-  | 'profissoes';
+  | 'profissoes'
+  | 'categorias-servico';
 
 /** Nome do campo do código em cada recurso (`cod_<tabela>` do contratante, só leitura). */
 export type CampoCodigoAuxiliar =
@@ -35,7 +36,8 @@ export type CampoCodigoAuxiliar =
   | 'codTipoEndereco'
   | 'codTipoRedeSocial'
   | 'codEstadoCivil'
-  | 'codProfissao';
+  | 'codProfissao'
+  | 'codCategoriaServico';
 
 /** `<X>SelectDto`: o que os combos e as pessoas (o tipo de cada telefone, e-mail...) trazem. */
 export const tipoSelectSchema = z.object({

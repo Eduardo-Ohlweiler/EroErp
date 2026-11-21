@@ -34,3 +34,21 @@ export function principalDepoisDeRemover<L>(linhas: readonly L[], removida: numb
 export function marcarPrincipal(total: number, escolhida: number): boolean[] {
   return Array.from({ length: total }, (_, i) => i === escolhida);
 }
+
+/**
+ * Os valores de um formulário que só tem a linha `caminho` (`valores.1`, `a.b.0`) com o conteúdo `linha`: o retrato
+ * que a linha que está saindo usa enquanto anima (ver `CongelaAoSair` no `TFieldList`). Índice vira posição de array.
+ */
+export function valoresNoCaminho(caminho: string, linha: unknown): Record<string, unknown> {
+  const partes = caminho.split('.');
+  const raiz: Record<string, unknown> = {};
+  let no: Record<string, unknown> | unknown[] = raiz;
+  partes.forEach((parte, i) => {
+    const ultima = i === partes.length - 1;
+    const filho = ultima ? linha : /^\d+$/.test(partes[i + 1]) ? [] : {};
+    if (Array.isArray(no)) no[Number(parte)] = filho;
+    else no[parte] = filho;
+    no = filho as Record<string, unknown> | unknown[];
+  });
+  return raiz;
+}

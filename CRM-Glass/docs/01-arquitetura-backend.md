@@ -128,8 +128,19 @@ por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora
 - A entidade-mãe não tem coleção: cada filha tem o seu repository, com `buscarPorPessoa`
   (`JOIN FETCH` do que a resposta mostra) e, para a lista, consultas em lote (`...PorPessoas(ids)`).
 - Mudou só uma filha: a `version` da mãe sobe mesmo assim (`marcarAlteracao`, `UPDATE VERSIONED`).
+- O `marcarAlteracao` limpa a sessão (`clearAutomatically`). Por isso a ordem do `atualizar` é:
+  conferir a versão → `marcarAlteracao` → **reler** → validar e buscar as referências → salvar →
+  filhas. Entidade lida antes dele fica desligada; apontar uma filha nova para ela (ex.: a
+  matriz, que entrou na sessão só como proxy pela filial que aponta para ela) derruba a
+  consulta seguinte com 500 (`data.entityHolder is null`). A recusa da validação desfaz a
+  versão junto com a transação.
 - Erro de regra numa linha usa o caminho do Bean Validation: `telefones[1].tipoId`,
-  `vinculos[0].pessoaId` (o `erroApi` do front converte para o campo da linha).
+  `vinculos[0].pessoaId` (o `erroApi` do front converte para o campo da linha). Quando o
+  service confere todas as linhas de uma vez (modelo: `ServicoService.validar`), as recusas
+  saem num 400 só: `new CampoInvalidoException(List<ErroCampoDto>)`.
+- **Lista filha obrigatória** (modelo: `servico.valores`, as filiais onde o serviço é
+  prestado): `@NotEmpty` no Create e no UpdateDto (com `@Size(max)` de teto). Assim um PUT
+  sem a lista nunca apaga as filhas em silêncio, e o 400 diz o que falta no campo da lista.
 - Banco: FK composta `(mae_id, tenant_id)` e `(tipo_id, tenant_id)` (`docs/05`).
 - Vínculo entre dois registros do mesmo cadastro: uma linha só, em orientação canônica
   (`OrdemUuid`, a mesma ordem do `uuid <` do PostgreSQL); salvar trava as duas pontas em
@@ -166,7 +177,7 @@ Id no corpo que não existe no contratante (ou é de outro contratante) nunca di
 | Exceção | HTTP | `codigo` |
 |---|---|---|
 | validação de DTO ou de parâmetro (`erros[{campo, mensagem}]`: o campo do DTO, ex. `administrador.email`, ou o nome do parâmetro na URL; vale também quando a rota mistura `@Valid @RequestBody` com restrição em parâmetro) | 400 | `VALIDACAO` |
-| `CampoInvalidoException` (regra de campo que só o service vê: cidade inexistente, CEP fora de 8 dígitos...; `erros[{campo, mensagem}]` como acima) | 400 | `VALIDACAO` |
+| `CampoInvalidoException` (regra de campo que só o service vê: cidade inexistente, CEP fora de 8 dígitos...; `erros[{campo, mensagem}]` como acima, um ou vários campos) | 400 | `VALIDACAO` |
 | `AutenticacaoException` / token inválido | 401 | `NAO_AUTENTICADO` |
 | `/2fa/verificar`: desafio vencido, código vencido, já usado, substituído por login novo ou anterior à última troca de senha (voltar para a senha) | 401 | `DESAFIO_EXPIRADO` |
 | `/2fa/verificar`: código errado, ou conta bloqueada/inativa/contratante inativo, sem dizer qual (pode digitar de novo) | 401 | `CODIGO_INVALIDO` |

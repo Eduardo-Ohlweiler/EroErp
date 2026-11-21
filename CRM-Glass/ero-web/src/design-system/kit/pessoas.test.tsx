@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router';
 import { useForm } from 'react-hook-form';
@@ -139,7 +139,7 @@ describe('TFieldList: regras puras', () => {
 
 describe('TFieldList: tela', () => {
   type Tel = { numero: string; principal: boolean };
-  function Lista({ somenteLeitura, variasLinhas, minimo }: { somenteLeitura?: boolean; variasLinhas?: boolean; minimo?: number }) {
+  function Lista({ somenteLeitura, variasLinhas, minimo, acoes }: { somenteLeitura?: boolean; variasLinhas?: boolean; minimo?: number; acoes?: ReactNode }) {
     const form = useForm<{ telefones: Tel[] }>({
       defaultValues: { telefones: [{ numero: '51999887766', principal: true }, { numero: '5133224455', principal: false }] },
     });
@@ -151,6 +151,7 @@ describe('TFieldList: tela', () => {
           name="telefones"
           principal="principal"
           minimo={minimo}
+          acoes={acoes}
           rotuloAdicionar="Acrescentar telefone"
           rotuloLinha={(i) => `Telefone ${i + 1}`}
           novaLinha={{ numero: '', principal: false }}
@@ -187,6 +188,17 @@ describe('TFieldList: tela', () => {
     expect(h).not.toContain('Remover Telefone');
     expect(h.match(/type="radio"/g)).toHaveLength(2);
     expect(h).not.toMatch(/type="radio"[^>]*disabled/);
+  });
+
+  it('acoes: os botões extras ficam ao lado do Acrescentar, no grupo que quebra no celular; somem em só leitura', () => {
+    const extra = <button type="button">Todas as filiais</button>;
+    const h = html(<Lista acoes={extra} />);
+    expect(h).toMatch(/data-kit="TFieldList-acoes" class="[^"]*flex-wrap/);
+    const grupo = h.split('data-kit="TFieldList-acoes"')[1];
+    expect(grupo.indexOf('Acrescentar telefone')).toBeGreaterThan(-1);
+    expect(grupo.indexOf('Acrescentar telefone')).toBeLessThan(grupo.indexOf('Todas as filiais'));
+    expect(html(<Lista somenteLeitura acoes={extra} />)).not.toContain('Todas as filiais');
+    expect(html(<Lista />)).not.toContain('Todas as filiais');
   });
 
   it('minimo: não oferece remover abaixo dele', () => {

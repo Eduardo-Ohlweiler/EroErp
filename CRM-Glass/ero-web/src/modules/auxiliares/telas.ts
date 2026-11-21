@@ -1,9 +1,9 @@
-import { AtSign, BriefcaseBusiness, HeartHandshake, MapPin, Mail, Phone, Tag } from 'lucide-react';
+import { AtSign, BriefcaseBusiness, HeartHandshake, MapPin, Mail, Phone, Shapes, Tag } from 'lucide-react';
 import type { ItemMenu } from '../../design-system/shell';
 import type { RecursoAuxiliar } from '../../shared/api/auxiliares';
 
 /**
- * As 7 telas dos cadastros auxiliares (docs/04-permissoes.md, grupo CADASTROS_AUXILIARES), na ordem do submenu.
+ * As 8 telas dos cadastros auxiliares (docs/04-permissoes.md, grupo CADASTROS_AUXILIARES), na ordem do submenu.
  * Uma fonte só para o menu (`app/menu.ts`), o redirecionamento de `/cadastros/auxiliares` e as rotas.
  */
 export const RAIZ_DOS_AUXILIARES = '/cadastros/auxiliares';
@@ -66,5 +66,13 @@ export const TELAS_AUXILIARES: TelaAuxiliar[] = [
     label: 'Profissões',
     icon: BriefcaseBusiness,
     descricao: 'Autônomo, empresário e as profissões que você usa.',
+  },
+  {
+    tela: 'categoria-servico-formlist',
+    recurso: 'categorias-servico',
+    to: `${RAIZ_DOS_AUXILIARES}/categorias-de-servico`,
+    label: 'Categorias de serviço',
+    icon: Shapes,
+    descricao: 'Agrupe os serviços como o seu negócio fala.',
   },
 ];

@@ -22,7 +22,7 @@ import { brParaIso, dentroDosLimites, diaDaSemana, isoParaBr, mascararData, nome
 import { TRadio } from './TRadio';
 import { TCheckBox } from './TCheckBox';
 import { TDate } from './TDate';
-import { ESPERA_DA_BUSCA_MS, opcoesDoCombo, TDBCombo } from './TDBCombo';
+import { ESPERA_DA_BUSCA_MS, opcoesDoCombo, paraOpcaoDoCombobox, TDBCombo } from './TDBCombo';
 import { TPanel } from './TPanel';
 import { TForm } from './TForm';
 import { DentroDoModal, LARGURA_DO_MODAL } from './TModal';
@@ -1015,9 +1015,72 @@ describe('Filiais: TCor e TCorMarca (cor de registro)', () => {
   });
 
   it('nenhum hex nos .tsx do kit (a cor do registro é dado; as sugeridas são token)', () => {
-    for (const arq of ['TCor.tsx', 'TCorMarca.tsx', 'cores.ts']) {
+    for (const arq of ['TCor.tsx', 'TCorMarca.tsx', 'cores.ts', 'TDBCombo.tsx', '../ui/Combobox.tsx']) {
       const src = fs.readFileSync(new URL(`./${arq}`, import.meta.url), 'utf8').replace(/^\s*(\/\/|\*|\/\*).*$/gm, '');
       expect(src, arq).not.toMatch(/#[0-9A-Fa-f]{3,8}\b/);
     }
+  });
+});
+
+describe('Serviços: bolinha da cor no TDBCombo', () => {
+  const buscar = async () => [];
+  const marcaNoCampo = (h: string) => h.match(/<span data-combobox-marca[^>]*>(.*?)<\/span><input/)?.[1];
+
+  it('opcoesDoCombo leva a cor só quando veio (null e undefined não viram cor); o vazio nunca tem cor', () => {
+    const lista = [
+      { id: 'f1', nome: 'Centro', cor: '#3b82f6' },
+      { id: 'f2', nome: 'Norte', cor: null },
+      { id: 'f3', nome: 'Sul' },
+    ];
+    expect(opcoesDoCombo(lista, '', null, 'Todas')).toEqual([
+      { valor: '', rotulo: 'Todas' },
+      { valor: 'f1', rotulo: 'Centro', cor: '#3b82f6' },
+      { valor: 'f2', rotulo: 'Norte' },
+      { valor: 'f3', rotulo: 'Sul' },
+    ]);
+    expect(opcoesDoCombo(lista, 'f2', null, 'Todas')[2]).not.toHaveProperty('cor');
+    // o valor conhecido que não veio na lista entra com a cor dele
+    expect(opcoesDoCombo([], 'f9', { id: 'f9', nome: 'Antiga', cor: '#A1B2C3' })).toEqual([{ valor: 'f9', rotulo: 'Antiga', cor: '#A1B2C3' }]);
+  });
+
+  it('paraOpcaoDoCombobox: com cor vira a marca TCorMarca; sem cor, a opção fica como era', () => {
+    expect(paraOpcaoDoCombobox({ valor: 'f3', rotulo: 'Sul' })).toEqual({ valor: 'f3', rotulo: 'Sul' });
+    const com = paraOpcaoDoCombobox({ valor: 'f1', rotulo: 'Centro', cor: '#3b82f6' });
+    expect(html(<>{com.marca}</>)).toMatch(/data-kit="TCorMarca"[^>]*aria-hidden="true"[^>]*style="--cor-do-registro:#3B82F6"[^>]*size-3/);
+  });
+
+  it('com cor: a bolinha sm aria-hidden antes do texto do campo, e o padding abre espaço para ela', () => {
+    const h = html(<TDBCombo label="Filial" buscar={buscar} value="f1" rotuloInicial="1 · Centro" corInicial="#10b981" onChange={() => {}} />);
+    const m = marcaNoCampo(h);
+    expect(m).toMatch(/data-kit="TCorMarca"[^>]*aria-hidden="true"/);
+    expect(m).toContain('--cor-do-registro:#10B981');
+    expect(m).not.toContain('role=');
+    expect(h).toMatch(/<input[^>]*class="input pl-9[^"]*"[^>]*value="1 · Centro"/);
+  });
+
+  it('sem cor: nada muda (sem bolinha, sem padding extra)', () => {
+    const h = html(<TDBCombo label="Pessoa" buscar={buscar} value="p1" rotuloInicial="Ana" onChange={() => {}} />);
+    expect(h).not.toContain('data-combobox-marca');
+    expect(h).not.toContain('TCorMarca');
+    expect(h).not.toContain('pl-9');
+    // vazio escolhido ("Todas"): sem bolinha
+    expect(html(<TDBCombo label="Filial" buscar={buscar} vazio="Todas" value="" onChange={() => {}} />)).not.toContain('TCorMarca');
+  });
+
+  it('cor inválida sai neutra: nada do valor chega ao CSS', () => {
+    const h = html(<TDBCombo label="Filial" buscar={buscar} value="f6" rotuloInicial="Antiga" corInicial="red;background:url(x)" onChange={() => {}} />);
+    expect(marcaNoCampo(h)).toContain('--cor-do-registro:var(--cor-registro-vazia)');
+    expect(h).not.toContain('url(x)');
+  });
+
+  it('só leitura e desabilitado: a bolinha continua (é parte do valor)', () => {
+    const d = html(<TDBCombo label="Filial" buscar={buscar} value="f1" rotuloInicial="Centro" corInicial="#10b981" disabled />);
+    expect(marcaNoCampo(d)).toContain('TCorMarca');
+    const l = html(
+      <SomenteLeituraDoForm.Provider value>
+        <TDBCombo label="Filial" buscar={buscar} value="f1" rotuloInicial="Centro" corInicial="#10b981" onChange={() => {}} />
+      </SomenteLeituraDoForm.Provider>,
+    );
+    expect(marcaNoCampo(l)).toContain('TCorMarca');
   });
 });

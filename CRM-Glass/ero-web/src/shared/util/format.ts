@@ -141,6 +141,16 @@ export function formatarMoeda(valor?: number | null): string {
   return `R$ ${formatarNumero(valor, 2, 2)}`;
 }
 
+/** Duração em minutos para exibição: "45 min", "1 h", "1 h 30 min"; ausente (ou zero) vira travessão. */
+export function formatarDuracao(minutos?: number | null): string {
+  if (minutos === null || minutos === undefined || !Number.isFinite(minutos) || minutos <= 0) return AUSENTE;
+  const total = Math.round(minutos);
+  const horas = Math.floor(total / 60);
+  const resto = total % 60;
+  if (horas === 0) return `${resto} min`;
+  return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
+}
+
 /** `1.234.567` e `1.500` são milhar; `0.750` e `72.5` não são (ver `paraNumero`). */
 const PONTO_DE_MILHAR = /^-?(?:\d{1,3}(?:\.\d{3}){2,}|[1-9]\d{0,2}\.\d{3})$/;
 

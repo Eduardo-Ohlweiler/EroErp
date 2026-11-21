@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Serviços (módulo servico) e o auxiliar Categoria de serviço (módulo auxiliar)
+        (PLANO-SERVICOS, 21/11/2026).
+
+        - categoria_servico: cópia da profissao (019), SEM itens do sistema: sem coluna
+          chave, sem semente e sem o check do item do sistema.
+        - servico: cadastro de negócio com tabela própria (nunca um produto com tipo).
+          cod_servico por contratante (maior + 1, ver docs/01 "Código do registro"); nome
+          único sem caixa nem acento (nome_busca, TextoBusca no Java). Categoria e duração
+          opcionais (duração em minutos, de 1 a 1440). NÃO há preço no serviço.
+        - servico_filial: as filiais onde o serviço é prestado (pelo menos uma, conferido
+          no DTO) e o preço de cada uma. O preço é SÓ por filial e é opcional:
+          valor NULL = não informado (digitado no movimento); 0 = gratuito. NULL nunca vira 0.
+          A lista do salvar é o estado completo e substitui a anterior (sem id na entrada).
+        - FKs compostas (x_id, tenant_id): o serviço nunca aponta para a categoria, nem a
+          linha para o serviço ou a filial, de outro contratante. uk_servico_id_tenant vem
+          antes da FK da filha (é o alvo dela); uk_filial_id_tenant já existe (022).
+          Com categoria_servico_id nulo o PostgreSQL não confere a FK (MATCH SIMPLE).
+    -->
+
+    <changeSet id="023-create-servico-1-categoria" author="eduardo">
+        <createTable tableName="categoria_servico">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_categoria_servico"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_categoria_servico_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_categoria_servico" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="nome" type="VARCHAR(40)"><constraints nullable="false"/></column>
+            <column name="nome_busca" type="VARCHAR(40)"><constraints nullable="false"/></column>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="categoria_servico" indexName="uk_categoria_servico_tenant_cod_categoria_servico" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_categoria_servico"/>
+        </createIndex>
+        <createIndex tableName="categoria_servico" indexName="uk_categoria_servico_tenant_nome_busca" unique="true">
+            <column name="tenant_id"/>
+            <column name="nome_busca"/>
+        </createIndex>
+        <createIndex tableName="categoria_servico" indexName="uk_categoria_servico_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <sql>ALTER TABLE categoria_servico ADD CONSTRAINT ck_categoria_servico_cod_categoria_servico CHECK (cod_categoria_servico &gt; 0)</sql>
+    </changeSet>
+
+    <changeSet id="023-create-servico-2-servico" author="eduardo">
+        <createTable tableName="servico">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_servico"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_servico_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_servico" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="nome" type="VARCHAR(150)"><constraints nullable="false"/></column>
+            <column name="nome_busca" type="VARCHAR(150)"><constraints nullable="false"/></column>
+            <column name="categoria_servico_id" type="UUID"/>
+            <column name="duracao_minutos" type="INTEGER"/>
+            <column name="descricao" type="VARCHAR(2000)"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="servico" indexName="uk_servico_tenant_cod_servico" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_servico"/>
+        </createIndex>
+        <createIndex tableName="servico" indexName="uk_servico_tenant_nome_busca" unique="true">
+            <column name="tenant_id"/>
+            <column name="nome_busca"/>
+        </createIndex>
+        <createIndex tableName="servico" indexName="uk_servico_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex tableName="servico" indexName="ix_servico_categoria">
+            <column name="categoria_servico_id"/>
+        </createIndex>
+        <addForeignKeyConstraint constraintName="fk_servico_categoria"
+                                 baseTableName="servico" baseColumnNames="categoria_servico_id,tenant_id"
+                                 referencedTableName="categoria_servico" referencedColumnNames="id,tenant_id"/>
+        <sql>ALTER TABLE servico ADD CONSTRAINT ck_servico_cod_servico CHECK (cod_servico &gt; 0)</sql>
+        <sql>
+            ALTER TABLE servico ADD CONSTRAINT ck_servico_duracao_minutos CHECK (
+                duracao_minutos IS NULL OR duracao_minutos BETWEEN 1 AND 1440)
+        </sql>
+    </changeSet>
+
+    <changeSet id="023-create-servico-3-filial" author="eduardo">
+        <createTable tableName="servico_filial">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_servico_filial"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_servico_filial_tenant" references="tenant(id)"/>
+            </column>
+            <column name="servico_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="filial_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="valor" type="NUMERIC(15,2)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="servico_filial" indexName="uk_servico_filial_servico_filial" unique="true">
+            <column name="servico_id"/>
+            <column name="filial_id"/>
+        </createIndex>
+        <createIndex tableName="servico_filial" indexName="ix_servico_filial_filial">
+            <column name="filial_id"/>
+        </createIndex>
+        <addForeignKeyConstraint constraintName="fk_servico_filial_servico"
+                                 baseTableName="servico_filial" baseColumnNames="servico_id,tenant_id"
+                                 referencedTableName="servico" referencedColumnNames="id,tenant_id"/>
+        <addForeignKeyConstraint constraintName="fk_servico_filial_filial"
+                                 baseTableName="servico_filial" baseColumnNames="filial_id,tenant_id"
+                                 referencedTableName="filial" referencedColumnNames="id,tenant_id"/>
+        <sql>ALTER TABLE servico_filial ADD CONSTRAINT ck_servico_filial_valor CHECK (valor IS NULL OR valor &gt;= 0)</sql>
+    </changeSet>
+
+</databaseChangeLog>

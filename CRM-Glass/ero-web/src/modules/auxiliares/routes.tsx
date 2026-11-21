@@ -9,7 +9,7 @@ import { RAIZ_DOS_AUXILIARES, TELAS_AUXILIARES } from './telas';
  *   /cadastros/auxiliares                              → abre o primeiro auxiliar liberado
  *   /cadastros/auxiliares/tipos-de-cadastro            FormList  (tipo-cadastro-formlist)  ← o modelo
  *   /cadastros/auxiliares/tipos-de-telefone | -email | -endereco | -rede-social   FormList (cópias do modelo)
- *   /cadastros/auxiliares/estados-civis | profissoes                              FormList (cópias do modelo)
+ *   /cadastros/auxiliares/estados-civis | profissoes | categorias-de-servico       FormList (cópias do modelo)
  */
 const caminhoDe = (tela: string) => TELAS_AUXILIARES.find((t) => t.tela === tela)!.to.slice(1);
 
@@ -62,6 +62,13 @@ export const rotasAuxiliares: RouteObject[] = [
     lazy: async () => {
       const { ProfissaoFormList } = await import('./pages/ProfissaoFormList');
       return { element: <ExigeTela tela="profissao-formlist" escopo="contratante"><ProfissaoFormList /></ExigeTela> };
+    },
+  },
+  {
+    path: caminhoDe('categoria-servico-formlist'),
+    lazy: async () => {
+      const { CategoriaServicoFormList } = await import('./pages/CategoriaServicoFormList');
+      return { element: <ExigeTela tela="categoria-servico-formlist" escopo="contratante"><CategoriaServicoFormList /></ExigeTela> };
     },
   },
 ];

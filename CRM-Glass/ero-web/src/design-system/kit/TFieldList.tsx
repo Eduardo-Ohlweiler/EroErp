@@ -1,10 +1,20 @@
-import { Fragment, useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
-import { get, useFieldArray, useFormContext, useFormState, useWatch, type FieldValues } from 'react-hook-form';
-import { AnimatePresence } from 'motion/react';
+import { Fragment, useEffect, useId, useMemo, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import {
+  createFormControl,
+  FormProvider,
+  get,
+  useFieldArray,
+  useFormContext,
+  useFormState,
+  useWatch,
+  type FieldValues,
+  type UseFormReturn,
+} from 'react-hook-form';
+import { AnimatePresence, useIsPresent } from 'motion/react';
 import { Plus, X } from 'lucide-react';
 import { LinhaDaLista } from '../../motion/coreografia';
 import { cn } from '../../shared/util/utils';
-import { linhaParaAcrescentar, linhasDasColunas, marcarPrincipal, principalDepoisDeRemover } from './fieldList';
+import { linhaParaAcrescentar, linhasDasColunas, marcarPrincipal, principalDepoisDeRemover, valoresNoCaminho } from './fieldList';
 import type { Largura } from './larguras';
 import { TButton } from './TButton';
 import { TCol, TRow } from './TRow';
@@ -36,6 +46,11 @@ export type TFieldListProps<L> = {
   minimo?: number;
   /** texto do botão; padrão "Acrescentar" */
   rotuloAdicionar?: string;
+  /**
+   * Botões extras ao lado do Acrescentar, no mesmo alinhamento (quebram para a linha de baixo no celular): o "Todas
+   * as filiais" do Serviço (`<TButton variant="secondary" size="sm" …/>`). Somem em só leitura, junto com o Acrescentar.
+   */
+  acoes?: ReactNode;
   /** o que se diz com a lista vazia ("Nenhum telefone.") */
   vazio?: string;
   /** nota sob a linha (ex.: "Pessoa inativa"); `null` quando não há */
@@ -68,6 +83,11 @@ const FOCAVEL = 'input:not([type="radio"]):not([disabled]), textarea:not([disabl
  * não animam sozinhas: as da tela seguem a cascata do cartão; as que chegam com os dados depois dela aparecem já
  * prontas (pessoa reaberta). A linha que sai fica `inert` até sumir, e o foco
  * nunca vai para ela. A tela não escreve movimento.
+ *
+ * A linha que sai também se desliga do formulário (`CongelaAoSair`): até sumir, os campos dela falam com um
+ * formulário à parte, com o retrato da linha. Sem isso, um `reset` que encolhe a lista (o Recarregar do 409) via os
+ * campos da linha que ainda anima se registrarem de novo e devolverem a linha removida aos valores, só com os campos
+ * que aparecem; o zod reprovava essa linha fantasma e o Salvar não enviava nem mostrava erro.
  */
 export function TFieldList<L extends FieldValues>({
   name,
@@ -75,6 +95,7 @@ export function TFieldList<L extends FieldValues>({
   novaLinha,
   minimo = 0,
   rotuloAdicionar = 'Acrescentar',
+  acoes,
   vazio,
   detalhe,
   principal,
@@ -152,39 +173,41 @@ export function TFieldList<L extends FieldValues>({
             };
             return (
               <LinhaDaLista key={campo.id} entrar={entrarNovas} className="group/linha min-w-0 pb-3">
-                <div
-                  role="group"
-                  aria-label={nome}
-                  data-linha={i}
-                  className={cn(
-                    'flex min-w-0 flex-col',
-                    variasLinhas
-                      ? 'gap-4 rounded-2xl border border-line p-4'
-                      : 'gap-2 border-b border-line pb-4 group-last/linha:border-b-0 group-last/linha:pb-0 sm:border-b-0 sm:pb-0',
-                  )}
-                >
-                  {grade.map((cols, l) => (
-                    <TRow key={l}>
-                      {cols.map(celula)}
-                      {l === 0 && principal && (
-                        <ControleDaLinha>
-                          <RadioPrincipal
-                            grupo={grupo}
-                            marcado={!!(linha as Record<string, unknown>)[principal]}
-                            somenteLeitura={somenteLeitura}
-                            onEscolher={() => escolherPrincipal(i)}
-                          />
-                        </ControleDaLinha>
-                      )}
-                      {l === 0 && podeRemover && (
-                        <ControleDaLinha className={variasLinhas ? 'sm:ml-auto' : undefined}>
-                          <TButton variant="ghost" icone={X} label="" aria-label={`Remover ${nome}`} title="Remover" onClick={() => remover(i)} />
-                        </ControleDaLinha>
-                      )}
-                    </TRow>
-                  ))}
-                  {detalhe?.(i, linha)}
-                </div>
+                <CongelaAoSair caminho={`${name}.${i}`} linha={linha}>
+                  <div
+                    role="group"
+                    aria-label={nome}
+                    data-linha={i}
+                    className={cn(
+                      'flex min-w-0 flex-col',
+                      variasLinhas
+                        ? 'gap-4 rounded-2xl border border-line p-4'
+                        : 'gap-2 border-b border-line pb-4 group-last/linha:border-b-0 group-last/linha:pb-0 sm:border-b-0 sm:pb-0',
+                    )}
+                  >
+                    {grade.map((cols, l) => (
+                      <TRow key={l}>
+                        {cols.map(celula)}
+                        {l === 0 && principal && (
+                          <ControleDaLinha>
+                            <RadioPrincipal
+                              grupo={grupo}
+                              marcado={!!(linha as Record<string, unknown>)[principal]}
+                              somenteLeitura={somenteLeitura}
+                              onEscolher={() => escolherPrincipal(i)}
+                            />
+                          </ControleDaLinha>
+                        )}
+                        {l === 0 && podeRemover && (
+                          <ControleDaLinha className={variasLinhas ? 'sm:ml-auto' : undefined}>
+                            <TButton variant="ghost" icone={X} label="" aria-label={`Remover ${nome}`} title="Remover" onClick={() => remover(i)} />
+                          </ControleDaLinha>
+                        )}
+                      </TRow>
+                    ))}
+                    {detalhe?.(i, linha)}
+                  </div>
+                </CongelaAoSair>
               </LinhaDaLista>
             );
           })}
@@ -194,12 +217,32 @@ export function TFieldList<L extends FieldValues>({
       {erroDaLista && <p className="text-xs text-danger">{erroDaLista}</p>}
 
       {!somenteLeitura && (
-        <div>
+        <div data-kit="TFieldList-acoes" className="flex min-w-0 flex-wrap items-center gap-2">
           <TButton variant="secondary" size="sm" icone={Plus} label={rotuloAdicionar} data-acrescentar onClick={acrescentar} />
+          {acoes}
         </div>
       )}
     </div>
   );
+}
+
+/**
+ * Enquanto a linha está no `AnimatePresence` só para animar a saída, os campos dela falam com um formulário à parte
+ * (criado na saída, com o retrato da linha no mesmo `caminho`), nunca com o da tela: o `useController` registra o
+ * campo a cada renderização e, no formulário de verdade, recriaria a linha removida (no `reset`) ou tomaria o lugar
+ * da linha que subiu para o mesmo índice. A árvore não muda (só o formulário do contexto): nada remonta nem pisca.
+ */
+function CongelaAoSair({ caminho, linha, children }: { caminho: string; linha: unknown; children: ReactNode }) {
+  const real = useFormContext();
+  const presente = useIsPresent();
+  // O retrato é o da última renderização com a linha presente (as props do elemento que o AnimatePresence guardou):
+  // só `presente` entra nas dependências, de propósito.
+  const congelado = useMemo(() => {
+    if (presente) return null;
+    const c = createFormControl({ defaultValues: valoresNoCaminho(caminho, linha) });
+    return { ...c, formState: c.control._formState } as UseFormReturn;
+  }, [presente]);
+  return <FormProvider {...(congelado ?? real)}>{children}</FormProvider>;
 }
 
 /** A mensagem de erro da lista inteira (`telefones` ou `telefones.root`), não a de um campo de uma linha. */

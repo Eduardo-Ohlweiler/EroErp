@@ -19,9 +19,9 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 import tools.jackson.databind.JsonNode;
 
 /**
- * Os 7 cadastros auxiliares. Cada teste roda nas 7 rotas: as 6 cópias do TipoCadastro
+ * Os 8 cadastros auxiliares. Cada teste roda nas 8 rotas: as 7 cópias do TipoCadastro
  * não escapam sem teste. Além dos 4 obrigatórios, o código ({@code cod_<tabela>}) e as
- * regras dos itens do sistema.
+ * regras dos itens do sistema (só nos 7 que têm: a categoria de serviço não tem nenhum).
  */
 class AuxiliarIntegracaoTest extends IntegracaoTest {
 
@@ -38,7 +38,14 @@ class AuxiliarIntegracaoTest extends IntegracaoTest {
         }
     }
 
+    /** Os 8 auxiliares: os 7 da pessoa e a categoria de serviço (sem itens do sistema). */
     static Stream<Auxiliar> auxiliares() {
+        return Stream.concat(auxiliaresComItensDoSistema(), Stream.of(
+                new Auxiliar("/api/categorias-servico", "codCategoriaServico", 40, List.of(), List.of())));
+    }
+
+    /** Só os que têm itens do sistema (as regras do item imutável e do nome repetido com ele). */
+    static Stream<Auxiliar> auxiliaresComItensDoSistema() {
         return Stream.of(
                 new Auxiliar("/api/tipos-cadastro", "codTipoCadastro", 25,
                         List.of("CLIENTE", "FORNECEDOR", "FUNCIONARIO", "LEAD", "OUTROS"),
@@ -264,7 +271,7 @@ class AuxiliarIntegracaoTest extends IntegracaoTest {
     // ------------------------------------------------------------ regras
 
     @ParameterizedTest
-    @MethodSource("auxiliares")
+    @MethodSource("auxiliaresComItensDoSistema")
     void itemDoSistemaNaoAltera422(Auxiliar a) {
         Contratante c = novoContratante();
         String token = c.admin().token();
@@ -286,7 +293,7 @@ class AuxiliarIntegracaoTest extends IntegracaoTest {
 
     /** Nome único no contratante sem caixa nem acento, contando os do sistema. */
     @ParameterizedTest
-    @MethodSource("auxiliares")
+    @MethodSource("auxiliaresComItensDoSistema")
     void nomeRepetidoComOSistema409(Auxiliar a) {
         Contratante c = novoContratante();
         String token = c.admin().token();
@@ -297,7 +304,14 @@ class AuxiliarIntegracaoTest extends IntegracaoTest {
             assertThat(status(r)).as(repetido).isEqualTo(409);
             assertThat(campos(r)).containsExactly("nome");
         }
+    }
 
+    /** Nome único no contratante sem caixa nem acento, entre os itens do contratante. */
+    @ParameterizedTest
+    @MethodSource("auxiliares")
+    void nomeProprioRepetido409(Auxiliar a) {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
         String nome = unico("Própria");
         JsonNode proprio = corpo(post(a.rota(), token, Map.of("nome", nome)));
         assertThat(campos(post(a.rota(), token, Map.of("nome", nome.toUpperCase().replace("Ó", "O")))))
@@ -323,9 +337,9 @@ class AuxiliarIntegracaoTest extends IntegracaoTest {
         }
     }
 
-    /** As 2 cópias novas falam no gênero certo: "um estado civil", "uma profissão". */
+    /** As 3 cópias novas falam no gênero certo: "um estado civil", "uma profissão", "uma categoria de serviço". */
     @Test
-    void mensagensNoGeneroCerto_estadoCivilEProfissao() {
+    void mensagensNoGeneroCerto_estadoCivilProfissaoECategoriaServico() {
         Contratante c = novoContratante();
         String token = c.admin().token();
         String inexistente = java.util.UUID.randomUUID().toString();
@@ -345,6 +359,16 @@ class AuxiliarIntegracaoTest extends IntegracaoTest {
         MvcTestResult profissaoNaoAchada = patch("/api/profissoes/" + inexistente + "/inativar", token);
         assertThat(status(profissaoNaoAchada)).isEqualTo(404);
         assertThat(corpo(profissaoNaoAchada).path("detail").asString()).isEqualTo("Profissão não encontrada.");
+
+        String nome = unico("Instalação");
+        assertThat(status(post("/api/categorias-servico", token, Map.of("nome", nome)))).isEqualTo(201);
+        MvcTestResult categoria = post("/api/categorias-servico", token, Map.of("nome", nome.toUpperCase().replace("Ç", "C")));
+        assertThat(status(categoria)).isEqualTo(409);
+        assertThat(corpo(categoria).path("erros").get(0).path("mensagem").asString())
+                .isEqualTo("Já existe uma categoria de serviço com este nome.");
+        MvcTestResult categoriaNaoAchada = patch("/api/categorias-servico/" + inexistente + "/ativar", token);
+        assertThat(status(categoriaNaoAchada)).isEqualTo(404);
+        assertThat(corpo(categoriaNaoAchada).path("detail").asString()).isEqualTo("Categoria de serviço não encontrada.");
     }
 
     @ParameterizedTest

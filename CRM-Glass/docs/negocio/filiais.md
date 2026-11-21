@@ -55,6 +55,7 @@ Plano de origem: `PLANO-FILIAIS.md`. A filial aponta para uma [[pessoas|pessoa]]
 - Cadastro novo abre com Tipo = Matriz e **sem cor**: a escolha da cor é consciente.
 - Painel "Dados da pessoa", só leitura: CPF ou CNPJ; na jurídica, razão social, fantasia, Data de abertura, IE e IM; o endereço principal. Botão "Abrir em Pessoas". Sem `PESSOAS_LER`, o painel mostra só o aviso.
 - O celular ganhou o "Mais" na barra inferior: acima de 5 itens, o 5º lugar abre o resto (P2).
+- Inativar a filial não olha os serviços; o serviço que já a tinha mostra "Filial inativa" ([[servicos]]).
 
 ## Decisões do dono
 
@@ -69,8 +70,8 @@ Plano de origem: `PLANO-FILIAIS.md`. A filial aponta para uma [[pessoas|pessoa]]
 
 ## Em aberto
 
-- `FilialService.buscarAtiva(id)` para os módulos que usarem filial (agenda, negócio). Nasce com o primeiro que precisar.
-- A bolinha nos combos dessas telas: `TDBCombo` com a marca da cor.
+- `FilialService.buscarAtiva(id)` para um módulo que precise de uma filial só (agenda, negócio). Nasce com o primeiro que precisar.
+- Resolvido em 21/11/2026, com [[servicos]]: `FilialService.buscarPorIds(ids)` (o primeiro módulo que usa filial) e a bolinha da cor no `TDBCombo` (o combo Matriz já mostra).
 
 ## Doc técnico
 

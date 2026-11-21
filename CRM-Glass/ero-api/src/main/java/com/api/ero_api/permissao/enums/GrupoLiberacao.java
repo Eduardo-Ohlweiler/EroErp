@@ -37,11 +37,23 @@ public enum GrupoLiberacao {
             List.of(Tela.FILIAL_LIST, Tela.FILIAL_FORM),
             List.of()),
 
-    /** Os 7 cadastros auxiliares da pessoa (menu Cadastros › Auxiliares). Os combos leem pelo /selecao, aberto a todos. */
+    /**
+     * Serviços (menu Cadastros › Serviços): o que se presta, onde (as filiais) e por quanto. O
+     * combo de serviços é aberto a todos ({@code /selecao}, sem preço); o cadastro rápido de
+     * categoria no Form exige também CADASTROS_AUXILIARES_ESCREVER.
+     */
+    SERVICOS("Serviços",
+            List.of(Tela.SERVICO_LIST, Tela.SERVICO_FORM),
+            List.of()),
+
+    /**
+     * Os 8 cadastros auxiliares (os 7 da pessoa e a categoria de serviço; menu Cadastros ›
+     * Auxiliares). Os combos leem pelo /selecao, aberto a todos.
+     */
     CADASTROS_AUXILIARES("Cadastros auxiliares",
             List.of(Tela.TIPO_CADASTRO_FORMLIST, Tela.TIPO_TELEFONE_FORMLIST, Tela.TIPO_EMAIL_FORMLIST,
                     Tela.TIPO_ENDERECO_FORMLIST, Tela.TIPO_REDE_SOCIAL_FORMLIST,
-                    Tela.ESTADO_CIVIL_FORMLIST, Tela.PROFISSAO_FORMLIST),
+                    Tela.ESTADO_CIVIL_FORMLIST, Tela.PROFISSAO_FORMLIST, Tela.CATEGORIA_SERVICO_FORMLIST),
             List.of()),
 
     USUARIOS("Usuários",

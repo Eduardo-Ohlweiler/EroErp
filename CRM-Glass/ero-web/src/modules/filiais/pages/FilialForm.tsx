@@ -124,7 +124,7 @@ export function FilialForm() {
   const buscarPessoas = async (termo?: string) =>
     (await pessoasApi.selecionar(termo)).map((p) => ({ id: p.id, nome: rotuloDaPessoa(p) }));
   const buscarMatrizes = async (termo?: string) =>
-    (await filiaisApi.selecionar(termo, 'MATRIZ', id)).map((m) => ({ id: m.id, nome: rotuloDaFilial(m) }));
+    (await filiaisApi.selecionar(termo, 'MATRIZ', id)).map((m) => ({ id: m.id, nome: rotuloDaFilial(m), cor: m.cor }));
   const pessoaCriada = (nova: PessoaResponse) => {
     setCriada({ id: nova.id, rotulo: rotuloDaPessoa(nova) });
     form.setValue('pessoaId', nova.id, { shouldDirty: true, shouldValidate: true });
@@ -185,7 +185,14 @@ export function FilialForm() {
         </TRow>
         {tipo === 'FILIAL' && (
           <TRow>
-            <TDBCombo name="matrizId" label="Matriz" required buscar={buscarMatrizes} rotuloInicial={rotuloDaMatrizEscolhida} />
+            <TDBCombo
+              name="matrizId"
+              label="Matriz"
+              required
+              buscar={buscarMatrizes}
+              rotuloInicial={rotuloDaMatrizEscolhida}
+              corInicial={daFilial?.matriz?.cor}
+            />
           </TRow>
         )}
         <TRow>
