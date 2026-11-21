@@ -14,6 +14,7 @@ const AUXILIARES = [
   'tipo-rede-social-formlist',
   'estado-civil-formlist',
   'profissao-formlist',
+  'categoria-servico-formlist',
 ];
 const TODAS = ['usuario-list', 'usuario-form', 'auditoria-list', 'pessoa-list', 'pessoa-form', 'filial-list', 'filial-form', ...AUXILIARES];
 
@@ -67,7 +68,7 @@ describe('seção Cadastros do menu', () => {
     expect(menuDeCadastros(PERFIS.usuarioComAuditoria)).toEqual([]);
   });
 
-  it('ADMIN vê Pessoas, Filiais e depois o pai "Cadastros auxiliares" com os 7 filhos, na ordem do submenu', () => {
+  it('ADMIN vê Pessoas, Filiais e depois o pai "Cadastros auxiliares" com os 8 filhos, na ordem do submenu', () => {
     const [pessoas, filiais, pai, ...resto] = menuDeCadastros(PERFIS.admin);
     expect(resto).toEqual([]);
     expect(pessoas.to).toBe('/cadastros/pessoas');
@@ -84,6 +85,7 @@ describe('seção Cadastros do menu', () => {
       '/cadastros/auxiliares/tipos-de-rede-social',
       '/cadastros/auxiliares/estados-civis',
       '/cadastros/auxiliares/profissoes',
+      '/cadastros/auxiliares/categorias-de-servico',
     ]);
   });
 
@@ -107,7 +109,7 @@ describe('seção Cadastros do menu', () => {
 
   it('superadmin na plataforma não vê a seção; dentro de um contratante, vê', () => {
     expect(menuDeCadastros(PERFIS.superadminNaPlataforma)).toEqual([]);
-    expect(filhos(PERFIS.superadminDentro)).toHaveLength(7);
+    expect(filhos(PERFIS.superadminDentro)).toHaveLength(8);
   });
 });
 
@@ -126,6 +128,7 @@ describe('título da barra superior', () => {
     expect(tituloDaRota('/cadastros/auxiliares/tipos-de-email')).toBe('Tipos de e-mail');
     expect(tituloDaRota('/cadastros/auxiliares/estados-civis')).toBe('Estados civis');
     expect(tituloDaRota('/cadastros/auxiliares/profissoes')).toBe('Profissões');
+    expect(tituloDaRota('/cadastros/auxiliares/categorias-de-servico')).toBe('Categorias de serviço');
     expect(tituloDaRota('/minha-conta')).toBe('Minha conta');
     expect(tituloDaRota('/admin/contratantesx')).toBe('Início');
   });

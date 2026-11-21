@@ -78,6 +78,7 @@ describe('tipoAuxiliarSchema', () => {
   it.each([
     ['estados-civis', 'codEstadoCivil'],
     ['profissoes', 'codProfissao'],
+    ['categorias-servico', 'codCategoriaServico'],
   ] as const)('lê o código do recurso %s em `%s`', (_recurso, campo) => {
     const { codTipoTelefone: _descartado, ...base } = resposta;
     const r = tipoAuxiliarSchema(campo).parse({ ...base, [campo]: 7 });
