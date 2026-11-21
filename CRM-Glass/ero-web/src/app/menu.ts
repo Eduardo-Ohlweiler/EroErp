@@ -1,4 +1,4 @@
-import { Building2, Contact, Home, ScrollText, Tags, Users } from 'lucide-react';
+import { Building2, Contact, Home, ScrollText, Store, Tags, Users } from 'lucide-react';
 import type { ItemMenu } from '../design-system/shell';
 import { RAIZ_DOS_AUXILIARES, TELAS_AUXILIARES } from '../modules/auxiliares/telas';
 import type { UsuarioLogado } from '../shared/api/tipos';
@@ -11,6 +11,7 @@ export const TITULOS: [RegExp, string][] = [
   [/^\/admin\/usuarios(\/|$)/, 'Usuários'],
   [/^\/admin\/logs(\/|$)/, 'Logs'],
   [/^\/cadastros\/pessoas(\/|$)/, 'Pessoas'],
+  [/^\/cadastros\/filiais(\/|$)/, 'Filiais'],
   [/^\/cadastros\/auxiliares\/tipos-de-cadastro(\/|$)/, 'Tipos de cadastro'],
   [/^\/cadastros\/auxiliares\/tipos-de-telefone(\/|$)/, 'Tipos de telefone'],
   [/^\/cadastros\/auxiliares\/tipos-de-email(\/|$)/, 'Tipos de e-mail'],
@@ -65,6 +66,14 @@ export const TELAS_DE_CADASTRO: TelaDoMenu[] = [
     escopo: 'contratante',
     descricao: 'Clientes, fornecedores, leads e contatos.',
   },
+  {
+    tela: 'filial-list',
+    to: '/cadastros/filiais',
+    label: 'Filiais',
+    icon: Store,
+    escopo: 'contratante',
+    descricao: 'Matrizes e filiais do contratante.',
+  },
 ];
 
 /** Contratantes: presa ao papel (superadmin na visão de plataforma), sem grupo (docs/04 "Telas sem grupo"). */
@@ -85,7 +94,7 @@ export { ROTULO_CADASTROS };
 
 /**
  * Seção Cadastros: o pai "Cadastros auxiliares", que abre o submenu com os auxiliares liberados (só dentro de um
- * contratante: o superadmin na plataforma não vê a seção). Sem filho liberado, o pai some. Pessoas vem antes do pai.
+ * contratante: o superadmin na plataforma não vê a seção). Sem filho liberado, o pai some. Pessoas e Filiais vêm antes do pai.
  * Esconder é conforto: quem barra é a API.
  */
 export function menuDeCadastros(usuario: Pick<UsuarioLogado, 'papel' | 'superadminAtuando' | 'telas'>): ItemDoMenu[] {
