@@ -8,6 +8,7 @@ import { rotasConta } from '../modules/conta/routes';
 import { rotasFiliais } from '../modules/filiais/routes';
 import { rotasInicio } from '../modules/inicio/routes';
 import { rotasPessoas } from '../modules/pessoas/routes';
+import { rotasServicos } from '../modules/servicos/routes';
 import { CascaProtegida } from './casca/Casca';
 import { Raiz } from './Raiz';
 
@@ -21,6 +22,7 @@ const DesignSystem = import.meta.env.DEV ? lazy(() => import('../design-system/c
  *     /                    Início
  *     /cadastros/pessoas/...     Pessoas: lista e ficha (modules/pessoas/routes.tsx)
  *     /cadastros/filiais/...     Filiais: lista e ficha (modules/filiais/routes.tsx)
+ *     /cadastros/servicos/...    Serviços: lista e ficha (modules/servicos/routes.tsx)
  *     /cadastros/auxiliares/...  Cadastros auxiliares: FormList de tipos (modules/auxiliares/routes.tsx)
  *     /admin/...           Administrativo: Contratantes (superadmin na plataforma), Usuários e Logs (modules/admin/routes.tsx)
  *     /minha-conta         Minha conta (modules/conta/routes.tsx)
@@ -40,6 +42,7 @@ const rotas: RouteObject[] = [
           ...rotasInicio,
           ...rotasPessoas,
           ...rotasFiliais,
+          ...rotasServicos,
           ...rotasAuxiliares,
           ...rotasAdmin,
           ...rotasConta,

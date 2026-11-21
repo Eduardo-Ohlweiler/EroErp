@@ -5,6 +5,7 @@ import {
   documentoCru,
   formatarData,
   formatarDocumento,
+  formatarDuracao,
   formatarMoeda,
   mascararCep,
   mascararCnpj,
@@ -129,5 +130,23 @@ describe('datas e enum', () => {
     const op = [{ valor: 'UM_MES', rotulo: '1 mês' }] as const;
     expect(rotuloDe(op, 'UM_MES')).toBe('1 mês');
     expect(rotuloDe(op, undefined)).toBeUndefined();
+  });
+});
+
+describe('duração em minutos', () => {
+  it('minutos, horas cheias e horas com minutos', () => {
+    expect(formatarDuracao(45)).toBe('45 min');
+    expect(formatarDuracao(1)).toBe('1 min');
+    expect(formatarDuracao(60)).toBe('1 h');
+    expect(formatarDuracao(90)).toBe('1 h 30 min');
+    expect(formatarDuracao(125)).toBe('2 h 5 min');
+    expect(formatarDuracao(1440)).toBe('24 h');
+  });
+
+  it('ausente, zero ou inválida vira travessão', () => {
+    expect(formatarDuracao(null)).toBe(AUSENTE);
+    expect(formatarDuracao(undefined)).toBe(AUSENTE);
+    expect(formatarDuracao(0)).toBe(AUSENTE);
+    expect(formatarDuracao(Number.NaN)).toBe(AUSENTE);
   });
 });
