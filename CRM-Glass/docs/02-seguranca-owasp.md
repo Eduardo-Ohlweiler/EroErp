@@ -36,7 +36,7 @@ Como cada risco está coberto no `ero-api` e o checklist que o agente
   - o `FOR UPDATE` do login só trava quando o e-mail existe: sob requisições simultâneas, o tempo de resposta denuncia se o e-mail existe e cada uma segura uma conexão pelo tempo do Argon2. Trocar por `pg_advisory_xact_lock(hashtext(email))` com timeout curto;
   - **Pessoas (20/11/2026):**
     - o CPF vai na query string de `GET /api/pessoas?documento=` e o `access_log` do nginx grava. Antes de produção, `log_format` sem `$args` no `/api/`; conferir também o access log do Tomcat;
-    - o `SqlExceptionHelper` do Hibernate registra em ERROR o `Detail` do PostgreSQL, com o CPF, na corrida de duplicidade. Desligar o logger ou usar `logServerErrorDetail=false`;
+    - o `SqlExceptionHelper` do Hibernate registra em ERROR o `Detail` do PostgreSQL, com o CPF, na corrida de duplicidade. Desligar o logger ou usar `logServerErrorDetail=false`. **O risco subiu em 21/11/2026:** se um CHECK da `pessoa` for violado, o `Failing row contains (...)` leva CNH e filiação (nome da mãe e do pai) ao log;
     - o `resolverDeToken` do `SecurityConfig` compara a URI crua. Alinhar com `RateLimitFilter.caminho()` (caminho decodificado). É consistência, não brecha;
     - quando o link de rede social virar clicável, usar `rel="noopener noreferrer"` e conferir http(s) também na hora de mostrar;
   - a invalidação do cache por usuário não enxerga uma carga em andamento (janela de milissegundos). Se preciso, usar um contador de geração por usuário.
