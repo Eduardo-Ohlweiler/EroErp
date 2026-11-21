@@ -20,7 +20,10 @@ export type SidebarProps = {
   marca?: string;
 };
 
-/** Menu lateral flutuante em pílula (trilho de ícones). O destaque do item ativo desliza entre os itens. */
+/**
+ * Menu lateral flutuante em pílula (trilho de ícones). O destaque do item ativo desliza entre os itens.
+ * Fica em `glass` (segue a Aparência): o conteúdo começa depois dele (`md:pl-[104px]` na Casca) e nada rola por baixo.
+ */
 export function Sidebar({ secoes, onSair, marca = 'CRM Glass' }: SidebarProps) {
   const { pathname } = useLocation();
   // Primeira parte da casca a montar e a última a sair (motion/tokens.ts, casca).
@@ -170,12 +173,15 @@ export type MobileNavProps = {
   secoes: SecaoMenu[];
 };
 
-/** Em telas pequenas o menu vira uma barra inferior (as seções na ordem; item com filhos abre o submenu acima da barra). */
+/**
+ * Em telas pequenas o menu vira uma barra inferior (as seções na ordem; item com filhos abre o submenu acima da barra).
+ * O conteúdo rola por baixo dela: é camada flutuante (`glass-flutuante`, opacidade e desfoque de piso).
+ */
 export function MobileNav({ secoes }: MobileNavProps) {
   const { pathname } = useLocation();
   const visiveis = secoesDaBarraInferior(secoes);
   return (
-    <div className="md:hidden glass fixed z-menu bottom-3 inset-x-3 h-16 rounded-[24px] flex items-center px-2">
+    <div className="md:hidden glass-flutuante fixed z-menu bottom-3 inset-x-3 h-16 rounded-[24px] flex items-center px-2">
       {/* Cada seção cresce na proporção dos seus ícones: o espaço entre os ícones fica igual em todas. */}
       {visiveis.map((s, i) => (
         <Fragment key={s.rotulo}>

@@ -26,6 +26,7 @@ export type TopbarProps = {
  * O menu do usuário aparece em todas as larguras: no celular é o único caminho visível para o Sair.
  * O botão claro/escuro do usuário entra pelo `direita` (Casca.tsx): o tema é escolha de cada usuário; o resto da
  * aparência é do contratante. Sem "Novo" e sem sino nesta fase.
+ * É sticky e o conteúdo rola por baixo dela: camada flutuante (`glass-flutuante`), não segue a Aparência abaixo do piso.
  */
 export function Topbar({ titulo, contratante, onBuscar, textoBusca = 'Buscar telas…', direita }: TopbarProps) {
   const [now, setNow] = useState(() => new Date());
@@ -45,7 +46,7 @@ export function Topbar({ titulo, contratante, onBuscar, textoBusca = 'Buscar tel
       initial="hidden"
       animate="show"
       exit="exit"
-      className="glass sticky top-4 z-barra h-16 rounded-[22px] px-2.5 flex items-center gap-2"
+      className="glass-flutuante sticky top-4 z-barra h-16 rounded-[22px] px-2.5 flex items-center gap-2"
     >
       {contratante}
 

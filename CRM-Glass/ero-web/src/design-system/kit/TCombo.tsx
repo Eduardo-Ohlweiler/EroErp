@@ -29,7 +29,7 @@ export function opcoesDoTCombo(opcoes: OpcaoCombo[], vazio?: string): OpcaoCombo
 }
 
 /**
- * Combo de opções (docs/07 §3.2), sobre o `Combobox` glass (WAI-ARIA, lista em `glass-solid` num portal). O valor é
+ * Combo de opções (docs/07 §3.2), sobre o `Combobox` glass (WAI-ARIA, lista em `glass-flutuante` num portal). O valor é
  * sempre texto; `vazio` vale `''`. Busca no servidor a cada termo é o `TDBCombo`.
  *
  * **Largura automática** (sem `width`, dentro de `TRow`): pelo maior rótulo das opções com o `vazio`, até 18

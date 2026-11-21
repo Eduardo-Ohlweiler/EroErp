@@ -10,6 +10,9 @@
   /* valor opaco usado só em máscaras CSS (não aparece como cor) */
   --mask-on: #000;
   --blur: 22px;
+  /* Piso do desfoque da camada flutuante (.glass-flutuante): a Aparência do contratante pode levar o --blur a 0
+   * ("Sem desfoque"), mas lista do combo, menus, paleta, modal, toast e calendário nunca ficam abaixo disto. */
+  --glass-flutuante-blur-piso: 16px;
   /* curvas e durações de movimento: --mov-* (motion/tokens.ts, aplicadas por aplicarVariaveisDeMovimento) */
   /* indicador de carregando com movimento reduzido: opacidade mínima da pulsação leve (o ícone nunca some).
    * 0,8 mantém o ícone ≥ 3:1 (WCAG 1.4.11) no vale da pulsação. Pior caso: ghost (texto muted) no tema claro,
@@ -68,6 +71,10 @@ body:has([aria-modal='true']) {
   --glass-subtle: rgb(255 255 255 / 0.012);
   --glass: rgb(255 255 255 / 0.025);
   --glass-solid: rgb(17 17 27 / 0.46);
+  /* Camada flutuante (lista do combo, Submenu, menu do usuário, paleta, modal, toast, calendário): opacidade com
+   * piso, não segue a Aparência. Medido SEM desfoque sobre o pior fundo (branco puro atrás): fg 11,5:1,
+   * muted 6,3:1, subtle 3,7:1; sobre preto: fg 17,4:1, muted 8,3:1, subtle 4,4:1. */
+  --glass-flutuante: rgb(17 17 27 / 0.86);
   --glass-border: rgb(255 255 255 / 0.07);
   --glass-border-hover: rgb(255 255 255 / 0.22);
   --glass-sheen: rgb(255 255 255 / 0.1);
@@ -111,6 +118,8 @@ body:has([aria-modal='true']) {
   --glass-subtle: rgb(255 255 255 / 0.1);
   --glass: rgb(255 255 255 / 0.2);
   --glass-solid: rgb(255 255 255 / 0.5);
+  /* camada flutuante, sem desfoque sobre o pior fundo (preto puro atrás): fg 13,4:1, muted 5,2:1, subtle 3,2:1 */
+  --glass-flutuante: rgb(255 255 255 / 0.86);
   --glass-border: rgb(255 255 255 / 0.55);
   --glass-border-hover: rgb(255 255 255 / 1);
   --glass-sheen: rgb(255 255 255 / 0.55);
@@ -148,12 +157,14 @@ body:has([aria-modal='true']) {
   --glass-subtle: rgb(10 10 18 / 0.24);
   --glass: rgb(10 10 18 / 0.36);
   --glass-solid: rgb(14 14 24 / 0.64);
+  --glass-flutuante: rgb(14 14 24 / 0.9);
 }
 [data-vidro='denso'][data-theme='light'],
 [data-vidro='denso'] [data-theme='light'] {
   --glass-subtle: rgb(255 255 255 / 0.32);
   --glass: rgb(255 255 255 / 0.46);
   --glass-solid: rgb(255 255 255 / 0.7);
+  --glass-flutuante: rgb(255 255 255 / 0.9);
 }
 
 /* ---------- Cores de destaque (trocáveis por empresa cliente) ---------- */

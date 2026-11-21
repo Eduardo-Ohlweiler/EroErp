@@ -28,7 +28,7 @@ export type TDateProps = PropsDeCampo & {
  * Data do kit (docs/07 §3.2): grava `AAAA-MM-DD` (dia do calendário, não instante), exibe `DD/MM/AAAA`.
  *
  * Digita-se direto (máscara `DD/MM/AAAA`, teclado numérico) ou escolhe-se no calendário pt-BR, num popover
- * `glass-solid` em portal (botão do calendário, ou Alt+↓ no campo). Data digitada que não existe (31/02) volta ao
+ * `glass-flutuante` em portal (botão do calendário, ou Alt+↓ no campo). Data digitada que não existe (31/02) volta ao
  * valor anterior ao sair do campo. O X limpa. Só leitura: `readOnly`, sem calendário nem X. Largura padrão `data`.
  *
  * Valor inicial de "hoje": `hojeIso()` (de `shared/util/format`), nunca `toISOString()`.
@@ -208,7 +208,7 @@ function TDateBase({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
                     transition={spring.snappy}
-                    className="glass-solid z-popover !rounded-2xl p-2"
+                    className="glass-flutuante z-popover !rounded-2xl p-2"
                     style={{ transformOrigin: 'var(--radix-popover-content-transform-origin)' }}
                   >
                     <Calendario valor={value || null} onEscolher={escolher} onLimpar={value ? limpar : undefined} min={min} max={max} autoFoco />

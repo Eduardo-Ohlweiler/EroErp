@@ -74,7 +74,7 @@ export function AvisoContexto({
           className={cn(
             // Numa linha só é uma pílula; no celular (360 px) o botão desce para a linha de baixo e a pílula vira
             // um cartão de cantos redondos (rounded-full num bloco de duas linhas ficaria um estádio).
-            'glass-solid !rounded-[22px] sm:!rounded-full flex max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1.5 p-1.5 pr-2 text-sm',
+            'glass-flutuante !rounded-[22px] sm:!rounded-full flex max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1.5 p-1.5 pr-2 text-sm',
             flutuante && 'pointer-events-auto',
             className,
           )}

@@ -44,7 +44,7 @@ export function focoPelaTecla(tecla: string, lado: LadoDoSubmenu): FocoAoAbrir |
 }
 
 /**
- * Submenu flutuante de um item do menu com `filhos` (docs/07 §0, casca): `glass-solid`, camada `z-popover`, num portal
+ * Submenu flutuante de um item do menu com `filhos` (docs/07 §0, casca): `glass-flutuante`, camada `z-popover`, num portal
  * (fora do vidro do trilho), à direita do trilho ou acima da barra inferior. Título = rótulo do pai; filhos com ícone e
  * texto, o da rota atual com `aria-current="page"`.
  *
@@ -109,7 +109,7 @@ export function Submenu({ item, lado, aberto, onAbertoChange, focoAoAbrir = 'pri
                 animate="show"
                 exit="exit"
                 style={{ transformOrigin: 'var(--radix-popover-content-transform-origin)' }}
-                className="glass-solid z-popover !rounded-2xl p-1.5 w-[248px] max-w-[calc(100vw-1.5rem)]"
+                className="glass-flutuante z-popover !rounded-2xl p-1.5 w-[248px] max-w-[calc(100vw-1.5rem)]"
               >
                 <div id={titulo} className="px-2.5 pt-1.5 pb-2 text-xs font-semibold text-muted">
                   {item.label}

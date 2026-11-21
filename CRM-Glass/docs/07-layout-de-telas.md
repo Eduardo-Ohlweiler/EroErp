@@ -36,7 +36,7 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 - Máscara no `onChange` (o `TEntry` com `mascara` já exibe e grava certo) e `useToast` direto (use `useMessage`).
 - Cor, sombra, desfoque, duração ou curva literal (vão para `tokens.css` e `motion/tokens.ts`).
 
-**Disposição.** Um campo por `TRow`. Lado a lado só nos grupos naturais: CNH · Categoria · Validade, De · Até, Dia · Das · Às, CEP · Número · Complemento, Bairro · Cidade · UF, Valor · Unidade, linha de `TFieldList`; ou quando o plano mandar dividir (cada um em `TCol` com `longo`). Campo curto nunca estica. Label em cima; ao lado só se o plano pedir (e então em toda a tela).
+**Disposição.** Um campo por `TRow`. Lado a lado só nos grupos naturais (campos do mesmo documento ficam sempre na mesma linha): CNH · Categoria · Validade, RG · Órgão emissor · UF · Emissão, De · Até, Dia · Das · Às, CEP · Número · Complemento, Bairro · Cidade · UF, Valor · Unidade, linha de `TFieldList`; ou quando o plano mandar dividir (cada um em `TCol` com `longo`). Campo curto nunca estica. Label em cima; ao lado só se o plano pedir (e então em toda a tela).
 
 **Permissão e só leitura.** `useSomenteLeitura('<GRUPO>')` (sem argumento para tela presa ao papel). Sem `<GRUPO>_ESCREVER`, o `TForm somenteLeitura` esconde Salvar, Novo, Inativar e Reativar; na List, `!somenteLeitura &&` no Novo e nas ações da grade. Inativar/reativar na grade com `useQuestion` quando a API de alterar não recebe `ativo`.
 
@@ -153,7 +153,7 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 >   `info`, `destaque`) e os do `Badge`; `ponto` põe a bolinha.
 > - `TDate` não usa o `<input type="date">` do navegador (que muda de cara e de
 >   idioma em cada sistema): é um campo de texto com máscara `DD/MM/AAAA`
->   (teclado numérico) e o `Calendario` pt-BR num popover `glass-solid`
+>   (teclado numérico) e o `Calendario` pt-BR num popover `glass-flutuante`
 >   (botão do calendário ou Alt+↓; semana começa no domingo; setas, PageUp/
 >   PageDown, Home/End). Grava `AAAA-MM-DD`; o `onChange` controlado recebe o
 >   texto ISO, não o evento. Data que não existe (31/02) volta ao valor
@@ -203,6 +203,16 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 >   menus) < modal < toast. Popover aberto de dentro de um modal sobe acima
 >   dele. Com a faixa do suporte na tela, os toasts sobem acima dela
 >   (`--folga-inferior`).
+> - Toda camada que flutua sobre o conteúdo (lista do `TCombo`/`TDBCombo`,
+>   calendário do `TDate`, `Popover`, `Submenu`, menu do usuário, seletor de
+>   contratante, paleta Ctrl+K, `TModal`/`Dialogo`, `Gaveta`, toasts) e todo
+>   elemento fixo ou sticky da casca com o conteúdo rolando por baixo (`Topbar`,
+>   `MobileNav` do celular, faixa do suporte `AvisoContexto`) usa o
+>   nível **`glass-flutuante`**, nunca `glass-solid`. O trilho lateral
+>   (`Sidebar`) fica em `glass`: o conteúdo começa depois dele. **Camada flutuante não
+>   segue a intensidade da Aparência abaixo do piso**: opacidade do token
+>   `--glass-flutuante` e desfoque nunca abaixo de `--glass-flutuante-blur-piso`
+>   (DIRECAO-VISUAL §2). Componente novo que flutua usa a mesma classe.
 > - Classes de impressão: `nao-imprime` (some no papel: a faixa do
 >   `AvisoContexto`, a barra do `TTabs`) e `so-impressao` (só no papel).
 > - `useMessage().erroApi(e, form?, { recarregar? })`: o Recarregar do 409 (só
@@ -225,7 +235,7 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 >   `<nav aria-label>` separado por uma linha `--line`; seção vazia some. Item
 >   com `filhos` vira um botão (`aria-haspopup="menu"`, `aria-expanded`), ativo
 >   quando a rota está sob ele ou num filho, que abre o **submenu flutuante**
->   (`Submenu`, Radix Popover num portal, `glass-solid`, `z-popover`): à direita
+>   (`Submenu`, Radix Popover num portal, `glass-flutuante`, `z-popover`): à direita
 >   do trilho no computador, acima da barra no celular; título = rótulo do pai,
 >   filhos com ícone e texto. Teclado de menu-button: Enter, Espaço, ↓ (e → no
 >   trilho) abrem no 1º filho, ↑ no último; ↑ ↓ Home End andam; Esc, Tab, ← (no
@@ -246,11 +256,11 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 > | `TFormFooter` · `TFormActionsLeft` · `TFormActionsRight` | `BarraAcoes` (`alinhar="inicio"`; é bloco) | borda no topo, empilhar no celular |
 > | `TRow` · `TCol` | — | tudo (flex + `larguras.ts`) |
 > | `TPanel` | `CardHeader` (título e ação) | recolhível, sem vidro próprio (§3.1) |
-> | `TModal` | `Dialogo` (Radix: foco preso, Esc, `aria-modal`, `glass-solid`, fundo sem desfoque) | só a tradução das props |
+> | `TModal` | `Dialogo` (Radix: foco preso, Esc, `aria-modal`, `glass-flutuante`, fundo sem desfoque) | só a tradução das props |
 > | `TTabs` · `TTabPanel` | `Tabs` · `ConteudoAba` (Radix, pílula que desliza) | só a tradução das props |
 > | rótulo, ajuda e erro de todo campo | `CampoForm` (rótulo em cima, `id` gerado por `useId`, `aria-describedby`, erro animado sem pular layout, é bloco) | `rotuloOculto` (rótulo só para leitor de tela) |
 > | `TEntry` | `Input` (`Bits.tsx`, classe `.input`); `InputSenha` para `type="password"` | máscaras: `shared/util/format.ts`, portando o `EroErp2.0/ero/src/utils/format.ts` (`mascararCpf`, `mascararCnpj`, `mascararCep`, `mascararTelefone`, `paraNumero`, `textoDaMascara`) |
-> | `TCombo` · `TDBCombo` | `Combobox` (WAI-ARIA, lista em `glass-solid` num portal, `carregando`, `onBuscaChange`, `limpavel`) | debounce e rótulo do valor salvo no `TDBCombo` |
+> | `TCombo` · `TDBCombo` | `Combobox` (WAI-ARIA, lista em `glass-flutuante` num portal, `carregando`, `onBuscaChange`, `limpavel`) | debounce e rótulo do valor salvo no `TDBCombo` |
 > | `TDBComboMulti` | — | tudo |
 > | `TDate` · `TDateTime` | `Popover` (`Overlays.tsx`) | o calendário em pt-BR |
 > | `TTextArea` | a classe `.input` | contador "máx. N caracteres" |
@@ -312,8 +322,17 @@ blocos, a permissão por grupo e a responsividade.
 - **Campos um abaixo do outro**, um por `TRow`.
 - **Lado a lado só** nos grupos naturais abaixo, ou quando a tela tem muitos
   campos e o plano manda dividir a linha (cada campo na sua `TCol`, com
-  `width="longo"`):
+  `width="longo"`).
+- **Campos do mesmo documento ficam na mesma linha** (regra do Eduardo,
+  20/11/2026): o número do documento e os dados que só existem junto com ele
+  (órgão, UF, categoria, emissão, validade). A lista abaixo dá exemplos, mas não
+  esgota a regra; documento novo segue o mesmo princípio, e o plano diz a
+  linha. Grupos naturais:
   - CNH · Categoria · Validade
+  - RG · Órgão emissor · UF · Emissão
+  - Título de eleitor · Zona · Seção
+  - CTPS · Série · UF
+  - Inscrição estadual · UF
   - De · Até
   - Dia · Das · Às
   - CEP · Número · Complemento
@@ -479,7 +498,7 @@ para os componentes de baixo, que falam português (`loading` → `carregando`,
 | `TRow` | `children` | Uma linha: `flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start`. |
 | `TCol` | `width?: 'auto' \| 'rotulo' \| Largura`, `align?: 'left' \| 'right'` | Coluna da linha. **Sem `width`, divide a linha em partes iguais** (`sm:flex-1 sm:min-w-0 sm:basis-64`) — CNH · Categoria · Validade ficam um em cada terço. `auto` encolhe até o campo, para curtos ficarem colados. `rotulo` (`sm:w-48`, 192 px) é a coluna de labels do §5. |
 | `TPanel` | `title?`, `subtitle?`, `recolhido?`, `actions?`, **`somenteLeitura?`** | Seção por assunto (Administrador, Endereços…), recolhível pelo título. **Sem vidro próprio**: está dentro do cartão `glass-solid` e a região não passa de duas camadas de `backdrop-filter` (DIRECAO-VISUAL §3, desempenho). Separa por borda `--line` e título (`CardHeader`), como o `.glass-flat`. `somenteLeitura` deixa só este painel só leitura dentro de um formulário editável (marca "Só leitura" no título). |
-| `TModal` | `aberto`, `titulo`, `onFechar`, `acoes?`, `largura?: 'sm' \| 'md' \| 'lg'`, `descricao?`, `bloquearFechar?` | Janela (`Dialogo`, `glass-solid`, fundo sem desfoque); nunca passa de `calc(100vw - 2rem)`. Foco no primeiro campo ao abrir; o `TForm` de dentro não põe cartão (§6). |
+| `TModal` | `aberto`, `titulo`, `onFechar`, `acoes?`, `largura?: 'sm' \| 'md' \| 'lg'`, `descricao?`, `bloquearFechar?` | Janela (`Dialogo`, `glass-flutuante`, fundo sem desfoque); nunca passa de `calc(100vw - 2rem)`. Foco no primeiro campo ao abrir; o `TForm` de dentro não põe cartão (§6). |
 | `TTabs` · `TTabPanel` | `TTabs`: `abas: {id, rotulo, alerta?, icone?, desabilitada?}[]`, `ativa`, `onChange`, `label?`, `children`; `TTabPanel`: `id`, `rotulo?` | Abas (`Tabs` · `ConteudoAba`), quando o formulário é grande demais para painéis. Os painéis vão dentro do `TTabs`; só a ativa fica montada (o `useForm` mora na tela). |
 
 Campo **sem `TCol`** vai direto na `TRow` quando está sozinho na linha. Campo
@@ -989,7 +1008,7 @@ campo `rotuloOculto` (o rótulo continua no DOM para leitor de tela).
 
 `TModal` com formulário segue as mesmas regras: `TForm`, `TRow`, larguras
 padrão, rodapé de botões. Dentro dele, `metade` e `longo` são relativos à
-coluna do modal. O modal já é a camada de vidro (`glass-solid`, fundo
+coluna do modal. O modal já é a camada de vidro (`glass-flutuante`, fundo
 escurecido sem desfoque): dentro dele o `TForm` não põe outro cartão de vidro
 e o `TPanel` continua sem `backdrop-filter`.
 

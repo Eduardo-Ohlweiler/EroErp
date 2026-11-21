@@ -96,7 +96,7 @@ export function CommandPalette({ aberto: open, onAbertoChange: setOpen, comandos
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.97, transition: { duration: micro.saidaRapida } }}
             transition={spring.soft}
-            className="glass-solid relative w-full max-w-[600px] rounded-[26px] overflow-hidden"
+            className="glass-flutuante relative w-full max-w-[600px] rounded-[26px] overflow-hidden"
           >
             <motion.div
               initial={reduzir ? false : { filter: 'blur(8px)' }}

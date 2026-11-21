@@ -50,7 +50,7 @@ export function opcoesDoCombo(
 
 /**
  * Combo com as **opções do banco** (docs/07 §3.2): Usuário e Contratante nos filtros dos Logs, responsável no
- * cadastro. Sobre o `Combobox` glass (WAI-ARIA, lista `glass-solid` em portal): busca ao abrir e, a cada termo, depois
+ * cadastro. Sobre o `Combobox` glass (WAI-ARIA, lista `glass-flutuante` em portal): busca ao abrir e, a cada termo, depois
  * de `ESPERA_DA_BUSCA_MS`; resposta velha que chega depois da nova é descartada. Grava o `id`; o rótulo do valor
  * salvo vem do `rotuloInicial`. Largura padrão `metade`.
  */

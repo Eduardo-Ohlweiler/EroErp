@@ -61,7 +61,8 @@
   /* ---------- Vidro: três níveis ---------- */
   .glass,
   .glass-subtle,
-  .glass-solid {
+  .glass-solid,
+  .glass-flutuante {
     position: relative;
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-xl);
@@ -71,7 +72,8 @@
   /* Borda de luz em degradê: forte no canto de cima, some no meio, volta fraca embaixo. */
   .glass::before,
   .glass-subtle::before,
-  .glass-solid::before {
+  .glass-solid::before,
+  .glass-flutuante::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -106,6 +108,15 @@
     box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--glass-shadow);
     -webkit-backdrop-filter: blur(calc(var(--blur) * 1.5)) saturate(var(--glass-saturate));
     backdrop-filter: blur(calc(var(--blur) * 1.5)) saturate(var(--glass-saturate));
+  }
+  /* Camada flutuante (lista do combo, Submenu, menu do usuário, seletor de contratante, paleta Ctrl+K, modal,
+   * gaveta, toast, popover e calendário): a receita do glass-solid com opacidade e desfoque de piso. A Aparência do
+   * contratante mexe no --blur dos cartões, mas esta camada não fica abaixo do token nem do piso de desfoque. */
+  .glass-flutuante {
+    background: var(--glass-flutuante);
+    box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--glass-shadow);
+    -webkit-backdrop-filter: blur(max(var(--glass-flutuante-blur-piso), calc(var(--blur) * 1.5))) saturate(var(--glass-saturate));
+    backdrop-filter: blur(max(var(--glass-flutuante-blur-piso), calc(var(--blur) * 1.5))) saturate(var(--glass-saturate));
   }
   .glass-hover {
     transition:

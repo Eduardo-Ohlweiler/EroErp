@@ -798,6 +798,37 @@ describe('correções da revisão da fatia 3', () => {
     expect(TOKENS_CSS).toMatch(/--folga-inferior:\s*0px/);
   });
 
+  it('camada flutuante: opacidade de piso nos dois temas e no denso, desfoque com piso, usada em toda camada flutuante', () => {
+    const alfas = (nome: string) => [...TOKENS_CSS.matchAll(new RegExp(`--${nome}:\\s*rgb\\([^/]+/\\s*([\\d.]+)\\)`, 'g'))].map((m) => Number(m[1]));
+    const flutuante = alfas('glass-flutuante');
+    const solido = alfas('glass-solid');
+    // escuro, claro, denso escuro, denso claro (mesma ordem do glass-solid)
+    expect(flutuante).toHaveLength(4);
+    expect(solido).toHaveLength(4);
+    flutuante.forEach((a, i) => {
+      expect(a).toBeGreaterThanOrEqual(0.86);
+      expect(a).toBeGreaterThan(solido[i]);
+    });
+    expect(TOKENS_CSS).toMatch(/--glass-flutuante-blur-piso:\s*\d+px/);
+    // a regra própria do nível (a primeira ocorrência é a receita comum, com os outros níveis)
+    const regra = INDEX_CSS.match(/\.glass-flutuante\s*\{[^}]*background: var\(--glass-flutuante\)[^}]*\}/)?.[0] ?? '';
+    expect(regra).toMatch(/[^-]backdrop-filter: blur\(max\(var\(--glass-flutuante-blur-piso\), calc\(var\(--blur\) \* 1\.5\)\)\)/);
+    // inclui o que é fixo/sticky na casca com o conteúdo rolando por baixo: barra superior, barra inferior do celular
+    // e a faixa do suporte (AvisoContexto)
+    const camadas = ['ui/Combobox', 'ui/Overlays', 'ui/Dialogo', 'ui/Gaveta', 'ui/Toast', 'kit/TDate', 'shell/Submenu', 'shell/MenuUsuario', 'shell/SeletorContratante', 'shell/CommandPalette', 'shell/Topbar', 'shell/Sidebar', 'ui/AvisoContexto'];
+    for (const c of camadas) {
+      const src = fs.readFileSync(new URL(`../${c}.tsx`, import.meta.url), 'utf8');
+      expect(src, c).toContain('glass-flutuante ');
+      expect(src.replace(/^\s*(\/\/|\*|\/\*).*$/gm, ''), c).not.toContain('glass-solid');
+    }
+    const topbar = fs.readFileSync(new URL('../shell/Topbar.tsx', import.meta.url), 'utf8');
+    expect(topbar).toMatch(/"glass-flutuante sticky /);
+    const sidebar = fs.readFileSync(new URL('../shell/Sidebar.tsx', import.meta.url), 'utf8');
+    // barra inferior do celular: flutuante; trilho lateral: nada rola por baixo dele, segue em `glass` (Aparência)
+    expect(sidebar).toMatch(/"md:hidden glass-flutuante fixed /);
+    expect(sidebar).toMatch(/"glass fixed z-menu left-4 /);
+  });
+
   it('AvisoContexto: a região viva nasce sem o texto (entra depois) e o texto visível não é lido duas vezes', () => {
     const h = html(<AvisoContexto acao={{ rotulo: 'Sair do contratante', onClick: () => {} }}>Você está dentro de X</AvisoContexto>);
     expect(h).toMatch(/role="status"[^>]*><span class="sr-only"><\/span>/);
