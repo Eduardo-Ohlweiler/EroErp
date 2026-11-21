@@ -50,7 +50,7 @@ export const colunasExportadas: ColunaExportavel<Filial>[] = [
   { titulo: 'Código', numerica: true, semQuebra: true, valor: (f) => String(f.codFilial) },
   { titulo: 'Nome', valor: nomeComFantasia },
   { titulo: 'CPF/CNPJ', semQuebra: true, valor: (f) => (f.pessoa.documento ? formatarDocumento(f.pessoa.documento) : '') },
-  { titulo: 'Tipo', valor: (f) => rotuloDoTipoFilial(f.tipo) },
+  { titulo: 'Tipo', semQuebra: true, valor: (f) => rotuloDoTipoFilial(f.tipo) },
   { titulo: 'Matriz', valor: matrizDe },
-  { titulo: 'Situação', valor: (f) => (f.ativo ? 'Ativo' : 'Inativo') },
+  { titulo: 'Situação', semQuebra: true, valor: (f) => (f.ativo ? 'Ativo' : 'Inativo') },
 ];
