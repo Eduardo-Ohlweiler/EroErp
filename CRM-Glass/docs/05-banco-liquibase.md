@@ -11,6 +11,7 @@ ero-api/src/main/resources/db/changelog/
 - Próximo número livre, com três dígitos. Arquivo novo entra no **fim** do `changelog-master.xml`.
 - `changeSet id` = nome do arquivo (sem `.xml`). Se o arquivo tiver mais de um changeSet, acrescente um sufixo. `author="eduardo"`.
 - **Migration aplicada nunca é editada.** Corrigir = migration nova.
+- **CHECK que muda** (ex.: coluna nova no `ck_pessoa_campos_do_tipo`, tipo novo no `ck_pessoa_vinculo_tipo`): `DROP CONSTRAINT` + `ADD CONSTRAINT` com o mesmo nome, na mesma changeSet de uma migration nova (ver 020 e 021). Coluna nova nasce nula, então as linhas antigas passam no CHECK recriado.
 - O Hibernate só **valida** o schema (`ddl-auto: validate`). Coluna esquecida faz a aplicação não subir.
 
 ## Tipos

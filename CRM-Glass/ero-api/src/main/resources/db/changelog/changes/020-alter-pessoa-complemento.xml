@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Dados complementares da pessoa (PLANO-PESSOAS-COMPLEMENTO §3.1).
+
+        - Pessoa física: RG com órgão emissor, UF (FK para estado) e emissão; CNH com número
+          (11 dígitos; o dígito verificador é conferido no Java), categoria e validade;
+          estado civil e profissão (cadastros auxiliares da 019, FK composta com o tenant:
+          o banco garante que ninguém aponta para o item de outro contratante);
+          nacionalidade; naturalidade (FK para cidade do IBGE); nome da mãe e do pai.
+        - Pessoa jurídica: data de abertura.
+        - Nada cifrado (decisão do plano §2.2): CPF e RG já ficam em claro, e a CNH é da
+          mesma classe. CNH, filiação e estado civil nunca vão para log nem para a lista.
+        - ck_pessoa_rg_complemento: órgão, UF e emissão só existem com o RG.
+        - ck_pessoa_cnh_complemento: categoria e validade são opcionais, mas só existem com o
+          número (decisão do dono, 20/11/2026). CNH vencida é aceita.
+        - ck_pessoa_campos_do_tipo da 015 é recriado com as colunas novas (DROP + ADD na
+          mesma changeSet). As linhas que já existem passam: as colunas novas nascem nulas.
+    -->
+    <changeSet id="020-alter-pessoa-complemento" author="eduardo">
+        <addColumn tableName="pessoa">
+            <column name="rg_orgao_emissor" type="VARCHAR(15)"/>
+            <column name="rg_estado_id" type="UUID"/>
+            <column name="rg_data_emissao" type="DATE"/>
+            <column name="cnh" type="VARCHAR(11)"/>
+            <column name="cnh_categoria" type="VARCHAR(2)"/>
+            <column name="cnh_validade" type="DATE"/>
+            <column name="estado_civil_id" type="UUID"/>
+            <column name="profissao_id" type="UUID"/>
+            <column name="nacionalidade" type="VARCHAR(40)"/>
+            <column name="naturalidade_id" type="UUID"/>
+            <column name="nome_mae" type="VARCHAR(255)"/>
+            <column name="nome_pai" type="VARCHAR(255)"/>
+            <column name="data_abertura" type="DATE"/>
+        </addColumn>
+        <addForeignKeyConstraint constraintName="fk_pessoa_rg_estado"
+                                 baseTableName="pessoa" baseColumnNames="rg_estado_id"
+                                 referencedTableName="estado" referencedColumnNames="id"/>
+        <addForeignKeyConstraint constraintName="fk_pessoa_estado_civil"
+                                 baseTableName="pessoa" baseColumnNames="estado_civil_id,tenant_id"
+                                 referencedTableName="estado_civil" referencedColumnNames="id,tenant_id"/>
+        <addForeignKeyConstraint constraintName="fk_pessoa_profissao"
+                                 baseTableName="pessoa" baseColumnNames="profissao_id,tenant_id"
+                                 referencedTableName="profissao" referencedColumnNames="id,tenant_id"/>
+        <addForeignKeyConstraint constraintName="fk_pessoa_naturalidade"
+                                 baseTableName="pessoa" baseColumnNames="naturalidade_id"
+                                 referencedTableName="cidade" referencedColumnNames="id"/>
+        <createIndex tableName="pessoa" indexName="ix_pessoa_estado_civil">
+            <column name="estado_civil_id"/>
+        </createIndex>
+        <createIndex tableName="pessoa" indexName="ix_pessoa_profissao">
+            <column name="profissao_id"/>
+        </createIndex>
+        <createIndex tableName="pessoa" indexName="ix_pessoa_naturalidade">
+            <column name="naturalidade_id"/>
+        </createIndex>
+        <sql>ALTER TABLE pessoa ADD CONSTRAINT ck_pessoa_cnh CHECK (cnh ~ '^[0-9]{11}$')</sql>
+        <sql>
+            ALTER TABLE pessoa ADD CONSTRAINT ck_pessoa_cnh_categoria
+                CHECK (cnh_categoria IN ('A', 'B', 'AB', 'C', 'D', 'E', 'AC', 'AD', 'AE'))
+        </sql>
+        <sql>
+            ALTER TABLE pessoa ADD CONSTRAINT ck_pessoa_rg_complemento CHECK (
+                rg IS NOT NULL OR (rg_orgao_emissor IS NULL AND rg_estado_id IS NULL AND rg_data_emissao IS NULL))
+        </sql>
+        <sql>
+            ALTER TABLE pessoa ADD CONSTRAINT ck_pessoa_cnh_complemento CHECK (
+                cnh IS NOT NULL OR (cnh_categoria IS NULL AND cnh_validade IS NULL))
+        </sql>
+        <sql>ALTER TABLE pessoa DROP CONSTRAINT ck_pessoa_campos_do_tipo</sql>
+        <sql>
+            ALTER TABLE pessoa ADD CONSTRAINT ck_pessoa_campos_do_tipo CHECK (
+                (tipo_pessoa = 'FISICA' AND cnpj IS NULL AND nome_fantasia IS NULL
+                    AND inscricao_estadual IS NULL AND inscricao_municipal IS NULL AND data_abertura IS NULL)
+                OR (tipo_pessoa = 'JURIDICA' AND cpf IS NULL AND rg IS NULL
+                    AND data_nascimento IS NULL AND sexo IS NULL
+                    AND rg_orgao_emissor IS NULL AND rg_estado_id IS NULL AND rg_data_emissao IS NULL
+                    AND cnh IS NULL AND cnh_categoria IS NULL AND cnh_validade IS NULL
+                    AND estado_civil_id IS NULL AND profissao_id IS NULL AND nacionalidade IS NULL
+                    AND naturalidade_id IS NULL AND nome_mae IS NULL AND nome_pai IS NULL))
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

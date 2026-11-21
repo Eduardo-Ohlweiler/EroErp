@@ -121,7 +121,7 @@ front. Renomear exige migration.
 | `GET /api/pessoas?codPessoa=&busca=&documento=&tipoPessoa=&tipoCadastroId=&ativo=`, `GET /api/pessoas/{id}` | `PESSOAS_LER` |
 | `GET /api/pessoas/selecao?busca=&ignorarId=` (até 20 ativas: id, código e nome) | `PESSOAS_LER` (**não** `ACESSO_LIBERADO`: nome de pessoa é dado pessoal) |
 | `POST /api/pessoas`, `PUT /{id}`, `PATCH /{id}/inativar` e `/ativar` | `PESSOAS_ESCREVER` |
-| `GET /api/cidades/selecao?busca=&uf=`, `GET /api/cep/{cep}` | `ACESSO_LIBERADO` (o CEP tem limite próprio por IP, `app.rate-limit.cep`) |
+| `GET /api/estados` (as 27 UFs: id, sigla e nome), `GET /api/cidades/selecao?busca=&uf=`, `GET /api/cep/{cep}` | `ACESSO_LIBERADO` (dado de referência, sem dado pessoal; o CEP tem limite próprio por IP, `app.rate-limit.cep`) |
 | `GET /api/usuarios?busca=&ativo=&papel=&bloqueado=` (`papel` = `ADMIN`/`USUARIO`; `bloqueado=true` = bloqueado agora por tentativas, `false` = não bloqueado; todos opcionais e somados) | `USUARIOS_LER` |
 | `GET /api/usuarios/selecao?inativos=` | `ACESSO_LIBERADO` (`inativos=true` traz também os inativos; o superadmin nunca aparece) |
 | `GET /api/auth/eu/perfil`, `PUT /api/auth/eu/perfil` | `ACESSO_LIBERADO` (só os próprios dados) |

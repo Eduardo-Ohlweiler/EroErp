@@ -2,8 +2,10 @@ package com.api.ero_api.localidade.mapper;
 
 import com.api.ero_api.localidade.dtos.CepResponseDto;
 import com.api.ero_api.localidade.dtos.CidadeSelectDto;
+import com.api.ero_api.localidade.dtos.EstadoSelectDto;
 import com.api.ero_api.localidade.dtos.ViaCepRespostaDto;
 import com.api.ero_api.localidade.entity.Cidade;
+import com.api.ero_api.localidade.entity.Estado;
 
 /** Conversão entidade ↔ DTO de estado, cidade e CEP, à mão e sem regra de negócio. */
 public final class LocalidadeMapper {
@@ -14,6 +16,10 @@ public final class LocalidadeMapper {
     /** O estado precisa ter vindo junto ({@code JOIN FETCH c.estado}). */
     public static CidadeSelectDto toSelectDto(Cidade c) {
         return new CidadeSelectDto(c.getId(), c.getNome(), c.getEstado().getSigla());
+    }
+
+    public static EstadoSelectDto toEstadoSelectDto(Estado e) {
+        return new EstadoSelectDto(e.getId(), e.getSigla(), e.getNome());
     }
 
     /**

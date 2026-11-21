@@ -1,10 +1,14 @@
 package com.api.ero_api.pessoa.service;
 
+import com.api.ero_api.auxiliar.entity.EstadoCivil;
+import com.api.ero_api.auxiliar.entity.Profissao;
 import com.api.ero_api.auxiliar.entity.TipoCadastro;
 import com.api.ero_api.auxiliar.entity.TipoEmail;
 import com.api.ero_api.auxiliar.entity.TipoEndereco;
 import com.api.ero_api.auxiliar.entity.TipoRedeSocial;
 import com.api.ero_api.auxiliar.entity.TipoTelefone;
+import com.api.ero_api.auxiliar.service.EstadoCivilService;
+import com.api.ero_api.auxiliar.service.ProfissaoService;
 import com.api.ero_api.auxiliar.service.TipoCadastroService;
 import com.api.ero_api.auxiliar.service.TipoEmailService;
 import com.api.ero_api.auxiliar.service.TipoEnderecoService;
@@ -21,6 +25,7 @@ import com.api.ero_api.compartilhado.util.RepetirSeCodigoRepetido;
 import com.api.ero_api.compartilhado.util.RestricaoViolada;
 import com.api.ero_api.compartilhado.util.TextoBusca;
 import com.api.ero_api.localidade.entity.Cidade;
+import com.api.ero_api.localidade.entity.Estado;
 import com.api.ero_api.localidade.service.LocalidadeService;
 import com.api.ero_api.pessoa.dtos.PessoaCreateDto;
 import com.api.ero_api.pessoa.dtos.PessoaEmailItemDto;
@@ -63,6 +68,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -95,12 +101,19 @@ public class PessoaService {
     private static final Sort ORDEM_PADRAO = Sort.by("nome");
     /** Itens do combo de pessoas: o usuário digita mais para achar a que não apareceu. */
     static final int LIMITE_SELECAO = 20;
-    /** Piso da data de nascimento (o teto é hoje, no DTO). */
+    /** Piso da data de nascimento, da emissão do RG e da validade da CNH (o teto das duas primeiras é hoje, no DTO). */
     private static final LocalDate NASCIMENTO_MINIMO = LocalDate.of(1900, 1, 1);
+    /** Piso da data de abertura da jurídica (o teto é hoje, no DTO). */
+    private static final LocalDate ABERTURA_MINIMA = LocalDate.of(1800, 1, 1);
+    /** Teto da validade da CNH: hoje + 15 anos (contra erro de digitação; vencida é aceita). */
+    private static final int VALIDADE_CNH_ANOS = 15;
+    /** Sigla do órgão emissor do RG, já em maiúsculas: "SSP", "DETRAN", "SSP/SP", "PC-RS". */
+    private static final Pattern ORGAO_EMISSOR = Pattern.compile("^[A-Z][A-Z /-]{1,14}$");
     private static final String UK_CODIGO = "uk_pessoa_tenant_cod_pessoa";
     private static final String UK_CPF = "uk_pessoa_tenant_cpf";
     private static final String UK_CNPJ = "uk_pessoa_tenant_cnpj";
     private static final String MSG_NAO_ENCONTRADA = "Pessoa não encontrada.";
+    private static final String MSG_REPRESENTANTE_PF = "O representante legal precisa ser pessoa física.";
     private static final String MSG_VERSAO = "Esta pessoa foi alterada por outro usuário. Recarregue e tente de novo.";
     /** Toda rota exige um contratante selecionado: a resposta nunca é da visão de plataforma. */
     private static final boolean PLATAFORMA = false;
@@ -117,6 +130,8 @@ public class PessoaService {
     private final TipoEmailService tipoEmailService;
     private final TipoRedeSocialService tipoRedeSocialService;
     private final TipoEnderecoService tipoEnderecoService;
+    private final EstadoCivilService estadoCivilService;
+    private final ProfissaoService profissaoService;
     private final LocalidadeService localidadeService;
     private final UsuarioService usuarioService;
     private final RepetirSeCodigoRepetido repetir;
@@ -127,6 +142,7 @@ public class PessoaService {
                          PessoaVinculoService vinculoService, TipoCadastroService tipoCadastroService,
                          TipoTelefoneService tipoTelefoneService, TipoEmailService tipoEmailService,
                          TipoRedeSocialService tipoRedeSocialService, TipoEnderecoService tipoEnderecoService,
+                         EstadoCivilService estadoCivilService, ProfissaoService profissaoService,
                          LocalidadeService localidadeService,
                          UsuarioService usuarioService,
                          RepetirSeCodigoRepetido repetir) {
@@ -142,6 +158,8 @@ public class PessoaService {
         this.tipoEmailService = tipoEmailService;
         this.tipoRedeSocialService = tipoRedeSocialService;
         this.tipoEnderecoService = tipoEnderecoService;
+        this.estadoCivilService = estadoCivilService;
+        this.profissaoService = profissaoService;
         this.localidadeService = localidadeService;
         this.usuarioService = usuarioService;
         this.repetir = repetir;
@@ -232,7 +250,8 @@ public class PessoaService {
         p = travadas.get(id);
         List<PessoaVinculo> antes = vinculoService.buscarDaPessoa(id);
         Referencias refs = validar(dados, p, travadas, outrasPessoas(antes, id));
-        PessoaMapper.atualizarEntidade(p, dto);
+        PessoaMapper.atualizarEntidade(p, dto, refs.rgEstado(), refs.estadoCivil(), refs.profissao(),
+                refs.naturalidade());
         PessoaMapper.nomeBusca(p);
         salvar(p);
         substituirFilhas(p, dados, refs);
@@ -263,7 +282,7 @@ public class PessoaService {
     private PessoaResponseDto gravarNova(PessoaCreateDto dto) {
         Map<UUID, Pessoa> travadas = travar(idsDosVinculos(dto.vinculos()));
         Referencias refs = validar(dto, null, travadas, Set.of());
-        Pessoa p = PessoaMapper.toEntity(dto);
+        Pessoa p = PessoaMapper.toEntity(dto, refs.rgEstado(), refs.estadoCivil(), refs.profissao(), refs.naturalidade());
         PessoaMapper.nomeBusca(p);
         p.setCodPessoa(repository.buscarProximoCodigo());
         salvar(p);
@@ -336,10 +355,15 @@ public class PessoaService {
                 .toList());
     }
 
-    /** Tipos e cidades já conferidos pelo {@link #validar}, por id, para montar as filhas. */
+    /**
+     * Tipos e cidades já conferidos pelo {@link #validar}, por id, para montar as filhas; e as
+     * referências da própria pessoa (UF do RG, estado civil, profissão, naturalidade), nulas
+     * quando não informadas.
+     */
     private record Referencias(Map<UUID, TipoCadastro> tiposCadastro, Map<UUID, TipoTelefone> telefones,
                                Map<UUID, TipoEmail> emails, Map<UUID, TipoRedeSocial> redesSociais,
-                               Map<UUID, TipoEndereco> enderecos, Map<UUID, Cidade> cidades) {
+                               Map<UUID, TipoEndereco> enderecos, Map<UUID, Cidade> cidades,
+                               Estado rgEstado, EstadoCivil estadoCivil, Profissao profissao, Cidade naturalidade) {
     }
 
     /**
@@ -358,6 +382,7 @@ public class PessoaService {
         validarCamposDoTipo(dados, fisica);
         validarDocumentos(dados, fisica, ignorarId);
         validarTamanhos(dados, fisica);
+        validarComplementos(dados, fisica);
 
         Anteriores antes = atual == null ? Anteriores.NENHUM : anteriores(atual.getId());
         Map<UUID, TipoCadastro> tiposCadastro = tipoCadastroService.buscarPorIds(dados.tiposCadastroIds());
@@ -401,8 +426,13 @@ public class PessoaService {
         List<PessoaEnderecoItemDto> enderecos = lista(dados.enderecos());
         Map<UUID, TipoEndereco> tiposEndereco = tipoEnderecoService.buscarPorIds(
                 enderecos.stream().map(PessoaEnderecoItemDto::tipoId).collect(Collectors.toSet()));
-        Map<UUID, Cidade> cidades = localidadeService.buscarCidades(
-                enderecos.stream().map(PessoaEnderecoItemDto::cidadeId).collect(Collectors.toSet()));
+        // As cidades dos endereços e a naturalidade numa consulta só.
+        Set<UUID> idsCidades = enderecos.stream().map(PessoaEnderecoItemDto::cidadeId)
+                .collect(Collectors.toCollection(HashSet::new));
+        if (dados.naturalidadeId() != null) {
+            idsCidades.add(dados.naturalidadeId());
+        }
+        Map<UUID, Cidade> cidades = localidadeService.buscarCidades(idsCidades);
         for (int i = 0; i < enderecos.size(); i++) {
             exigirTipo(tiposEndereco, enderecos.get(i).tipoId(), antes.enderecos(), TipoEndereco::isAtivo,
                     "enderecos[" + i + "].tipoId", "Tipo de endereço");
@@ -413,8 +443,56 @@ public class PessoaService {
         exigirNoMaximoUmPrincipal(enderecos.stream().map(PessoaEnderecoItemDto::principal),
                 "enderecos", "Marque só um endereço principal.");
 
+        Estado rgEstado = dados.rgEstadoId() == null ? null : localidadeService.buscarEstado(dados.rgEstadoId())
+                .orElseThrow(() -> new CampoInvalidoException("rgEstadoId", "UF não encontrada."));
+        Cidade naturalidade = null;
+        if (dados.naturalidadeId() != null) {
+            naturalidade = cidades.get(dados.naturalidadeId());
+            if (naturalidade == null) {
+                throw new CampoInvalidoException("naturalidadeId", "Cidade não encontrada.");
+            }
+        }
+        EstadoCivil estadoCivil = estadoCivil(dados.estadoCivilId(), atual);
+        Profissao profissao = profissao(dados.profissaoId(), atual);
+
         validarVinculos(lista(dados.vinculos()), atual, fisica, travadas, jaVinculadas);
-        return new Referencias(tiposCadastro, tiposTelefone, tiposEmail, tiposRede, tiposEndereco, cidades);
+        return new Referencias(tiposCadastro, tiposTelefone, tiposEmail, tiposRede, tiposEndereco, cidades,
+                rgEstado, estadoCivil, profissao, naturalidade);
+    }
+
+    /**
+     * Estado civil do contratante (o tenant filtra a busca): de outro contratante ou
+     * inexistente dá "não encontrado"; inativo só passa se já era o desta pessoa.
+     */
+    private EstadoCivil estadoCivil(UUID id, Pessoa atual) {
+        if (id == null) {
+            return null;
+        }
+        EstadoCivil e = estadoCivilService.buscarPorIds(Set.of(id)).get(id);
+        if (e == null) {
+            throw new CampoInvalidoException("estadoCivilId", "Estado civil não encontrado.");
+        }
+        boolean jaEra = atual != null && atual.getEstadoCivil() != null && id.equals(atual.getEstadoCivil().getId());
+        if (!e.isAtivo() && !jaEra) {
+            throw new CampoInvalidoException("estadoCivilId", "Estado civil inativo.");
+        }
+        return e;
+    }
+
+    /** Profissão do contratante, com a mesma regra do {@link #estadoCivil}. */
+    private Profissao profissao(UUID id, Pessoa atual) {
+        if (id == null) {
+            return null;
+        }
+        Profissao e = profissaoService.buscarPorIds(Set.of(id)).get(id);
+        if (e == null) {
+            throw new CampoInvalidoException("profissaoId", "Profissão não encontrada.");
+        }
+        boolean jaEra = atual != null && atual.getProfissao() != null && id.equals(atual.getProfissao().getId());
+        if (!e.isAtivo() && !jaEra) {
+            throw new CampoInvalidoException("profissaoId", "Profissão inativa.");
+        }
+        return e;
     }
 
     /** O campo do outro tipo vem nulo ou vazio; preenchido = 400 no campo (o front limpa ao trocar o tipo). */
@@ -424,15 +502,73 @@ public class PessoaService {
             recusarPreenchido(d.nomeFantasia(), "nomeFantasia", "Pessoa física não tem nome fantasia.");
             recusarPreenchido(d.inscricaoEstadual(), "inscricaoEstadual", "Pessoa física não tem inscrição estadual.");
             recusarPreenchido(d.inscricaoMunicipal(), "inscricaoMunicipal", "Pessoa física não tem inscrição municipal.");
+            recusarInformado(d.dataAbertura(), "dataAbertura", "Pessoa física não tem data de abertura.");
         } else {
             recusarPreenchido(d.cpf(), "cpf", "Pessoa jurídica não tem CPF.");
             recusarPreenchido(d.rg(), "rg", "Pessoa jurídica não tem RG.");
-            if (d.dataNascimento() != null) {
-                throw new CampoInvalidoException("dataNascimento", "Pessoa jurídica não tem data de nascimento.");
+            recusarInformado(d.dataNascimento(), "dataNascimento", "Pessoa jurídica não tem data de nascimento.");
+            recusarInformado(d.sexo(), "sexo", "Pessoa jurídica não tem sexo.");
+            recusarPreenchido(d.rgOrgaoEmissor(), "rgOrgaoEmissor", "Pessoa jurídica não tem RG.");
+            recusarInformado(d.rgEstadoId(), "rgEstadoId", "Pessoa jurídica não tem RG.");
+            recusarInformado(d.rgDataEmissao(), "rgDataEmissao", "Pessoa jurídica não tem RG.");
+            recusarPreenchido(d.cnh(), "cnh", "Pessoa jurídica não tem CNH.");
+            recusarInformado(d.cnhCategoria(), "cnhCategoria", "Pessoa jurídica não tem CNH.");
+            recusarInformado(d.cnhValidade(), "cnhValidade", "Pessoa jurídica não tem CNH.");
+            recusarInformado(d.estadoCivilId(), "estadoCivilId", "Pessoa jurídica não tem estado civil.");
+            recusarInformado(d.profissaoId(), "profissaoId", "Pessoa jurídica não tem profissão.");
+            recusarPreenchido(d.nacionalidade(), "nacionalidade", "Pessoa jurídica não tem nacionalidade.");
+            recusarInformado(d.naturalidadeId(), "naturalidadeId", "Pessoa jurídica não tem naturalidade.");
+            recusarPreenchido(d.nomeMae(), "nomeMae", "Pessoa jurídica não tem filiação.");
+            recusarPreenchido(d.nomePai(), "nomePai", "Pessoa jurídica não tem filiação.");
+        }
+    }
+
+    /**
+     * Os documentos e os dados civis da física e a abertura da jurídica (o campo do outro
+     * tipo já foi recusado): RG e CNH como grupos (o complemento só existe com o número),
+     * DV da CNH, datas com piso e teto, nacionalidade com piso.
+     */
+    private static void validarComplementos(PessoaCreateDto d, boolean fisica) {
+        if (!fisica) {
+            if (d.dataAbertura() != null && d.dataAbertura().isBefore(ABERTURA_MINIMA)) {
+                throw new CampoInvalidoException("dataAbertura", "Data de abertura inválida.");
             }
-            if (d.sexo() != null) {
-                throw new CampoInvalidoException("sexo", "Pessoa jurídica não tem sexo.");
+            return;
+        }
+        String orgao = PessoaMapper.normalizarOrgaoEmissor(d.rgOrgaoEmissor());
+        if (PessoaMapper.normalizarRg(d.rg()) == null
+                && (orgao != null || d.rgEstadoId() != null || d.rgDataEmissao() != null)) {
+            throw new CampoInvalidoException("rg", "Informe o número do RG.");
+        }
+        if (orgao != null && !ORGAO_EMISSOR.matcher(orgao).matches()) {
+            throw new CampoInvalidoException("rgOrgaoEmissor", "Órgão emissor inválido.");
+        }
+        if (d.rgDataEmissao() != null) {
+            if (d.rgDataEmissao().isBefore(NASCIMENTO_MINIMO)) {
+                throw new CampoInvalidoException("rgDataEmissao", "Data de emissão inválida.");
             }
+            if (d.dataNascimento() != null && d.rgDataEmissao().isBefore(d.dataNascimento())) {
+                throw new CampoInvalidoException("rgDataEmissao", "A emissão não pode ser anterior ao nascimento.");
+            }
+        }
+
+        // CNH (decisão do dono, 20/11/2026): o número pode ir sozinho; categoria e validade
+        // são opcionais e só existem com ele; vencida é aceita.
+        String cnh = PessoaMapper.normalizarCnh(d.cnh());
+        if (cnh == null && (d.cnhCategoria() != null || d.cnhValidade() != null)) {
+            throw new CampoInvalidoException("cnh", "Informe o número da CNH.");
+        }
+        if (cnh != null && !DocumentoValidator.cnhValida(cnh)) {
+            throw new CampoInvalidoException("cnh", "CNH inválida.");
+        }
+        if (d.cnhValidade() != null && (d.cnhValidade().isBefore(NASCIMENTO_MINIMO)
+                || d.cnhValidade().isAfter(LocalDate.now().plusYears(VALIDADE_CNH_ANOS)))) {
+            throw new CampoInvalidoException("cnhValidade", "Validade da CNH inválida.");
+        }
+
+        String nacionalidade = PessoaMapper.textoOuNulo(d.nacionalidade());
+        if (nacionalidade != null && nacionalidade.length() < 2) {
+            throw new CampoInvalidoException("nacionalidade", "Nacionalidade deve ter de 2 a 40 caracteres.");
         }
     }
 
@@ -481,8 +617,9 @@ public class PessoaService {
 
     /**
      * Vínculos ({@code vinculos[i]}): nunca consigo mesma, sem repetir a pessoa, só pessoa do
-     * contratante (travada), inativa só se já estava vinculada, e Contato ↔ Empresa só com a
-     * empresa pessoa jurídica.
+     * contratante (travada), inativa só se já estava vinculada, Contato ↔ Empresa só com a
+     * empresa pessoa jurídica, e Representante legal ↔ Empresa representada só com o
+     * representante pessoa física e a representada pessoa jurídica (P1, 20/11/2026).
      */
     private static void validarVinculos(List<PessoaVinculoItemDto> vinculos, Pessoa atual, boolean fisica,
                                         Map<UUID, Pessoa> travadas, Set<UUID> jaVinculadas) {
@@ -508,6 +645,30 @@ public class PessoaService {
             }
             if (v.tipo() == TipoVinculo.CONTATO && fisica) {
                 throw new CampoInvalidoException("vinculos[" + i + "].tipo", "Só pessoa jurídica tem contato.");
+            }
+            validarRepresentante(v.tipo(), fisica, outra, "vinculos[" + i + "].tipo");
+        }
+    }
+
+    /**
+     * "A outra é REPRESENTANTE_LEGAL desta": esta é a empresa (PJ) e a outra, o representante
+     * (PF). "A outra é REPRESENTADA desta": o contrário.
+     */
+    private static void validarRepresentante(TipoVinculo tipo, boolean fisica, Pessoa outra, String campo) {
+        boolean outraFisica = outra.getTipoPessoa() == TipoPessoa.FISICA;
+        if (tipo == TipoVinculo.REPRESENTANTE_LEGAL) {
+            if (fisica) {
+                throw new CampoInvalidoException(campo, "Só pessoa jurídica tem representante legal.");
+            }
+            if (!outraFisica) {
+                throw new CampoInvalidoException(campo, MSG_REPRESENTANTE_PF);
+            }
+        } else if (tipo == TipoVinculo.REPRESENTADA) {
+            if (outraFisica) {
+                throw new CampoInvalidoException(campo, "A empresa representada precisa ser pessoa jurídica.");
+            }
+            if (!fisica) {
+                throw new CampoInvalidoException(campo, MSG_REPRESENTANTE_PF);
             }
         }
     }
@@ -600,6 +761,12 @@ public class PessoaService {
 
     private static void recusarPreenchido(String valor, String campo, String mensagem) {
         if (valor != null && !valor.isBlank()) {
+            throw new CampoInvalidoException(campo, mensagem);
+        }
+    }
+
+    private static void recusarInformado(Object valor, String campo, String mensagem) {
+        if (valor != null) {
             throw new CampoInvalidoException(campo, mensagem);
         }
     }

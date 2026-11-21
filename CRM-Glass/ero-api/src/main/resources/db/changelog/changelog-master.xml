@@ -29,5 +29,7 @@
     <include file="changes/017-create-pessoa-endereco.xml" relativeToChangelogFile="true"/>
     <include file="changes/018-create-pessoa-vinculo.xml" relativeToChangelogFile="true"/>
     <include file="changes/019-create-estado-civil-profissao.xml" relativeToChangelogFile="true"/>
+    <include file="changes/020-alter-pessoa-complemento.xml" relativeToChangelogFile="true"/>
+    <include file="changes/021-alter-pessoa-vinculo-representante.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

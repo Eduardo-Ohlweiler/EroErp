@@ -2,6 +2,7 @@ package com.api.ero_api.localidade.controller;
 
 import com.api.ero_api.localidade.dtos.CepResponseDto;
 import com.api.ero_api.localidade.dtos.CidadeSelectDto;
+import com.api.ero_api.localidade.dtos.EstadoSelectDto;
 import com.api.ero_api.localidade.service.LocalidadeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,18 +18,25 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Cidades do IBGE e consulta de CEP. São apoio de qualquer tela com endereço, por isso
- * abertas a todo usuário sem pendência ({@code ACESSO_LIBERADO}).
+ * Estados e cidades do IBGE e consulta de CEP. São apoio de qualquer tela com endereço ou
+ * documento, por isso abertos a todo usuário sem pendência ({@code ACESSO_LIBERADO}).
  */
 @RestController
 @RequestMapping("/api")
-@Tag(name = "Localidades", description = "Cidades do IBGE e consulta de CEP")
+@Tag(name = "Localidades", description = "Estados e cidades do IBGE e consulta de CEP")
 public class LocalidadeController {
 
     private final LocalidadeService service;
 
     public LocalidadeController(LocalidadeService service) {
         this.service = service;
+    }
+
+    @GetMapping("/estados")
+    @PreAuthorize("hasAuthority('ACESSO_LIBERADO')")
+    @Operation(summary = "As 27 UFs, por sigla (dado de referência, igual para todos)")
+    public List<EstadoSelectDto> listarEstados() {
+        return service.listarEstados();
     }
 
     @GetMapping("/cidades/selecao")
