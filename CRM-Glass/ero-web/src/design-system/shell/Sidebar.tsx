@@ -169,7 +169,10 @@ function NavItemComFilhos({ item, active }: { item: ItemMenu; active: boolean })
 }
 
 export type MobileNavProps = {
-  /** as mesmas seções do menu lateral; na barra entram na ordem, separadas por uma linha, até `MAXIMO_NA_BARRA_INFERIOR` */
+  /**
+   * as mesmas seções do menu lateral; na barra entram na ordem, separadas por uma linha, até `MAXIMO_NA_BARRA_INFERIOR`.
+   * Passou disso, o último lugar vira "Mais", que abre o submenu com o resto (`secoesDaBarraInferior`).
+   */
   secoes: SecaoMenu[];
 };
 

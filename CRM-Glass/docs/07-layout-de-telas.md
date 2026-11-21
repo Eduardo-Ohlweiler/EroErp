@@ -17,12 +17,13 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 - Estrutura: `TPage` (container, `breadcrumb`, `coreografia`) · `TForm` (cartão `glass-solid`, `somenteLeitura`) · `TFormFooter`/`TFormActionsLeft` (rodapé de botões) · `TRow` (uma linha) · `TCol` (coluna; sem `width` divide a linha) · `TPanel` (seção recolhível) · `TModal` (`sm` 448, `md` 672, `lg` 896) · `TTabs`/`TTabPanel` · `TRotulo` (rótulo do label ao lado).
 - Texto: `TEntry` (`metade`; com máscara, a do dado: cpf/telefone/cnh `cpf`, cnpj/cpfCnpj `cnpj`, cep `cep`, hora `hora`, moeda/decimal `valor`, inteiro `quantidade`) · `TDate` (`data`).
 - Texto longo: `TTextArea` (`longo`, 3 linhas, contador com `maxLength`).
-- Escolha: `TCombo` (largura **automática** pelo maior rótulo: `situacao`/`medio`/`metade`; opções fixas ou carregadas do banco, o inativo gravado com `inativo: true`; `SITUACAO_OPCOES`) · `TDBCombo` (`metade`, busca no servidor, opções de `/selecao`) · `TRadio` e `TCheckBox` (largura do conteúdo).
+- Escolha: `TCombo` (largura **automática** pelo maior rótulo: `situacao`/`medio`/`metade`; opções fixas ou carregadas do banco, o inativo gravado com `inativo: true`; `SITUACAO_OPCOES`) · `TDBCombo` (`metade`, busca no servidor, opções de `/selecao`) · `TRadio` e `TCheckBox` (largura do conteúdo) · `TCor` (cor de registro `#RRGGBB`: 8 sugeridas com nome e "Outra"; largura do conteúdo).
+- Cor de registro na grade, nos cartões e nos combos: `TCorMarca` (`cor`, `tamanho` `sm`/`md`, `rotulo`). A tela **nunca** escreve `style` de cor: só o `TCor` e o `TCorMarca` aplicam a cor do banco (§3.2, "Cor de registro").
 - Lista filha: `TFieldList` (telefones, e-mails, endereços em várias linhas, vínculos; `principal` exclusivo; só leitura sem botões).
 - Dados: `TDataGrid` (ações na 1ª coluna, cartões abaixo de `md`) · `TDataGridFooter` (lê o `PaginaDto`) · `TBadge` (situação) · `TAuditoria` (só na edição) · `TAcoesDeExportacao` (Exportar e Pdf).
 - Ação e aviso: `TButton` (`variant`: salvar, novo, buscar, limpar, voltar, exportar, pdf, editar, inativar, reativar + genéricas) · `useMessage()` · `useQuestion()` · `useSomenteLeitura(grupo?)`.
-- **Não existem** (peça ao `glass-design-system`): `TDateTime`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio`, `TCor`, `TBotaoImprimir`.
-- Casca (fora do kit, `design-system/shell`): o menu é feito de **seções** (`secoes: {rotulo, itens}[]`); item com `filhos` abre o **submenu flutuante** no trilho e na barra inferior (§0, "Casca").
+- **Não existem** (peça ao `glass-design-system`): `TDateTime`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio`, `TBotaoImprimir`.
+- Casca (fora do kit, `design-system/shell`): o menu é feito de **seções** (`secoes: {rotulo, itens}[]`); item com `filhos` abre o **submenu flutuante** no trilho e na barra inferior. Na barra inferior cabem 5; acima disso o 5º lugar vira **"Mais"**, com o resto achatado (§0, "Casca").
 
 **Escala de larguras** (`width`, só nomes da escala; dica: na dúvida, a menor):
 - Fixos (sm+): `uf` 80 · `codigo`/`hora`/`quantidade` 128 · `data`/`cep`/`valor` 160 · `cpf` 176 · `situacao` 192 · `cnpj` 208 · `dataHora`/`curto` 224 · `medio` 320.
@@ -110,8 +111,12 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 > valer), o `TEntry.onCompletar` (CEP completo) e o `erroApi` que lê
 > `telefones[0].numero` como `telefones.0.numero`. Na casca: o menu em **seções**
 > e o **submenu flutuante** (ver "Casca" abaixo).
+> **Entraram em Filiais (2026-11-21):** `TCor` (escolher a cor de registro) e
+> `TCorMarca` (a bolinha), com as 8 sugeridas em `tokens.css`
+> (`--cor-registro-1` … `-8`) e o anel `--line-strong` (§3.2, "Cor de
+> registro"). Na casca: o **"Mais"** da barra inferior.
 > **Ainda não existem** (pedir ao `glass-design-system` antes de usar):
-> `TDateTime`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio`, `TCor` e
+> `TDateTime`, `TDBComboMulti`, `TDBCheckBox`, `TDBRadio` e
 > `TBotaoImprimir`. O modelo FormList nasce com a `TipoCadastroFormList`.
 > Catálogo: seção "Kit de telas" em `/design-system` (e "Kit de telas: peças da
 > fatia 3" e "Kit de telas: peças de Pessoas", com os interruptores de só
@@ -242,6 +247,13 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 >   trilho) e o clique fora fecham, e o foco volta ao botão. A dica do pai some
 >   com o submenu aberto. A barra inferior mostra até 5 itens
 >   (`MAXIMO_NA_BARRA_INFERIOR`), contando as seções na ordem (o pai conta 1).
+>   **Passou de 5:** entram os 4 primeiros e o 5º lugar vira **"Mais"**
+>   (ícone `Ellipsis`, numa seção própria, `<nav aria-label="Mais telas">`), um
+>   pai cujos filhos são o resto, achatado como no Ctrl+K ("Cadastros
+>   auxiliares › Tipos de telefone"). Abre o mesmo submenu flutuante (mesmo
+>   teclado, foco preso e devolvido, `aria-expanded`, movimento `submenu`) e
+>   fica ativo quando a rota está numa tela de dentro dele. Quem calcula é o
+>   `secoesDaBarraInferior` (função pura); o trilho do computador não muda.
 >   `telasDoMenu(secoes)` achata para o Ctrl+K e o Início: o filho entra como
 >   "Cadastros auxiliares › Tipos de telefone".
 >
@@ -266,7 +278,7 @@ detalhe de cada assunto está na seção do índice: leia só ela, não o arquiv
 > | `TTextArea` | a classe `.input` | contador "máx. N caracteres" |
 > | `TCheckBox` · `TDBCheckBox` | `Toggle` (interruptor) existe; caixa de marcar, não | a caixa de marcar glass |
 > | `TRadio` · `TDBRadio` | `Segmented` existe, mas é `tablist`, não grupo de rádio | o grupo de rádio glass |
-> | `TCor` | — (o `EditorAparencia` escolhe destaque, não cor de registro) | tudo, quando a primeira tela pedir |
+> | `TCor` · `TCorMarca` | `CampoForm` (`grupo="radiogroup"`); o anel que desliza do seletor de destaque do `EditorAparencia` | existe (Filiais, 2026-11-21) |
 > | `TFieldList` · `TRotulo` · `TAuditoria` | — | tudo |
 > | `useMessage` | `ToastProvider` / `useToast` (tons `success`, `info`, `danger`, `accent`; botão de ação, ex. "Recarregar" no 409); `ErroApi` de `shared/api/erros.ts` | tom de aviso; erro que fica até fechar, com botão de fechar |
 > | `useQuestion` | `ConfirmDialog` (`perigo`, `confirmar`, `onConfirmar` com Promise e "Aguarde…") | a forma de Promise (`await confirmar(...)`) |
@@ -522,7 +534,8 @@ são os do `CampoForm`, e cada campo é um bloco da montagem.
 | `TCombo` | `opcoes: {valor, rotulo, inativo?}[]`, `vazio?` | **Opções numa lista local** — situação, enum, ou os tipos que a tela carregou do banco (`/selecao`) sem busca no servidor (`Combobox`). `vazio` é a opção "Todos"/"Selecione…". `inativo: true` marca o valor **já gravado** que deixou de valer: aparece como "Nome (inativo)"; quem monta as opções põe os ativos mais os inativos gravados no registro. **Largura automática** sem `width` (§2.3). `SITUACAO_OPCOES` está pronto no kit. **X de limpar** (também no `TDBCombo`): só com valor, sem `vazio`, sem `required`, e nunca nas larguras estreitas (`uf`, `codigo`, `hora`, `quantidade` — `larguraEstreita`); o padding direito do campo reserva só os botões que aparecem (chevron 40 px, chevron + X 72 px), para a sigla caber inteira a 80 px. |
 | `TDBCombo` | `buscar(termo)`, `rotuloInicial?`, `vazio?`, `acao?` | **Opções do banco** (`Combobox` com `onBuscaChange` e `carregando`, debounce 300 ms) e o rótulo do valor salvo. No CRM as rotas de combo são `GET /api/<recurso>/selecao` (`SelectDto` com `id` e `nome`); hoje devolvem todos os ativos, sem termo — o `buscar` pode ignorar o termo e o `Combobox` filtra local. Quando a lista crescer, a rota ganha `?busca=` no backend. `acao` é o botão colado ao campo, na altura dele, para o **cadastro rápido** do que não está na lista (`<TButton variant="novo" label="" …/>`, que some para quem só lê). |
 | `TDBComboMulti` | `buscar`, `excluir?`, `maximo?` | Vários do banco. |
-| `TCor` | `cores?` | **Cor de identificação** de um registro: as `CORES_SUGERIDAS` em bolinhas e "Outra", com o seletor do sistema. Grava `#RRGGBB` em maiúsculas. As sugeridas saem de token, nunca de hex na tela. Nenhum cadastro do CRM pede ainda. |
+| `TCor` | `value?`, `onChange?(cor)`, `onBlur?` (fora de `TForm`); `required?`, `ajuda?`, `disabled?`, `width?` (padrão: o conteúdo) | **Cor de identificação** de um registro (a filial): as 8 sugeridas (Azul, Verde, Âmbar, Vermelho, Violeta, Rosa, Turquesa, Ardósia) em bolinhas, cada uma com o nome, e "Outra", pelo `<input type="color">` do sistema (cru dentro do kit). Um `role="radiogroup"` com o rótulo do campo e nove `role="radio"`: ← → ↑ ↓ Home End andam e escolhem a sugerida; em "Outra" só focam, e Enter ou Espaço abrem o seletor. A escolhida tem o anel que desliza (`spring.snappy`; sem deslizar no movimento reduzido). **Grava `#RRGGBB` em maiúsculas**; a cor gravada que não é sugerida aparece como "Outra (#A1B2C3)". O hex das sugeridas é lido dos tokens (`getComputedStyle`), não está no código; o 2.0 tinha `cores?`, aqui não (as sugeridas são token). Só leitura: focável, a escolhida marcada, sem clique nem setas, `aria-readonly`. Não reserva a linha do erro (como o `TRadio`). `data-kit="TCor"`, `data-largura="conteudo"`. |
+| `TCorMarca` | `cor`, `tamanho?` (`sm` 12 px, `md` 16 px, padrão), `rotulo?` | **A bolinha da cor de registro**, só exibição: na grade, nos cartões do celular e nos combos. `rotulo` ("Cor: Azul") vira `title` e `aria-label` (`role="img"`); sem ele, `aria-hidden` (o nome já está ao lado). Cor fora do formato: bolinha neutra. |
 | `TCheckBox` | `opcoes?`, `vertical?` | Sem `opcoes`, um booleano com o rótulo ao lado; com `opcoes` (`{valor, rotulo, desabilitada?, dica?}`), um grupo fixo que grava a lista dos marcados, na ordem das opções. |
 | `TDBCheckBox` | `buscar()`, `vertical?`, `altura?` | Grupo vindo do banco. |
 | `TRadio` | `opcoes` (`{valor, rotulo, desabilitada?, dica?}`), `vertical?`, `vazio?` | Escolha única fixa (`role="radiogroup"`, setas entre as opções), lado a lado por padrão. `vazio` é a opção "Não informado" (valor `''`), no fim. |
@@ -530,6 +543,24 @@ são os do `CampoForm`, e cada campo é um bloco da montagem.
 | `TFieldList` | `name`, `colunas: ColunaDaLista[]` (uma linha) ou `ColunaDaLista[][]` (item em várias linhas), `novaLinha` (objeto ou função), `minimo?`, `rotuloAdicionar?` (padrão "Acrescentar"), `vazio?`, `detalhe?(i, linha)`, `principal?`, `rotuloLinha?(i, linha)`. Coluna: `{name, componente(campo, i, linha), width?, dividir?}` | **Lista filha editável** dentro do formulário (telefones, e-mails, redes, endereços, vínculos): `useFieldArray` por baixo, uma `TRow` por linha com os campos nas suas larguras padrão, o Principal e o remover no fim da 1ª linha, Acrescentar embaixo. `componente` recebe o `name` completo (`telefones.0.numero`) e serve a qualquer campo do kit (inclusive `TDBCombo` com `acao`, o cadastro rápido). `width` põe o campo numa `TCol` daquela largura; `dividir`, numa `TCol` sem largura (divide o resto da linha). `principal` = nome do booleano da linha: rádio exclusivo, a 1ª linha acrescentada já vem principal, remover a principal passa a marca para a 1ª. Só leitura: sem Acrescentar nem remover, o rádio travado. No celular cada linha empilha. A tela não monta `<ul>`/`grid` de linhas. |
 | `TRotulo` | `htmlFor`, `required?` | Só o rótulo, para a coluna de labels do §5. |
 | `TAuditoria` | `registro` | Só na edição, no fim do formulário: Criado por · Criado em, Alterado por · Alterado em, só leitura. Lê `criadoPorNome`, `createdAt`, `alteradoPorNome`, `updatedAt` do `ResponseDto` (datas ISO-8601 em UTC, formatadas em pt-BR no fuso do navegador). Linha sem dado não aparece. O backend publica `criadoPorNome`/`alteradoPorNome` em Contratantes e Usuários (cadastro novo segue o mesmo modelo, `docs/01`, "Auditoria de registro"). Dentro de um contratante, o que o superadmin (suporte) cadastrou ou alterou chega com o nome vazio: a linha mostra só a data. |
+
+> **Cor de registro.** A cor que o usuário escolhe para um registro é **dado**,
+> não pele: vem do banco como `#RRGGBB` e é a única cor que não mora em
+> `tokens.css`. Por isso:
+> - **Só o kit a aplica** (`TCor`, `TCorMarca`), numa variável CSS
+>   (`--cor-do-registro`) lida por `bg-[var(--cor-do-registro)]`, só na
+>   bolinha. Nunca como cor de texto nem fundo de texto; **a tela nunca escreve
+>   `style` de cor** nem `bg-[#…]`.
+> - **Antes de aplicar**, o kit confere `^#[0-9A-Fa-f]{6}$` (`normalizarCor`,
+>   `kit/cores.ts`); fora disso a bolinha sai neutra (`--cor-registro-vazia`).
+>   Isso fecha injeção de CSS; o DTO (`@Pattern`) e o banco (CHECK) conferem
+>   também.
+> - **As 8 sugeridas são token** (`--cor-registro-1` … `-8`), as mesmas nos dois
+>   temas e em todo destaque: são dado, não pele.
+> - **Contraste (WCAG 1.4.11):** toda bolinha tem o anel `--line-strong`,
+>   desenhado sobre o fundo (`bg-clip-padding`): 4,3:1 no escuro e 3,4:1 no claro
+>   contra o fundo, com qualquer cor dentro (inclusive `#FFFF00` no claro e
+>   `#111111` no escuro). E a cor nunca é a única informação: o nome vai ao lado.
 
 ### 3.3 Mensagens e confirmação
 

@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { Ellipsis } from 'lucide-react';
 
 /** Item do menu lateral e da barra inferior. A lista vem de `app/menu.ts` (frontend-modulos), já filtrada por permissão. */
 export type ItemMenu = {
@@ -47,17 +48,38 @@ export function telasDoMenu(secoes: readonly SecaoMenu[]): TelaNavegavel[] {
 /** Máximo de ícones na barra inferior (as seções somadas): mais que isso não cabe num celular de 320 px. */
 export const MAXIMO_NA_BARRA_INFERIOR = 5;
 
+/** O item "Mais" da barra inferior: rótulo, título do submenu e da seção dele. */
+export const ROTULO_DO_MAIS = 'Mais';
+export const SECAO_DO_MAIS = 'Mais telas';
+/** O `to` do "Mais": não é rota (nunca casa com o `pathname`); o item fica ativo pelos filhos. */
+export const ROTA_DO_MAIS = '#mais';
+
+/** Corta as seções nos primeiros `quantos` itens, na ordem; devolve o que coube e o que sobrou (seção vazia some). */
+function cortar(secoes: readonly SecaoMenu[], quantos: number): { cabem: SecaoMenu[]; sobram: SecaoMenu[] } {
+  let resta = quantos;
+  const cabem: SecaoMenu[] = [];
+  const sobram: SecaoMenu[] = [];
+  for (const s of secoes) {
+    const n = Math.max(0, Math.min(resta, s.itens.length));
+    resta -= n;
+    if (n > 0) cabem.push({ ...s, itens: s.itens.slice(0, n) });
+    if (n < s.itens.length) sobram.push({ ...s, itens: s.itens.slice(n) });
+  }
+  return { cabem, sobram };
+}
+
 /**
- * As seções que cabem na barra inferior (função pura): os itens contam na ordem das seções até o máximo (o pai de um
- * submenu conta como um); seção que fica sem item some.
+ * As seções da barra inferior (função pura). Os itens contam na ordem das seções (o pai de um submenu conta como um);
+ * seção sem item some. Até o máximo, entram todos. Passou do máximo: entram os primeiros `maximo − 1` e o último
+ * lugar vira **"Mais"** (ícone `Ellipsis`, numa seção própria), um pai cujos filhos são o que sobrou, achatado como
+ * no Ctrl+K (`telasDoMenu`: "Cadastros auxiliares › Tipos de telefone"). Ele abre o mesmo submenu flutuante e fica
+ * ativo quando a rota está num desses filhos.
  */
 export function secoesDaBarraInferior(secoes: readonly SecaoMenu[], maximo = MAXIMO_NA_BARRA_INFERIOR): SecaoMenu[] {
-  let resta = maximo;
-  return secoes
-    .map((s) => {
-      const itens = s.itens.slice(0, Math.max(0, resta));
-      resta -= itens.length;
-      return { ...s, itens };
-    })
-    .filter((s) => s.itens.length > 0);
+  const comItens = secoes.filter((s) => s.itens.length > 0);
+  const total = comItens.reduce((n, s) => n + s.itens.length, 0);
+  if (total <= maximo) return comItens.map((s) => ({ ...s, itens: [...s.itens] }));
+  const { cabem, sobram } = cortar(comItens, Math.max(0, maximo - 1));
+  const filhos: ItemMenu[] = telasDoMenu(sobram).map((t) => ({ ...t.item, label: t.rotulo, filhos: undefined }));
+  return [...cabem, { rotulo: SECAO_DO_MAIS, itens: [{ to: ROTA_DO_MAIS, label: ROTULO_DO_MAIS, icon: Ellipsis, filhos }] }];
 }

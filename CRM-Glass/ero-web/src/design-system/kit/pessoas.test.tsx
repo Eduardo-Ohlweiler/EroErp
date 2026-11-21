@@ -224,7 +224,7 @@ describe('casca: seções e submenu', () => {
     expect(itemAtivo('/cadastros/pessoas', auxiliares)).toBe(false);
   });
 
-  it('barra inferior: no máximo 5 contando as seções na ordem; seção vazia some', () => {
+  it('barra inferior: no máximo 5 contando as seções na ordem; acima disso o 5º lugar é "Mais" (navegacao.test)', () => {
     const muitas: SecaoMenu[] = [
       { rotulo: 'A', itens: [1, 2, 3].map((n) => ({ to: `/a${n}`, label: `A${n}`, icon: Users })) },
       { rotulo: 'B', itens: [1, 2, 3].map((n) => ({ to: `/b${n}`, label: `B${n}`, icon: Users })) },
@@ -233,7 +233,8 @@ describe('casca: seções e submenu', () => {
     const r = secoesDaBarraInferior(muitas);
     expect(r.map((s) => [s.rotulo, s.itens.length])).toEqual([
       ['A', 3],
-      ['B', 2],
+      ['B', 1],
+      ['Mais telas', 1],
     ]);
   });
 

@@ -8,6 +8,7 @@
   --color-muted: var(--fg-muted);
   --color-subtle: var(--fg-subtle);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
   --color-accent-text: var(--accent-text);

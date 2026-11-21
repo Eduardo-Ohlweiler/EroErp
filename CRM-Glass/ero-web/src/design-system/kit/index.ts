@@ -22,6 +22,9 @@ export { TDBCombo, ESPERA_DA_BUSCA_MS, type TDBComboProps, type OpcaoDoBanco } f
 export { TDate, type TDateProps } from './TDate';
 export { TRadio, type TRadioProps, type OpcaoRadio } from './TRadio';
 export { TCheckBox, type TCheckBoxProps, type OpcaoCheckBox } from './TCheckBox';
+export { TCor, type TCorProps } from './TCor';
+export { TCorMarca, type TCorMarcaProps } from './TCorMarca';
+export { FORMATO_DA_COR } from './cores';
 export { TAuditoria, type Auditavel } from './TAuditoria';
 export { SITUACAO_OPCOES, type OpcaoSelect } from './opcoes';
 export { type PropsDeCampo } from './campo';
