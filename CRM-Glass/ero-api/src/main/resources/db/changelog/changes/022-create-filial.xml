@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Filial (módulo filial): matriz ou filial do contratante (PLANO-FILIAIS, 20/11/2026).
+
+        - Não duplica cadastro: aponta para uma pessoa (física ou jurídica) e guarda só o
+          tipo, a matriz, a cor e a situação. Uma pessoa é uma filial só
+          (uk_filial_tenant_pessoa).
+        - Várias matrizes por contratante, cada uma com as suas filiais. Profundidade 1:
+          a matriz é sempre do tipo MATRIZ e está ativa, conferido no service com trava
+          (envolve outra linha, não cabe em CHECK).
+        - cod_filial: código por contratante (maior + 1, ver docs/01 "Código do registro").
+        - cor: #RRGGBB em maiúsculas (o mapper normaliza). É dado do usuário, não token do
+          sistema; o front só a aplica pelo kit (TCor / TCorMarca).
+        - uk_filial_id_tenant vem antes da FK da matriz: é o alvo da autorreferência
+          composta (matriz_id, tenant_id). Com matriz_id nulo o PostgreSQL não confere
+          (MATCH SIMPLE), que é o que a matriz quer.
+    -->
+    <changeSet id="022-create-filial" author="eduardo">
+        <createTable tableName="filial">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_filial"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_filial_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_filial" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="pessoa_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="tipo" type="VARCHAR(10)"><constraints nullable="false"/></column>
+            <column name="matriz_id" type="UUID"/>
+            <column name="cor" type="VARCHAR(7)"><constraints nullable="false"/></column>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="filial" indexName="uk_filial_tenant_cod_filial" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_filial"/>
+        </createIndex>
+        <createIndex tableName="filial" indexName="uk_filial_tenant_pessoa" unique="true">
+            <column name="tenant_id"/>
+            <column name="pessoa_id"/>
+        </createIndex>
+        <createIndex tableName="filial" indexName="uk_filial_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex tableName="filial" indexName="ix_filial_matriz">
+            <column name="matriz_id"/>
+        </createIndex>
+        <addForeignKeyConstraint constraintName="fk_filial_pessoa"
+                                 baseTableName="filial" baseColumnNames="pessoa_id,tenant_id"
+                                 referencedTableName="pessoa" referencedColumnNames="id,tenant_id"/>
+        <addForeignKeyConstraint constraintName="fk_filial_matriz"
+                                 baseTableName="filial" baseColumnNames="matriz_id,tenant_id"
+                                 referencedTableName="filial" referencedColumnNames="id,tenant_id"/>
+        <sql>ALTER TABLE filial ADD CONSTRAINT ck_filial_cod_filial CHECK (cod_filial &gt; 0)</sql>
+        <sql>ALTER TABLE filial ADD CONSTRAINT ck_filial_tipo CHECK (tipo IN ('MATRIZ', 'FILIAL'))</sql>
+        <sql>
+            ALTER TABLE filial ADD CONSTRAINT ck_filial_tipo_matriz CHECK (
+                (tipo = 'MATRIZ' AND matriz_id IS NULL)
+                OR (tipo = 'FILIAL' AND matriz_id IS NOT NULL))
+        </sql>
+        <sql>ALTER TABLE filial ADD CONSTRAINT ck_filial_matriz_outra CHECK (matriz_id IS NULL OR matriz_id &lt;&gt; id)</sql>
+        <sql>ALTER TABLE filial ADD CONSTRAINT ck_filial_cor CHECK (cor ~ '^#[0-9A-F]{6}$')</sql>
+    </changeSet>
+
+</databaseChangeLog>
