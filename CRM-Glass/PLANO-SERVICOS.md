@@ -52,6 +52,9 @@
 | Duração | **Entra agora, opcional** (minutos, 1 a 1440). Sem "intervalo depois". |
 | Categoria | **Entra agora, opcional** (auxiliar "Categoria de serviço"). |
 | O que fica para depois | Profissionais habilitados, insumos, comissão, unidade de cobrança (hora, m²), sessões/pacotes. |
+| Obrigatórios | **Nome e filial** (pelo menos uma). Categoria, duração, preço e descrição são opcionais. |
+| Código | Visível e **não editável, primeiro campo da tela** ("Automático" até salvar). |
+| Combo de serviços | Mostra **código e nome** (`cod · nome`), nunca preço. |
 
 ### 2.2 Já decidido antes (não se pergunta de novo)
 
