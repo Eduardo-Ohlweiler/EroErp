@@ -177,6 +177,12 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
   - Kit: `TCor` e `TCorMarca` (cor de registro, dado do usuário, só o kit a aplica), tokens `--cor-registro-1..8`, `autoFocus` no `TCombo` e no `TDBCombo`. Casca: "Mais" na barra inferior do celular acima de 5 itens.
   - 27 testes novos no backend (`FilialIntegracaoTest`). Push e merge são do dono. Doc: `docs/negocio/filiais.md`.
   - Falta o dono aprovar a ressalva "cor de registro" na regra de cores do `CLAUDE.md`.
+- **Cadastro de Serviços (21/11/2026, branch `timeero/servicos`)**, pelo `/timeero` (`PLANO-SERVICOS.md`):
+  - Backend: migration 023, módulo `servico`, auxiliar `categoria_servico` (sem itens do sistema) e grupo `SERVICOS`. `cod_servico` por contratante. Preço **só por filial** e opcional (vazio = não informado; 0 = gratuito); a lista de filiais é onde o serviço é prestado (pelo menos uma). Duração e categoria opcionais. `FilialService.buscarPorIds`. Vários erros de campo num 400 só (`CampoInvalidoException` com lista).
+  - `/api/servicos/selecao` aberto, só código e nome.
+  - Telas: Categorias de serviço (FormList), ServicoList (filtro por filial, faixa de preços, "Preço na filial", Pdf vira tabela de preços) e ServicoForm (código primeiro e não editável, cadastro rápido de categoria, "Filiais e preços" com "Todas as filiais").
+  - Kit: bolinha da cor no `TDBCombo` (`cor`, `corInicial`; o combo Matriz de Filiais ganhou), `acoes` no `TFieldList`, e a correção do `TFieldList` (linha removida voltava a se registrar no form durante a animação de saída e travava o Salvar após "Recarregar"; valia também para Pessoas).
+  - 35 testes novos no backend. Doc: `docs/negocio/servicos.md`.
 - **Protótipo** em `prototipo/` (congelado; detalhes no `prototipo/README.md`):
   - login com esfera de partículas;
   - dashboard com números que contam, gráficos que se desenham, medidor, rosca e ranking;
@@ -205,7 +211,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 4. ~~Começar o backend~~ **Feito** (fundação, segurança, login, usuários e permissões).
 5. ~~Base do front definitivo~~ **Feito na fatia 1.** **Fatia 2:** as telas do `PLANO-FATIA-2.md` (login com código por e-mail e sessão em memória, casca com menu por permissão, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta), mais as pendências da seção 5 desse arquivo. Começar com `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
 6. ~~Definir as regras do papel ADMIN~~ **Feito em 14/11/2026:** o ADMIN faz tudo dentro do contratante, e sempre sobra pelo menos um ADMIN ativo (`docs/negocio/usuarios-e-acesso.md`).
-7. ~~Filiais, como no EroErp 2.0~~ **Feito em 21/11/2026** (`docs/negocio/filiais.md`). **Próximo:** produtos, funil de negócios e agenda. Quem usar filial cria o `FilialService.buscarAtiva(id)` e o combo com a bolinha da cor. (Pessoas, cadastros auxiliares e os dados complementares de Pessoas: feitos em 20 e 21/11/2026.)
+7. ~~Filiais, como no EroErp 2.0~~ **Feito em 21/11/2026** (`docs/negocio/filiais.md`). Serviços **feito em 21/11/2026** (`docs/negocio/servicos.md`). **Próximo:** produtos, funil de negócios e agenda. Quem usar uma filial só cria o `FilialService.buscarAtiva(id)`; quem consumir serviço segue a regra de `servicos.md` (retrato de nome e preço, `buscarAtivo`, `precoNaFilial`). (Pessoas, cadastros auxiliares e os dados complementares de Pessoas: feitos em 20 e 21/11/2026.)
 8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup. Checklist que o `seguranca` deixou para produção:
    - tirar o Swagger e o actuator do nginx, ou restringi-los por IP;
    - HSTS no terminador TLS, `server_tokens off` e `Permissions-Policy`;
@@ -255,7 +261,8 @@ Achados menores das revisões e do QA, deixados para depois. Nenhum bloqueia a e
 **Antes:**
 
 - Conferir que a branch de trabalho foi enviada ao GitHub: `git log --branches --not --remotes` precisa sair vazio.
-- Copiar à mão, para um lugar seguro, os dois `.env`: `CRM-Glass/ero-api/.env` e `EroErp2.0/ero-erp-api/.env`. **Nunca no git.**
+- Copiar à mão, para um lugar seguro, os `.env`: `CRM-Glass/ero-api/.env`, `EroErp2.0/ero-erp-api/.env` e `EroErp2.0/ero/.env.local`. **Nunca no git.**
+- O worktree `CRM-Glass/.claude/worktrees/aparencia-plataforma` tem o `PLANO-APARENCIA-PLATAFORMA.md` sem commit (plano de 20/11, nunca aprovado). Trazer para a `main` se a ideia ainda valer.
 - Guardar o zip `backup-claude-<data>.zip` com a memória do Claude (`C:\Users\Eduardo\.claude\projects\*\memory\`), os planos (`C:\Users\Eduardo\.claude\plans\`) e o `C:\Users\Eduardo\.claude\settings.json`.
 - Opcional: `pg_dump` do volume Docker `ero-api_ero_api_pg` (dados de demonstração).
 - Olhar o worktree `EroErp2.0/.claude/worktrees/layout-modulos-5abfc5`, que tem 1 arquivo sem commit.

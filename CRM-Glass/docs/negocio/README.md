@@ -14,7 +14,8 @@ Regra de ouro: **aqui mora a regra de negócio (o quê e por quê); a implementa
 | [[logs-e-auditoria]] | Trilha de segurança, categorias, retenção, o que o suporte esconde |
 | [[pessoas]] | Cadastro de pessoas: física e jurídica, contatos, endereços, vínculos, cadastro rápido |
 | [[filiais]] | Matrizes e filiais: apontam para uma pessoa, cor de registro, combo aberto sem documento |
-| [[cadastros-auxiliares]] | Os 5 tipos (cadastro, telefone, e-mail, endereço, rede social), itens do sistema e do contratante |
+| [[servicos]] | Serviços: preço só por filial, filiais onde é prestado, duração e categoria opcionais |
+| [[cadastros-auxiliares]] | Os tipos da pessoa e a categoria de serviço, itens do sistema e do contratante |
 | [[codigo-sequencial]] | `cod_<entidade>` por contratante nos cadastros de negócio (regra nos docs; nasce com pessoas) |
 | [[aparencia-e-movimento]] | Decisões visuais e de movimento do dono |
 | [[decisoes]] | Registro cronológico de tudo que o dono decidiu |

@@ -144,6 +144,21 @@ Fonte: `EroErp2.0/docs/09-modulo-filiais.md` (e `10` a `12`, que usam filial) e 
 
 Entregue em 21/11/2026: [[filiais]].
 
+## Pesquisa de 21/11/2026: Serviços
+
+**Como era**
+- EroErp antigo: serviço era uma linha de `produto` com `tipo_produto.classificacao = 'SERVICO'` (texto). Carregava unidade, NCM, CEST e custo; o preço morava no estoque por emitente (sem estoque, vendia a R$ 0,00); `codigo` digitado e sem unicidade; delete físico com erro 500; `/produtos/select` devolvia o DTO inteiro, com custo. Só "sessões padrão" mudava na tela.
+- EroErp 2.0 (`docs/10-modulo-servicos.md`, migration 020): tabela `servico` própria (código por `tenant_sequencia`, nome único, observação, ativo) e `servico_filial` com valor opcional. Telas **List + Form** (não FormList), com `TFieldList` de valores por filial. A consulta guarda o retrato de nome e preço.
+
+**O que o CRM Glass trouxe**
+- Tabela própria, nome único sem acento, sem exclusão, preço só por filial com vazio ≠ 0, `/selecao` sem preço, retrato no consumidor, telas List + Form.
+
+**O que não copiar**
+- Do antigo: serviço dentro de produto, classificação em texto, preço no estoque.
+- Do 2.0: `ServicoService.findById` devolvendo entidade para outro módulo; native com `unaccent` e paginação em duas consultas; `sincronizarFiliais` linha a linha; `tenant_sequencia`; lista de filiais só de preço (aqui é onde o serviço é prestado); PUT sem trava quando só as filiais mudam.
+
+Entregue em 21/11/2026: [[servicos]].
+
 ## Onde olhar
 
 EroErp antigo em `../ero-erp-api` e `../ero`; EroErp 2.0 em `../EroErp2.0`.

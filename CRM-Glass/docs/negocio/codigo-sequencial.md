@@ -1,11 +1,11 @@
 # Código sequencial por contratante
 
-**Status: regra fechada em 14/11/2026 e escrita nos docs técnicos. Em uso desde 20/11/2026, em [[pessoas]] e nos [[cadastros-auxiliares]]; em [[filiais]] desde 21/11/2026.**
+**Status: regra fechada em 14/11/2026 e escrita nos docs técnicos. Em uso desde 20/11/2026, em [[pessoas]] e nos [[cadastros-auxiliares]]; em [[filiais]] desde 21/11/2026; em [[servicos]] desde 21/11/2026.**
 
 ## Regras vigentes
 
 - Todo cadastro de negócio usado pelos clientes que contrataram o sistema (pessoa, filial, pedido, estoque...) tem uma coluna de código com o nome da tabela: `cod_pessoa` em `pessoa`, `cod_filial` em `filial`, `cod_pedido` em `pedido`, e assim por diante.
-- Em uso: `cod_pessoa`, `cod_filial` e os códigos dos cadastros auxiliares (`cod_tipo_telefone` etc.).
+- Em uso: `cod_pessoa`, `cod_filial`, `cod_servico` e os códigos dos cadastros auxiliares (`cod_tipo_telefone`, `cod_categoria_servico` etc.).
 - O código é sequencial **por contratante**: cada contratante começa no 1.
 - Numeração: no salvar, o maior código do contratante + 1. Não há tabela de contadores nem sequence.
 - Um índice único (contratante, código) impede número repetido quando dois salvam juntos. O sistema tenta de novo sozinho.
