@@ -107,6 +107,10 @@ app:
     email: ${SUPERADMIN_EMAIL:}
     senha: ${SUPERADMIN_SENHA:}
     nome: ${SUPERADMIN_NOME:Superadmin}
+  # Consulta de CEP (ViaCEP), feita pelo back. Host fixo; o deploy precisa liberar a saída para ele.
+  # Limite próprio por IP: app.rate-limit.cep (padrão 30/min).
+  cep:
+    url: https://viacep.com.br/ws
 
 logging:
   level:

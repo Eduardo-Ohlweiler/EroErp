@@ -18,13 +18,19 @@ import java.util.HexFormat;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.util.UrlPathHelper;
 
 /**
  * Limite de requisições por IP (OWASP A07 — força bruta; A06 — abuso).
  *
- * <p>Baldes separados para login, 2FA (verificar e reenviar o código), refresh e o resto da API. Guardados em
+ * <p>Baldes separados para login, 2FA (verificar e reenviar o código), refresh, consulta de CEP
+ * (cada uma é uma chamada ao ViaCEP; ver ViaCepService) e o resto da API. Guardados em
  * memória: com mais de uma instância atrás de balanceador, cada uma conta o seu
  * (aceitável; para limite global, trocar por Bucket4j + Redis/Postgres).
+ *
+ * <p>O balde é escolhido pelo caminho já decodificado e limpo, o mesmo que o
+ * Spring MVC usa para casar a rota. Com a URI crua, {@code /api/%63ep/01001000}
+ * chegaria ao controller de CEP contado no balde geral (10× o limite).
  *
  * <p>Registrado dentro da cadeia do Spring Security (ver SecurityConfig), antes
  * da autenticação.
@@ -47,7 +53,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        String uri = request.getRequestURI();
+        String uri = caminho(request);
         String grupo;
         int limite;
         if (uri.startsWith("/api/auth/login")) {
@@ -59,6 +65,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else if (uri.startsWith("/api/auth/refresh")) {
             grupo = "refresh";
             limite = props.refresh();
+        } else if (uri.startsWith("/api/cep/")) {
+            grupo = "cep";
+            limite = props.cep();
         } else {
             grupo = "geral";
             limite = props.geral();
@@ -74,6 +83,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
         chain.doFilter(request, response);
+    }
+
+    /**
+     * Caminho dentro da aplicação, decodificado ({@code %63} vira {@code c}), sem
+     * conteúdo após {@code ;} e com barras repetidas reduzidas. O firewall do
+     * Spring Security já recusou antes {@code ..}, {@code %2F} e afins.
+     */
+    static String caminho(HttpServletRequest request) {
+        return UrlPathHelper.defaultInstance.getPathWithinApplication(request);
     }
 
     /**

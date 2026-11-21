@@ -85,7 +85,7 @@ export function Dialogo({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 12, scale: 0.97 }}
                   transition={spring.soft}
-                  className={cn('glass-solid pointer-events-auto relative w-full rounded-[28px] max-h-[90vh] overflow-y-auto p-6', className)}
+                  className={cn('glass-flutuante pointer-events-auto relative w-full rounded-[28px] max-h-[90vh] overflow-y-auto p-6', className)}
                   style={{ maxWidth: largura }}
                 >
                   <div className="flex items-start justify-between gap-4 mb-4">

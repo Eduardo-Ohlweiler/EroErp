@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import type { UsuarioLogado } from '../shared/api/tipos';
 import { naVisaoDePlataforma, podeAbrirTela } from '../shared/sessao/rotulos';
-import { menuAdministrativo, tituloDaRota } from './menu';
+import { menuAdministrativo, menuDeCadastros, tituloDaRota } from './menu';
 
 type Perfil = Pick<UsuarioLogado, 'papel' | 'superadminAtuando' | 'telas'>;
 
 /** O que o `GET /api/auth/eu` manda em `telas` (GrupoLiberacao.telasLiberadas): ADMIN e SUPERADMIN recebem tudo. */
-const TODAS = ['usuario-list', 'usuario-form', 'auditoria-list'];
+const AUXILIARES = [
+  'tipo-cadastro-formlist',
+  'tipo-telefone-formlist',
+  'tipo-email-formlist',
+  'tipo-endereco-formlist',
+  'tipo-rede-social-formlist',
+];
+const TODAS = ['usuario-list', 'usuario-form', 'auditoria-list', 'pessoa-list', 'pessoa-form', ...AUXILIARES];
 
 const PERFIS: Record<string, Perfil> = {
   usuarioSemGrupo: { papel: 'USUARIO', superadminAtuando: false, telas: [] },
@@ -50,6 +57,46 @@ describe('grupo Administrativo do menu, pelos 5 perfis', () => {
   });
 });
 
+describe('seção Cadastros do menu', () => {
+  const filhos = (p: Perfil) => menuDeCadastros(p).flatMap((i) => i.filhos ?? []).map((f) => f.to);
+
+  it('quem não tem nenhum auxiliar liberado não vê a seção', () => {
+    expect(menuDeCadastros(PERFIS.usuarioSemGrupo)).toEqual([]);
+    expect(menuDeCadastros(PERFIS.usuarioComAuditoria)).toEqual([]);
+  });
+
+  it('ADMIN vê Pessoas e depois o pai "Cadastros auxiliares" com os 5 filhos, na ordem do submenu', () => {
+    const [pessoas, pai, ...resto] = menuDeCadastros(PERFIS.admin);
+    expect(resto).toEqual([]);
+    expect(pessoas.to).toBe('/cadastros/pessoas');
+    expect(pessoas.filhos).toBeUndefined();
+    expect(pai.to).toBe('/cadastros/auxiliares');
+    expect(filhos(PERFIS.admin)).toEqual([
+      '/cadastros/auxiliares/tipos-de-cadastro',
+      '/cadastros/auxiliares/tipos-de-telefone',
+      '/cadastros/auxiliares/tipos-de-email',
+      '/cadastros/auxiliares/tipos-de-endereco',
+      '/cadastros/auxiliares/tipos-de-rede-social',
+    ]);
+  });
+
+  it('usuário só com Pessoas vê só Pessoas, sem o pai dos auxiliares', () => {
+    const so: Perfil = { papel: 'USUARIO', superadminAtuando: false, telas: ['pessoa-list', 'pessoa-form'] };
+    expect(menuDeCadastros(so).map((i) => i.to)).toEqual(['/cadastros/pessoas']);
+  });
+
+  it('usuário com só um auxiliar liberado vê só o pai, com esse filho', () => {
+    const so: Perfil = { papel: 'USUARIO', superadminAtuando: false, telas: ['tipo-telefone-formlist'] };
+    expect(menuDeCadastros(so)).toHaveLength(1);
+    expect(filhos(so)).toEqual(['/cadastros/auxiliares/tipos-de-telefone']);
+  });
+
+  it('superadmin na plataforma não vê a seção; dentro de um contratante, vê', () => {
+    expect(menuDeCadastros(PERFIS.superadminNaPlataforma)).toEqual([]);
+    expect(filhos(PERFIS.superadminDentro)).toHaveLength(5);
+  });
+});
+
 describe('título da barra superior', () => {
   it('chama cada tela pelo nome, inclusive as fichas', () => {
     expect(tituloDaRota('/admin/contratantes')).toBe('Contratantes');
@@ -57,6 +104,10 @@ describe('título da barra superior', () => {
     expect(tituloDaRota('/admin/contratantes/abc/aparencia')).toBe('Contratantes');
     expect(tituloDaRota('/admin/usuarios/abc')).toBe('Usuários');
     expect(tituloDaRota('/admin/logs')).toBe('Logs');
+    expect(tituloDaRota('/cadastros/pessoas')).toBe('Pessoas');
+    expect(tituloDaRota('/cadastros/pessoas/abc')).toBe('Pessoas');
+    expect(tituloDaRota('/cadastros/auxiliares/tipos-de-cadastro')).toBe('Tipos de cadastro');
+    expect(tituloDaRota('/cadastros/auxiliares/tipos-de-email')).toBe('Tipos de e-mail');
     expect(tituloDaRota('/minha-conta')).toBe('Minha conta');
     expect(tituloDaRota('/admin/contratantesx')).toBe('Início');
   });

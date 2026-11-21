@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   exit={{ opacity: 0, x: 80, transition: { duration: micro.saidaAviso } }}
                   transition={spring.bouncy}
                   role={i.tone === 'danger' || i.tone === 'warning' ? 'alert' : 'status'}
-                  className="glass-solid pointer-events-auto rounded-2xl p-3.5 flex gap-3 items-start"
+                  className="glass-flutuante pointer-events-auto rounded-2xl p-3.5 flex gap-3 items-start"
                 >
                   <span className={cn('size-9 rounded-xl grid place-items-center shrink-0', iconClass[i.tone])}>
                     <Icon className="size-[18px]" />

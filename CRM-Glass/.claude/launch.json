@@ -19,6 +19,20 @@
       "runtimeArgs": ["/c", "ero-api\\run-dev.cmd"],
       "port": 8080,
       "url": "http://localhost:8080"
+    },
+    {
+      "name": "ero-api-mailpit",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "ero-api\\run-dev.cmd"],
+      "port": 8080,
+      "url": "http://localhost:8080",
+      "env": {
+        "MAIL_HOST": "localhost",
+        "MAIL_PORTA": "1025",
+        "MAIL_SMTP_AUTH": "false",
+        "MAIL_STARTTLS": "false",
+        "MAIL_REMETENTE": "crm@teste.local"
+      }
     }
   ]
 }

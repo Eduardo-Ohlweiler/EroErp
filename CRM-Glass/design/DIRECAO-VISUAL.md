@@ -26,7 +26,8 @@ Analisei 20 prints de referências (reels de UI "glassy" feitos em React + Tailw
 - **Três níveis de vidro**, para não sacrificar a leitura em telas densas de CRM:
   - `glass-subtle` — painéis grandes e fundo de seções (mais transparente).
   - `glass` — cartões padrão, KPIs, gráficos.
-  - `glass-solid` — tabelas, formulários longos, modais, menus suspensos (mais opaco, texto sempre legível).
+  - `glass-solid` — tabelas, formulários longos (mais opaco, texto sempre legível).
+  - `glass-flutuante` — toda camada que flutua sobre o conteúdo: lista do combo, `Submenu`, menu do usuário, seletor de contratante, paleta Ctrl+K, modal e gaveta, toasts, popovers e calendários de data, e o que é fixo na casca com o conteúdo rolando por baixo (barra superior, barra inferior do celular, faixa "Você está dentro de … como suporte"). O trilho lateral fica em `glass`: o conteúdo começa depois dele. **Camada flutuante não segue a intensidade da Aparência abaixo do piso:** a opacidade é a do token `--glass-flutuante` (0,86 nos dois temas; 0,9 no vidro denso) e o desfoque nunca fica abaixo de `--glass-flutuante-blur-piso` (16px), por mais transparente que o contratante deixe o resto. Cartões e o fundo da tela continuam seguindo a Aparência. Texto da camada ≥ 4,5:1 (principal e secundário) e ≥ 3:1 (sutil) mesmo sem desfoque, sobre branco ou preto atrás.
 - **Fundo vivo:** gradiente com "orbs" de cor desfocados que se movem devagar; opção de imagem de fundo escolhida pelo usuário; partículas apenas em login/boas-vindas.
 - **Contraste é inegociável:** texto principal com contraste AA mínimo sobre o pior caso do fundo. Vidro bonito e ilegível não vale para um produto comercial.
 

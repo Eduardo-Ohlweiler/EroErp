@@ -1,5 +1,6 @@
 package com.api.ero_api.tenant.mapper;
 
+import com.api.ero_api.compartilhado.util.DocumentoValidator;
 import com.api.ero_api.tenant.dtos.AparenciaDto;
 import com.api.ero_api.tenant.dtos.FundoCatalogoDto;
 import com.api.ero_api.tenant.dtos.TenantAtualDto;
@@ -9,7 +10,6 @@ import com.api.ero_api.tenant.dtos.TenantSelectDto;
 import com.api.ero_api.tenant.dtos.TenantUpdateDto;
 import com.api.ero_api.tenant.entity.Tenant;
 import com.api.ero_api.tenant.enums.Fundo;
-import com.api.ero_api.tenant.util.DocumentoValidator;
 import java.math.RoundingMode;
 import java.util.Locale;
 import java.util.Map;

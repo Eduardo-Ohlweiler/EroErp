@@ -62,7 +62,7 @@ export function Gaveta({ aberto, onAbertoChange, titulo, descricao, children, ro
                 exit={{ x: '105%' }}
                 transition={spring.soft}
                 className={cn(
-                  'glass-solid fixed z-modal right-3 top-3 bottom-3 rounded-[28px] flex flex-col',
+                  'glass-flutuante fixed z-modal right-3 top-3 bottom-3 rounded-[28px] flex flex-col',
                   'w-[min(var(--gaveta-largura),calc(100vw-24px))]',
                   className,
                 )}

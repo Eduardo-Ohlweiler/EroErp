@@ -44,14 +44,18 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
-     * Exceções de negócio. Duplicidade num campo ({@link ConflitoCampoException}) traz
-     * {@code erros[{campo, mensagem}]} como o 400; o 409 de versão sai sem {@code erros}.
+     * Exceções de negócio. Duplicidade num campo ({@link ConflitoCampoException}, 409) e
+     * campo recusado pelo service ({@link CampoInvalidoException}, 400) trazem
+     * {@code erros[{campo, mensagem}]} como o 400 do Bean Validation; o 409 de versão sai
+     * sem {@code erros}.
      */
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ProblemDetail> negocio(ApiException ex, HttpServletRequest req) {
-        List<ErroCampoDto> erros = ex instanceof ConflitoCampoException c
-                ? List.of(new ErroCampoDto(c.getCampo(), c.getMessage()))
-                : null;
+        List<ErroCampoDto> erros = switch (ex) {
+            case ConflitoCampoException c -> List.of(new ErroCampoDto(c.getCampo(), c.getMessage()));
+            case CampoInvalidoException c -> List.of(new ErroCampoDto(c.getCampo(), c.getMessage()));
+            default -> null;
+        };
         ResponseEntity<ProblemDetail> r = resposta(ex.getStatus(), ex.getCodigo(), ex.getMessage(), req, erros);
         if (ex instanceof MuitasRequisicoesException m && m.getSegundosParaTentar() != null) {
             return ResponseEntity.status(r.getStatusCode())

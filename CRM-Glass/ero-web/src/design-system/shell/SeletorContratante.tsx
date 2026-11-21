@@ -45,7 +45,7 @@ export function filtrarContratantes(opcoes: OpcaoContratante[], busca: string): 
 }
 
 /**
- * O chip do contratante, para o superadmin, abre este seletor (popover `glass-solid` em portal): busca, a lista de
+ * O chip do contratante, para o superadmin, abre este seletor (popover `glass-flutuante` em portal): busca, a lista de
  * contratantes ativos e, quando ele está dentro de um, "Voltar à plataforma". Não busca dados: a Casca passa as
  * `opcoes` e faz a troca (`onEscolher`/`onSair`).
  *
@@ -156,7 +156,7 @@ export function SeletorContratante({
                 exit={{ opacity: 0, y: -6, scale: 0.98 }}
                 transition={spring.snappy}
                 style={{ transformOrigin: 'var(--radix-popover-content-transform-origin)' }}
-                className="glass-solid z-popover !rounded-2xl p-1.5 w-[min(340px,calc(100vw-24px))]"
+                className="glass-flutuante z-popover !rounded-2xl p-1.5 w-[min(340px,calc(100vw-24px))]"
               >
                 <div className="px-2.5 pt-2 pb-2">
                   <div className="text-sm font-semibold">Acessar contratante</div>

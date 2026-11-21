@@ -72,6 +72,32 @@ export function valorParaExibir(mascara: Mascara | undefined, guardado: unknown)
   return ehDeDocumento(mascara) ? EXIBIR[mascara](v) : v;
 }
 
+/**
+ * Quantos caracteres crus deixam a máscara completa (o `onCompletar` do `TEntry`). O CPF/CNPJ que alterna só completa
+ * no CNPJ (com 11 dígitos ainda pode ser um CNPJ pela metade); telefone, no celular de 11 dígitos. As numéricas não
+ * completam (não têm tamanho fixo).
+ */
+const COMPLETA_COM: Partial<Record<Mascara, number>> = {
+  cpf: 11,
+  cnpj: 14,
+  cpfCnpj: 14,
+  telefone: 11,
+  celular: 11,
+  cep: 8,
+  hora: 5,
+};
+
+/**
+ * O valor cru quando a máscara acabou de ficar completa (CEP com 8 dígitos), senão `null`. Função pura: o `TEntry`
+ * chama a cada digitação e dispara o `onCompletar` uma vez por valor completo.
+ */
+export function valorCompleto(mascara: Mascara | undefined, exibido: string): string | null {
+  const tamanho = mascara ? COMPLETA_COM[mascara] : undefined;
+  if (!mascara || tamanho === undefined) return null;
+  const cru = valorParaGravar(mascara, exibido);
+  return cru.length === tamanho ? cru : null;
+}
+
 /** Tamanho máximo do texto exibido. */
 export const TAMANHO_MAXIMO: Partial<Record<Mascara, number>> = {
   cpf: 14,

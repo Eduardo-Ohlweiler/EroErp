@@ -38,7 +38,15 @@ export function avisoDosCampos(t: Extract<TratamentoDeErro, { tipo: 'campos' }>)
 }
 
 /**
- * Classifica o erro. `temCampo(caminho)` diz se o formulário tem aquele campo (sem formulário, nenhum campo vale).
+ * O caminho do campo como o `react-hook-form` o conhece: o Bean Validation manda a posição da lista entre colchetes
+ * (`telefones[0].numero`), e o formulário usa ponto (`telefones.0.numero`, o `name` que o `TFieldList` dá ao campo).
+ */
+export function caminhoDoCampo(campo: string): string {
+  return campo.replace(/\[(\d+)\]/g, '.$1');
+}
+
+/**
+ * Classifica o erro. Os caminhos de `erros` saem com ponto no lugar dos colchetes (`caminhoDoCampo`). `temCampo(caminho)` diz se o formulário tem aquele campo (sem formulário, nenhum campo vale).
  */
 export function tratarErroApi(e: unknown, temCampo: (campo: string) => boolean = () => false): TratamentoDeErro {
   if (!(e instanceof ErroApi)) return { tipo: 'mensagem', texto: TEXTO_GENERICO };
@@ -47,8 +55,9 @@ export function tratarErroApi(e: unknown, temCampo: (campo: string) => boolean =
 
   // 409 com `erros` é duplicidade de campo, não conflito de versão: recarregar não resolve.
   if ((e.status === 400 || e.status === 409) && e.erros.length > 0) {
-    const campos = e.erros.filter((x) => temCampo(x.campo));
-    const semCampo = e.erros.filter((x) => !temCampo(x.campo));
+    const erros = e.erros.map((x) => ({ ...x, campo: caminhoDoCampo(x.campo) }));
+    const campos = erros.filter((x) => temCampo(x.campo));
+    const semCampo = erros.filter((x) => !temCampo(x.campo));
     return { tipo: 'campos', campos, semCampo, texto: e.detail };
   }
 

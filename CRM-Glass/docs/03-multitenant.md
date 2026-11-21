@@ -31,7 +31,7 @@ Só onde ainda não se sabe o tenant, ou onde a plataforma age sobre um contrata
 - **Montar o usuário da requisição** (`AutorizacaoService`): sempre pelo id do token assinado.
 - **Operações do próprio usuário** (trocar senha, tema, meus dados em `/api/auth/eu/perfil`): funcionam até para o superadmin dentro de um contratante, sempre pelo id da sessão.
 - **Seed do superadmin.**
-- **Superadmin na visão de plataforma** (token com tenant ROOT): cria e altera contratantes e o primeiro admin, com `atribuirTenant` explícito.
+- **Superadmin na visão de plataforma** (token com tenant ROOT): cria e altera contratantes e o primeiro admin, com `atribuirTenant` explícito. Na criação do contratante também grava os itens do sistema dos cadastros auxiliares (`ItensDoSistemaService.semear`, na mesma transação; recusa fora do ROOT).
 
 `TenantContext.comoRoot(...)` precisa ser chamado **antes** de a transação abrir,
 porque o Hibernate lê o tenant quando abre a sessão. Por isso esses fluxos usam
@@ -276,10 +276,20 @@ códigos por hora (429). No máximo um por usuário dentro da janela de 1 hora d
 Retenção: 12 meses (`app.auditoria.retencao`, padrão `P365D`, mínimo `P30D`: abaixo
 disso a aplicação não sobe; horário em `app.auditoria.retencao-cron`, padrão `0 30 3 * * *`).
 
+## Itens do sistema dos cadastros auxiliares
+
+Os 5 cadastros auxiliares da pessoa (tipo de cadastro, telefone, e-mail, endereço e rede social) têm itens do sistema (Cliente, Celular...). Eles **não** são linhas globais: cada contratante tem as próprias, marcadas por `chave` (o nome da constante do enum `<Tipo>DoSistema`; `chave` nula = item do contratante). Assim tudo continua `TenantEntity`, com filtro automático, e a FK composta `(tipo_id, tenant_id)` garante no banco que uma pessoa nunca aponta para o tipo de outro contratante.
+
+- Contratantes que já existiam: semente da migration 014 (a Plataforma fica de fora).
+- Contratante novo: `ItensDoSistemaService.semear` dentro do `TenantService.criar`, com o código vindo do enum (nunca o maior + 1, que em ROOT pegaria o de todos).
+- Item do sistema é imutável: alterar, inativar ou ativar dá 422 "Itens do sistema não podem ser alterados." (e `ck_<tabela>_sistema_ativo` no banco).
+- Toda rota dos auxiliares exige um contratante selecionado (`exigirTenantSelecionado`), também os GET e o `/selecao`: na visão de plataforma dá 422.
+
 ## O que NÃO é filtrado automaticamente
 
 - **SQL nativo.** Só é permitido em repository com `@SqlNativoRevisado`, e a consulta filtra `tenant_id` à mão (ou é global de propósito, como a checagem de e-mail único).
 - **Entidades da plataforma**, que não estendem `TenantEntity`: `Tenant`, `SessaoUsuario`, `RefreshToken`, `EventoSeguranca`. As consultas delas são por id ou hash, ou filtram à mão, como `ConsultaEventoService.listar`.
+- **Referência do IBGE** (`Estado`, `Cidade`, módulo `localidade`, migration 013): também fora do `TenantEntity`, de propósito. É a mesma lista para todos os contratantes, ninguém grava pela API (as entidades são `@Immutable`) e nenhuma delas guarda dado de contratante.
 
 ## E se for um container por contratante?
 

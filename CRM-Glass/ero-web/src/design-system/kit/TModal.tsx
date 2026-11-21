@@ -35,7 +35,7 @@ export type TModalProps = {
 
 /**
  * Janela do kit (docs/07 §3.1 e §6), sobre o `Dialogo` (Radix): foco preso dentro, Esc fecha, `aria-modal`, foco de
- * volta ao botão que abriu, `glass-solid` em portal com o fundo escurecido **sem** desfoque (o modal é a camada de
+ * volta ao botão que abriu, `glass-flutuante` em portal com o fundo escurecido **sem** desfoque (o modal é a camada de
  * vidro). Nunca passa de `calc(100vw - 2rem)`.
  *
  * Dentro dele as regras de tela continuam: `TForm`, `TRow`, larguras padrão (relativas à coluna do modal) e

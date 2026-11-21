@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Os 5 cadastros auxiliares da pessoa (módulo auxiliar): tipo de cadastro, de
+        telefone, de e-mail, de endereço e de rede social. Uma tabela por tipo, todas
+        com as mesmas colunas.
+
+        - Cada contratante tem as próprias linhas, inclusive as dos itens do sistema
+          (Cliente, Celular...), marcadas por "chave" (o nome da constante do enum
+          <Tipo>DoSistema). chave nula = item criado pelo contratante.
+        - Item do sistema é imutável: não se edita nem se inativa (422 no service e
+          ck_<t>_sistema_ativo aqui).
+        - cod_<t>: código por contratante. Os do sistema são 1..N na ordem do enum; o
+          primeiro do contratante continua do N+1 (maior + 1, ver docs/01).
+        - Nome único no contratante sem diferenciar maiúsculas nem acento, contando os
+          do sistema: índice em (tenant_id, nome_busca), com o TextoBusca.normalizar.
+        - uk_<t>_id_tenant é o alvo das FKs compostas (tipo_id, tenant_id) das filhas da
+          pessoa: o banco garante que a pessoa nunca aponta para o tipo de outro contratante.
+
+        A semente leva os itens do sistema para os contratantes que já existem (inclusive
+        os inativos; a Plataforma fica de fora). Contratante novo recebe pelo
+        ItensDoSistemaService.semear, no TenantService.criar. Os valores são IGUAIS aos
+        enums; item novo do sistema = constante no fim do enum + migration nova que semeia
+        os existentes (adotando, com UPDATE ... SET chave, o item do contratante que já
+        tiver o mesmo nome_busca).
+    -->
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-cadastro" author="eduardo">
+        <createTable tableName="tipo_cadastro">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_tipo_cadastro"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_tipo_cadastro_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_tipo_cadastro" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="nome" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="nome_busca" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="chave" type="VARCHAR(30)"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="tipo_cadastro" indexName="uk_tipo_cadastro_tenant_cod_tipo_cadastro" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_tipo_cadastro"/>
+        </createIndex>
+        <createIndex tableName="tipo_cadastro" indexName="uk_tipo_cadastro_tenant_nome_busca" unique="true">
+            <column name="tenant_id"/>
+            <column name="nome_busca"/>
+        </createIndex>
+        <createIndex tableName="tipo_cadastro" indexName="uk_tipo_cadastro_tenant_chave" unique="true">
+            <column name="tenant_id"/>
+            <column name="chave"/>
+        </createIndex>
+        <createIndex tableName="tipo_cadastro" indexName="uk_tipo_cadastro_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <sql>ALTER TABLE tipo_cadastro ADD CONSTRAINT ck_tipo_cadastro_cod_tipo_cadastro CHECK (cod_tipo_cadastro &gt; 0)</sql>
+        <sql>ALTER TABLE tipo_cadastro ADD CONSTRAINT ck_tipo_cadastro_sistema_ativo CHECK (chave IS NULL OR ativo)</sql>
+    </changeSet>
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-telefone" author="eduardo">
+        <createTable tableName="tipo_telefone">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_tipo_telefone"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_tipo_telefone_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_tipo_telefone" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="nome" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="nome_busca" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="chave" type="VARCHAR(30)"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="tipo_telefone" indexName="uk_tipo_telefone_tenant_cod_tipo_telefone" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_tipo_telefone"/>
+        </createIndex>
+        <createIndex tableName="tipo_telefone" indexName="uk_tipo_telefone_tenant_nome_busca" unique="true">
+            <column name="tenant_id"/>
+            <column name="nome_busca"/>
+        </createIndex>
+        <createIndex tableName="tipo_telefone" indexName="uk_tipo_telefone_tenant_chave" unique="true">
+            <column name="tenant_id"/>
+            <column name="chave"/>
+        </createIndex>
+        <createIndex tableName="tipo_telefone" indexName="uk_tipo_telefone_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <sql>ALTER TABLE tipo_telefone ADD CONSTRAINT ck_tipo_telefone_cod_tipo_telefone CHECK (cod_tipo_telefone &gt; 0)</sql>
+        <sql>ALTER TABLE tipo_telefone ADD CONSTRAINT ck_tipo_telefone_sistema_ativo CHECK (chave IS NULL OR ativo)</sql>
+    </changeSet>
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-email" author="eduardo">
+        <createTable tableName="tipo_email">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_tipo_email"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_tipo_email_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_tipo_email" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="nome" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="nome_busca" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="chave" type="VARCHAR(30)"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="tipo_email" indexName="uk_tipo_email_tenant_cod_tipo_email" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_tipo_email"/>
+        </createIndex>
+        <createIndex tableName="tipo_email" indexName="uk_tipo_email_tenant_nome_busca" unique="true">
+            <column name="tenant_id"/>
+            <column name="nome_busca"/>
+        </createIndex>
+        <createIndex tableName="tipo_email" indexName="uk_tipo_email_tenant_chave" unique="true">
+            <column name="tenant_id"/>
+            <column name="chave"/>
+        </createIndex>
+        <createIndex tableName="tipo_email" indexName="uk_tipo_email_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <sql>ALTER TABLE tipo_email ADD CONSTRAINT ck_tipo_email_cod_tipo_email CHECK (cod_tipo_email &gt; 0)</sql>
+        <sql>ALTER TABLE tipo_email ADD CONSTRAINT ck_tipo_email_sistema_ativo CHECK (chave IS NULL OR ativo)</sql>
+    </changeSet>
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-endereco" author="eduardo">
+        <createTable tableName="tipo_endereco">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_tipo_endereco"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_tipo_endereco_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_tipo_endereco" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="nome" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="nome_busca" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="chave" type="VARCHAR(30)"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="tipo_endereco" indexName="uk_tipo_endereco_tenant_cod_tipo_endereco" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_tipo_endereco"/>
+        </createIndex>
+        <createIndex tableName="tipo_endereco" indexName="uk_tipo_endereco_tenant_nome_busca" unique="true">
+            <column name="tenant_id"/>
+            <column name="nome_busca"/>
+        </createIndex>
+        <createIndex tableName="tipo_endereco" indexName="uk_tipo_endereco_tenant_chave" unique="true">
+            <column name="tenant_id"/>
+            <column name="chave"/>
+        </createIndex>
+        <createIndex tableName="tipo_endereco" indexName="uk_tipo_endereco_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <sql>ALTER TABLE tipo_endereco ADD CONSTRAINT ck_tipo_endereco_cod_tipo_endereco CHECK (cod_tipo_endereco &gt; 0)</sql>
+        <sql>ALTER TABLE tipo_endereco ADD CONSTRAINT ck_tipo_endereco_sistema_ativo CHECK (chave IS NULL OR ativo)</sql>
+    </changeSet>
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-rede-social" author="eduardo">
+        <createTable tableName="tipo_rede_social">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_tipo_rede_social"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_tipo_rede_social_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_tipo_rede_social" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="nome" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="nome_busca" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="chave" type="VARCHAR(30)"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="tipo_rede_social" indexName="uk_tipo_rede_social_tenant_cod_tipo_rede_social" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_tipo_rede_social"/>
+        </createIndex>
+        <createIndex tableName="tipo_rede_social" indexName="uk_tipo_rede_social_tenant_nome_busca" unique="true">
+            <column name="tenant_id"/>
+            <column name="nome_busca"/>
+        </createIndex>
+        <createIndex tableName="tipo_rede_social" indexName="uk_tipo_rede_social_tenant_chave" unique="true">
+            <column name="tenant_id"/>
+            <column name="chave"/>
+        </createIndex>
+        <createIndex tableName="tipo_rede_social" indexName="uk_tipo_rede_social_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <sql>ALTER TABLE tipo_rede_social ADD CONSTRAINT ck_tipo_rede_social_cod_tipo_rede_social CHECK (cod_tipo_rede_social &gt; 0)</sql>
+        <sql>ALTER TABLE tipo_rede_social ADD CONSTRAINT ck_tipo_rede_social_sistema_ativo CHECK (chave IS NULL OR ativo)</sql>
+    </changeSet>
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-cadastro-semente" author="eduardo">
+        <sql>
+            INSERT INTO tipo_cadastro (id, tenant_id, cod_tipo_cadastro, nome, nome_busca, chave, ativo, created_at, version)
+            SELECT gen_random_uuid(), t.id, v.cod, v.nome, v.busca, v.chave, true, now(), 0
+            FROM tenant t CROSS JOIN (VALUES
+                (1, 'Cliente', 'cliente', 'CLIENTE'),
+                (2, 'Fornecedor', 'fornecedor', 'FORNECEDOR'),
+                (3, 'Funcionário', 'funcionario', 'FUNCIONARIO'),
+                (4, 'Lead', 'lead', 'LEAD'),
+                (5, 'Outros', 'outros', 'OUTROS')
+            ) AS v(cod, nome, busca, chave)
+            WHERE t.id &lt;&gt; '00000000-0000-0000-0000-000000000000';
+        </sql>
+    </changeSet>
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-telefone-semente" author="eduardo">
+        <sql>
+            INSERT INTO tipo_telefone (id, tenant_id, cod_tipo_telefone, nome, nome_busca, chave, ativo, created_at, version)
+            SELECT gen_random_uuid(), t.id, v.cod, v.nome, v.busca, v.chave, true, now(), 0
+            FROM tenant t CROSS JOIN (VALUES
+                (1, 'Celular', 'celular', 'CELULAR'),
+                (2, 'WhatsApp', 'whatsapp', 'WHATSAPP'),
+                (3, 'Residencial', 'residencial', 'RESIDENCIAL'),
+                (4, 'Comercial', 'comercial', 'COMERCIAL')
+            ) AS v(cod, nome, busca, chave)
+            WHERE t.id &lt;&gt; '00000000-0000-0000-0000-000000000000';
+        </sql>
+    </changeSet>
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-email-semente" author="eduardo">
+        <sql>
+            INSERT INTO tipo_email (id, tenant_id, cod_tipo_email, nome, nome_busca, chave, ativo, created_at, version)
+            SELECT gen_random_uuid(), t.id, v.cod, v.nome, v.busca, v.chave, true, now(), 0
+            FROM tenant t CROSS JOIN (VALUES
+                (1, 'Particular', 'particular', 'PARTICULAR'),
+                (2, 'Comercial', 'comercial', 'COMERCIAL')
+            ) AS v(cod, nome, busca, chave)
+            WHERE t.id &lt;&gt; '00000000-0000-0000-0000-000000000000';
+        </sql>
+    </changeSet>
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-endereco-semente" author="eduardo">
+        <sql>
+            INSERT INTO tipo_endereco (id, tenant_id, cod_tipo_endereco, nome, nome_busca, chave, ativo, created_at, version)
+            SELECT gen_random_uuid(), t.id, v.cod, v.nome, v.busca, v.chave, true, now(), 0
+            FROM tenant t CROSS JOIN (VALUES
+                (1, 'Residencial', 'residencial', 'RESIDENCIAL'),
+                (2, 'Comercial', 'comercial', 'COMERCIAL'),
+                (3, 'Cobrança', 'cobranca', 'COBRANCA')
+            ) AS v(cod, nome, busca, chave)
+            WHERE t.id &lt;&gt; '00000000-0000-0000-0000-000000000000';
+        </sql>
+    </changeSet>
+
+    <changeSet id="014-create-tipos-auxiliares-tipo-rede-social-semente" author="eduardo">
+        <sql>
+            INSERT INTO tipo_rede_social (id, tenant_id, cod_tipo_rede_social, nome, nome_busca, chave, ativo, created_at, version)
+            SELECT gen_random_uuid(), t.id, v.cod, v.nome, v.busca, v.chave, true, now(), 0
+            FROM tenant t CROSS JOIN (VALUES
+                (1, 'Instagram', 'instagram', 'INSTAGRAM'),
+                (2, 'Facebook', 'facebook', 'FACEBOOK'),
+                (3, 'LinkedIn', 'linkedin', 'LINKEDIN'),
+                (4, 'TikTok', 'tiktok', 'TIKTOK'),
+                (5, 'X', 'x', 'X')
+            ) AS v(cod, nome, busca, chave)
+            WHERE t.id &lt;&gt; '00000000-0000-0000-0000-000000000000';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

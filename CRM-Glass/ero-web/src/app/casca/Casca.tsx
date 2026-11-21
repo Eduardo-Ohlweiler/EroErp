@@ -11,8 +11,10 @@ import {
   MobileNav,
   SeletorContratante,
   Sidebar,
+  telasDoMenu,
   Topbar,
   type Comando,
+  type SecaoMenu,
 } from '../../design-system/shell';
 import { AvisoContexto, Button } from '../../design-system/ui';
 import { useAparencia } from '../../shared/aparencia/AparenciaProvider';
@@ -30,7 +32,7 @@ import {
   UsuarioDaCascaProvider,
 } from '../../shared/sessao';
 import { cn } from '../../shared/util/utils';
-import { menuAdministrativo, menuDoUsuario, ROTULO_ADMINISTRATIVO, tituloDaRota } from '../menu';
+import { menuAdministrativo, menuDeCadastros, menuDoUsuario, ROTULO_ADMINISTRATIVO, ROTULO_CADASTROS, tituloDaRota } from '../menu';
 
 /**
  * Casca protegida: só com sessão autenticada. Sem sessão → /login?voltar=<rota>; com a troca de senha
@@ -74,8 +76,8 @@ export function CascaProtegida() {
 /**
  * Menu lateral (barra inferior no celular) → barra superior → conteúdo (RotaAnimada).
  *
- * Busca (Ctrl K): fica desligada até haver 3 telas ou mais no menu (os dois grupos somados); com uma só, ela não
- * leva a lugar nenhum. O grupo de baixo é o Administrativo (Usuários, Logs e, na plataforma, Contratantes).
+ * Busca (Ctrl K): fica desligada até haver 3 telas ou mais no menu (as seções somadas, com os filhos dos submenus); com uma só, ela não
+ * leva a lugar nenhum. A seção do meio é Cadastros (Cadastros auxiliares, com submenu); a de baixo, o Administrativo (Usuários, Logs e, na plataforma, Contratantes).
  * O Sair fica no menu lateral e no MenuUsuario (que também aparece no celular).
  * Barra inferior do celular: só com 2 telas ou mais, somando os dois grupos (com uma, ocupa espaço fixo à toa).
  */
@@ -90,8 +92,20 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
   const saindo = useRef(false);
 
   const menu = useMemo(() => menuDoUsuario(usuario), [usuario]);
+  const cadastros = useMemo(() => menuDeCadastros(usuario), [usuario]);
   const administrativo = useMemo(() => menuAdministrativo(usuario), [usuario]);
-  const totalNoMenu = menu.length + administrativo.length;
+  // Seções do menu, de cima para baixo (seção vazia não aparece). Item com `filhos` abre o submenu flutuante.
+  const secoes = useMemo<SecaoMenu[]>(
+    () => [
+      { rotulo: 'Principal', itens: menu },
+      { rotulo: ROTULO_CADASTROS, itens: cadastros },
+      { rotulo: ROTULO_ADMINISTRATIVO, itens: administrativo },
+    ],
+    [menu, cadastros, administrativo],
+  );
+  // As telas com os filhos dos submenus achatados ("Cadastros auxiliares › Tipos de telefone"): Ctrl+K e contagem.
+  const telas = useMemo(() => telasDoMenu(secoes), [secoes]);
+  const totalNoMenu = telas.length;
   const contratante = nomeDoContratante(usuario);
   const papel = rotuloDoPapel(usuario.papel);
   const comBusca = totalNoMenu >= MINIMO_PARA_BUSCA;
@@ -108,8 +122,12 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
   const minhaConta = () => navegar('/minha-conta');
 
   const comandos: Comando[] = [
-    ...menu.map((i) => ({ grupo: 'Telas', rotulo: i.label, icone: i.icon, executar: () => navegar(i.to) })),
-    ...administrativo.map((i) => ({ grupo: ROTULO_ADMINISTRATIVO, rotulo: i.label, icone: i.icon, executar: () => navegar(i.to) })),
+    ...telas.map((t) => ({
+      grupo: t.secao === 'Principal' ? 'Telas' : t.secao,
+      rotulo: t.rotulo,
+      icone: t.item.icon,
+      executar: () => navegar(t.item.to),
+    })),
     { grupo: 'Ações', rotulo: 'Minha conta', dica: 'Meus dados, senha e sessões', icone: UserRound, executar: minhaConta },
     // Superadmin: na plataforma, abre o seletor do chip (busca e lista dos contratantes ativos);
     // dentro de um contratante, voltar à plataforma.
@@ -144,8 +162,8 @@ function Casca({ usuario }: { usuario: UsuarioLogado }) {
 
   return (
     <>
-      <Sidebar itens={menu} itensSistema={administrativo} rotuloSistema={ROTULO_ADMINISTRATIVO} onSair={fazerSair} />
-      {comBarraInferior && <MobileNav itens={menu} itensSistema={administrativo} rotuloSistema={ROTULO_ADMINISTRATIVO} />}
+      <Sidebar secoes={secoes} onSair={fazerSair} />
+      {comBarraInferior && <MobileNav secoes={secoes} />}
       {/*
        * Espaço embaixo do conteúdo para o fim da tela não ficar escondido atrás do que é fixo: a barra inferior do
        * celular e, com o superadmin dentro de um contratante, a faixa do suporte (bottom-24 no celular, onde ocupa

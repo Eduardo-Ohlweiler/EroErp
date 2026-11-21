@@ -1,7 +1,25 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { Building2, Home, KeyRound, Mail, Palette, Plus, ScrollText, Search, Trash2, UserRound, Users } from 'lucide-react';
+import {
+  AtSign,
+  Building2,
+  Contact,
+  Home,
+  KeyRound,
+  Mail,
+  MapPin,
+  Palette,
+  Phone,
+  Plus,
+  ScrollText,
+  Search,
+  Tag,
+  Tags,
+  Trash2,
+  UserRound,
+  Users,
+} from 'lucide-react';
 import { staggerGroup } from '../../motion/tokens';
 import { CountUp } from '../../motion/CountUp';
 import { useAparencia } from '../../shared/aparencia/AparenciaProvider';
@@ -57,11 +75,13 @@ import {
   type Comando,
   type ItemMenu,
   type OpcaoContratante,
+  type SecaoMenu,
 } from '../shell';
 import { MedidorFps } from './MedidorFps';
 import { SecaoMovimento } from './SecaoMovimento';
 import { SecaoKit } from './SecaoKit';
 import { SecaoKitPecas } from './SecaoKitPecas';
+import { SecaoKitPessoas } from './SecaoKitPessoas';
 import { ModelosDoKit, type ModeloKit } from './KitModelos';
 
 /* ---------------- Dados fictícios só para o catálogo ---------------- */
@@ -89,6 +109,32 @@ const MENU: ItemMenu[] = [
   { to: '/design-system/usuarios', label: 'Usuários', icon: Users },
   { to: '/design-system/contratantes', label: 'Contratantes', icon: Building2 },
   { to: '/design-system/logs', label: 'Logs', icon: ScrollText },
+];
+/**
+ * O menu da casca do catálogo em seções, com o submenu flutuante: "Cadastros auxiliares" é um botão no trilho (e na
+ * barra inferior) que abre os 5 tipos. Rotas de mentira, como as do MENU.
+ */
+const SECOES: SecaoMenu[] = [
+  { rotulo: 'Principal', itens: MENU.slice(0, 1) },
+  {
+    rotulo: 'Cadastros',
+    itens: [
+      { to: '/design-system/pessoas', label: 'Pessoas', icon: Contact },
+      {
+        to: '/design-system/auxiliares',
+        label: 'Cadastros auxiliares',
+        icon: Tags,
+        filhos: [
+          { to: '/design-system/auxiliares/tipos-de-cadastro', label: 'Tipos de cadastro', icon: Tag },
+          { to: '/design-system/auxiliares/tipos-de-telefone', label: 'Tipos de telefone', icon: Phone },
+          { to: '/design-system/auxiliares/tipos-de-email', label: 'Tipos de e-mail', icon: Mail },
+          { to: '/design-system/auxiliares/tipos-de-endereco', label: 'Tipos de endereço', icon: MapPin },
+          { to: '/design-system/auxiliares/tipos-de-rede-social', label: 'Tipos de rede social', icon: AtSign },
+        ],
+      },
+    ],
+  },
+  { rotulo: 'Administrativo', itens: [...MENU.slice(1), { to: '/design-system/conta', label: 'Minha conta', icon: UserRound }] },
 ];
 const CONTRATANTES_DEMO: OpcaoContratante[] = [
   { id: 't1', nome: 'Demo Solar', detalhe: '12.ABC.345/01DE-35' },
@@ -223,8 +269,8 @@ function Catalogo() {
 
       {casca && (
         <>
-          <Sidebar itens={MENU} itensSistema={[{ to: '/design-system/conta', label: 'Minha conta', icon: UserRound }]} onSair={() => toast({ title: 'Sair', tone: 'info' })} />
-          <MobileNav itens={MENU} />
+          <Sidebar secoes={SECOES} onSair={() => toast({ title: 'Sair', tone: 'info' })} />
+          <MobileNav secoes={SECOES} />
         </>
       )}
       <CommandPalette aberto={busca} onAbertoChange={setBusca} comandos={comandos} />
@@ -292,19 +338,29 @@ function Catalogo() {
             {/* ---------- Kit de telas (docs/07) ---------- */}
             <SecaoKit />
             <SecaoKitPecas />
+            <SecaoKitPessoas />
 
             {/* ---------- Fundamentos ---------- */}
-            <Secao titulo="Níveis de vidro" subtitulo="glass-subtle, glass e glass-solid (tabelas, formulários, modais, menus)" className="col-span-12">
-              <div className="grid md:grid-cols-3 gap-4">
+            <Secao
+              titulo="Níveis de vidro"
+              subtitulo="glass-subtle, glass e glass-solid seguem a Aparência; glass-flutuante (combo, menus, paleta, modal, toast, calendário) tem opacidade e desfoque de piso"
+              className="col-span-12"
+            >
+              <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {[
                   { c: 'glass-subtle', d: 'Painéis grandes e fundos de seção.' },
                   { c: 'glass', d: 'Cartões, KPIs e gráficos. O padrão.' },
-                  { c: 'glass-solid', d: 'Tabelas, formulários, modais e menus.' },
+                  { c: 'glass-solid', d: 'Tabelas e formulários.' },
+                  { c: 'glass-flutuante', d: 'Camada sobre o conteúdo: lista do combo, menus, paleta, modal, toast e calendário. Não fica abaixo do piso.' },
                 ].map((g) => (
                   <div key={g.c} className="relative rounded-[22px] overflow-hidden p-5 min-h-[150px]">
                     <div className="absolute inset-0" style={{ background: 'var(--bg)' }} />
                     <div className="absolute -left-6 top-4 size-28 rounded-full blur-2xl accent-gradient opacity-80" />
                     <div className="absolute right-4 -bottom-6 size-24 rounded-full blur-2xl opacity-70" style={{ background: 'var(--accent-3)' }} />
+                    {/* texto atrás do vidro: mostra quanto do conteúdo de baixo atravessa cada nível */}
+                    <div aria-hidden className="absolute inset-x-5 top-9 text-sm font-semibold text-fg leading-6">
+                      Acrescentar rede social · Endereços · Nenhum endereço
+                    </div>
                     <div className={`${g.c} relative p-4 rounded-2xl mt-4`}>
                       <div className="text-sm font-semibold font-mono">.{g.c}</div>
                       <div className="text-xs text-muted mt-1">{g.d}</div>

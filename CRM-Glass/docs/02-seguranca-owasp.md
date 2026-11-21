@@ -23,6 +23,7 @@ Como cada risco está coberto no `ero-api` e o checklist que o agente
 - **Rate limit e cache de autorização ficam em memória.** Com várias instâncias, cada uma conta o seu limite e as outras levam até 30 s para ver uma permissão revogada. No modelo "container por contratante" isso não importa. Para escalar horizontalmente, troque por Redis.
 - **CSRF desligado** porque o token vai em header. As duas rotas que usam cookie (refresh e logout) exigem `SameSite=Strict` e o header `X-Ero-Refresh: 1`, que outro site não consegue enviar sem passar pelo CORS.
 - **Corpo inválido responde 400 antes do 403.** Um `PUT`/`POST` com corpo malformado (JSON quebrado ou campo recusado pelo Bean Validation) de quem está logado mas não tem a permissão da rota recebe 400, não 403. O filtro do Spring Security só exige login (`anyRequest().authenticated()`); o `@PreAuthorize` é checado no proxy do controller, e o Spring MVC lê e valida o corpo (`@Valid @RequestBody`, restrições em parâmetro) antes de chamar o método. Não vaza dado: o 400 só descreve o formato do DTO (o mesmo que o front já conhece), nunca registro de ninguém, e sem login a resposta continua sendo 401 antes de tudo. Com corpo válido, quem não tem permissão recebe 403 sem o service rodar.
+- **Saída para a internet: só o ViaCEP** (`GET /api/cep/{cep}`, `ViaCepService`). Proteção contra SSRF e abuso: host fixo da configuração (`app.cep.url`, padrão `https://viacep.com.br/ws`), o CEP é conferido com 8 dígitos antes de montar a URL, 3 s para conectar e 3 s para responder, sem seguir redirecionamento, limite próprio por IP (`app.rate-limit.cep`, 30/min) e o CEP não vai para o log. O deploy precisa liberar a saída para `viacep.com.br`; fora do ar, a tela recebe 503 e o usuário preenche o endereço à mão.
 - **Contexto ROOT** (`TenantContext.comoRoot`) enxerga todos os tenants. Só pode ser usado em `auth`, `seguranca`, seed e fluxos de plataforma do superadmin, sempre buscando pelo id que veio do token. Uso novo de `comoRoot` precisa de revisão do agente `seguranca`.
 - **Pendências conhecidas** (endurecimento, sem caminho de exploração hoje):
   - ~~o desafio 2FA podia ser reaproveitado~~ **resolvido:** o `jti` do desafio aponta para a linha do código, que é de uso único (`usado_em`) e é apagada quando o usuário faz login de novo;
@@ -33,6 +34,11 @@ Como cada risco está coberto no `ero-api` e o checklist que o agente
   - fixar as imagens base do `Dockerfile` por digest;
   - rodar `mvnw verify -Pseguranca` com `NVD_API_KEY` (ainda não rodado);
   - o `FOR UPDATE` do login só trava quando o e-mail existe: sob requisições simultâneas, o tempo de resposta denuncia se o e-mail existe e cada uma segura uma conexão pelo tempo do Argon2. Trocar por `pg_advisory_xact_lock(hashtext(email))` com timeout curto;
+  - **Pessoas (20/11/2026):**
+    - o CPF vai na query string de `GET /api/pessoas?documento=` e o `access_log` do nginx grava. Antes de produção, `log_format` sem `$args` no `/api/`; conferir também o access log do Tomcat;
+    - o `SqlExceptionHelper` do Hibernate registra em ERROR o `Detail` do PostgreSQL, com o CPF, na corrida de duplicidade. Desligar o logger ou usar `logServerErrorDetail=false`;
+    - o `resolverDeToken` do `SecurityConfig` compara a URI crua. Alinhar com `RateLimitFilter.caminho()` (caminho decodificado). É consistência, não brecha;
+    - quando o link de rede social virar clicável, usar `rel="noopener noreferrer"` e conferir http(s) também na hora de mostrar;
   - a invalidação do cache por usuário não enxerga uma carga em andamento (janela de milissegundos). Se preciso, usar um contador de geração por usuário.
 - **Chave de criptografia** (`APP_CRIPTO_CHAVE`): perder ou trocar a chave torna ilegíveis os campos cifrados gravados (hoje, os códigos de verificação pendentes, que valem 10 min). Guarde a chave num cofre e, por contratante, junto com o backup do banco.
 

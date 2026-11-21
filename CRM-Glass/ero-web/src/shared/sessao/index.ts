@@ -9,6 +9,7 @@ export {
   type EstadoSessao,
   type MotivoAnonimo,
 } from './estado';
+export { ExigeTela } from './ExigeTela';
 export { ehCaminhoInterno, rotaDoLogin, sanitizarVoltar } from './voltar';
 export {
   dentroDoEscopo,
@@ -17,6 +18,7 @@ export {
   nomeDoContratante,
   podeAbrirTela,
   ROTULO_ADMINISTRATIVO,
+  ROTULO_CADASTROS,
   rotuloDoPapel,
   type EscopoDaTela,
 } from './rotulos';

@@ -1,6 +1,6 @@
 # Como continuar este projeto em outro computador
 
-Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 14/11/2026.
+Guia de passagem do CRM Glass (nome provisório: **Vitrum CRM**). Última atualização: 20/11/2026.
 
 ---
 
@@ -155,6 +155,14 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
     - A API passou a aceitar enum só pelo nome (Jackson `fail-on-numbers-for-enums`).
   - **Revisões:** revisor-backend, seguranca, revisor-ui e guardiao-layout aprovaram. O QA aprovou a bateria de ponta a ponta: isolamento entre contratantes, 403 para não superadmin e contratante inativado caindo na hora.
   - **Logins de teste:** contratantes "Teste QA …" e "Teste Contratante …" ficam no banco.
+- **Cadastro de Pessoas (20/11/2026, branch `timeero/pessoas`)**, pelo `/timeero`:
+  - **Localidade:** tabelas do IBGE (27 UFs, 5.571 municípios), busca de cidade e consulta de CEP pelo backend no ViaCEP (limite próprio de 30 por minuto).
+  - **5 cadastros auxiliares** (tipo de cadastro, telefone, e-mail, endereço e rede social), com itens do sistema semeados por contratante e itens do contratante editáveis (menu Cadastros › Auxiliares).
+  - **Módulo `pessoa`:** física e jurídica, telefones, e-mails, redes sociais, endereços, vínculos entre pessoas e cadastro rápido em modal. `cod_pessoa` sequencial por contratante, com a peça de retentativa.
+  - **Telas:** Pessoas (lista, cadastro, painel Vínculos, modal rápido, Exportar e Pdf), as 5 telas auxiliares (FormList) e o submenu flutuante da casca.
+  - **Testes:** 274 no backend e 422 no front.
+  - **Revisões:** revisor-backend, seguranca, revisor-ui e guardiao-layout aprovaram, e o QA aprovou. Regras em `docs/negocio/pessoas.md` e `docs/negocio/cadastros-auxiliares.md`.
+  - **Pendências:** seção "Pendências de Pessoas" no fim da seção 5; as de segurança também em `docs/02`.
 - **Protótipo** em `prototipo/` (congelado; detalhes no `prototipo/README.md`):
   - login com esfera de partículas;
   - dashboard com números que contam, gráficos que se desenham, medidor, rosca e ranking;
@@ -183,7 +191,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 4. ~~Começar o backend~~ **Feito** (fundação, segurança, login, usuários e permissões).
 5. ~~Base do front definitivo~~ **Feito na fatia 1.** **Fatia 2:** as telas do `PLANO-FATIA-2.md` (login com código por e-mail e sessão em memória, casca com menu por permissão, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta), mais as pendências da seção 5 desse arquivo. Começar com `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
 6. ~~Definir as regras do papel ADMIN~~ **Feito em 14/11/2026:** o ADMIN faz tudo dentro do contratante, e sempre sobra pelo menos um ADMIN ativo (`docs/negocio/usuarios-e-acesso.md`).
-7. **Primeiros módulos de negócio pelo `/timeero`:** cadastro de pessoas/clientes, empresas/filiais, produtos, funil de negócios e agenda.
+7. **Próximo: Filiais, como no EroErp 2.0** (a pesquisa já está feita em `docs/negocio/eroerp-referencias.md`, "Pesquisa de 20/11/2026: Filiais"). A filial aponta para uma Pessoa, com matriz, tipo e cor. Antes de planejar, o dono decide duas coisas: se o usuário fica preso a uma filial e como a cor da filial convive com a regra de tokens. Depois: produtos, funil de negócios e agenda. (Pessoas e cadastros auxiliares: feitos em 20/11/2026.)
 8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup. Checklist que o `seguranca` deixou para produção:
    - tirar o Swagger e o actuator do nginx, ou restringi-los por IP;
    - HSTS no terminador TLS, `server_tokens off` e `Permissions-Policy`;
@@ -194,6 +202,31 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 10. **Só quando houver a 1ª cena exclusiva:** F1 (fotos em URL pública) e F12 (teste do 409 da cena exclusiva), do `PLANO-FATIA-2.md` §5.
 11. **Orçamento de desempenho:** decidir se o `qa` passa a medir fps (rolagem, troca de tela, tela parada) no build de produção em toda entrega e se reprova abaixo da meta. A proposta é 60 fps nas trocas, tela utilizável em menos de 500 ms e nenhuma tarefa acima de 50 ms. Avaliar também um fundo 3D pontual (ex.: login) com WebGL, medindo o fps.
 12. **Custo do `/timeero`:** na próxima entrega só de tela, medir de novo o gasto por agente e só então decidir as otimizações do time (o kit `T*` desta entrega foi um custo único).
+
+### Pendências de Pessoas (20/11/2026)
+
+Achados menores das revisões e do QA, deixados para depois. Nenhum bloqueia a entrega.
+
+**Segurança** (o texto completo está em `docs/02`, "Pendências conhecidas")
+- CPF na query string de `GET /api/pessoas?documento=` vai para o `access_log` do nginx. Antes de produção: `log_format` sem `$args` no `/api/` e conferir o access log do Tomcat.
+- O `SqlExceptionHelper` do Hibernate grava o CPF no ERROR da corrida de duplicidade: desligar o logger ou `logServerErrorDetail=false`.
+- O `resolverDeToken` do `SecurityConfig` compara a URI crua: alinhar com `RateLimitFilter.caminho()`. É consistência, não brecha.
+- Link de rede social clicável: `rel="noopener noreferrer"` e conferir http(s) também na hora de mostrar.
+
+**Backend**
+- `PessoaService.buscarEntidade` é público e sem uso: deixar `private`.
+- Índice GIN `pg_trgm` em `nome_busca` quando o volume justificar.
+- O PUT que muda campo da pessoa sobe a `version` em 2. É inofensivo.
+
+**UI**
+- A borda do `.input` (`--line`, 8%) fica abaixo de 3:1. Criar o token `--input-border`.
+- A dica do trilho (`ComDica`, `Sidebar.tsx`) não respeita movimento reduzido.
+- O `Submenu` não consulta o modo leve.
+
+**Dados**
+- O Demo Solar tem 3 usuários ativos para um limite de 2 (já era assim).
+- O QA deixou pessoas e tipos "QA ..." inativos no Solar e no Marina.
+
 
 
 ---

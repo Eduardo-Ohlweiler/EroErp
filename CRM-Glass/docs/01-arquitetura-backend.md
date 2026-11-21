@@ -24,7 +24,8 @@ ero-api/src/main/java/com/api/ero_api/
     entity/             BaseEntity, TenantEntity, @SqlNativoRevisado
     dtos/               PaginaDto, ErroCampoDto
     exception/          ApiException e filhas + GlobalExceptionHandler
-    util/               LogSeguro, PaginacaoUtils, HashUtils
+    util/               LogSeguro, PaginacaoUtils, HashUtils, TextoBusca (nome_busca sem acento),
+                        RestricaoViolada, RepetirSeCodigoRepetido (código), DocumentoValidator (CPF/CNPJ)
     web/                filtros HTTP (CorrelationId, limite de tamanho), ClienteRequisicao
     email/              EmailService (SMTP, modelos em resources/templates/email/)
     config/             auditoria JPA, OpenAPI, seed do superadmin, agendamento (@EnableScheduling)
@@ -119,6 +120,21 @@ por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora
 - Ordenação aceita só os campos da lista branca do service (`PaginacaoUtils.validar`). No máximo 100 itens por página.
 - Datas trafegam em ISO-8601 UTC (`Instant`). Quem formata em pt-BR é o front.
 
+### Listas filhas de um cadastro (modelo: `pessoa`)
+
+- A filha (telefone, e-mail, endereço...) chega **sem `id`** dentro do Create/UpdateDto:
+  a lista é o estado completo e substitui a anterior (`removerPorPessoa` + `saveAll`).
+  Assim ninguém aponta para a linha de outro registro (sem IDOR) e a `ordem` é a posição.
+- A entidade-mãe não tem coleção: cada filha tem o seu repository, com `buscarPorPessoa`
+  (`JOIN FETCH` do que a resposta mostra) e, para a lista, consultas em lote (`...PorPessoas(ids)`).
+- Mudou só uma filha: a `version` da mãe sobe mesmo assim (`marcarAlteracao`, `UPDATE VERSIONED`).
+- Erro de regra numa linha usa o caminho do Bean Validation: `telefones[1].tipoId`,
+  `vinculos[0].pessoaId` (o `erroApi` do front converte para o campo da linha).
+- Banco: FK composta `(mae_id, tenant_id)` e `(tipo_id, tenant_id)` (`docs/05`).
+- Vínculo entre dois registros do mesmo cadastro: uma linha só, em orientação canônica
+  (`OrdemUuid`, a mesma ordem do `uuid <` do PostgreSQL); salvar trava as duas pontas em
+  ordem de id e sobe a `version` da outra quando o vínculo dela mudou.
+
 ### Erros (RFC 9457 — ProblemDetail)
 
 ```json
@@ -137,6 +153,7 @@ por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora
 | Exceção | HTTP | `codigo` |
 |---|---|---|
 | validação de DTO ou de parâmetro (`erros[{campo, mensagem}]`: o campo do DTO, ex. `administrador.email`, ou o nome do parâmetro na URL; vale também quando a rota mistura `@Valid @RequestBody` com restrição em parâmetro) | 400 | `VALIDACAO` |
+| `CampoInvalidoException` (regra de campo que só o service vê: cidade inexistente, CEP fora de 8 dígitos...; `erros[{campo, mensagem}]` como acima) | 400 | `VALIDACAO` |
 | `AutenticacaoException` / token inválido | 401 | `NAO_AUTENTICADO` |
 | `/2fa/verificar`: desafio vencido, código vencido, já usado, substituído por login novo ou anterior à última troca de senha (voltar para a senha) | 401 | `DESAFIO_EXPIRADO` |
 | `/2fa/verificar`: código errado, ou conta bloqueada/inativa/contratante inativo, sem dizer qual (pode digitar de novo) | 401 | `CODIGO_INVALIDO` |
@@ -208,10 +225,11 @@ usuário fala e imprime: `cod_pessoa` na tabela `pessoa`, `cod_emitente` em
   - na 3ª recusa lança `ConflitoException("Não foi possível gerar o código. Tente salvar de novo.")` (409);
   - evento de log (`eventos.registrar`) entra na transação da tentativa; e-mail e
     outros efeitos de fora só depois do commit, para não sair em dobro.
-  A peça nasce junto com o primeiro cadastro (pessoas) e passa a ser usada por todos.
+  A peça é a `compartilhado/util/RepetirSeCodigoRepetido` (nasceu com os cadastros auxiliares) e é usada por todos.
 - Como cadastro não tem DELETE físico (só inativa), o número não volta a ser usado.
-- `ResponseDto`: `codPessoa` logo depois de `id`. `SelectDto` e combos não levam o
-  código por enquanto.
+- `ResponseDto`: `codPessoa` logo depois de `id`. O `SelectDto` leva o código quando o
+  combo mostra "código · nome" (decisão de 14/11: `PessoaSelectDto(id, codPessoa, nome)`);
+  os combos dos auxiliares não levam.
 - Lista: filtro exato `@RequestParam(required = false) @Positive Long codPessoa`,
   `AND (:codPessoa IS NULL OR p.codPessoa = :codPessoa)` no `buscarComFiltros` e
   `"codPessoa"` na lista branca de ordenação.

@@ -44,3 +44,6 @@ export const podeAbrirTela = (
 
 /** Administrador do contratante ou superadmin: quem cria administrador, redefine senha e desbloqueia. */
 export const ehAdministrador = (u: Pick<UsuarioLogado, 'papel'>) => u.papel === 'ADMIN' || u.papel === 'SUPERADMIN';
+
+/** Nome da seção do menu com os cadastros (Pessoas, Cadastros auxiliares) e do começo do caminho das telas deles. */
+export const ROTULO_CADASTROS = 'Cadastros';

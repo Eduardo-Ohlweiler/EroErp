@@ -1,7 +1,8 @@
-import { Building2, Home, ScrollText, Users } from 'lucide-react';
+import { Building2, Contact, Home, ScrollText, Tags, Users } from 'lucide-react';
 import type { ItemMenu } from '../design-system/shell';
+import { RAIZ_DOS_AUXILIARES, TELAS_AUXILIARES } from '../modules/auxiliares/telas';
 import type { UsuarioLogado } from '../shared/api/tipos';
-import { naVisaoDePlataforma, podeAbrirTela, ROTULO_ADMINISTRATIVO, type EscopoDaTela } from '../shared/sessao';
+import { naVisaoDePlataforma, podeAbrirTela, ROTULO_ADMINISTRATIVO, ROTULO_CADASTROS, type EscopoDaTela } from '../shared/sessao';
 
 /** Título da tela na barra superior, pelo caminho (o primeiro que casar). */
 export const TITULOS: [RegExp, string][] = [
@@ -9,6 +10,12 @@ export const TITULOS: [RegExp, string][] = [
   [/^\/admin\/contratantes(\/|$)/, 'Contratantes'],
   [/^\/admin\/usuarios(\/|$)/, 'Usuários'],
   [/^\/admin\/logs(\/|$)/, 'Logs'],
+  [/^\/cadastros\/pessoas(\/|$)/, 'Pessoas'],
+  [/^\/cadastros\/auxiliares\/tipos-de-cadastro(\/|$)/, 'Tipos de cadastro'],
+  [/^\/cadastros\/auxiliares\/tipos-de-telefone(\/|$)/, 'Tipos de telefone'],
+  [/^\/cadastros\/auxiliares\/tipos-de-email(\/|$)/, 'Tipos de e-mail'],
+  [/^\/cadastros\/auxiliares\/tipos-de-endereco(\/|$)/, 'Tipos de endereço'],
+  [/^\/cadastros\/auxiliares\/tipos-de-rede-social(\/|$)/, 'Tipos de rede social'],
   [/^\/minha-conta(\/|$)/, 'Minha conta'],
 ];
 
@@ -46,6 +53,18 @@ export const TELAS_DO_MENU: TelaDoMenu[] = [
   },
 ];
 
+/** Telas da seção Cadastros com grupo próprio (o pai "Cadastros auxiliares" é montado em `menuDeCadastros`). */
+export const TELAS_DE_CADASTRO: TelaDoMenu[] = [
+  {
+    tela: 'pessoa-list',
+    to: '/cadastros/pessoas',
+    label: 'Pessoas',
+    icon: Contact,
+    escopo: 'contratante',
+    descricao: 'Clientes, fornecedores, leads e contatos.',
+  },
+];
+
 /** Contratantes: presa ao papel (superadmin na visão de plataforma), sem grupo (docs/04 "Telas sem grupo"). */
 const CONTRATANTES: ItemDoMenu = {
   to: '/admin/contratantes',
@@ -57,6 +76,27 @@ const CONTRATANTES: ItemDoMenu = {
 /** Grupo de cima do menu: o Início. */
 export function menuDoUsuario(_usuario: UsuarioLogado): ItemDoMenu[] {
   return [{ to: '/', label: 'Início', icon: Home }];
+}
+
+/** Nome da seção do meio do menu (a mesma do começo do caminho das telas de cadastro). */
+export { ROTULO_CADASTROS };
+
+/**
+ * Seção Cadastros: o pai "Cadastros auxiliares", que abre o submenu com os auxiliares liberados (só dentro de um
+ * contratante: o superadmin na plataforma não vê a seção). Sem filho liberado, o pai some. Pessoas vem antes do pai.
+ * Esconder é conforto: quem barra é a API.
+ */
+export function menuDeCadastros(usuario: Pick<UsuarioLogado, 'papel' | 'superadminAtuando' | 'telas'>): ItemDoMenu[] {
+  const itens: ItemDoMenu[] = TELAS_DE_CADASTRO.filter((t) => podeAbrirTela(usuario, t.tela, t.escopo)).map(
+    ({ tela: _tela, escopo: _escopo, ...item }) => item,
+  );
+  const filhos = TELAS_AUXILIARES.filter((t) => podeAbrirTela(usuario, t.tela, 'contratante')).map(
+    ({ tela: _tela, recurso: _recurso, ...item }): ItemDoMenu => item,
+  );
+  if (filhos.length > 0) {
+    itens.push({ to: RAIZ_DOS_AUXILIARES, label: 'Cadastros auxiliares', icon: Tags, descricao: 'Os tipos usados nos cadastros.', filhos });
+  }
+  return itens;
 }
 
 /**

@@ -60,7 +60,10 @@ class ArquiteturaTest {
             "com.api.ero_api.tenant.entity.Tenant",
             "com.api.ero_api.auditoria.entity.EventoSeguranca",
             "com.api.ero_api.sessao.entity.SessaoUsuario",
-            "com.api.ero_api.sessao.entity.RefreshToken");
+            "com.api.ero_api.sessao.entity.RefreshToken",
+            // Referência do IBGE, igual para todos os contratantes e só lida pela aplicação (migration 013).
+            "com.api.ero_api.localidade.entity.Estado",
+            "com.api.ero_api.localidade.entity.Cidade");
 
     // ------------------------------------------------------------ estrutura
 

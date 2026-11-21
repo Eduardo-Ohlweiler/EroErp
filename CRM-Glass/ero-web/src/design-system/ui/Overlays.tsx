@@ -72,7 +72,7 @@ export function Popover({
           exit={{ opacity: 0, y: -6, scale: 0.98, transition: { duration: micro.saidaRapida } }}
           transition={spring.snappy}
           style={{ position: 'fixed', top: pos.top, left: pos.left, width, transformOrigin: 'top right' }}
-          className="glass-solid z-popover rounded-2xl p-1.5"
+          className="glass-flutuante z-popover rounded-2xl p-1.5"
         >
           {children}
         </motion.div>

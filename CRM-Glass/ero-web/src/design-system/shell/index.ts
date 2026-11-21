@@ -5,3 +5,4 @@ export * from './Topbar';
 export * from './CommandPalette';
 export * from './MenuUsuario';
 export * from './SeletorContratante';
+export * from './Submenu';

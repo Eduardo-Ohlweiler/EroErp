@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Endereços da pessoa. Mesma regra das outras filhas (016): sem id na entrada, a
+        lista substitui a anterior, FKs compostas para a pessoa e o tipo, no máximo um
+        principal. A cidade é do IBGE (013, sem tenant): FK simples.
+    -->
+    <changeSet id="017-create-pessoa-endereco" author="eduardo">
+        <createTable tableName="pessoa_endereco">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_pessoa_endereco"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_pessoa_endereco_tenant" references="tenant(id)"/>
+            </column>
+            <column name="pessoa_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="ordem" type="INTEGER"><constraints nullable="false"/></column>
+            <column name="tipo_endereco_id" type="UUID"><constraints nullable="false"/></column>
+            <column name="cep" type="VARCHAR(8)"/>
+            <column name="cidade_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_pessoa_endereco_cidade" references="cidade(id)"/>
+            </column>
+            <column name="rua" type="VARCHAR(255)"/>
+            <column name="numero" type="VARCHAR(20)"/>
+            <column name="bairro" type="VARCHAR(100)"/>
+            <column name="complemento" type="VARCHAR(100)"/>
+            <column name="principal" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="fk_pessoa_endereco_pessoa"
+                                 baseTableName="pessoa_endereco" baseColumnNames="pessoa_id,tenant_id"
+                                 referencedTableName="pessoa" referencedColumnNames="id,tenant_id"/>
+        <addForeignKeyConstraint constraintName="fk_pessoa_endereco_tipo"
+                                 baseTableName="pessoa_endereco" baseColumnNames="tipo_endereco_id,tenant_id"
+                                 referencedTableName="tipo_endereco" referencedColumnNames="id,tenant_id"/>
+        <createIndex tableName="pessoa_endereco" indexName="ix_pessoa_endereco_pessoa">
+            <column name="pessoa_id"/>
+        </createIndex>
+        <createIndex tableName="pessoa_endereco" indexName="ix_pessoa_endereco_tipo">
+            <column name="tipo_endereco_id"/>
+        </createIndex>
+        <createIndex tableName="pessoa_endereco" indexName="ix_pessoa_endereco_cidade">
+            <column name="cidade_id"/>
+        </createIndex>
+        <sql>CREATE UNIQUE INDEX uk_pessoa_endereco_principal ON pessoa_endereco (pessoa_id) WHERE principal</sql>
+        <sql>ALTER TABLE pessoa_endereco ADD CONSTRAINT ck_pessoa_endereco_cep CHECK (cep ~ '^[0-9]{8}$')</sql>
+    </changeSet>
+
+</databaseChangeLog>

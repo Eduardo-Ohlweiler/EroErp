@@ -2,6 +2,11 @@ package com.api.ero_api.tenant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.api.ero_api.auxiliar.enums.TipoCadastroDoSistema;
+import com.api.ero_api.auxiliar.enums.TipoEmailDoSistema;
+import com.api.ero_api.auxiliar.enums.TipoEnderecoDoSistema;
+import com.api.ero_api.auxiliar.enums.TipoRedeSocialDoSistema;
+import com.api.ero_api.auxiliar.enums.TipoTelefoneDoSistema;
 import com.api.ero_api.seguranca.tenant.TenantContext;
 import com.api.ero_api.support.IntegracaoTest;
 import java.util.List;
@@ -412,6 +417,48 @@ class TenantIntegracaoTest extends IntegracaoTest {
         assertThat(status(ordem)).isEqualTo(422);
         assertThat(corpo(ordem).path("detail").asString()).isEqualTo("Não é possível ordenar por \"documento\".");
         assertThat(status(get("/api/tenants?sort=createdAt,desc", s.token()))).isEqualTo(200);
+    }
+
+    /**
+     * Contratante novo já nasce com os itens do sistema dos 5 cadastros auxiliares (5 + 4 +
+     * 2 + 3 + 5), iguais aos enums: chave, nome, código 1..N e ativos. A Plataforma nunca
+     * recebe nenhum.
+     */
+    @Test
+    void contratanteNovoRecebeOsItensDoSistema() {
+        Contratante c = novoContratante();
+        conferirItens("tipo_cadastro", c, TipoCadastroDoSistema.values());
+        conferirItens("tipo_telefone", c, TipoTelefoneDoSistema.values());
+        conferirItens("tipo_email", c, TipoEmailDoSistema.values());
+        conferirItens("tipo_endereco", c, TipoEnderecoDoSistema.values());
+        conferirItens("tipo_rede_social", c, TipoRedeSocialDoSistema.values());
+        for (String tabela : List.of("tipo_cadastro", "tipo_telefone", "tipo_email", "tipo_endereco", "tipo_rede_social")) {
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM " + tabela + " WHERE tenant_id = ?", Long.class,
+                    TenantContext.ROOT)).as("Plataforma sem itens em %s", tabela).isZero();
+        }
+    }
+
+    /** As linhas do contratante na tabela, na ordem do código, contra o enum (chave = name(), código = ordinal + 1). */
+    private void conferirItens(String tabela, Contratante c, Enum<?>[] itens) {
+        List<String> gravados = jdbc.query(
+                "SELECT cod_" + tabela + ", nome, chave, ativo FROM " + tabela + " WHERE tenant_id = ? ORDER BY cod_" + tabela,
+                (rs, i) -> rs.getLong(1) + "|" + rs.getString(2) + "|" + rs.getString(3) + "|" + rs.getBoolean(4),
+                c.id());
+        List<String> esperados = java.util.Arrays.stream(itens)
+                .map(e -> (e.ordinal() + 1) + "|" + rotulo(e) + "|" + e.name() + "|true")
+                .toList();
+        assertThat(gravados).as(tabela).containsExactlyElementsOf(esperados);
+    }
+
+    private static String rotulo(Enum<?> item) {
+        return switch (item) {
+            case TipoCadastroDoSistema t -> t.rotulo();
+            case TipoTelefoneDoSistema t -> t.rotulo();
+            case TipoEmailDoSistema t -> t.rotulo();
+            case TipoEnderecoDoSistema t -> t.rotulo();
+            case TipoRedeSocialDoSistema t -> t.rotulo();
+            default -> throw new IllegalArgumentException(item.toString());
+        };
     }
 
     private long eventos(Sessao s, String tipo, Contratante c) {

@@ -32,7 +32,7 @@ export type CalendarioProps = {
  * Calendário de um mês, em pt-BR (semana começando no domingo), no padrão "date picker" da WAI-ARIA:
  * grade com um dia focável por vez (setas andam um dia ou uma semana, Home/End vão ao começo e ao fim da semana,
  * PageUp/PageDown trocam de mês e, com Shift, de ano; Enter ou Espaço escolhe). O título do mês é anunciado ao
- * mudar. Não tem vidro próprio: vai dentro de um popover `glass-solid` (TDate).
+ * mudar. Não tem vidro próprio: vai dentro de um popover `glass-flutuante` (TDate).
  */
 export function Calendario({ valor, onEscolher, onLimpar, min, max, autoFoco, className }: CalendarioProps) {
   const base = useId();
