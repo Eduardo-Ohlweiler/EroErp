@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Servico } from '../api/servicos';
-import { paraCorpo, paraForm, schema, VAZIO, type Dados, type LinhaDeValor } from './servico';
+import { filiaisQueFaltam, LIMITE_SELECAO_FILIAIS, paraCorpo, paraForm, schema, VAZIO, type Dados, type LinhaDeValor } from './servico';
 
 const filial = (id: string, cod: number, nome: string, cor = '#3B82F6') => ({ id, codFilial: cod, nome, tipo: 'MATRIZ' as const, cor });
 
@@ -150,5 +150,21 @@ describe('paraCorpo', () => {
       { filialId: 'f2', valor: null },
       { filialId: 'f3', valor: 0 },
     ]);
+  });
+});
+
+describe('filiaisQueFaltam (Todas as filiais)', () => {
+  const lote = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `f${i + 1}` }));
+
+  it('acrescenta só as que ainda não estão na lista', () => {
+    expect(filiaisQueFaltam(lote(3), ['f2'])).toEqual({ faltam: [{ id: 'f1' }, { id: 'f3' }], cortou: false });
+    expect(filiaisQueFaltam(lote(2), ['f1', 'f2'])).toEqual({ faltam: [], cortou: false });
+  });
+
+  it('resposta no limite da API é resposta cortada: pode haver mais filiais', () => {
+    expect(LIMITE_SELECAO_FILIAIS).toBe(20);
+    expect(filiaisQueFaltam(lote(19), []).cortou).toBe(false);
+    expect(filiaisQueFaltam(lote(20), []).cortou).toBe(true);
+    expect(filiaisQueFaltam(lote(20), lote(20).map((f) => f.id))).toEqual({ faltam: [], cortou: true });
   });
 });

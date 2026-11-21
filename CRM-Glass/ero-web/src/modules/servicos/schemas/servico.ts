@@ -66,6 +66,19 @@ export const schema = z
 
 export type Dados = z.infer<typeof schema>;
 
+/** Quantas filiais a API devolve em `GET /api/filiais/selecao` sem termo: `FilialService.LIMITE_SELECAO` no backend (não mexer só aqui). */
+export const LIMITE_SELECAO_FILIAIS = 20;
+
+/**
+ * O "Todas as filiais": das filiais que a API devolveu, as que ainda não estão na lista (`faltam`) e se a resposta veio
+ * cheia (`cortou`: no limite da API pode haver mais filiais ativas que não vieram, então a tela avisa em vez de dizer
+ * que "todas" já estão na lista).
+ */
+export function filiaisQueFaltam<T extends { id: string }>(recebidas: readonly T[], idsNaLista: readonly string[]): { faltam: T[]; cortou: boolean } {
+  const ja = new Set(idsNaLista);
+  return { faltam: recebidas.filter((f) => !ja.has(f.id)), cortou: recebidas.length >= LIMITE_SELECAO_FILIAIS };
+}
+
 /** Serviço novo: sem filial (a pessoa acrescenta; pelo menos uma é obrigatória). */
 export const VAZIO: Dados = { nome: '', categoriaId: '', duracao: '', descricao: '', valores: [] };
 

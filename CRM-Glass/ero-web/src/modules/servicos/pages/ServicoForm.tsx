@@ -28,6 +28,8 @@ import { servicosApi } from '../api/servicos';
 import { CategoriaRapidaModal } from '../components/CategoriaRapidaModal';
 import {
   DESCRICAO_MAXIMA,
+  filiaisQueFaltam,
+  LIMITE_SELECAO_FILIAIS,
   NOME_MAXIMO,
   paraCorpo,
   paraForm,
@@ -112,12 +114,23 @@ export function ServicoForm() {
     try {
       const todas = await filiaisApi.selecionar();
       const atuais = form.getValues('valores').filter((l) => l.filialId);
-      const faltam = todas.filter((f) => !atuais.some((l) => l.filialId === f.id)).map(linhaDaFilial);
-      if (faltam.length === 0) {
-        msg.info('Todas as filiais ativas já estão na lista');
-        return;
+      const { faltam, cortou } = filiaisQueFaltam(
+        todas,
+        atuais.map((l) => l.filialId),
+      );
+      if (faltam.length > 0) {
+        form.setValue('valores', [...atuais, ...faltam.map(linhaDaFilial)], { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
       }
-      form.setValue('valores', [...atuais, ...faltam], { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
+      // A API devolve no máximo LIMITE_SELECAO_FILIAIS por vez: resposta cheia não prova que são "todas"
+      if (cortou) {
+        msg.aviso(
+          faltam.length > 0
+            ? `Foram acrescentadas as ${LIMITE_SELECAO_FILIAIS} primeiras filiais por nome. Se houver mais, acrescente as demais por "Acrescentar filial".`
+            : `As ${LIMITE_SELECAO_FILIAIS} primeiras filiais por nome já estão na lista. Se houver mais, acrescente as demais por "Acrescentar filial".`,
+        );
+      } else if (faltam.length === 0) {
+        msg.info('Todas as filiais ativas já estão na lista');
+      }
     } catch (e) {
       msg.erroApi(e);
     } finally {

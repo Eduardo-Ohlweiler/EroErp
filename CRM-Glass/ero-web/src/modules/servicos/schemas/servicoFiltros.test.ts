@@ -82,8 +82,12 @@ describe('o que a lista mostra', () => {
   });
 
   it('quantas filiais e o texto de filiais e preços', () => {
-    expect(quantasFiliais(servico)).toBe('2 filiais');
+    expect(quantasFiliais(servico)).toBe('2 filiais · 1 sem preço');
+    expect(quantasFiliais({ valores: [servico.valores[0], servico.valores[0]] })).toBe('2 filiais');
     expect(quantasFiliais({ valores: [servico.valores[0]] })).toBe('1 filial');
+    expect(quantasFiliais({ valores: [servico.valores[1]] })).toBe('1 filial · 1 sem preço');
+    expect(quantasFiliais({ valores: [{ ...servico.valores[0], valor: 0 }, servico.valores[1]] })).toBe('2 filiais · 1 sem preço');
+    expect(quantasFiliais({ valores: [servico.valores[1], { ...servico.valores[1] }] })).toBe('2 filiais · 2 sem preço');
     expect(filiaisEPrecos(servico)).toBe('2 · Centro: R$ 90,00; 3 · Norte: não informado');
   });
 

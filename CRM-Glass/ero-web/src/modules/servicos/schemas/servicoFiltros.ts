@@ -52,9 +52,13 @@ export const textoDoPrecoNaFilial = (s: Pick<Servico, 'valores'>, filialId: stri
   return preco === null || preco === undefined ? 'Não informado' : formatarMoeda(preco);
 };
 
-/** "1 filial" · "3 filiais" */
-export const quantasFiliais = (s: Pick<Servico, 'valores'>): string =>
-  s.valores.length === 1 ? '1 filial' : `${s.valores.length} filiais`;
+/** "1 filial" · "3 filiais" · "3 filiais · 1 sem preço" (a filial sem preço informado não some atrás da faixa). */
+export const quantasFiliais = (s: Pick<Servico, 'valores'>): string => {
+  const total = s.valores.length;
+  const semPreco = s.valores.filter((v) => v.valor === null || v.valor === undefined).length;
+  const filiais = total === 1 ? '1 filial' : `${total} filiais`;
+  return semPreco === 0 ? filiais : `${filiais} · ${semPreco} sem preço`;
+};
 
 /** "2 · Centro: R$ 90,00; 3 · Norte: não informado" (exportação). */
 export const filiaisEPrecos = (s: Pick<Servico, 'valores'>): string =>
