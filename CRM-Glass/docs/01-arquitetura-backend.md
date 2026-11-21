@@ -128,6 +128,12 @@ por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora
 - A entidade-mãe não tem coleção: cada filha tem o seu repository, com `buscarPorPessoa`
   (`JOIN FETCH` do que a resposta mostra) e, para a lista, consultas em lote (`...PorPessoas(ids)`).
 - Mudou só uma filha: a `version` da mãe sobe mesmo assim (`marcarAlteracao`, `UPDATE VERSIONED`).
+- O `marcarAlteracao` limpa a sessão (`clearAutomatically`). Por isso a ordem do `atualizar` é:
+  conferir a versão → `marcarAlteracao` → **reler** → validar e buscar as referências → salvar →
+  filhas. Entidade lida antes dele fica desligada; apontar uma filha nova para ela (ex.: a
+  matriz, que entrou na sessão só como proxy pela filial que aponta para ela) derruba a
+  consulta seguinte com 500 (`data.entityHolder is null`). A recusa da validação desfaz a
+  versão junto com a transação.
 - Erro de regra numa linha usa o caminho do Bean Validation: `telefones[1].tipoId`,
   `vinculos[0].pessoaId` (o `erroApi` do front converte para o campo da linha). Quando o
   service confere todas as linhas de uma vez (modelo: `ServicoService.validar`), as recusas

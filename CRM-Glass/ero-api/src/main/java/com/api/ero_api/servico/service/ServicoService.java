@@ -156,9 +156,13 @@ public class ServicoService {
     }
 
     /**
-     * Ordem (o revisor confere): ler e conferir a versão → validar → nome livre →
+     * Ordem (o revisor confere), a mesma do {@code PessoaService}: ler e conferir a versão →
      * {@code marcarAlteracao} (versão de novo, já com a linha travada: pega também quem salvou
-     * só as filiais depois da leitura) → reler → salvar → substituir as filiais.
+     * só as filiais depois da leitura) → reler → validar → nome livre → salvar → substituir
+     * as filiais. Validar só depois de reler: o {@code marcarAlteracao} limpa a sessão, e a
+     * categoria e as filiais conferidas antes dele iriam desligadas para as linhas novas (a
+     * matriz, lida antes só como proxy pela filial que aponta para ela, derrubava a consulta
+     * da resposta com 500). Uma recusa da validação desfaz a versão junto com a transação.
      */
     @Transactional
     public ServicoResponseDto atualizar(UUID id, ServicoUpdateDto dto) {
@@ -168,13 +172,13 @@ public class ServicoService {
         if (!s.getVersion().equals(dto.version())) {
             throw new ConflitoException(MSG_VERSAO);
         }
-        Referencias refs = validar(dados, s);
-        exigirNomeLivre(TextoBusca.normalizar(dados.nome()), id);
         if (repository.marcarAlteracao(id, dto.version(), Instant.now(), SecurityUtils.getUsuarioIdLogado()) == 0) {
             throw new ConflitoException(MSG_VERSAO);
         }
-        // O marcarAlteracao limpou a sessão: relê com a versão nova.
+        // O marcarAlteracao limpou a sessão: relê com a versão nova e só então confere as referências.
         s = buscarEntidade(id);
+        Referencias refs = validar(dados, s);
+        exigirNomeLivre(TextoBusca.normalizar(dados.nome()), id);
         ServicoMapper.atualizarEntidade(s, dto, refs.categoria());
         salvar(s);
         substituirFiliais(s, dados.valores(), refs.filiais());

@@ -435,6 +435,18 @@ class ServicoIntegracaoTest extends IntegracaoTest {
         assertThat(erros(um)).containsExactly(Map.entry("valores[1].filialId", "Esta filial está inativa."));
         assertThat(corpo(um).path("detail").asString()).as("um erro só: o detail é a mensagem dele")
                 .isEqualTo("Esta filial está inativa.");
+
+        // No PUT a validação vem depois do marcarAlteracao: a recusa desfaz a versão junto.
+        String nome = unico("Gravado");
+        String gravado = criar(token, servico(nome, null, null, null, List.of(valor(f, null)))).path("id").asString();
+        JsonNode s = corpo(get(ROTA + "/" + gravado, token));
+        MvcTestResult recusado = put(ROTA + "/" + gravado, token, versao(servico(nome, null, null, null,
+                List.of(valor(f, null), valor(inativa, null))), s));
+        assertThat(erros(recusado)).containsExactly(Map.entry("valores[1].filialId", "Esta filial está inativa."));
+        JsonNode depois = corpo(get(ROTA + "/" + gravado, token));
+        assertThat(depois.path("version").asLong()).as("versão intacta").isEqualTo(s.path("version").asLong());
+        assertThat(depois.path("updatedAt")).as("auditoria intacta").isEqualTo(s.path("updatedAt"));
+        assertThat(filiaisDe(depois)).containsExactly(f);
     }
 
     /** A filial já gravada e inativada depois continua, sinalizada, e o preço dela ainda se corrige. */
@@ -535,6 +547,45 @@ class ServicoIntegracaoTest extends IntegracaoTest {
         assertThat(status(outraTela)).isEqualTo(409);
         assertThat(corpo(get(ROTA + "/" + id, token)).path("valores").get(0).path("valor").decimalValue())
                 .isEqualByComparingTo("10");
+    }
+
+    /**
+     * Tirar a matriz da lista e depois devolvê-la. A filial que ficou aponta para a matriz, e
+     * a leitura dela deixava na sessão só um proxy da matriz: as referências conferidas antes
+     * do {@code marcarAlteracao} (que limpa a sessão) iam desligadas para a linha nova e o
+     * Hibernate caía em 500 ({@code data.entityHolder is null}).
+     */
+    @Test
+    void matrizRemovidaEDevolvidaNaLista() {
+        Contratante c = novoContratante();
+        String token = c.admin().token();
+        String matriz = filial(token, unico("Matriz")).path("id").asString();
+        String daMatriz = filialDa(token, matriz, unico("Filial")).path("id").asString();
+        String nome = unico("Volta");
+        JsonNode s = criar(token, servico(nome, null, null, null,
+                List.of(valor(matriz, BigDecimal.ONE), valor(daMatriz, BigDecimal.TWO))));
+        String id = s.path("id").asString();
+
+        MvcTestResult semMatriz = put(ROTA + "/" + id, token, versao(servico(nome, null, null, null,
+                List.of(valor(daMatriz, BigDecimal.TWO))), s));
+        assertThat(status(semMatriz)).as(texto(semMatriz)).isEqualTo(200);
+        assertThat(filiaisDe(corpo(semMatriz))).containsExactly(daMatriz);
+
+        MvcTestResult comMatriz = put(ROTA + "/" + id, token, versao(servico(nome, null, null, null,
+                List.of(valor(daMatriz, BigDecimal.TWO), valor(matriz, BigDecimal.ONE))), corpo(semMatriz)));
+        assertThat(status(comMatriz)).as(texto(comMatriz)).isEqualTo(200);
+        assertThat(filiaisDe(corpo(comMatriz))).as("por código da filial").containsExactly(matriz, daMatriz);
+        assertThat(corpo(comMatriz).path("valores").get(0).path("valor").decimalValue()).isEqualByComparingTo("1");
+        assertThat(filiaisDe(corpo(get(ROTA + "/" + id, token)))).containsExactly(matriz, daMatriz);
+
+        // A outra ordem também (era o mesmo 500).
+        MvcTestResult semMatrizDeNovo = put(ROTA + "/" + id, token, versao(servico(nome, null, null, null,
+                List.of(valor(daMatriz, null))), corpo(comMatriz)));
+        assertThat(status(semMatrizDeNovo)).as(texto(semMatrizDeNovo)).isEqualTo(200);
+        MvcTestResult outraOrdem = put(ROTA + "/" + id, token, versao(servico(nome, null, null, null,
+                List.of(valor(matriz, null), valor(daMatriz, null))), corpo(semMatrizDeNovo)));
+        assertThat(status(outraOrdem)).as(texto(outraOrdem)).isEqualTo(200);
+        assertThat(filiaisDe(corpo(outraOrdem))).containsExactly(matriz, daMatriz);
     }
 
     @Test
@@ -708,6 +759,18 @@ class ServicoIntegracaoTest extends IntegracaoTest {
         Map<String, Object> f = new HashMap<>();
         f.put("pessoaId", pessoaPJ(token, nome));
         f.put("tipo", "MATRIZ");
+        f.put("cor", "#3B82F6");
+        MvcTestResult r = post("/api/filiais", token, f);
+        assertThat(status(r)).as("criar filial: %s", texto(r)).isEqualTo(201);
+        return corpo(r);
+    }
+
+    /** Uma pessoa jurídica nova e a filial dela, respondendo à {@code matrizId}. */
+    private JsonNode filialDa(String token, String matrizId, String nome) {
+        Map<String, Object> f = new HashMap<>();
+        f.put("pessoaId", pessoaPJ(token, nome));
+        f.put("tipo", "FILIAL");
+        f.put("matrizId", matrizId);
         f.put("cor", "#3B82F6");
         MvcTestResult r = post("/api/filiais", token, f);
         assertThat(status(r)).as("criar filial: %s", texto(r)).isEqualTo(201);
