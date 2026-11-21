@@ -278,7 +278,7 @@ disso a aplicação não sobe; horário em `app.auditoria.retencao-cron`, padrã
 
 ## Itens do sistema dos cadastros auxiliares
 
-Os 7 cadastros auxiliares da pessoa (tipo de cadastro, telefone, e-mail, endereço e rede social, estado civil e profissão) têm itens do sistema (Cliente, Celular, Solteiro(a)...). Eles **não** são linhas globais: cada contratante tem as próprias, marcadas por `chave` (o nome da constante do enum `<Tipo>DoSistema`; `chave` nula = item do contratante). Assim tudo continua `TenantEntity`, com filtro automático, e a FK composta `(tipo_id, tenant_id)` garante no banco que uma pessoa nunca aponta para o tipo de outro contratante.
+Os 7 cadastros auxiliares da pessoa (tipo de cadastro, telefone, e-mail, endereço e rede social, estado civil e profissão) têm itens do sistema (o 8º auxiliar, a categoria de serviço, não tem nenhum: sem `chave` e sem semente) (Cliente, Celular, Solteiro(a)...). Eles **não** são linhas globais: cada contratante tem as próprias, marcadas por `chave` (o nome da constante do enum `<Tipo>DoSistema`; `chave` nula = item do contratante). Assim tudo continua `TenantEntity`, com filtro automático, e a FK composta `(tipo_id, tenant_id)` garante no banco que uma pessoa nunca aponta para o tipo de outro contratante.
 
 - Contratantes que já existiam: semente das migrations 014 (os 5 tipos) e 019 (estado civil e profissão); a Plataforma fica de fora.
 - Contratante novo: `ItensDoSistemaService.semear` dentro do `TenantService.criar`, com o código vindo do enum (nunca o maior + 1, que em ROOT pegaria o de todos).

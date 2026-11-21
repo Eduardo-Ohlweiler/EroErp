@@ -32,5 +32,6 @@
     <include file="changes/020-alter-pessoa-complemento.xml" relativeToChangelogFile="true"/>
     <include file="changes/021-alter-pessoa-vinculo-representante.xml" relativeToChangelogFile="true"/>
     <include file="changes/022-create-filial.xml" relativeToChangelogFile="true"/>
+    <include file="changes/023-create-servico.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

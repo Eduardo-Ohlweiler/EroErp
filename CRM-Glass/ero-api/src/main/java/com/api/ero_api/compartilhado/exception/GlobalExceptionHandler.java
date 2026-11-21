@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> negocio(ApiException ex, HttpServletRequest req) {
         List<ErroCampoDto> erros = switch (ex) {
             case ConflitoCampoException c -> List.of(new ErroCampoDto(c.getCampo(), c.getMessage()));
-            case CampoInvalidoException c -> List.of(new ErroCampoDto(c.getCampo(), c.getMessage()));
+            case CampoInvalidoException c -> c.getErros();
             default -> null;
         };
         ResponseEntity<ProblemDetail> r = resposta(ex.getStatus(), ex.getCodigo(), ex.getMessage(), req, erros);

@@ -16,13 +16,16 @@ public enum Tela {
     PESSOA_FORM("pessoa-form", "Pessoas — cadastro"),
     FILIAL_LIST("filial-list", "Filiais — lista"),
     FILIAL_FORM("filial-form", "Filiais — cadastro"),
+    SERVICO_LIST("servico-list", "Serviços — lista"),
+    SERVICO_FORM("servico-form", "Serviços — cadastro"),
     TIPO_CADASTRO_FORMLIST("tipo-cadastro-formlist", "Tipos de cadastro"),
     TIPO_TELEFONE_FORMLIST("tipo-telefone-formlist", "Tipos de telefone"),
     TIPO_EMAIL_FORMLIST("tipo-email-formlist", "Tipos de e-mail"),
     TIPO_ENDERECO_FORMLIST("tipo-endereco-formlist", "Tipos de endereço"),
     TIPO_REDE_SOCIAL_FORMLIST("tipo-rede-social-formlist", "Tipos de rede social"),
     ESTADO_CIVIL_FORMLIST("estado-civil-formlist", "Estados civis"),
-    PROFISSAO_FORMLIST("profissao-formlist", "Profissões");
+    PROFISSAO_FORMLIST("profissao-formlist", "Profissões"),
+    CATEGORIA_SERVICO_FORMLIST("categoria-servico-formlist", "Categorias de serviço");
 
     private final String codigo;
     private final String rotulo;
