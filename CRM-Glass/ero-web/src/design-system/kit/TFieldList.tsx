@@ -36,6 +36,11 @@ export type TFieldListProps<L> = {
   minimo?: number;
   /** texto do botão; padrão "Acrescentar" */
   rotuloAdicionar?: string;
+  /**
+   * Botões extras ao lado do Acrescentar, no mesmo alinhamento (quebram para a linha de baixo no celular): o "Todas
+   * as filiais" do Serviço (`<TButton variant="secondary" size="sm" …/>`). Somem em só leitura, junto com o Acrescentar.
+   */
+  acoes?: ReactNode;
   /** o que se diz com a lista vazia ("Nenhum telefone.") */
   vazio?: string;
   /** nota sob a linha (ex.: "Pessoa inativa"); `null` quando não há */
@@ -75,6 +80,7 @@ export function TFieldList<L extends FieldValues>({
   novaLinha,
   minimo = 0,
   rotuloAdicionar = 'Acrescentar',
+  acoes,
   vazio,
   detalhe,
   principal,
@@ -194,8 +200,9 @@ export function TFieldList<L extends FieldValues>({
       {erroDaLista && <p className="text-xs text-danger">{erroDaLista}</p>}
 
       {!somenteLeitura && (
-        <div>
+        <div data-kit="TFieldList-acoes" className="flex min-w-0 flex-wrap items-center gap-2">
           <TButton variant="secondary" size="sm" icone={Plus} label={rotuloAdicionar} data-acrescentar onClick={acrescentar} />
+          {acoes}
         </div>
       )}
     </div>

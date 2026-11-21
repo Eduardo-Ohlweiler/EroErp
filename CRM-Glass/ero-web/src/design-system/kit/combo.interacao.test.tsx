@@ -26,6 +26,56 @@ afterEach(() => {
   caixa = null;
 });
 
+describe('TDBCombo com cor (interação)', () => {
+  it('na lista, a bolinha antes do nome só nas opções com cor; escolher leva a bolinha ao campo fechado', async () => {
+    const buscar = vi.fn(async () => [
+      { id: 'f1', nome: 'Centro', cor: '#3b82f6' },
+      { id: 'f2', nome: 'Antiga', cor: 'nada' },
+      { id: 'f3', nome: 'Sem cor' },
+    ]);
+    let valor = '';
+    const c = montar(<TDBCombo label="Filial" buscar={buscar} vazio="Todas" value="" onChange={(v) => (valor = v)} />);
+    const input = c.querySelector<HTMLInputElement>('input[role="combobox"]')!;
+    expect(c.querySelector('[data-combobox-marca]')).toBeNull();
+    await act(async () => {
+      input.click();
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    const opcoes = [...document.querySelectorAll<HTMLElement>('[role="option"]')];
+    expect(opcoes.map((o) => o.textContent)).toEqual(['Todas', 'Centro', 'Antiga', 'Sem cor']);
+    const marca = (o: HTMLElement) => o.querySelector('[data-kit="TCorMarca"]');
+    expect(opcoes.map((o) => !!marca(o))).toEqual([false, true, true, false]);
+    expect(marca(opcoes[1])!.getAttribute('aria-hidden')).toBe('true');
+    expect((marca(opcoes[1]) as HTMLElement).style.getPropertyValue('--cor-do-registro')).toBe('#3B82F6');
+    expect((marca(opcoes[2]) as HTMLElement).style.getPropertyValue('--cor-do-registro')).toBe('var(--cor-registro-vazia)');
+    // a bolinha vem antes do nome
+    expect(opcoes[1].firstElementChild!.contains(marca(opcoes[1]))).toBe(true);
+    await act(async () => {
+      opcoes[1].click();
+    });
+    expect(valor).toBe('f1');
+  });
+
+  it('valor com cor no campo fechado; ao digitar a busca, a bolinha sai (o texto já não é a escolhida)', async () => {
+    const buscar = vi.fn(async () => [{ id: 'f1', nome: 'Centro', cor: '#3b82f6' }]);
+    const c = montar(<TDBCombo label="Filial" buscar={buscar} value="f1" rotuloInicial="Centro" corInicial="#3b82f6" onChange={() => {}} />);
+    const input = c.querySelector<HTMLInputElement>('input[role="combobox"]')!;
+    expect(c.querySelector('[data-combobox-marca] [data-kit="TCorMarca"]')).not.toBeNull();
+    await act(async () => {
+      input.click();
+    });
+    expect(c.querySelector('[data-combobox-marca]')).not.toBeNull();
+    await act(async () => {
+      const definir = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+      definir.call(input, 'Ce');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(c.querySelector('[data-combobox-marca]')).toBeNull();
+  });
+});
+
 describe('autoFocus dos combos (interação)', () => {
   it('TDBCombo: foca o input ao montar, sem abrir a lista nem buscar no servidor', () => {
     const buscar = vi.fn(async () => [{ id: 'p1', nome: 'Ana' }]);

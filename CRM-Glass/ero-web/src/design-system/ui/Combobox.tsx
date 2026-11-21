@@ -1,11 +1,20 @@
-import { useEffect, useId, useMemo, useRef, useState, type ComponentType, type KeyboardEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ComponentType, type KeyboardEvent, type ReactNode } from 'react';
 import * as RadixPopover from '@radix-ui/react-popover';
 import { AnimatePresence, motion } from 'motion/react';
 import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react';
 import { spring } from '../../motion/tokens';
 import { cn, norm } from '../../shared/util/utils';
 
-export type OpcaoCombobox = { valor: string; rotulo: string; detalhe?: string };
+export type OpcaoCombobox = {
+  valor: string;
+  rotulo: string;
+  detalhe?: string;
+  /**
+   * Marca decorativa antes do rótulo, na lista e no campo fechado (a bolinha da cor de registro: `TCorMarca`
+   * `aria-hidden`). O rótulo continua sendo o nome acessível. Sem ela, nada muda.
+   */
+  marca?: ReactNode;
+};
 
 export type ComboboxProps = {
   opcoes: OpcaoCombobox[];
@@ -67,6 +76,9 @@ export function Combobox({
   const [busca, setBusca] = useState('');
   const [ativo, setAtivo] = useState(0);
   const selecionada = opcoes.find((o) => o.valor === valor) ?? null;
+  // A marca da escolhida no campo: fechado, ou aberto sem nada digitado (aí o placeholder é o rótulo da escolhida).
+  // O padding esquerdo fica reservado enquanto há escolhida com marca: o texto não pula ao abrir e digitar.
+  const marcaDaEscolhida = selecionada?.marca;
   const ruim = invalido || aria['aria-invalid'] === true || aria['aria-invalid'] === 'true';
 
   const filtradas = useMemo(() => {
@@ -150,6 +162,14 @@ export function Combobox({
       <RadixPopover.Anchor asChild>
         <div className={cn('relative', className)}>
           {Icone && <Icone className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-subtle pointer-events-none" />}
+          {marcaDaEscolhida && (!aberto || busca === '') && (
+            <span
+              data-combobox-marca
+              className={cn('absolute top-1/2 -translate-y-1/2 flex items-center pointer-events-none', Icone ? 'left-10' : 'left-3.5')}
+            >
+              {marcaDaEscolhida}
+            </span>
+          )}
           <input
             ref={inputRef}
             id={id}
@@ -177,7 +197,7 @@ export function Combobox({
             }}
             onClick={() => (aberto ? undefined : abrir())}
             onKeyDown={tecla}
-            className={cn('input', Icone && 'pl-10', mostraLimpar && mostraAbrir ? 'pr-[72px]' : (mostraLimpar || mostraAbrir) && 'pr-10')}
+            className={cn('input', marcaDaEscolhida ? (Icone ? 'pl-[60px]' : 'pl-9') : Icone && 'pl-10', mostraLimpar && mostraAbrir ? 'pr-[72px]' : (mostraLimpar || mostraAbrir) && 'pr-10')}
           />
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
             {carregando && <Loader2 aria-hidden className="size-4 text-subtle motion-safe:animate-spin mr-1" />}
@@ -257,6 +277,7 @@ export function Combobox({
                           i === ativo ? 'bg-[var(--chip-hover)] text-fg' : 'text-muted',
                         )}
                       >
+                        {o.marca && <span className="flex shrink-0 items-center">{o.marca}</span>}
                         <span className="flex-1 min-w-0">
                           <span className={cn('block truncate', sel && 'font-semibold text-fg')}>{o.rotulo}</span>
                           {o.detalhe && <span className="block text-[11px] text-subtle truncate">{o.detalhe}</span>}
