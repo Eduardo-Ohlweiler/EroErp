@@ -2,6 +2,8 @@ package com.api.ero_api.tenant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.api.ero_api.auxiliar.enums.EstadoCivilDoSistema;
+import com.api.ero_api.auxiliar.enums.ProfissaoDoSistema;
 import com.api.ero_api.auxiliar.enums.TipoCadastroDoSistema;
 import com.api.ero_api.auxiliar.enums.TipoEmailDoSistema;
 import com.api.ero_api.auxiliar.enums.TipoEnderecoDoSistema;
@@ -420,8 +422,8 @@ class TenantIntegracaoTest extends IntegracaoTest {
     }
 
     /**
-     * Contratante novo já nasce com os itens do sistema dos 5 cadastros auxiliares (5 + 4 +
-     * 2 + 3 + 5), iguais aos enums: chave, nome, código 1..N e ativos. A Plataforma nunca
+     * Contratante novo já nasce com os itens do sistema dos 7 cadastros auxiliares (5 + 4 +
+     * 2 + 3 + 5 + 6 + 7), iguais aos enums: chave, nome, código 1..N e ativos. A Plataforma nunca
      * recebe nenhum.
      */
     @Test
@@ -432,7 +434,10 @@ class TenantIntegracaoTest extends IntegracaoTest {
         conferirItens("tipo_email", c, TipoEmailDoSistema.values());
         conferirItens("tipo_endereco", c, TipoEnderecoDoSistema.values());
         conferirItens("tipo_rede_social", c, TipoRedeSocialDoSistema.values());
-        for (String tabela : List.of("tipo_cadastro", "tipo_telefone", "tipo_email", "tipo_endereco", "tipo_rede_social")) {
+        conferirItens("estado_civil", c, EstadoCivilDoSistema.values());
+        conferirItens("profissao", c, ProfissaoDoSistema.values());
+        for (String tabela : List.of("tipo_cadastro", "tipo_telefone", "tipo_email", "tipo_endereco", "tipo_rede_social",
+                "estado_civil", "profissao")) {
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM " + tabela + " WHERE tenant_id = ?", Long.class,
                     TenantContext.ROOT)).as("Plataforma sem itens em %s", tabela).isZero();
         }
@@ -457,6 +462,8 @@ class TenantIntegracaoTest extends IntegracaoTest {
             case TipoEmailDoSistema t -> t.rotulo();
             case TipoEnderecoDoSistema t -> t.rotulo();
             case TipoRedeSocialDoSistema t -> t.rotulo();
+            case EstadoCivilDoSistema t -> t.rotulo();
+            case ProfissaoDoSistema t -> t.rotulo();
             default -> throw new IllegalArgumentException(item.toString());
         };
     }

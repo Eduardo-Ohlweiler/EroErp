@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Tipos de cadastro do contratante (cadastro auxiliar; tela FormList). É o modelo dos
- * 5 auxiliares: os outros 4 services são cópia com troca de nomes.
+ * 7 auxiliares: os outros 6 services são cópia com troca de nomes.
  *
  * <ul>
  *   <li>todo método começa com {@code exigirTenantSelecionado()}: na visão de plataforma

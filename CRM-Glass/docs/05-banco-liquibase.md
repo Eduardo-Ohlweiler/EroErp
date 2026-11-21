@@ -93,7 +93,7 @@ UPDATE pessoa p SET cod_pessoa = n.num
 
 ## Itens do sistema semeados por contratante
 
-Cadastro auxiliar com itens pré-cadastrados (ex.: `tipo_telefone` com Celular, WhatsApp...) grava esses itens **em cada contratante**, marcados pela coluna `chave` (nome da constante do enum `<Tipo>DoSistema`; nula = item do contratante). Padrão da migration 014:
+Cadastro auxiliar com itens pré-cadastrados (ex.: `tipo_telefone` com Celular, WhatsApp...) grava esses itens **em cada contratante**, marcados pela coluna `chave` (nome da constante do enum `<Tipo>DoSistema`; nula = item do contratante). Padrão da migration 014 (repetido na 019):
 
 - índices únicos `uk_<t>_tenant_cod_<t>`, `uk_<t>_tenant_nome_busca` (nome único sem caixa nem acento, contando os do sistema), `uk_<t>_tenant_chave` (nulos não colidem) e `uk_<t>_id_tenant (id, tenant_id)`, alvo das FKs compostas;
 - `ck_<t>_sistema_ativo CHECK (chave IS NULL OR ativo)`: item do sistema nunca fica inativo;

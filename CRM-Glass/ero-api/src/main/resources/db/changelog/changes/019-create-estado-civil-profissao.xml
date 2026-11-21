@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Mais 2 cadastros auxiliares da pessoa (módulo auxiliar): estado civil e profissão.
+        Cópia exata da 014 (mesmas colunas, índices e checks; ver o comentário de lá), com
+        uma diferença: o nome da profissão vai até 40 caracteres ("Técnico em segurança do
+        trabalho" não cabe em 25).
+
+        A semente leva os itens do sistema para os contratantes que já existem (inclusive
+        os inativos; a Plataforma fica de fora). Contratante novo recebe pelo
+        ItensDoSistemaService.semear. Os valores são IGUAIS aos enums EstadoCivilDoSistema
+        e ProfissaoDoSistema, e o nome_busca é o TextoBusca.normalizar do nome
+        (ItensDoSistemaMigrationTest confere).
+
+        As colunas da pessoa que apontam para estas tabelas (FK composta (x_id, tenant_id)
+        no uk_<t>_id_tenant) vêm na 020.
+    -->
+
+    <changeSet id="019-create-estado-civil-profissao-estado-civil" author="eduardo">
+        <createTable tableName="estado_civil">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_estado_civil"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_estado_civil_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_estado_civil" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="nome" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="nome_busca" type="VARCHAR(25)"><constraints nullable="false"/></column>
+            <column name="chave" type="VARCHAR(30)"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="estado_civil" indexName="uk_estado_civil_tenant_cod_estado_civil" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_estado_civil"/>
+        </createIndex>
+        <createIndex tableName="estado_civil" indexName="uk_estado_civil_tenant_nome_busca" unique="true">
+            <column name="tenant_id"/>
+            <column name="nome_busca"/>
+        </createIndex>
+        <createIndex tableName="estado_civil" indexName="uk_estado_civil_tenant_chave" unique="true">
+            <column name="tenant_id"/>
+            <column name="chave"/>
+        </createIndex>
+        <createIndex tableName="estado_civil" indexName="uk_estado_civil_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <sql>ALTER TABLE estado_civil ADD CONSTRAINT ck_estado_civil_cod_estado_civil CHECK (cod_estado_civil &gt; 0)</sql>
+        <sql>ALTER TABLE estado_civil ADD CONSTRAINT ck_estado_civil_sistema_ativo CHECK (chave IS NULL OR ativo)</sql>
+    </changeSet>
+
+    <changeSet id="019-create-estado-civil-profissao-profissao" author="eduardo">
+        <createTable tableName="profissao">
+            <column name="id" type="UUID"><constraints primaryKey="true" primaryKeyName="pk_profissao"/></column>
+            <column name="tenant_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_profissao_tenant" references="tenant(id)"/>
+            </column>
+            <column name="cod_profissao" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="nome" type="VARCHAR(40)"><constraints nullable="false"/></column>
+            <column name="nome_busca" type="VARCHAR(40)"><constraints nullable="false"/></column>
+            <column name="chave" type="VARCHAR(30)"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_by" type="UUID"/>
+            <column name="updated_by" type="UUID"/>
+            <column name="version" type="BIGINT" defaultValueNumeric="0"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="profissao" indexName="uk_profissao_tenant_cod_profissao" unique="true">
+            <column name="tenant_id"/>
+            <column name="cod_profissao"/>
+        </createIndex>
+        <createIndex tableName="profissao" indexName="uk_profissao_tenant_nome_busca" unique="true">
+            <column name="tenant_id"/>
+            <column name="nome_busca"/>
+        </createIndex>
+        <createIndex tableName="profissao" indexName="uk_profissao_tenant_chave" unique="true">
+            <column name="tenant_id"/>
+            <column name="chave"/>
+        </createIndex>
+        <createIndex tableName="profissao" indexName="uk_profissao_id_tenant" unique="true">
+            <column name="id"/>
+            <column name="tenant_id"/>
+        </createIndex>
+        <sql>ALTER TABLE profissao ADD CONSTRAINT ck_profissao_cod_profissao CHECK (cod_profissao &gt; 0)</sql>
+        <sql>ALTER TABLE profissao ADD CONSTRAINT ck_profissao_sistema_ativo CHECK (chave IS NULL OR ativo)</sql>
+    </changeSet>
+
+    <changeSet id="019-create-estado-civil-profissao-estado-civil-semente" author="eduardo">
+        <sql>
+            INSERT INTO estado_civil (id, tenant_id, cod_estado_civil, nome, nome_busca, chave, ativo, created_at, version)
+            SELECT gen_random_uuid(), t.id, v.cod, v.nome, v.busca, v.chave, true, now(), 0
+            FROM tenant t CROSS JOIN (VALUES
+                (1, 'Solteiro(a)', 'solteiro(a)', 'SOLTEIRO'),
+                (2, 'Casado(a)', 'casado(a)', 'CASADO'),
+                (3, 'União estável', 'uniao estavel', 'UNIAO_ESTAVEL'),
+                (4, 'Separado(a)', 'separado(a)', 'SEPARADO'),
+                (5, 'Divorciado(a)', 'divorciado(a)', 'DIVORCIADO'),
+                (6, 'Viúvo(a)', 'viuvo(a)', 'VIUVO')
+            ) AS v(cod, nome, busca, chave)
+            WHERE t.id &lt;&gt; '00000000-0000-0000-0000-000000000000';
+        </sql>
+    </changeSet>
+
+    <changeSet id="019-create-estado-civil-profissao-profissao-semente" author="eduardo">
+        <sql>
+            INSERT INTO profissao (id, tenant_id, cod_profissao, nome, nome_busca, chave, ativo, created_at, version)
+            SELECT gen_random_uuid(), t.id, v.cod, v.nome, v.busca, v.chave, true, now(), 0
+            FROM tenant t CROSS JOIN (VALUES
+                (1, 'Autônomo(a)', 'autonomo(a)', 'AUTONOMO'),
+                (2, 'Empresário(a)', 'empresario(a)', 'EMPRESARIO'),
+                (3, 'Servidor(a) público(a)', 'servidor(a) publico(a)', 'SERVIDOR_PUBLICO'),
+                (4, 'Profissional liberal', 'profissional liberal', 'PROFISSIONAL_LIBERAL'),
+                (5, 'Aposentado(a)', 'aposentado(a)', 'APOSENTADO'),
+                (6, 'Estudante', 'estudante', 'ESTUDANTE'),
+                (7, 'Do lar', 'do lar', 'DO_LAR')
+            ) AS v(cod, nome, busca, chave)
+            WHERE t.id &lt;&gt; '00000000-0000-0000-0000-000000000000';
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

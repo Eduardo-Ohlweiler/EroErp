@@ -17,9 +17,10 @@ Alguns grupos têm **ações extras**, concedidas uma a uma.
 ```
 GrupoLiberacao.PESSOAS                (cadastro de pessoas; menu Cadastros › Pessoas)
   telas:  pessoa-list, pessoa-form
-GrupoLiberacao.CADASTROS_AUXILIARES   (os 5 cadastros auxiliares da pessoa; menu Cadastros › Auxiliares)
+GrupoLiberacao.CADASTROS_AUXILIARES   (os 7 cadastros auxiliares da pessoa; menu Cadastros › Auxiliares)
   telas:  tipo-cadastro-formlist, tipo-telefone-formlist, tipo-email-formlist,
-          tipo-endereco-formlist, tipo-rede-social-formlist
+          tipo-endereco-formlist, tipo-rede-social-formlist,
+          estado-civil-formlist, profissao-formlist
 GrupoLiberacao.USUARIOS
   telas:  usuario-list, usuario-form
   ações:  USUARIOS_LIBERAR_ACESSO  ("Liberar acesso de outros usuários")
@@ -114,9 +115,9 @@ front. Renomear exige migration.
 | `PATCH /api/usuarios/{id}/redefinir-senha` e `/desbloquear` | `USUARIOS_ESCREVER` **e** papel ADMIN/SUPERADMIN (nunca em si mesmo). O `redefinir-2fa` saiu: não há app autenticador para resetar; quem perdeu o acesso ao e-mail tem o e-mail trocado pelo administrador. |
 | `GET /api/sessoes`, `PATCH /api/sessoes/{id}/encerrar`, `PATCH /api/sessoes/encerrar-outras` | `ACESSO_LIBERADO` (só as próprias sessões) |
 | `GET /api/auditoria/eventos`, `GET /api/auditoria/tipos` | `AUDITORIA_LER` |
-| `GET /api/tipos-cadastro?page=&size=&sort=` (o mesmo em `/api/tipos-telefone`, `/api/tipos-email`, `/api/tipos-endereco` e `/api/tipos-rede-social`; ordena por `nome` ou pelo código) | `CADASTROS_AUXILIARES_LER` |
-| `POST /api/tipos-cadastro`, `PUT /{id}`, `PATCH /{id}/inativar` e `/ativar` (idem nos outros 4; item do sistema: 422) | `CADASTROS_AUXILIARES_ESCREVER` |
-| `GET /api/tipos-cadastro/selecao?inativos=` (idem nos outros 4) | `ACESSO_LIBERADO` (combo da pessoa) |
+| `GET /api/tipos-cadastro?page=&size=&sort=` (o mesmo em `/api/tipos-telefone`, `/api/tipos-email`, `/api/tipos-endereco`, `/api/tipos-rede-social`, `/api/estados-civis` e `/api/profissoes`; ordena por `nome` ou pelo código) | `CADASTROS_AUXILIARES_LER` |
+| `POST /api/tipos-cadastro`, `PUT /{id}`, `PATCH /{id}/inativar` e `/ativar` (idem nos outros 6; item do sistema: 422) | `CADASTROS_AUXILIARES_ESCREVER` |
+| `GET /api/tipos-cadastro/selecao?inativos=` (idem nos outros 6) | `ACESSO_LIBERADO` (combo da pessoa) |
 | `GET /api/pessoas?codPessoa=&busca=&documento=&tipoPessoa=&tipoCadastroId=&ativo=`, `GET /api/pessoas/{id}` | `PESSOAS_LER` |
 | `GET /api/pessoas/selecao?busca=&ignorarId=` (até 20 ativas: id, código e nome) | `PESSOAS_LER` (**não** `ACESSO_LIBERADO`: nome de pessoa é dado pessoal) |
 | `POST /api/pessoas`, `PUT /{id}`, `PATCH /{id}/inativar` e `/ativar` | `PESSOAS_ESCREVER` |
