@@ -14,6 +14,8 @@ public enum Tela {
     AUDITORIA_LIST("auditoria-list", "Auditoria — eventos de segurança"),
     PESSOA_LIST("pessoa-list", "Pessoas — lista"),
     PESSOA_FORM("pessoa-form", "Pessoas — cadastro"),
+    FILIAL_LIST("filial-list", "Filiais — lista"),
+    FILIAL_FORM("filial-form", "Filiais — cadastro"),
     TIPO_CADASTRO_FORMLIST("tipo-cadastro-formlist", "Tipos de cadastro"),
     TIPO_TELEFONE_FORMLIST("tipo-telefone-formlist", "Tipos de telefone"),
     TIPO_EMAIL_FORMLIST("tipo-email-formlist", "Tipos de e-mail"),

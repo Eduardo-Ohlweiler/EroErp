@@ -532,6 +532,41 @@ body:has([aria-modal='true']) {
   --marca-borda-marcada: var(--accent-text);
 }
 
+/* ---------- Cor de registro (TCor, TCorMarca; docs/07 §3.2, "Cor de registro") ----------
+ * A cor que o usuário escolhe para um registro (a filial) é DADO, não pele: vem do banco como #RRGGBB e só o kit a
+ * aplica, conferida antes, pela variável --cor-do-registro (bg-[var(--cor-do-registro)]), só na bolinha.
+ * As 8 sugeridas (as do EroErp 2.0) são as mesmas nos dois temas e em todo destaque: o TCor lê o hex daqui
+ * (getComputedStyle) e grava em maiúsculas. Nenhum hex em .tsx.
+ *
+ * --line-strong: o anel de toda bolinha, desenhado sobre o fundo (bg-clip-padding), com qualquer cor dentro.
+ * Contraste do anel contra o fundo ≥ 3:1 (WCAG 1.4.11), o mesmo par da borda da caixa de marcar (--marca-borda):
+ *   escuro: sobre --bg #07070d 4,3:1; vidro sólido, pior caso medido 4,2:1; camada flutuante com branco atrás 3,7:1
+ *   claro:  sobre --bg #e9ecf4 3,4:1; sobre o branco (camada flutuante) 3,5:1
+ * Assim a borda aparece até com cores-limite (#FFFF00 no claro, #111111 no escuro), e a cor nunca é a única
+ * informação (o nome vai ao lado). --cor-registro-vazia: a bolinha sem cor válida (neutra).
+ */
+:root,
+[data-theme='dark'] {
+  --line-strong: rgb(244 244 249 / 0.46);
+}
+[data-theme='light'] {
+  --line-strong: rgb(18 19 27 / 0.5);
+}
+:root,
+[data-theme] {
+  --cor-registro-vazia: var(--chip-hover);
+}
+:root {
+  --cor-registro-1: #3B82F6; /* Azul */
+  --cor-registro-2: #10B981; /* Verde */
+  --cor-registro-3: #F59E0B; /* Âmbar */
+  --cor-registro-4: #EF4444; /* Vermelho */
+  --cor-registro-5: #8B5CF6; /* Violeta */
+  --cor-registro-6: #EC4899; /* Rosa */
+  --cor-registro-7: #14B8A6; /* Turquesa */
+  --cor-registro-8: #64748B; /* Ardósia */
+}
+
 /* Orb em tela estreita: ver --orb-pico (precisa vir depois do :root acima para valer). */
 @media (max-width: 480px) {
   :root {

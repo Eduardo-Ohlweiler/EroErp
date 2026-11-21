@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ErroApi, erroDeProblemDetail } from '../../shared/api/erros';
@@ -32,6 +32,9 @@ import { ATRASO_DO_ANUNCIO_MS, AvisoContexto } from '../ui/AvisoContexto';
 import { Calendario } from '../ui/Calendario';
 import { ReservaErroDoForm } from './campo';
 import { dicasDasOpcoes, maiorRotulo } from './opcoes';
+import { estiloDaCor, indiceDaSugerida, lerCoresSugeridas, normalizarCor, rotuloDaCor } from './cores';
+import { TCor } from './TCor';
+import { TCorMarca } from './TCorMarca';
 
 const html = (el: ReactElement) => renderToStaticMarkup(el);
 // O CSS de verdade, lido do disco: o vitest não processa CSS (o `?raw` viria vazio). Import dinâmico com tipo próprio
@@ -624,6 +627,16 @@ describe('fatia 3: TRadio, TCheckBox, TDate, TDBCombo', () => {
     expect(h).toContain('>novo</button>');
   });
 
+  it('TDBCombo e TCombo com autoFocus: o input do combo leva o autofocus e a lista nasce fechada', () => {
+    const buscar = async () => [];
+    const db = html(<TDBCombo label="Pessoa" buscar={buscar} value="" onChange={() => {}} autoFocus />);
+    expect(db).toMatch(/<input[^>]*role="combobox"[^>]*aria-expanded="false"[^>]*autofocus=""/);
+    expect(html(<TDBCombo label="Pessoa" buscar={buscar} value="" onChange={() => {}} />)).not.toContain('autofocus');
+    const fixo = html(<TCombo label="Situação" opcoes={SITUACAO_OPCOES} value="true" onChange={() => {}} autoFocus />);
+    expect(fixo).toMatch(/<input[^>]*role="combobox"[^>]*aria-expanded="false"[^>]*autofocus=""/);
+    expect(html(<TCombo label="Situação" opcoes={SITUACAO_OPCOES} value="true" onChange={() => {}} />)).not.toContain('autofocus');
+  });
+
   it('TDBCombo: opções do combo com o vazio e o valor conhecido que não veio na lista', () => {
     const lista = [{ id: 'u1', nome: 'Ana' }];
     expect(opcoesDoCombo(lista, '', null, 'Todos')).toEqual([
@@ -882,5 +895,129 @@ describe('correções da revisão da fatia 3', () => {
     expect(h).toMatch(/role="status"[^>]*><span class="sr-only"><\/span>/);
     expect(h).toMatch(/<span aria-hidden="true"[^>]*>Você está dentro de X<\/span>/);
     expect(ATRASO_DO_ANUNCIO_MS).toBeGreaterThan(0);
+  });
+});
+
+describe('Filiais: TCor e TCorMarca (cor de registro)', () => {
+  /** Os tokens de verdade, lidos do tokens.css: o stub do getComputedStyle devolve o que o navegador devolveria. */
+  const TOKENS_DA_COR = Object.fromEntries([...TOKENS_CSS.matchAll(/(--cor-registro-\d):\s*(#[0-9A-Fa-f]{6})/g)].map((m) => [m[1], ` ${m[2]}`]));
+  beforeAll(() => {
+    vi.stubGlobal('document', { documentElement: {} });
+    vi.stubGlobal('getComputedStyle', () => ({ getPropertyValue: (t: string) => TOKENS_DA_COR[t] ?? '' }));
+  });
+  afterAll(() => vi.unstubAllGlobals());
+
+  const leitura = (el: ReactElement) => html(<SomenteLeituraDoForm.Provider value>{el}</SomenteLeituraDoForm.Provider>);
+  const radios = (h: string) => [...h.matchAll(/<button[^>]*role="radio"[^>]*>/g)].map((m) => m[0]);
+
+  it('tokens: as 8 sugeridas do 2.0, uma vez só (iguais nos dois temas); anel --line-strong nos dois temas', () => {
+    expect(Object.entries(TOKENS_DA_COR).map(([k, v]) => `${k}${v}`)).toEqual([
+      '--cor-registro-1 #3B82F6',
+      '--cor-registro-2 #10B981',
+      '--cor-registro-3 #F59E0B',
+      '--cor-registro-4 #EF4444',
+      '--cor-registro-5 #8B5CF6',
+      '--cor-registro-6 #EC4899',
+      '--cor-registro-7 #14B8A6',
+      '--cor-registro-8 #64748B',
+    ]);
+    expect(TOKENS_CSS.match(/^\s*--line-strong:/gm)).toHaveLength(2);
+    expect(INDEX_CSS).toContain('--color-line-strong: var(--line-strong)');
+  });
+
+  it('normalizarCor: só #RRGGBB passa, em maiúsculas (fecha injeção de CSS)', () => {
+    expect(normalizarCor('#a1b2c3')).toBe('#A1B2C3');
+    expect(normalizarCor(' #10b981 ')).toBe('#10B981');
+    for (const ruim of ['red', '#fff', '#12345', '#1234567', 'A1B2C3', '#A1B2C3;background:url(x)', 'var(--accent)', null, undefined, 42]) {
+      expect(normalizarCor(ruim), String(ruim)).toBeNull();
+    }
+    expect(estiloDaCor('#a1b2c3')).toEqual({ '--cor-do-registro': '#A1B2C3' });
+    expect(estiloDaCor('red;background:url(x)')).toEqual({ '--cor-do-registro': 'var(--cor-registro-vazia)' });
+  });
+
+  it('sugeridas lidas do getComputedStyle; nome da cor ou "Outra (#…)"', () => {
+    const s = lerCoresSugeridas();
+    expect(s.map((c) => c.nome)).toEqual(['Azul', 'Verde', 'Âmbar', 'Vermelho', 'Violeta', 'Rosa', 'Turquesa', 'Ardósia']);
+    expect(s[0].hex).toBe('#3B82F6');
+    expect(indiceDaSugerida('#10b981', s)).toBe(1);
+    expect(rotuloDaCor('#3b82f6', s)).toBe('Azul');
+    expect(rotuloDaCor('#a1b2c3', s)).toBe('Outra (#A1B2C3)');
+    expect(rotuloDaCor('', s)).toBe('');
+    // sem CSS (fora do navegador), nenhuma sugerida é reconhecida: a cor aparece como "Outra"
+    expect(lerCoresSugeridas(() => '').every((c) => c.hex === null)).toBe(true);
+  });
+
+  it('TCor: radiogroup com o rótulo, 9 rádios com nome, a sugerida marcada, largura do conteúdo', () => {
+    const h = html(
+      <TRow>
+        <TCor label="Cor" value="#3b82f6" onChange={() => {}} required />
+      </TRow>,
+    );
+    expect(h).toMatch(/data-kit="TCor"[^>]*data-largura="conteudo"/);
+    expect(h).toMatch(/role="radiogroup"[^>]*aria-labelledby="[^"]+-rotulo"/);
+    expect(h).toContain('aria-required="true"');
+    const r = radios(h);
+    expect(r).toHaveLength(9);
+    expect(r.filter((b) => b.includes('aria-checked="true"'))).toHaveLength(1);
+    expect(r[0]).toMatch(/aria-checked="true"[^>]*tabindex="0"[^>]*data-cor="Azul"/);
+    expect(r.filter((b) => b.includes('tabindex="0"'))).toHaveLength(1);
+    expect(h).toContain('style="--cor-do-registro:var(--cor-registro-1)"');
+    expect(h).toContain('>Ardósia</button>');
+    expect(h).toContain('>Outra</button>');
+    // o seletor do sistema, cru dentro do kit, fora do Tab
+    expect(h).toMatch(/<input[^>]*type="color"[^>]*tabindex="-1"[^>]*aria-hidden="true"/);
+  });
+
+  it('TCor: cor que não é sugerida vira "Outra (#A1B2C3)", marcada, com a bolinha pela variável', () => {
+    const h = html(<TCor label="Cor" value="#a1b2c3" onChange={() => {}} />);
+    expect(h).toContain('>Outra (#A1B2C3)</button>');
+    expect(radios(h)[8]).toMatch(/aria-checked="true"[^>]*tabindex="0"/);
+    expect(h).toContain('style="--cor-do-registro:#A1B2C3"');
+    expect(h).toMatch(/type="color"[^>]*value="#a1b2c3"/);
+  });
+
+  it('TCor: sem cor, nada marcado e o 1º no Tab; valor inválido não chega ao CSS; erro marca o grupo', () => {
+    const h = html(<TCor label="Cor" value="" onChange={() => {}} error="Escolha a cor." />);
+    expect(radios(h).filter((b) => b.includes('aria-checked="true"'))).toHaveLength(0);
+    expect(radios(h)[0]).toContain('tabindex="0"');
+    expect(h).toMatch(/role="radiogroup"[^>]*aria-invalid="true"/);
+    expect(h).toContain('Escolha a cor.');
+    const ruim = html(<TCor label="Cor" value="red;background:url(x)" onChange={() => {}} />);
+    expect(ruim).not.toContain('url(x)');
+    expect(ruim).toContain('>Outra</button>');
+  });
+
+  it('TCor: só leitura continua focável (sem disabled), aria-readonly, sem *; disabled trava', () => {
+    const l = leitura(<TCor label="Cor" value="#10B981" onChange={() => {}} required />);
+    expect(l).toContain('aria-readonly="true"');
+    expect(l).not.toContain('aria-required');
+    expect(radios(l).some((b) => b.includes('disabled=""'))).toBe(false);
+    expect(radios(l)[1]).toContain('aria-checked="true"');
+    const d = html(<TCor label="Cor" value="#10B981" onChange={() => {}} disabled />);
+    expect(radios(d).every((b) => b.includes('disabled=""'))).toBe(true);
+    // desabilitado se vê, como o TRadio e o TCheckBox: fundo --input-bg-readonly, todos os nomes em --fg-muted
+    expect(d).toContain('bg-[var(--input-bg-readonly)]');
+    expect(radios(d).every((b) => b.includes('text-muted') && !b.includes('text-fg'))).toBe(true);
+    expect(html(<TCor label="Cor" value="#10B981" onChange={() => {}} />)).not.toMatch(/rounded-2xl bg-\[var\(--input-bg-readonly\)\]/);
+  });
+
+  it('TCorMarca: rótulo vira title e aria-label; sem ele, aria-hidden; tamanhos; anel sempre; inválida neutra', () => {
+    const com = html(<TCorMarca cor="#ef4444" rotulo="Cor: Vermelho" />);
+    expect(com).toMatch(/data-kit="TCorMarca"[^>]*role="img"[^>]*aria-label="Cor: Vermelho"[^>]*title="Cor: Vermelho"/);
+    expect(com).toContain('--cor-do-registro:#EF4444');
+    expect(com).toContain('size-4');
+    expect(com).toContain('border-line-strong');
+    const sem = html(<TCorMarca cor="#ef4444" tamanho="sm" />);
+    expect(sem).toContain('aria-hidden="true"');
+    expect(sem).not.toContain('role=');
+    expect(sem).toContain('size-3');
+    expect(html(<TCorMarca cor="javascript:alert(1)" />)).toContain('--cor-do-registro:var(--cor-registro-vazia)');
+  });
+
+  it('nenhum hex nos .tsx do kit (a cor do registro é dado; as sugeridas são token)', () => {
+    for (const arq of ['TCor.tsx', 'TCorMarca.tsx', 'cores.ts']) {
+      const src = fs.readFileSync(new URL(`./${arq}`, import.meta.url), 'utf8').replace(/^\s*(\/\/|\*|\/\*).*$/gm, '');
+      expect(src, arq).not.toMatch(/#[0-9A-Fa-f]{3,8}\b/);
+    }
   });
 });

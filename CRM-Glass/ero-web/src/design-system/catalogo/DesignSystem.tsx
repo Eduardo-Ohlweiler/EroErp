@@ -82,6 +82,7 @@ import { SecaoMovimento } from './SecaoMovimento';
 import { SecaoKit } from './SecaoKit';
 import { SecaoKitPecas } from './SecaoKitPecas';
 import { SecaoKitPessoas } from './SecaoKitPessoas';
+import { SecaoKitFiliais } from './SecaoKitFiliais';
 import { ModelosDoKit, type ModeloKit } from './KitModelos';
 
 /* ---------------- Dados fictícios só para o catálogo ---------------- */
@@ -339,6 +340,7 @@ function Catalogo() {
             <SecaoKit />
             <SecaoKitPecas />
             <SecaoKitPessoas />
+            <SecaoKitFiliais />
 
             {/* ---------- Fundamentos ---------- */}
             <Secao

@@ -15,7 +15,7 @@ const AUXILIARES = [
   'estado-civil-formlist',
   'profissao-formlist',
 ];
-const TODAS = ['usuario-list', 'usuario-form', 'auditoria-list', 'pessoa-list', 'pessoa-form', ...AUXILIARES];
+const TODAS = ['usuario-list', 'usuario-form', 'auditoria-list', 'pessoa-list', 'pessoa-form', 'filial-list', 'filial-form', ...AUXILIARES];
 
 const PERFIS: Record<string, Perfil> = {
   usuarioSemGrupo: { papel: 'USUARIO', superadminAtuando: false, telas: [] },
@@ -67,11 +67,14 @@ describe('seção Cadastros do menu', () => {
     expect(menuDeCadastros(PERFIS.usuarioComAuditoria)).toEqual([]);
   });
 
-  it('ADMIN vê Pessoas e depois o pai "Cadastros auxiliares" com os 7 filhos, na ordem do submenu', () => {
-    const [pessoas, pai, ...resto] = menuDeCadastros(PERFIS.admin);
+  it('ADMIN vê Pessoas, Filiais e depois o pai "Cadastros auxiliares" com os 7 filhos, na ordem do submenu', () => {
+    const [pessoas, filiais, pai, ...resto] = menuDeCadastros(PERFIS.admin);
     expect(resto).toEqual([]);
     expect(pessoas.to).toBe('/cadastros/pessoas');
     expect(pessoas.filhos).toBeUndefined();
+    expect(filiais.to).toBe('/cadastros/filiais');
+    expect(filiais.label).toBe('Filiais');
+    expect(filiais.filhos).toBeUndefined();
     expect(pai.to).toBe('/cadastros/auxiliares');
     expect(filhos(PERFIS.admin)).toEqual([
       '/cadastros/auxiliares/tipos-de-cadastro',
@@ -87,6 +90,13 @@ describe('seção Cadastros do menu', () => {
   it('usuário só com Pessoas vê só Pessoas, sem o pai dos auxiliares', () => {
     const so: Perfil = { papel: 'USUARIO', superadminAtuando: false, telas: ['pessoa-list', 'pessoa-form'] };
     expect(menuDeCadastros(so).map((i) => i.to)).toEqual(['/cadastros/pessoas']);
+  });
+
+  it('usuário só com Filiais vê só Filiais; Pessoas não abre Filiais', () => {
+    const so: Perfil = { papel: 'USUARIO', superadminAtuando: false, telas: ['filial-list', 'filial-form'] };
+    expect(menuDeCadastros(so).map((i) => i.to)).toEqual(['/cadastros/filiais']);
+    const pessoas: Perfil = { papel: 'USUARIO', superadminAtuando: false, telas: ['pessoa-list', 'pessoa-form'] };
+    expect(menuDeCadastros(pessoas).map((i) => i.to)).not.toContain('/cadastros/filiais');
   });
 
   it('usuário com só um auxiliar liberado vê só o pai, com esse filho', () => {
@@ -110,6 +120,8 @@ describe('título da barra superior', () => {
     expect(tituloDaRota('/admin/logs')).toBe('Logs');
     expect(tituloDaRota('/cadastros/pessoas')).toBe('Pessoas');
     expect(tituloDaRota('/cadastros/pessoas/abc')).toBe('Pessoas');
+    expect(tituloDaRota('/cadastros/filiais')).toBe('Filiais');
+    expect(tituloDaRota('/cadastros/filiais/abc')).toBe('Filiais');
     expect(tituloDaRota('/cadastros/auxiliares/tipos-de-cadastro')).toBe('Tipos de cadastro');
     expect(tituloDaRota('/cadastros/auxiliares/tipos-de-email')).toBe('Tipos de e-mail');
     expect(tituloDaRota('/cadastros/auxiliares/estados-civis')).toBe('Estados civis');

@@ -135,6 +135,19 @@ por página, sem N+1). O filtro de tenant continua valendo, porque é JPQL. Fora
   (`OrdemUuid`, a mesma ordem do `uuid <` do PostgreSQL); salvar trava as duas pontas em
   ordem de id e sobe a `version` da outra quando o vínculo dela mudou.
 
+### Referência inexistente no corpo: 404 ou 400 com campo
+
+Id no corpo que não existe no contratante (ou é de outro contratante) nunca diz qual dos dois. Há duas respostas, e cada uma tem o seu lugar:
+
+| Resposta | Quando vale | Exemplos |
+|---|---|---|
+| **404** `NaoEncontradoException`, sem campo | A referência é **outro cadastro de negócio**, buscado pelo service dono dele (`buscarEntidade`), e a tela nunca manda um id que não existe (o combo só oferece os do contratante). Só acontece por chamada direta. | `filial.pessoaId` ("Pessoa não encontrada.", pelo `PessoaService`), `filial.matrizId` ("Matriz não encontrada.") |
+| **400** `CampoInvalidoException`, com `erros[{campo}]` | A referência está numa **linha de lista filha**, ou aponta para um **cadastro auxiliar ou dado de referência** (tipo, cidade, UF, estado civil). O formulário precisa marcar o campo ou a linha. | `telefones[1].tipoId`, `vinculos[0].pessoaId`, `enderecos[0].cidadeId`, `estadoCivilId`, `rgEstadoId` |
+
+- Na dúvida num módulo novo: se o id vem de um `TDBCombo` de outro cadastro principal, 404 pelo service dono; se vem de uma lista filha ou de um auxiliar, 400 com o caminho do campo.
+- Os dois dão o mesmo texto para "não existe" e "é de outro contratante" (sem IDOR). A FK composta (`docs/05`) garante o mesmo no banco.
+- A referência que **existe** mas não serve (inativa, do tipo errado, já usada) sempre leva o campo: na filial é 409 (`ConflitoCampoException`, "A matriz escolhida está inativa."); nas filhas e auxiliares de pessoa segue o 400 da linha (`CampoInvalidoException`, `vinculos[0].pessoaId` "Esta pessoa está inativa.").
+
 ### Erros (RFC 9457 — ProblemDetail)
 
 ```json

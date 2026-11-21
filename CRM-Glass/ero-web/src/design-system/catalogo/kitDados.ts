@@ -170,3 +170,19 @@ export const contratantesDemo = {
     banco = banco.map((x) => (x.id === id ? { ...x, ativo, version: x.version + 1 } : x));
   },
 };
+
+/*
+ * Cores de registro de mentira para o catálogo do TCor e do TCorMarca (Filiais): no produto elas vêm do banco
+ * (#RRGGBB). Ficam aqui, em .ts de dados, e não num .tsx: a tela nunca escreve cor.
+ */
+export const CORES_DE_REGISTRO_DEMO = {
+  /** uma sugerida (Verde, --cor-registro-2) gravada em minúsculas, como pode vir do banco */
+  sugerida: '#10b981',
+  /** uma cor que não é sugerida: o TCor mostra "Outra (#A1B2C3)" */
+  outra: '#A1B2C3',
+  /** cores-limite do anel --line-strong: amarelo puro (some no claro sem anel) e quase preto (some no escuro) */
+  amareloLimite: '#FFFF00',
+  pretoLimite: '#111111',
+  /** fora do formato: o kit não aplica (bolinha neutra) */
+  invalida: 'red;background:url(x)',
+} as const;

@@ -133,11 +133,16 @@ Fonte: `EroErp2.0/docs/09-modulo-filiais.md` (e `10` a `12`, que usam filial) e 
 **O que não copiar**
 - Do ERP antigo (emitente): matriz podia ser qualquer pessoa, até ela mesma; "bloqueado" só valia no combo; exclusão física com erro 500; N+1 no combo; sem trava no banco; cor validada só no cadastro.
 - Do 2.0: SQL nativo com `unaccent` e segunda consulta por ids (aqui, JPQL com nome e `CAST`); tenant lido à mão.
+- Do 2.0: o `/select` de filiais aberto **com CPF e CNPJ**. Aqui o `/selecao` continua aberto, mas sem documento (só código, nome, tipo e cor).
+- Do 2.0: o combo de pessoa da filial aberto a qualquer um. Aqui usa o `/api/pessoas/selecao`, que exige `PESSOAS_LER`, e a API também exige `PESSOAS_LER` para escolher a pessoa.
+- Do 2.0: `PUT` sem `version` e matriz conferida sem trava. Aqui há `version` e a matriz é travada antes de conferir.
 - Logo, regime tributário, CNAE, numeração de nota e certificado: só entram quando houver emissão de nota. Não fazem sentido no CRM.
 
-**Decisões em aberto (perguntar ao dono)**
-- **Usuário preso a filial.** O 2.0 não tem vínculo usuário-filial nem "filial atual" na sessão: cada registro carrega a sua filial. Decidir se o CRM Glass segue assim ou prende o usuário a uma ou mais filiais, com filial atual no token e filtro automático.
-- **Cor da filial contra a regra de tokens.** A regra do projeto proíbe cor literal fora de `tokens.css`, mas a filial guarda uma cor `#RRGGBB` escolhida pelo contratante. Decidir como exibir: paleta fixa de tokens (guarda a chave, não o hex) ou cor livre aplicada como dado, com contraste conferido.
+**Decisões (eram "em aberto"; decididas em 20/11/2026, ver [[filiais]])**
+- **Usuário preso a filial:** não. Como no 2.0, sem vínculo usuário-filial nem "filial atual" na sessão; cada registro carrega a sua filial.
+- **Cor da filial contra a regra de tokens:** cor livre `#RRGGBB`, como dado do usuário, aplicada só pelo kit (`TCor`, `TCorMarca`). As 8 sugeridas são token.
+
+Entregue em 21/11/2026: [[filiais]].
 
 ## Onde olhar
 

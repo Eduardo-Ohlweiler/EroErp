@@ -21,6 +21,8 @@ export type TComboProps = PropsDeCampo & {
   onChange?: (valor: string) => void;
   onBlur?: () => void;
   placeholder?: string;
+  /** foca o campo ao montar, sem abrir a lista: o primeiro campo do formulário (`autoFocus={!somenteLeitura}`) */
+  autoFocus?: boolean;
 };
 
 /** As opções como o `Combobox` as mostra: o inativo gravado com " (inativo)", o `vazio` na frente. Função pura. */
@@ -56,7 +58,7 @@ function TComboLigado(props: TComboProps & { name: string }) {
   );
 }
 
-function TComboBase({ label, opcoes, vazio, value, onChange, width, ajuda, error, rotuloOculto, required, disabled, id, placeholder }: TComboProps) {
+function TComboBase({ label, opcoes, vazio, value, onChange, width, ajuda, error, rotuloOculto, required, disabled, id, placeholder, autoFocus }: TComboProps) {
   // Só leitura do TForm: focável e sem abrir a lista. `disabled` só para campo travado de verdade.
   const somenteLeitura = useSomenteLeituraDoForm();
   const lista = opcoesDoTCombo(opcoes, vazio);
@@ -87,6 +89,7 @@ function TComboBase({ label, opcoes, vazio, value, onChange, width, ajuda, error
           invalido={!!error}
           desabilitado={!!disabled}
           somenteLeitura={somenteLeitura}
+          autoFocus={autoFocus}
         />
       )}
     </CampoDoKit>

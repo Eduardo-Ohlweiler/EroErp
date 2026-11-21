@@ -170,6 +170,13 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
   - LGPD: CNH, filiação e estado civil só na ficha, fora da lista, do Exportar e do Pdf.
   - Camadas flutuantes com opacidade e desfoque mínimos que a Aparência não baixa; combo estreito sem o X de limpar.
   - 335 testes no backend, 458 no front; revisões e QA aprovados. Push e merge são do dono. Doc: `docs/negocio/pessoas.md`.
+- **Cadastro de Filiais (21/11/2026, branch `claude/filiais-439d4b`)**, pelo `/timeero` (`PLANO-FILIAIS.md`):
+  - Backend: migration 022, módulo `filial` e grupo `FILIAIS`. A filial aponta para uma pessoa e guarda tipo (Matriz ou Filial), matriz, cor `#RRGGBB` e situação. `cod_filial` por contratante. Várias matrizes; a matriz é travada antes de conferir.
+  - `/api/filiais/selecao` aberto a quem está logado, sem CPF nem CNPJ. Escolher a pessoa da filial exige também `PESSOAS_LER` na API.
+  - Telas: FilialList (ordem fixa, cada matriz seguida das suas filiais) e FilialForm (cadastro rápido de pessoa e painel "Dados da pessoa", só leitura).
+  - Kit: `TCor` e `TCorMarca` (cor de registro, dado do usuário, só o kit a aplica), tokens `--cor-registro-1..8`, `autoFocus` no `TCombo` e no `TDBCombo`. Casca: "Mais" na barra inferior do celular acima de 5 itens.
+  - 27 testes novos no backend (`FilialIntegracaoTest`). Push e merge são do dono. Doc: `docs/negocio/filiais.md`.
+  - Falta o dono aprovar a ressalva "cor de registro" na regra de cores do `CLAUDE.md`.
 - **Protótipo** em `prototipo/` (congelado; detalhes no `prototipo/README.md`):
   - login com esfera de partículas;
   - dashboard com números que contam, gráficos que se desenham, medidor, rosca e ranking;
@@ -198,7 +205,7 @@ CRM comercial (SaaS web) para vender, bonito e atrativo, em estilo **glass**, qu
 4. ~~Começar o backend~~ **Feito** (fundação, segurança, login, usuários e permissões).
 5. ~~Base do front definitivo~~ **Feito na fatia 1.** **Fatia 2:** as telas do `PLANO-FATIA-2.md` (login com código por e-mail e sessão em memória, casca com menu por permissão, Início, Contratantes, Configuração do contratante, Usuários, Logs e Minha conta), mais as pendências da seção 5 desse arquivo. Começar com `/timeero Fatia 2: telas do PLANO-FATIA-2.md`.
 6. ~~Definir as regras do papel ADMIN~~ **Feito em 14/11/2026:** o ADMIN faz tudo dentro do contratante, e sempre sobra pelo menos um ADMIN ativo (`docs/negocio/usuarios-e-acesso.md`).
-7. **Próximo: Filiais, como no EroErp 2.0** (a pesquisa já está feita em `docs/negocio/eroerp-referencias.md`, "Pesquisa de 20/11/2026: Filiais"). A filial aponta para uma Pessoa, com matriz, tipo e cor. Antes de planejar, o dono decide duas coisas: se o usuário fica preso a uma filial e como a cor da filial convive com a regra de tokens. A migration dela será a **022**. Depois: produtos, funil de negócios e agenda. (Pessoas, cadastros auxiliares e os dados complementares de Pessoas: feitos em 20 e 21/11/2026.)
+7. ~~Filiais, como no EroErp 2.0~~ **Feito em 21/11/2026** (`docs/negocio/filiais.md`). **Próximo:** produtos, funil de negócios e agenda. Quem usar filial cria o `FilialService.buscarAtiva(id)` e o combo com a bolinha da cor. (Pessoas, cadastros auxiliares e os dados complementares de Pessoas: feitos em 20 e 21/11/2026.)
 8. **Deploy:** decidir entre banco compartilhado e container por contratante, e pedir ao `operador-deploy` o compose de produção com HTTPS e backup. Checklist que o `seguranca` deixou para produção:
    - tirar o Swagger e o actuator do nginx, ou restringi-los por IP;
    - HSTS no terminador TLS, `server_tokens off` e `Permissions-Policy`;

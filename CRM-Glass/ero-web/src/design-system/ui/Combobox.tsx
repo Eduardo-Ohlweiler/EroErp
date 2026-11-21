@@ -28,6 +28,8 @@ export type ComboboxProps = {
   desabilitado?: boolean;
   /** só leitura: continua focável (leitor de tela lê o valor), mas não abre a lista nem limpa */
   somenteLeitura?: boolean;
+  /** foca o campo ao montar, sem abrir a lista (o primeiro campo do formulário) */
+  autoFocus?: boolean;
   id?: string;
   'aria-describedby'?: string;
   'aria-invalid'?: boolean | 'true' | 'false';
@@ -53,6 +55,7 @@ export function Combobox({
   invalido,
   desabilitado,
   somenteLeitura,
+  autoFocus,
   id,
   className,
   ...aria
@@ -161,6 +164,7 @@ export function Combobox({
             aria-readonly={somenteLeitura || undefined}
             readOnly={somenteLeitura}
             disabled={desabilitado}
+            autoFocus={autoFocus}
             autoComplete="off"
             placeholder={selecionada ? selecionada.rotulo : placeholder}
             value={aberto ? busca : (selecionada?.rotulo ?? '')}
