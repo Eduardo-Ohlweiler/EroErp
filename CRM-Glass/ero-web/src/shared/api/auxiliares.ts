@@ -4,7 +4,7 @@ import { api } from './cliente';
 import { paginaSchema, type PaginaDto } from './pagina';
 
 /*
- * Cadastros auxiliares (ero-api, módulo `auxiliar`; grupo CADASTROS_AUXILIARES — docs/04-permissoes.md). São 5, todos
+ * Cadastros auxiliares (ero-api, módulo `auxiliar`; grupo CADASTROS_AUXILIARES — docs/04-permissoes.md). São 7, todos
  * com a mesma forma; o que muda é o recurso (a rota) e o nome do campo do código (`codTipoCadastro`...):
  *
  *   GET   /api/<recurso>?page&size&sort        → PaginaDto<ResponseDto>   (CADASTROS_AUXILIARES_LER; ativos e inativos)
@@ -17,11 +17,25 @@ import { paginaSchema, type PaginaDto } from './pagina';
  * Fica em `shared/` porque é usado pelas telas dos auxiliares e pelo cadastro de Pessoas.
  */
 
-/** Os 5 recursos (a rota depois de `/api/`). */
-export type RecursoAuxiliar = 'tipos-cadastro' | 'tipos-telefone' | 'tipos-email' | 'tipos-endereco' | 'tipos-rede-social';
+/** Os 7 recursos (a rota depois de `/api/`). */
+export type RecursoAuxiliar =
+  | 'tipos-cadastro'
+  | 'tipos-telefone'
+  | 'tipos-email'
+  | 'tipos-endereco'
+  | 'tipos-rede-social'
+  | 'estados-civis'
+  | 'profissoes';
 
 /** Nome do campo do código em cada recurso (`cod_<tabela>` do contratante, só leitura). */
-export type CampoCodigoAuxiliar = 'codTipoCadastro' | 'codTipoTelefone' | 'codTipoEmail' | 'codTipoEndereco' | 'codTipoRedeSocial';
+export type CampoCodigoAuxiliar =
+  | 'codTipoCadastro'
+  | 'codTipoTelefone'
+  | 'codTipoEmail'
+  | 'codTipoEndereco'
+  | 'codTipoRedeSocial'
+  | 'codEstadoCivil'
+  | 'codProfissao';
 
 /** `<X>SelectDto`: o que os combos e as pessoas (o tipo de cada telefone, e-mail...) trazem. */
 export const tipoSelectSchema = z.object({
@@ -118,7 +132,7 @@ export const tipoPorChave = (lista: readonly TipoSelect[], chave: string): TipoS
   lista.find((t) => t.chave === chave && t.ativo);
 
 /**
- * O cliente de um recurso. As 5 telas usam o mesmo: só muda o recurso e o nome do campo do código.
+ * O cliente de um recurso. As 7 telas usam o mesmo: só muda o recurso e o nome do campo do código.
  * `criarApiAuxiliar('tipos-telefone', 'codTipoTelefone')`.
  */
 export function criarApiAuxiliar(recurso: RecursoAuxiliar, campoCodigo: CampoCodigoAuxiliar) {

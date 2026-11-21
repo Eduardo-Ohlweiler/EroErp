@@ -1,9 +1,9 @@
-import { AtSign, MapPin, Mail, Phone, Tag } from 'lucide-react';
+import { AtSign, BriefcaseBusiness, HeartHandshake, MapPin, Mail, Phone, Tag } from 'lucide-react';
 import type { ItemMenu } from '../../design-system/shell';
 import type { RecursoAuxiliar } from '../../shared/api/auxiliares';
 
 /**
- * As 5 telas dos cadastros auxiliares (docs/04-permissoes.md, grupo CADASTROS_AUXILIARES), na ordem do submenu.
+ * As 7 telas dos cadastros auxiliares (docs/04-permissoes.md, grupo CADASTROS_AUXILIARES), na ordem do submenu.
  * Uma fonte só para o menu (`app/menu.ts`), o redirecionamento de `/cadastros/auxiliares` e as rotas.
  */
 export const RAIZ_DOS_AUXILIARES = '/cadastros/auxiliares';
@@ -50,5 +50,21 @@ export const TELAS_AUXILIARES: TelaAuxiliar[] = [
     label: 'Tipos de rede social',
     icon: AtSign,
     descricao: 'Instagram, LinkedIn e os seus próprios tipos.',
+  },
+  {
+    tela: 'estado-civil-formlist',
+    recurso: 'estados-civis',
+    to: `${RAIZ_DOS_AUXILIARES}/estados-civis`,
+    label: 'Estados civis',
+    icon: HeartHandshake,
+    descricao: 'Solteiro, casado, união estável e os seus próprios.',
+  },
+  {
+    tela: 'profissao-formlist',
+    recurso: 'profissoes',
+    to: `${RAIZ_DOS_AUXILIARES}/profissoes`,
+    label: 'Profissões',
+    icon: BriefcaseBusiness,
+    descricao: 'Autônomo, empresário e as profissões que você usa.',
   },
 ];

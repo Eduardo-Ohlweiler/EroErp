@@ -166,7 +166,7 @@ export function coletarCampos(camposDoKit) {
 /** Que token o DADO pede (doc 07 §2.3), pela máscara, pelo componente, pelo tipo ou pelo rótulo; null = livre. */
 export function classificar(c) {
   const porMascara = {
-    cpf: 'cpf', telefone: 'cpf', celular: 'cpf', cnpj: 'cnpj', cpfCnpj: 'cnpj', cep: 'cep', hora: 'hora',
+    cpf: 'cpf', telefone: 'cpf', celular: 'cpf', cnpj: 'cnpj', cpfCnpj: 'cnpj', cep: 'cep', cnh: 'cpf', hora: 'hora',
     moeda: 'valor', decimal: 'valor', decimalComSinal: 'valor', inteiro: 'quantidade',
   }
   if (c.mascara && porMascara[c.mascara]) return porMascara[c.mascara]

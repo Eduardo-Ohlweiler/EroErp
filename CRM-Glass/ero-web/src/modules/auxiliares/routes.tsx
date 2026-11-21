@@ -9,6 +9,7 @@ import { RAIZ_DOS_AUXILIARES, TELAS_AUXILIARES } from './telas';
  *   /cadastros/auxiliares                              → abre o primeiro auxiliar liberado
  *   /cadastros/auxiliares/tipos-de-cadastro            FormList  (tipo-cadastro-formlist)  ← o modelo
  *   /cadastros/auxiliares/tipos-de-telefone | -email | -endereco | -rede-social   FormList (cópias do modelo)
+ *   /cadastros/auxiliares/estados-civis | profissoes                              FormList (cópias do modelo)
  */
 const caminhoDe = (tela: string) => TELAS_AUXILIARES.find((t) => t.tela === tela)!.to.slice(1);
 
@@ -47,6 +48,20 @@ export const rotasAuxiliares: RouteObject[] = [
     lazy: async () => {
       const { TipoRedeSocialFormList } = await import('./pages/TipoRedeSocialFormList');
       return { element: <ExigeTela tela="tipo-rede-social-formlist" escopo="contratante"><TipoRedeSocialFormList /></ExigeTela> };
+    },
+  },
+  {
+    path: caminhoDe('estado-civil-formlist'),
+    lazy: async () => {
+      const { EstadoCivilFormList } = await import('./pages/EstadoCivilFormList');
+      return { element: <ExigeTela tela="estado-civil-formlist" escopo="contratante"><EstadoCivilFormList /></ExigeTela> };
+    },
+  },
+  {
+    path: caminhoDe('profissao-formlist'),
+    lazy: async () => {
+      const { ProfissaoFormList } = await import('./pages/ProfissaoFormList');
+      return { element: <ExigeTela tela="profissao-formlist" escopo="contratante"><ProfissaoFormList /></ExigeTela> };
     },
   },
 ];

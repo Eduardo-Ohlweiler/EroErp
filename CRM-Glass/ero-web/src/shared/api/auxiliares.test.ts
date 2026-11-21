@@ -74,4 +74,14 @@ describe('tipoAuxiliarSchema', () => {
   it('recusa a resposta que não traz o código do recurso', () => {
     expect(() => tipoAuxiliarSchema('codTipoEmail').parse(resposta)).toThrow();
   });
+
+  it.each([
+    ['estados-civis', 'codEstadoCivil'],
+    ['profissoes', 'codProfissao'],
+  ] as const)('lê o código do recurso %s em `%s`', (_recurso, campo) => {
+    const { codTipoTelefone: _descartado, ...base } = resposta;
+    const r = tipoAuxiliarSchema(campo).parse({ ...base, [campo]: 7 });
+    expect(r.codigo).toBe(7);
+    expect(() => tipoAuxiliarSchema(campo).parse(base)).toThrow();
+  });
 });

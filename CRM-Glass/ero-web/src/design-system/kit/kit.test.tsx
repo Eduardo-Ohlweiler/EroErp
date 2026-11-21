@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ErroApi, erroDeProblemDetail } from '../../shared/api/erros';
 import { classeDaLargura, CLASSE_LARGURA, LARGURA_PADRAO, larguraAplicada } from './larguras';
-import { aplicarMascara, larguraPadraoDoEntry, valorParaExibir, valorParaGravar } from './mascaras';
+import { aplicarMascara, larguraPadraoDoEntry, TAMANHO_MAXIMO, teclado, valorCompleto, valorParaExibir, valorParaGravar } from './mascaras';
 import { somenteLeituraPara, SomenteLeituraDoForm } from './somenteLeitura';
 import { avisoDosCampos, textoDeEspera, tratarErroApi } from './erroApi';
 import { celulaCsv, montarCsv, nomeDeArquivo } from './planilha';
@@ -59,6 +59,7 @@ describe('larguras (docs/07 §2)', () => {
     expect(larguraPadraoDoEntry('cnpj')).toBe('cnpj');
     expect(larguraPadraoDoEntry('cpfCnpj')).toBe('cnpj');
     expect(larguraPadraoDoEntry('cep')).toBe('cep');
+    expect(larguraPadraoDoEntry('cnh')).toBe('cpf');
     expect(larguraPadraoDoEntry('hora')).toBe('hora');
     expect(larguraPadraoDoEntry('moeda')).toBe('valor');
     expect(larguraPadraoDoEntry('decimal')).toBe('valor');
@@ -118,6 +119,32 @@ describe('máscaras do TEntry', () => {
     expect(aplicarMascara('decimal', '1234', { casas: 3 })).toBe('1,234');
     expect(valorParaExibir(undefined, null)).toBe('');
     expect(valorParaExibir('inteiro', 5)).toBe('5');
+  });
+
+  it('cnh: só dígitos, até 11, sem pontuação, grava cru com o zero à esquerda', () => {
+    expect(aplicarMascara('cnh', '0123.456 789-01')).toBe('01234567890');
+    expect(aplicarMascara('cnh', '012345678901234')).toBe('01234567890');
+    expect(aplicarMascara('cnh', 'abc')).toBe('');
+    expect(valorParaGravar('cnh', '01234567890')).toBe('01234567890');
+    expect(valorParaGravar('cnh', '0123 4567 890')).toBe('01234567890');
+    expect(valorParaExibir('cnh', '01234567890')).toBe('01234567890');
+    expect(valorParaExibir('cnh', null)).toBe('');
+    expect(TAMANHO_MAXIMO.cnh).toBe(11);
+    expect(teclado('cnh')).toBe('numeric');
+    expect(valorCompleto('cnh', '0123456789')).toBeNull();
+    expect(valorCompleto('cnh', '01234567890')).toBe('01234567890');
+  });
+
+  it('cnh no TRow: largura cpf, data-mascara e teclado numérico (cabe com Categoria uf e Validade data)', () => {
+    const linha = html(
+      <TRow>
+        <TEntry label="CNH" mascara="cnh" value="01234567890" onChange={() => {}} />
+      </TRow>,
+    );
+    expect(linha).toMatch(/data-kit="TEntry"[^>]*data-largura="cpf"/);
+    expect(linha).toContain('data-mascara="cnh"');
+    expect(linha).toContain('inputMode="numeric"');
+    expect(linha).toContain('maxLength="11"');
   });
 });
 

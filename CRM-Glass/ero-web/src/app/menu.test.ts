@@ -12,6 +12,8 @@ const AUXILIARES = [
   'tipo-email-formlist',
   'tipo-endereco-formlist',
   'tipo-rede-social-formlist',
+  'estado-civil-formlist',
+  'profissao-formlist',
 ];
 const TODAS = ['usuario-list', 'usuario-form', 'auditoria-list', 'pessoa-list', 'pessoa-form', ...AUXILIARES];
 
@@ -65,7 +67,7 @@ describe('seção Cadastros do menu', () => {
     expect(menuDeCadastros(PERFIS.usuarioComAuditoria)).toEqual([]);
   });
 
-  it('ADMIN vê Pessoas e depois o pai "Cadastros auxiliares" com os 5 filhos, na ordem do submenu', () => {
+  it('ADMIN vê Pessoas e depois o pai "Cadastros auxiliares" com os 7 filhos, na ordem do submenu', () => {
     const [pessoas, pai, ...resto] = menuDeCadastros(PERFIS.admin);
     expect(resto).toEqual([]);
     expect(pessoas.to).toBe('/cadastros/pessoas');
@@ -77,6 +79,8 @@ describe('seção Cadastros do menu', () => {
       '/cadastros/auxiliares/tipos-de-email',
       '/cadastros/auxiliares/tipos-de-endereco',
       '/cadastros/auxiliares/tipos-de-rede-social',
+      '/cadastros/auxiliares/estados-civis',
+      '/cadastros/auxiliares/profissoes',
     ]);
   });
 
@@ -93,7 +97,7 @@ describe('seção Cadastros do menu', () => {
 
   it('superadmin na plataforma não vê a seção; dentro de um contratante, vê', () => {
     expect(menuDeCadastros(PERFIS.superadminNaPlataforma)).toEqual([]);
-    expect(filhos(PERFIS.superadminDentro)).toHaveLength(5);
+    expect(filhos(PERFIS.superadminDentro)).toHaveLength(7);
   });
 });
 
@@ -108,6 +112,8 @@ describe('título da barra superior', () => {
     expect(tituloDaRota('/cadastros/pessoas/abc')).toBe('Pessoas');
     expect(tituloDaRota('/cadastros/auxiliares/tipos-de-cadastro')).toBe('Tipos de cadastro');
     expect(tituloDaRota('/cadastros/auxiliares/tipos-de-email')).toBe('Tipos de e-mail');
+    expect(tituloDaRota('/cadastros/auxiliares/estados-civis')).toBe('Estados civis');
+    expect(tituloDaRota('/cadastros/auxiliares/profissoes')).toBe('Profissões');
     expect(tituloDaRota('/minha-conta')).toBe('Minha conta');
     expect(tituloDaRota('/admin/contratantesx')).toBe('Início');
   });

@@ -18,7 +18,7 @@ import { useSomenteLeituraDoForm } from './somenteLeitura';
 
 export type TEntryProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'width' | 'required' | 'disabled' | 'size'> &
   PropsDeCampo & {
-    /** `cpf`, `cnpj` (alfanumérico), `cpfCnpj`, `telefone`, `celular`, `cep`, `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal` */
+    /** `cpf`, `cnpj` (alfanumérico), `cpfCnpj`, `telefone`, `celular`, `cep`, `cnh` (11 dígitos, sem pontuação), `hora`, `moeda`, `decimal`, `inteiro`, `decimalComSinal` */
     mascara?: Mascara;
     /** casas decimais (ignorado em `inteiro`; padrão 2) */
     casas?: number;
@@ -31,7 +31,7 @@ export type TEntryProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'width' | 
     acao?: ReactNode;
     /**
      * Chamado com o valor cru quando a máscara fica completa ao digitar ou colar (CEP com 8 dígitos, CPF com 11,
-     * CNPJ com 14, celular com 11): é a consulta do CEP. Uma vez por valor completo; apagar um dígito e completar de
+     * CNPJ com 14, celular com 11, CNH com 11): é a consulta do CEP. Uma vez por valor completo; apagar um dígito e completar de
      * novo chama outra vez. Vem depois do `onChange`: o formulário já tem o valor novo.
      */
     onCompletar?: (cru: string) => void;
