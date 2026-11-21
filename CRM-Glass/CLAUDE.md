@@ -69,7 +69,7 @@ Rodar: `ero-api/run-dev.cmd` (Windows) ou `cd ero-api && ./mvnw spring-boot:run 
 
 ## Regras que valem para todos
 
-- Nenhuma cor, sombra ou desfoque literal fora de `ero-web/src/styles/tokens.css`.
+- Nenhuma cor, sombra ou desfoque literal fora de `ero-web/src/styles/tokens.css`. Única ressalva: a cor de registro vinda do banco (`#RRGGBB`, a cor da filial), aplicada só pelo `TCor`/`TCorMarca` (`docs/07` §3.2, "Cor de registro").
 - Nenhuma duração ou curva de animação solta fora de `ero-web/src/motion/tokens.ts`.
 - Textos da interface e mensagens da API em português do Brasil; números, moeda e datas em pt-BR (a API manda ISO-8601 e o front formata).
 - Na dúvida sobre regra de negócio, pergunte ao dono do produto (Eduardo) em vez de assumir.
