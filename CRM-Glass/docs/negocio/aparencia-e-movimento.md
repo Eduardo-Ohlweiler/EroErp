@@ -11,6 +11,14 @@ Resumo das decisões visuais do dono. A fonte da verdade é `design/DIRECAO-VISU
 - Telas de cadastro seguem o **padrão do EroErp 2.0**: kit `T*` com os mesmos nomes e props, larguras por escala, modelos List/Form/FormList, label em cima, botões embaixo à esquerda; só o visual é glass. Botões de ação com as cores do 2.0 em versão glass (Salvar verde, Buscar azul, Limpar vermelho, Novo cor do contratante, Exportar verde, Pdf âmbar, Voltar neutro). Tela fora do modelo é pergunta ao dono. Componente que faltar é criado no kit, nunca contornado na tela.
 - Relatórios: a folha impressa é o DOM, com logo do Ero, barra na cor do contratante, filtros só na 1ª página e rodapé com sistema, data, usuário e "Página X de Y" (`docs/08`).
 - Nenhuma cor, sombra ou desfoque literal fora de `tokens.css`; nenhuma duração ou curva fora de `motion/tokens.ts`.
+- **Cor de registro** (a cor da filial, [[filiais]]): é **dado do usuário**, não pele.
+  - Vem do banco como `#RRGGBB` e é a única cor que não mora em `tokens.css`.
+  - **Só o kit a aplica** (`TCor` e `TCorMarca`), e só na bolinha. Nunca em texto nem fundo de texto. A tela nunca escreve `style` de cor.
+  - O kit confere o formato antes de aplicar; fora dele, a bolinha sai neutra.
+  - As 8 sugeridas (Azul, Verde, Âmbar, Vermelho, Violeta, Rosa, Turquesa, Ardósia) são token (`--cor-registro-1` a `-8`), iguais nos dois temas.
+  - A bolinha tem sempre o anel `--line-strong`, para aparecer em qualquer cor, e o nome fica ao lado: a cor nunca é a única informação.
+  - Detalhe técnico: `docs/07`, §3.2, "Cor de registro".
+- **Barra inferior do celular:** cabem 5 itens. Acima disso, o 5º lugar vira "Mais", que abre o submenu flutuante com o resto.
 
 ## Decisões do dono
 
@@ -18,6 +26,8 @@ Resumo das decisões visuais do dono. A fonte da verdade é `design/DIRECAO-VISU
 - 12/11/2026: telas no padrão do 2.0 com visual glass.
 - 14/11/2026: tema claro/escuro volta a ser escolha do usuário.
 - 14/11/2026: custo do time otimizado (um construtor por tela, uma passada visual só); ver `.claude/skills/timeero`.
+- 20/11/2026: cor da filial livre `#RRGGBB`, como dado do usuário, aplicada só pelo kit.
+- 20/11/2026: "Mais" na barra inferior do celular acima de 5 itens (P2 de Filiais).
 
 ## Em aberto
 

@@ -1,10 +1,11 @@
 # Código sequencial por contratante
 
-**Status: regra fechada em 14/11/2026 e escrita nos docs técnicos. Em uso desde 20/11/2026, em [[pessoas]] e nos [[cadastros-auxiliares]].**
+**Status: regra fechada em 14/11/2026 e escrita nos docs técnicos. Em uso desde 20/11/2026, em [[pessoas]] e nos [[cadastros-auxiliares]]; em [[filiais]] desde 21/11/2026.**
 
 ## Regras vigentes
 
-- Todo cadastro de negócio usado pelos clientes que contrataram o sistema (pessoa, emitente, pedido, estoque...) tem uma coluna de código com o nome da tabela: `cod_pessoa` em `pessoa`, `cod_emitente` em `emitente`, `cod_pedido` em `pedido`, e assim por diante.
+- Todo cadastro de negócio usado pelos clientes que contrataram o sistema (pessoa, filial, pedido, estoque...) tem uma coluna de código com o nome da tabela: `cod_pessoa` em `pessoa`, `cod_filial` em `filial`, `cod_pedido` em `pedido`, e assim por diante.
+- Em uso: `cod_pessoa`, `cod_filial` e os códigos dos cadastros auxiliares (`cod_tipo_telefone` etc.).
 - O código é sequencial **por contratante**: cada contratante começa no 1.
 - Numeração: no salvar, o maior código do contratante + 1. Não há tabela de contadores nem sequence.
 - Um índice único (contratante, código) impede número repetido quando dois salvam juntos. O sistema tenta de novo sozinho.
@@ -20,6 +21,7 @@
 
 - 16/11/2026: os cadastros auxiliares também têm código (`cod_tipo_telefone` etc.). Os itens do sistema recebem 1..N na ordem do enum, e o primeiro item do contratante continua do N+1.
 - 20/11/2026: o combo "código · nome" entrou na seleção de pessoas (`PessoaSelectDto` leva `codPessoa`).
+- 20/11/2026: Filiais ganhou `cod_filial` (o 2.0 não tinha), com o combo "código · nome" (`FilialSelectDto` leva `codFilial`).
 
 ## Em aberto
 

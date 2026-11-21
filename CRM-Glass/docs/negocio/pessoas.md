@@ -69,6 +69,10 @@ Planos de origem: `PLANO-PESSOAS.md` e `PLANO-PESSOAS-COMPLEMENTO.md`. Regra de 
 - O filtro Situação abre em "Ativo". Exportar e Pdf valem para quem tem `PESSOAS_LER`, **sem data de nascimento, CNH, filiação nem estado civil**.
 - Cadastro novo abre como Física e sem tipo de cadastro marcado.
 
+**Pessoa que é filial** ([[filiais]])
+- Inativar a pessoa não olha a filial: Pessoas não bloqueia, e a filial continua ativa e usável. A lista e o cadastro da filial mostram "Pessoa inativa".
+- A filial não copia dado da pessoa: endereço, contatos, IE e IM são lidos daqui.
+
 ## LGPD
 
 - CNH, filiação (nome da mãe e do pai) e estado civil aparecem **só na ficha**. Ficam fora da lista, do Exportar, do Pdf e de qualquer log. A lista, a seleção e o vínculo usam DTOs que não têm esses campos.
@@ -107,6 +111,10 @@ Planos de origem: `PLANO-PESSOAS.md` e `PLANO-PESSOAS-COMPLEMENTO.md`. Regra de 
 - CNH, filiação e estado civil fora da lista, do Exportar e do Pdf (LGPD).
 - Camadas flutuantes e combo estreito: ver [[aparencia-e-movimento]] e [[decisoes]].
 
+20/11/2026 (plano de Filiais):
+- P1: inativar a pessoa não olha a filial, como no 2.0 ([[filiais]]).
+- P2: o limite de 5 ícones na barra do celular foi resolvido com o "Mais" (antes em "Em aberto").
+
 ## Em aberto
 
 - Inscrição estadual "ISENTO".
@@ -117,7 +125,6 @@ Planos de origem: `PLANO-PESSOAS.md` e `PLANO-PESSOAS-COMPLEMENTO.md`. Regra de 
 - Dados bancários e PIX, quando houver cobrança (conta e chave PIX com o `CriptoConverter`).
 - Gerador de contratos (tags, flexão "(a)" pelo sexo e pela `chave` do estado civil). Ver [[eroerp-referencias]].
 - Cifrar `nome_mae`, se o dono quiser.
-- Limite de 5 ícones na barra do celular quando entrar o próximo módulo.
 - Pendências técnicas: `CONTINUAR.md`, "Pendências de Pessoas", e `docs/02`.
 
 ## Doc técnico

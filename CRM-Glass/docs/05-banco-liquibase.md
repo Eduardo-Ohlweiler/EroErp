@@ -106,6 +106,13 @@ Cadastro auxiliar com itens pré-cadastrados (ex.: `tipo_telefone` com Celular, 
 
 Tabela filha que aponta para um cadastro do contratante usa FK composta `(x_id, tenant_id) → x(id, tenant_id)`, com o índice único `uk_x_id_tenant (id, tenant_id)` na tabela referenciada. Assim o banco garante que o registro nunca aponta para o de outro contratante, além do filtro automático do service.
 
+**Autorreferência (modelo: `filial.matriz_id`, migration 022).** A tabela que aponta para ela mesma usa a mesma FK composta: `fk_filial_matriz (matriz_id, tenant_id) → filial(id, tenant_id)`.
+- O índice único `uk_filial_id_tenant (id, tenant_id)` é criado **antes** da FK, na mesma migration: é o alvo dela.
+- **Coluna nula não é conferida.** A FK é `MATCH SIMPLE` (o padrão do PostgreSQL): com `matriz_id` nulo, o banco não confere a linha, e é isso que a matriz quer. Não use `MATCH FULL`, que recusaria `(NULL, tenant_id)`.
+- Por isso, quando a referência é obrigatória numa parte dos registros, a regra vai num CHECK: `ck_filial_tipo_matriz` (MATRIZ sem `matriz_id`, FILIAL com ele) e `ck_filial_matriz_outra` (`matriz_id <> id`).
+- O que depende de outra linha (a matriz ser do tipo MATRIZ e estar ativa) não cabe em CHECK: fica no service, com a linha referenciada travada (`docs/01`).
+- Índice comum na coluna da autorreferência (`ix_filial_matriz`), para contar as filhas.
+
 ## Ambientes
 
 | Ambiente | Banco |
