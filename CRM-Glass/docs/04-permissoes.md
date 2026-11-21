@@ -124,8 +124,8 @@ front. Renomear exige migration.
 | `GET /api/pessoas/selecao?busca=&ignorarId=` (até 20 ativas: id, código e nome) | `PESSOAS_LER` (**não** `ACESSO_LIBERADO`: nome de pessoa é dado pessoal) |
 | `POST /api/pessoas`, `PUT /{id}`, `PATCH /{id}/inativar` e `/ativar` | `PESSOAS_ESCREVER` |
 | `GET /api/filiais?codFilial=&busca=&documento=&tipo=&ativo=` (ordem fixa, sem `sort`), `GET /api/filiais/{id}` | `FILIAIS_LER` (liberar Pessoas não abre Filiais) |
-| `GET /api/filiais/selecao?busca=&tipo=&ignorarId=` (até 20 ativas: id, código, nome, tipo e cor; **sem documento**) | `ACESSO_LIBERADO` (combo das outras telas) |
-| `POST /api/filiais`, `PUT /{id}`, `PATCH /{id}/inativar` e `/ativar` | `FILIAIS_ESCREVER` (escolher a pessoa pela tela usa `/api/pessoas/selecao`, que exige `PESSOAS_LER`) |
+| `GET /api/filiais/selecao?busca=&tipo=&ignorarId=` (até 20 ativas: id, código, nome, tipo e cor; **sem documento**) | `ACESSO_LIBERADO` (combo das outras telas). **Exceção decidida no plano de Filiais:** o nome que sai é o da pessoa da filial, e todo logado o vê; o `/api/pessoas/selecao` continua exigindo `PESSOAS_LER` |
+| `POST /api/filiais`, `PUT /{id}`, `PATCH /{id}/inativar` e `/ativar` | `FILIAIS_ESCREVER`; escolher a pessoa (POST, ou PUT com outra pessoa) exige **também** `PESSOAS_LER`, conferido no service antes de buscar a pessoa (403 sem revelar se o id existe). PUT com a mesma pessoa (cor, tipo, matriz) não exige `PESSOAS_LER` |
 | `GET /api/estados` (as 27 UFs: id, sigla e nome), `GET /api/cidades/selecao?busca=&uf=`, `GET /api/cep/{cep}` | `ACESSO_LIBERADO` (dado de referência, sem dado pessoal; o CEP tem limite próprio por IP, `app.rate-limit.cep`) |
 | `GET /api/usuarios?busca=&ativo=&papel=&bloqueado=` (`papel` = `ADMIN`/`USUARIO`; `bloqueado=true` = bloqueado agora por tentativas, `false` = não bloqueado; todos opcionais e somados) | `USUARIOS_LER` |
 | `GET /api/usuarios/selecao?inativos=` | `ACESSO_LIBERADO` (`inativos=true` traz também os inativos; o superadmin nunca aparece) |

@@ -1,6 +1,7 @@
 package com.api.ero_api.filial.service;
 
 import com.api.ero_api.compartilhado.dtos.PaginaDto;
+import com.api.ero_api.compartilhado.exception.AcessoNegadoException;
 import com.api.ero_api.compartilhado.exception.CampoInvalidoException;
 import com.api.ero_api.compartilhado.exception.ConflitoCampoException;
 import com.api.ero_api.compartilhado.exception.ConflitoException;
@@ -18,6 +19,7 @@ import com.api.ero_api.filial.entity.Filial;
 import com.api.ero_api.filial.enums.TipoFilial;
 import com.api.ero_api.filial.mapper.FilialMapper;
 import com.api.ero_api.filial.repository.FilialRepository;
+import com.api.ero_api.permissao.enums.GrupoLiberacao;
 import com.api.ero_api.pessoa.entity.Pessoa;
 import com.api.ero_api.pessoa.service.PessoaService;
 import com.api.ero_api.seguranca.SecurityUtils;
@@ -52,6 +54,10 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>a regra "a matriz é do tipo MATRIZ e está ativa" envolve outra linha e não cabe em
  *       CHECK: criar uma filial em M, inativar M, reativar uma filial de M e transformar M em
  *       filial travam a linha de M antes de conferir, sempre em ordem de id (sem deadlock);</li>
+ *   <li>escolher a pessoa da filial (no cadastro, ou trocar no PUT) exige {@code PESSOAS_LER}
+ *       além de {@code FILIAIS_ESCREVER}, conferido antes de buscar a pessoa: sem isso a resposta
+ *       revelaria nome e documento de quem o usuário não pode ler (e se o id existe). Na filial
+ *       já gravada, com a mesma pessoa, cor e matriz mudam sem {@code PESSOAS_LER};</li>
  *   <li>a lista sai em ordem fixa (cada matriz seguida das suas filiais): {@code sort} é recusado;</li>
  *   <li>nada de dado pessoal em log; filial não gera evento de segurança.</li>
  * </ul>
@@ -68,6 +74,8 @@ public class FilialService {
     private static final String MSG_NAO_ENCONTRADA = "Filial não encontrada.";
     private static final String MSG_VERSAO = "Esta filial foi alterada por outro usuário. Recarregue e tente de novo.";
     private static final String MSG_PESSOA_JA_FILIAL = "Esta pessoa já é uma filial.";
+    private static final String MSG_SEM_PESSOAS = "Você não tem permissão para escolher a pessoa da filial. "
+            + "Peça ao administrador o acesso a Pessoas.";
     /** Toda rota exige um contratante selecionado: a resposta nunca é da visão de plataforma. */
     private static final boolean PLATAFORMA = false;
 
@@ -127,6 +135,7 @@ public class FilialService {
      */
     public FilialResponseDto criar(FilialCreateDto dto) {
         SecurityUtils.exigirTenantSelecionado();
+        exigirLerPessoas();
         try {
             return repetir.executar(UK_CODIGO, () -> gravarNova(dto));
         } catch (DataIntegrityViolationException e) {
@@ -159,9 +168,10 @@ public class FilialService {
             throw new ConflitoException(MSG_VERSAO);
         }
 
-        // A pessoa que não mudou não é reconferida (inativa continua).
+        // A pessoa que não mudou não é reconferida (inativa continua, e PESSOAS_LER não é exigido).
         Pessoa pessoa = f.getPessoa();
         if (!pessoa.getId().equals(dto.pessoaId())) {
+            exigirLerPessoas();
             pessoa = pessoaService.buscarEntidade(dto.pessoaId());
             exigirPessoaLivre(pessoa, id);
         }
@@ -213,7 +223,8 @@ public class FilialService {
     /**
      * Já ativa: 204 sem fazer nada. A filial só volta com a matriz ativa. Trava a filial e a
      * matriz juntas, em ordem de id: a matriz é lida antes só pelo id (sem carregar a filial,
-     * que precisa vir já travada).
+     * que precisa vir já travada). Se a matriz mudou entre essa leitura e a trava (raro), é 409:
+     * travar a nova depois da filial sairia da ordem de id e poderia dar deadlock.
      */
     @Transactional
     public void ativar(UUID id) {
@@ -228,11 +239,12 @@ public class FilialService {
             return;
         }
         if (f.getMatriz() != null) {
-            // A matriz mudou entre a leitura do id e a trava (raro): trava a nova também.
-            Filial matriz = travadas.containsKey(f.getMatriz().getId())
-                    ? travadas.get(f.getMatriz().getId())
-                    : travar(Set.of(f.getMatriz().getId())).get(f.getMatriz().getId());
-            if (matriz == null || !matriz.isAtivo()) {
+            Filial matriz = travadas.get(f.getMatriz().getId());
+            if (matriz == null) {
+                throw new ConflitoException("A matriz desta filial acabou de ser alterada por outro usuário. "
+                        + "Recarregue e tente de novo.");
+            }
+            if (!matriz.isAtivo()) {
                 throw new ConflitoException("A matriz desta filial está inativa. Reative a matriz antes.");
             }
         }
@@ -255,6 +267,16 @@ public class FilialService {
         // repetida, ao criar (que diz o código de quem ficou com ela).
         repository.saveAndFlush(f);
         return montarResposta(f);
+    }
+
+    /**
+     * Escolher a pessoa da filial mostra nome e documento dela: exige {@code PESSOAS_LER}
+     * (ADMIN tem tudo). Vem antes de buscar a pessoa, para o 404/409 não revelar se o id existe.
+     */
+    private static void exigirLerPessoas() {
+        if (!SecurityUtils.exigirUsuario().authorities().contains(GrupoLiberacao.PESSOAS.authorityLer())) {
+            throw new AcessoNegadoException(MSG_SEM_PESSOAS);
+        }
     }
 
     /** A pessoa nova da filial: ativa e sem outra filial. O 409 diz o código de quem já a usa. */

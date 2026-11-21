@@ -201,8 +201,42 @@ class FilialIntegracaoTest extends IntegracaoTest {
         assertThat(status(get("/api/pessoas", comum.token()))).as("Filiais não abre Pessoas").isEqualTo(403);
 
         liberar(admin, u.id(), List.of(grupo("FILIAIS", "ESCREVER")), Set.of());
-        assertThat(status(put(ROTA + "/" + id, comum.token(), versao(filial(pessoa, "MATRIZ", null, "#000000"), m))))
-                .isEqualTo(200);
+        MvcTestResult mesmaPessoa = put(ROTA + "/" + id, comum.token(), versao(filial(pessoa, "MATRIZ", null, "#000000"), m));
+        assertThat(status(mesmaPessoa)).as("mesma pessoa: a cor muda sem PESSOAS_LER").isEqualTo(200);
+        m = corpo(mesmaPessoa);
+
+        // Filial já gravada: sem PESSOAS_LER ainda troca a matriz (a pessoa é a mesma).
+        JsonNode outraMatriz = matriz(admin, unico("Outra Matriz"));
+        String pessoaFilha = pessoaPJ(admin, unico("Filha"), null, cnpj());
+        JsonNode filha = criar(admin, filial(pessoaFilha, "FILIAL", id, "#10B981"));
+        MvcTestResult trocaMatriz = put(ROTA + "/" + filha.path("id").asString(), comum.token(),
+                versao(filial(pessoaFilha, "FILIAL", outraMatriz.path("id").asString(), "#10B981"), filha));
+        assertThat(status(trocaMatriz)).as("mesma pessoa: a matriz muda sem PESSOAS_LER").isEqualTo(200);
+        assertThat(corpo(trocaMatriz).path("matriz").path("id").asString()).isEqualTo(outraMatriz.path("id").asString());
+
+        // Escolher pessoa nova sem PESSOAS_LER: 403 antes de buscar (nem dado, nem se o id existe).
+        String nomeLivre = unico("Pessoa Sigilosa");
+        String livre = pessoaPJ(admin, nomeLivre, null, cnpj());
+        String inexistente = UUID.randomUUID().toString();
+        MvcTestResult semLer = post(ROTA, comum.token(), filial(livre, "MATRIZ", null, "#123456"));
+        assertThat(status(semLer)).as("criar sem PESSOAS_LER").isEqualTo(403);
+        assertThat(corpo(semLer).path("codigo").asString()).isEqualTo("ACESSO_NEGADO");
+        assertThat(texto(semLer)).doesNotContain(nomeLivre);
+        assertThat(status(post(ROTA, comum.token(), filial(inexistente, "MATRIZ", null, "#123456"))))
+                .as("id inexistente também 403, não 404").isEqualTo(403);
+        assertThat(status(post(ROTA, comum.token(), filial(pessoa, "MATRIZ", null, "#123456"))))
+                .as("pessoa já filial também 403, não 409").isEqualTo(403);
+        assertThat(status(put(ROTA + "/" + id, comum.token(), versao(filial(livre, "MATRIZ", null, "#000000"), m))))
+                .as("trocar a pessoa sem PESSOAS_LER").isEqualTo(403);
+        assertThat(status(put(ROTA + "/" + id, comum.token(), versao(filial(inexistente, "MATRIZ", null, "#000000"), m))))
+                .isEqualTo(403);
+
+        liberar(admin, u.id(), List.of(grupo("FILIAIS", "ESCREVER"), grupo("PESSOAS", "LER")), Set.of());
+        String outraLivre = pessoaPJ(admin, unico("Livre"), null, cnpj());
+        assertThat(status(post(ROTA, comum.token(), filial(outraLivre, "MATRIZ", null, "#123456"))))
+                .as("com PESSOAS_LER cria").isEqualTo(201);
+        assertThat(status(put(ROTA + "/" + id, comum.token(), versao(filial(livre, "MATRIZ", null, "#000000"), m))))
+                .as("com PESSOAS_LER troca a pessoa").isEqualTo(200);
 
         // Na visão de plataforma o filtro de tenant não vale: nada de ler nem gravar.
         Sessao s = loginSuperadmin();
