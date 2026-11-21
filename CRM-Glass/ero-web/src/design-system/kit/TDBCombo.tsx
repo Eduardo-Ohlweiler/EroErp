@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useController } from 'react-hook-form';
 import { Combobox, type OpcaoCombobox } from '../ui/Combobox';
 import { CampoDoKit, useLigadoAoForm, type PropsDeCampo } from './campo';
-import { LARGURA_PADRAO } from './larguras';
+import { LARGURA_PADRAO, larguraEstreita } from './larguras';
 import { useSomenteLeituraDoForm } from './somenteLeitura';
 
 /** O que as rotas `GET /api/<recurso>/selecao` devolvem (`SelectDto`). */
@@ -167,7 +167,7 @@ function TDBComboBase({
       carregando={carregando}
       textoVazio={falhou ? 'Não foi possível carregar a lista.' : 'Nada encontrado'}
       placeholder={placeholder ?? vazio ?? 'Selecione…'}
-      limpavel={vazio === undefined && !required}
+      limpavel={vazio === undefined && !required && !larguraEstreita(width)}
       invalido={!!error}
       desabilitado={!!disabled}
       somenteLeitura={somenteLeitura}

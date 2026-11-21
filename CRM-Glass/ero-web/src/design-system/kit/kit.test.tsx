@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ErroApi, erroDeProblemDetail } from '../../shared/api/erros';
-import { classeDaLargura, CLASSE_LARGURA, LARGURA_PADRAO, larguraAplicada } from './larguras';
+import { classeDaLargura, CLASSE_LARGURA, LARGURA_PADRAO, larguraAplicada, larguraEstreita } from './larguras';
 import { aplicarMascara, larguraPadraoDoEntry, TAMANHO_MAXIMO, teclado, valorCompleto, valorParaExibir, valorParaGravar } from './mascaras';
 import { somenteLeituraPara, SomenteLeituraDoForm } from './somenteLeitura';
 import { avisoDosCampos, textoDeEspera, tratarErroApi } from './erroApi';
@@ -396,6 +396,27 @@ describe('volta 1: só leitura, grade e ícone', () => {
     expect(h).toContain('aria-readonly="true"');
     expect(h).not.toMatch(/role="combobox"[^>]*\sdisabled=""/);
     expect(h).not.toContain('Limpar seleção');
+    expect(h).not.toMatch(/role="combobox"[^>]*class="[^"]*\bpr-/);
+  });
+
+  it('combo estreito (uf) com valor não reserva o X: a sigla cabe com o chevron; nas largas o X segue', () => {
+    const UF = [{ valor: 'RS', rotulo: 'RS' }, { valor: 'SC', rotulo: 'SC' }];
+    const estreito = html(<TCombo label="UF" width="uf" opcoes={UF} value="RS" onChange={() => {}} />);
+    expect(estreito).not.toContain('Limpar seleção');
+    expect(estreito).toMatch(/role="combobox"[^>]*class="[^"]*\bpr-10\b/);
+    expect(estreito).not.toContain('pr-[72px]');
+    // a tela do PessoaForm (vazio="") também: só o chevron
+    expect(html(<TCombo label="UF" width="uf" opcoes={UF} vazio="" value="RS" onChange={() => {}} />)).not.toContain('pr-[72px]');
+    expect(larguraEstreita('uf')).toBe(true);
+    expect(larguraEstreita('quantidade')).toBe(true);
+    expect(larguraEstreita('data')).toBe(false);
+    expect(larguraEstreita(undefined)).toBe(false);
+
+    const largo = html(<TCombo label="Tipo" width="situacao" opcoes={UF} value="RS" onChange={() => {}} />);
+    expect(largo).toContain('Limpar seleção');
+    expect(largo).toContain('pr-[72px]');
+    // sem valor, o X não aparece e o espaço dele não fica reservado
+    expect(html(<TCombo label="Tipo" width="situacao" opcoes={UF} value="" onChange={() => {}} />)).toMatch(/role="combobox"[^>]*class="[^"]*\bpr-10\b/);
   });
 
   it('TButton: ícone para genérica; tamanho imposto pelo contêiner quando a tela não passa size', () => {

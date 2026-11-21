@@ -1,6 +1,7 @@
 import { useController } from 'react-hook-form';
 import { Combobox, type OpcaoCombobox } from '../ui/Combobox';
 import { CampoDoKit, useLigadoAoForm, type PropsDeCampo } from './campo';
+import { larguraEstreita } from './larguras';
 import { larguraDoCombo, maiorRotulo, rotuloInativo, type OpcaoSelect } from './opcoes';
 import { useSomenteLeituraDoForm } from './somenteLeitura';
 
@@ -82,7 +83,7 @@ function TComboBase({ label, opcoes, vazio, value, onChange, width, ajuda, error
           valor={valor}
           onChange={(v) => onChange?.(v ?? '')}
           placeholder={placeholder ?? vazio ?? 'Selecione…'}
-          limpavel={vazio === undefined && !required}
+          limpavel={vazio === undefined && !required && !larguraEstreita(width)}
           invalido={!!error}
           desabilitado={!!disabled}
           somenteLeitura={somenteLeitura}

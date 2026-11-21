@@ -133,6 +133,9 @@ export function Combobox({
   };
 
   const ativoId = aberto && filtradas[ativo] ? `${base}-op-${ativo}` : undefined;
+  // O padding direito reserva só os botões que aparecem (32 px cada, a 6 px da borda): é o que deixa a sigla caber a 80 px.
+  const mostraLimpar = limpavel && !!selecionada && !desabilitado && !somenteLeitura;
+  const mostraAbrir = !somenteLeitura;
 
   // A opção ativa (setas) fica sempre visível na lista rolável.
   useEffect(() => {
@@ -170,11 +173,11 @@ export function Combobox({
             }}
             onClick={() => (aberto ? undefined : abrir())}
             onKeyDown={tecla}
-            className={cn('input', Icone && 'pl-10', 'pr-[72px]')}
+            className={cn('input', Icone && 'pl-10', mostraLimpar && mostraAbrir ? 'pr-[72px]' : (mostraLimpar || mostraAbrir) && 'pr-10')}
           />
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
             {carregando && <Loader2 aria-hidden className="size-4 text-subtle motion-safe:animate-spin mr-1" />}
-            {limpavel && selecionada && !desabilitado && !somenteLeitura && (
+            {mostraLimpar && (
               <button
                 type="button"
                 aria-label="Limpar seleção"
@@ -187,7 +190,7 @@ export function Combobox({
                 <X className="size-4" />
               </button>
             )}
-            {!somenteLeitura && (
+            {mostraAbrir && (
             <button
               type="button"
               tabIndex={-1}
