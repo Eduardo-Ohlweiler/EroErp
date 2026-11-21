@@ -1,16 +1,18 @@
 import { z } from 'zod';
 import type { OpcaoCheckBox, OpcaoCombo, OpcaoRadio } from '../../../design-system/kit';
-import { documentoCru, soDigitos } from '../../../shared/util/format';
+import { documentoCru, hojeIso, soDigitos } from '../../../shared/util/format';
 import { rotuloDaCidade } from '../../../shared/api/localidade';
-import { rotuloDaPessoa, type PessoaCreate, type PessoaResponse } from '../api/pessoas';
+import { CATEGORIAS_CNH, rotuloDaPessoa, type PessoaComplementos, type PessoaCreate, type PessoaResponse } from '../api/pessoas';
 
 /*
  * Formulário da pessoa: espelha o PessoaCreateDto / PessoaUpdateDto da ero-api, com os mesmos caminhos de campo
  * (`telefones.0.numero`, `tiposCadastroIds`), para o 400 e o 409 da API caírem no campo certo. Validação aqui é
  * conforto: a regra (documento válido e único, tipo inativo, vínculo, principal único...) é da API.
  *
- * O formulário guarda os dois blocos (física e jurídica); o `paraCorpo` manda `null` nos campos do outro tipo.
- * `cidadeRotulo` e `pessoaRotulo` só alimentam o `TDBCombo` (o nome do que já está escolhido) e não vão para a API.
+ * O formulário guarda os dois blocos (física e jurídica); o `paraCorpo` manda `null` nos campos do outro tipo. Os dados
+ * complementares (PLANO-PESSOAS-COMPLEMENTO §3.4) seguem a mesma regra: os de PF (RG completo, CNH, dados civis,
+ * filiação) saem na PJ, e a data de abertura sai na PF.
+ * `cidadeRotulo`, `naturalidadeRotulo` e `pessoaRotulo` só alimentam o `TDBCombo` (o nome do que já está escolhido) e não vão para a API.
  * `vinculos` é o estado completo e volta no PUT: a API substitui a lista (o que sai da tela é apagado). `tipo` é o que a
  * OUTRA pessoa é desta; a orientação e o inverso a API resolve. `pessoaAtiva` só alimenta o aviso "Inativa".
  */
@@ -23,7 +25,7 @@ export const SEXO_OPCOES: OpcaoRadio[] = [
   { valor: 'FEMININO', rotulo: 'Feminino' },
 ];
 
-const TIPOS_VINCULO = ['RESPONSAVEL', 'DEPENDENTE', 'CONJUGE', 'FAMILIAR', 'CONTATO', 'EMPRESA'] as const;
+const TIPOS_VINCULO = ['RESPONSAVEL', 'DEPENDENTE', 'CONJUGE', 'FAMILIAR', 'CONTATO', 'EMPRESA', 'REPRESENTANTE_LEGAL', 'REPRESENTADA'] as const;
 
 /** "É o quê desta pessoa": o que a OUTRA pessoa é desta (o inverso a API resolve). */
 export const TIPO_VINCULO_OPCOES: OpcaoCombo[] = [
@@ -33,7 +35,12 @@ export const TIPO_VINCULO_OPCOES: OpcaoCombo[] = [
   { valor: 'FAMILIAR', rotulo: 'Familiar' },
   { valor: 'CONTATO', rotulo: 'Contato' },
   { valor: 'EMPRESA', rotulo: 'Empresa' },
+  { valor: 'REPRESENTANTE_LEGAL', rotulo: 'Representante legal' },
+  { valor: 'REPRESENTADA', rotulo: 'Empresa representada' },
 ];
+
+/** Categoria da CNH: a sigla é o rótulo. */
+export const CNH_CATEGORIA_OPCOES: OpcaoCombo[] = CATEGORIAS_CNH.map((c) => ({ valor: c, rotulo: c }));
 
 const telefone = z.object({
   tipoId: z.string().min(1, 'Escolha o tipo.'),
@@ -91,9 +98,27 @@ const base = z.object({
     rg: z.string().max(20, 'No máximo 20 caracteres.'),
     dataNascimento: z.string(),
     sexo: z.enum(['', 'MASCULINO', 'FEMININO']),
+    // Só física: o resto do RG (órgão, UF e emissão só existem com o número do RG)
+    rgOrgaoEmissor: z.string().max(15, 'No máximo 15 caracteres.'),
+    rgEstadoId: z.string(),
+    rgDataEmissao: z.string(),
+    // Só física: a CNH (categoria e validade só existem com o número)
+    cnh: z.string(),
+    cnhCategoria: z.enum(['', ...CATEGORIAS_CNH]),
+    cnhValidade: z.string(),
+    // Só física: dados civis
+    estadoCivilId: z.string(),
+    profissaoId: z.string(),
+    nacionalidade: z.string().max(40, 'No máximo 40 caracteres.'),
+    naturalidadeId: z.string(),
+    /** só alimenta o `TDBCombo` (o nome da cidade já escolhida); não vai para a API */
+    naturalidadeRotulo: z.string(),
+    nomeMae: z.string().max(255, 'No máximo 255 caracteres.'),
+    nomePai: z.string().max(255, 'No máximo 255 caracteres.'),
     // Só jurídica
     nomeFantasia: z.string().max(255, 'No máximo 255 caracteres.'),
     cnpj: z.string(),
+    dataAbertura: z.string(),
     inscricaoEstadual: z.string().max(20, 'No máximo 20 caracteres.'),
     inscricaoMunicipal: z.string().max(20, 'No máximo 20 caracteres.'),
     // Classificação
@@ -114,6 +139,69 @@ export function conferirDocumento(d: { tipoPessoa: 'FISICA' | 'JURIDICA'; cpf: s
   }
   if (d.tipoPessoa === 'JURIDICA' && d.cnpj !== '' && documentoCru(d.cnpj).length !== 14) {
     ctx.addIssue({ code: 'custom', path: ['cnpj'], message: 'CNPJ incompleto.' });
+  }
+}
+
+/** `AAAA-MM-DD` daqui a `anos` anos (só troca o ano: a comparação é de texto). */
+const maisAnos = (iso: string, anos: number): string => `${Number(iso.slice(0, 4)) + anos}${iso.slice(4)}`;
+
+/** CNH vencida: a validade já passou (a CNH vencida é aceita; a tela só avisa). Sem validade, não está vencida. */
+export const cnhVencida = (validade: string, hoje: string = hojeIso()): boolean => validade !== '' && validade < hoje;
+
+type Complementos = Pick<
+  Dados,
+  | 'tipoPessoa'
+  | 'dataNascimento'
+  | 'rg'
+  | 'rgOrgaoEmissor'
+  | 'rgEstadoId'
+  | 'rgDataEmissao'
+  | 'cnh'
+  | 'cnhCategoria'
+  | 'cnhValidade'
+  | 'nacionalidade'
+  | 'dataAbertura'
+>;
+
+/**
+ * Os dados complementares (conforto; a API repete tudo e confere o dígito da CNH). Os erros caem nos mesmos campos da API:
+ *  - órgão, UF e emissão do RG só com o número do RG (erro em `rg`); a emissão não vem antes do nascimento;
+ *  - categoria e validade da CNH só com o número (erro em `cnh`); o número tem 11 dígitos; a CNH vencida passa;
+ *  - nenhuma data é futura (a validade da CNH vai até 15 anos adiante).
+ * Os campos do outro tipo de pessoa ficam vazios (a troca Física/Jurídica os limpa), então cada bloco confere só o seu tipo.
+ */
+export function conferirComplementos(d: Complementos, ctx: z.RefinementCtx, hoje: string = hojeIso()): void {
+  const erro = (campo: string, message: string) => ctx.addIssue({ code: 'custom', path: [campo], message });
+
+  if (d.tipoPessoa === 'FISICA') {
+    if (d.dataNascimento !== '' && d.dataNascimento > hoje) erro('dataNascimento', 'A data de nascimento não pode ser no futuro.');
+
+    // RG
+    const orgao = d.rgOrgaoEmissor.trim();
+    if (d.rg.trim() === '' && (orgao !== '' || d.rgEstadoId !== '' || d.rgDataEmissao !== '')) erro('rg', 'Informe o número do RG.');
+    if (orgao !== '' && !/^[A-Za-z][A-Za-z /-]{1,14}$/.test(orgao)) erro('rgOrgaoEmissor', 'Órgão emissor inválido.');
+    if (d.rgDataEmissao !== '') {
+      if (d.rgDataEmissao > hoje) erro('rgDataEmissao', 'A emissão não pode ser no futuro.');
+      else if (d.dataNascimento !== '' && d.rgDataEmissao < d.dataNascimento) {
+        erro('rgDataEmissao', 'A emissão não pode ser anterior ao nascimento.');
+      }
+    }
+
+    // CNH
+    const cnh = soDigitos(d.cnh);
+    if (cnh === '') {
+      if (d.cnhCategoria !== '' || d.cnhValidade !== '') erro('cnh', 'Informe o número da CNH.');
+    } else if (cnh.length !== 11) {
+      erro('cnh', 'CNH deve ter 11 dígitos.');
+    }
+    if (d.cnhValidade !== '' && d.cnhValidade > maisAnos(hoje, 15)) erro('cnhValidade', 'Validade da CNH inválida.');
+
+    if (d.nacionalidade.trim() !== '' && d.nacionalidade.trim().length < 2) {
+      erro('nacionalidade', 'Nacionalidade deve ter de 2 a 40 caracteres.');
+    }
+  } else if (d.dataAbertura !== '') {
+    if (d.dataAbertura > hoje) erro('dataAbertura', 'A data de abertura não pode ser no futuro.');
+    else if (d.dataAbertura < '1800-01-01') erro('dataAbertura', 'Data de abertura inválida.');
   }
 }
 
@@ -144,6 +232,7 @@ export function problemasDeVinculos(vinculos: readonly { pessoaId: string }[], i
 export function criarSchema(idAberta?: string) {
   return base.superRefine((d, ctx) => {
     conferirDocumento(d, ctx);
+    conferirComplementos(d, ctx);
     for (const p of problemasDeVinculos(d.vinculos, idAberta)) {
       ctx.addIssue({ code: 'custom', path: ['vinculos', p.indice, 'pessoaId'], message: p.mensagem });
     }
@@ -167,8 +256,22 @@ export const VAZIO: Dados = {
   rg: '',
   dataNascimento: '',
   sexo: '',
+  rgOrgaoEmissor: '',
+  rgEstadoId: '',
+  rgDataEmissao: '',
+  cnh: '',
+  cnhCategoria: '',
+  cnhValidade: '',
+  estadoCivilId: '',
+  profissaoId: '',
+  nacionalidade: '',
+  naturalidadeId: '',
+  naturalidadeRotulo: '',
+  nomeMae: '',
+  nomePai: '',
   nomeFantasia: '',
   cnpj: '',
+  dataAbertura: '',
   inscricaoEstadual: '',
   inscricaoMunicipal: '',
   tiposCadastroIds: [],
@@ -198,8 +301,26 @@ export const NOVO_ENDERECO: EnderecoForm = {
 export const NOVO_VINCULO: VinculoForm = { pessoaId: '', pessoaRotulo: '', pessoaAtiva: true, tipo: '', observacao: '' };
 
 /** Os campos do outro tipo de pessoa: quem troca Física ↔ Jurídica limpa os do bloco que saiu. */
-export const CAMPOS_DA_FISICA = ['cpf', 'rg', 'dataNascimento', 'sexo'] as const;
-export const CAMPOS_DA_JURIDICA = ['nomeFantasia', 'cnpj', 'inscricaoEstadual', 'inscricaoMunicipal'] as const;
+export const CAMPOS_DA_FISICA = [
+  'cpf',
+  'rg',
+  'rgOrgaoEmissor',
+  'rgEstadoId',
+  'rgDataEmissao',
+  'cnh',
+  'cnhCategoria',
+  'cnhValidade',
+  'dataNascimento',
+  'sexo',
+  'estadoCivilId',
+  'profissaoId',
+  'nacionalidade',
+  'naturalidadeId',
+  'naturalidadeRotulo',
+  'nomeMae',
+  'nomePai',
+] as const;
+export const CAMPOS_DA_JURIDICA = ['nomeFantasia', 'cnpj', 'dataAbertura', 'inscricaoEstadual', 'inscricaoMunicipal'] as const;
 
 /** Resposta da API → valores do formulário. */
 export function paraForm(p: PessoaResponse): Dados {
@@ -210,8 +331,22 @@ export function paraForm(p: PessoaResponse): Dados {
     rg: p.rg ?? '',
     dataNascimento: p.dataNascimento ?? '',
     sexo: p.sexo ?? '',
+    rgOrgaoEmissor: p.rgOrgaoEmissor ?? '',
+    rgEstadoId: p.rgUf?.id ?? '',
+    rgDataEmissao: p.rgDataEmissao ?? '',
+    cnh: soDigitos(p.cnh ?? ''),
+    cnhCategoria: p.cnhCategoria ?? '',
+    cnhValidade: p.cnhValidade ?? '',
+    estadoCivilId: p.estadoCivil?.id ?? '',
+    profissaoId: p.profissao?.id ?? '',
+    nacionalidade: p.nacionalidade ?? '',
+    naturalidadeId: p.naturalidade?.id ?? '',
+    naturalidadeRotulo: p.naturalidade ? rotuloDaCidade(p.naturalidade) : '',
+    nomeMae: p.nomeMae ?? '',
+    nomePai: p.nomePai ?? '',
     nomeFantasia: p.nomeFantasia ?? '',
     cnpj: p.cnpj ?? '',
+    dataAbertura: p.dataAbertura ?? '',
     inscricaoEstadual: p.inscricaoEstadual ?? '',
     inscricaoMunicipal: p.inscricaoMunicipal ?? '',
     tiposCadastroIds: p.tiposCadastro.map((t) => t.id),
@@ -243,6 +378,28 @@ export function paraForm(p: PessoaResponse): Dados {
 const texto = (v: string): string | null => v.trim() || null;
 
 /**
+ * Os dados complementares do corpo: `null` no que é do outro tipo de pessoa. O órgão vai em maiúsculas e a CNH só com
+ * dígitos. "Só com o RG" e "só com a CNH" são do schema (e da API): aqui nada é descartado em silêncio.
+ */
+function complementos(d: Dados, fisica: boolean): PessoaComplementos {
+  return {
+    rgOrgaoEmissor: fisica ? (texto(d.rgOrgaoEmissor)?.toUpperCase() ?? null) : null,
+    rgEstadoId: fisica ? d.rgEstadoId || null : null,
+    rgDataEmissao: fisica ? d.rgDataEmissao || null : null,
+    cnh: fisica ? soDigitos(d.cnh) || null : null,
+    cnhCategoria: fisica && d.cnhCategoria !== '' ? d.cnhCategoria : null,
+    cnhValidade: fisica ? d.cnhValidade || null : null,
+    estadoCivilId: fisica ? d.estadoCivilId || null : null,
+    profissaoId: fisica ? d.profissaoId || null : null,
+    nacionalidade: fisica ? texto(d.nacionalidade) : null,
+    naturalidadeId: fisica ? d.naturalidadeId || null : null,
+    nomeMae: fisica ? texto(d.nomeMae) : null,
+    nomePai: fisica ? texto(d.nomePai) : null,
+    dataAbertura: fisica ? null : d.dataAbertura || null,
+  };
+}
+
+/**
  * Formulário → corpo do POST e do PUT (sem a `version`, que vem do registro lido). Manda `null` nos campos do outro
  * tipo de pessoa; tira `cidadeRotulo` e `pessoaRotulo`; o documento, o CEP e o telefone vão sem pontuação.
  */
@@ -255,6 +412,7 @@ export function paraCorpo(d: Dados): PessoaCreate {
     rg: fisica ? texto(d.rg) : null,
     dataNascimento: fisica ? d.dataNascimento || null : null,
     sexo: fisica ? d.sexo || null : null,
+    ...complementos(d, fisica),
     cnpj: fisica ? null : documentoCru(d.cnpj) || null,
     nomeFantasia: fisica ? null : texto(d.nomeFantasia),
     inscricaoEstadual: fisica ? null : texto(d.inscricaoEstadual),

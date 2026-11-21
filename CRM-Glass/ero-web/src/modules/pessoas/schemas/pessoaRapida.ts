@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { tipoPorChave, type TipoSelect } from '../../../shared/api/auxiliares';
 import { documentoCru, soDigitos } from '../../../shared/util/format';
-import type { PessoaCreate } from '../api/pessoas';
+import { SEM_COMPLEMENTOS, type PessoaCreate } from '../api/pessoas';
 import { conferirDocumento } from './pessoa';
 
 /*
@@ -73,5 +73,6 @@ export function paraCorpoRapido(d: DadosRapidos, tipoCelularId: string | undefin
     redesSociais: [],
     enderecos: [],
     vinculos: [],
+    ...SEM_COMPLEMENTOS,
   };
 }

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { rotuloDaPessoa, type PessoaResponse } from '../api/pessoas';
+import { rotuloDaPessoa, SEM_COMPLEMENTOS, type PessoaResponse } from '../api/pessoas';
 import {
+  CAMPOS_DA_FISICA,
+  CAMPOS_DA_JURIDICA,
+  CNH_CATEGORIA_OPCOES,
+  cnhVencida,
   criarSchema,
   NOVO_VINCULO,
   opcoesDosTiposDeCadastro,
@@ -8,6 +12,7 @@ import {
   paraForm,
   problemasDeVinculos,
   schema,
+  TIPO_VINCULO_OPCOES,
   VAZIO,
   type Dados,
   type VinculoForm,
@@ -52,7 +57,110 @@ const ficha = (p: Partial<PessoaResponse> = {}): PessoaResponse => ({
   ...p,
 });
 
+const fichaCompleta = (): PessoaResponse =>
+  ficha({
+    rgOrgaoEmissor: 'SSP',
+    rgUf: { id: 'uf-rs', sigla: 'RS', nome: 'Rio Grande do Sul' },
+    rgDataEmissao: '2010-03-01',
+    cnh: '12345678900',
+    cnhCategoria: 'AB',
+    cnhValidade: '2030-01-31',
+    estadoCivil: tipo('ec1', 'Casado'),
+    profissao: tipo('pr1', 'Engenheira'),
+    nacionalidade: 'Brasileira',
+    naturalidade: { id: 'c9', nome: 'Pelotas', uf: 'RS' },
+    nomeMae: 'Ana Souza',
+    nomePai: 'José Souza',
+  });
+
 const valido = (d: Partial<Dados> = {}): Dados => ({ ...VAZIO, nome: 'Marina', tiposCadastroIds: ['tc1'], ...d });
+
+/** Os campos que o schema recusou. */
+const camposComErro = (d: Partial<Dados>): string[] => {
+  const r = schema.safeParse(valido(d));
+  return r.success ? [] : r.error.issues.map((i) => i.path.join('.'));
+};
+const mensagem = (d: Partial<Dados>, campo: string): string | undefined =>
+  schema.safeParse(valido(d)).error?.issues.find((i) => i.path.join('.') === campo)?.message;
+
+describe('regras dos dados complementares (conforto; a API repete)', () => {
+  it('CNH: o número vai sozinho, sem categoria nem validade', () => {
+    expect(camposComErro({ cnh: '12345678900' })).toEqual([]);
+  });
+
+  it('CNH: o número tem 11 dígitos (a pontuação não conta)', () => {
+    expect(mensagem({ cnh: '1234567' }, 'cnh')).toBe('CNH deve ter 11 dígitos.');
+    expect(camposComErro({ cnh: '123.456.789-00' })).toEqual([]);
+  });
+
+  it('CNH: categoria ou validade sem o número são recusadas, no campo da CNH', () => {
+    expect(mensagem({ cnhCategoria: 'B' }, 'cnh')).toBe('Informe o número da CNH.');
+    expect(mensagem({ cnhValidade: '2030-01-31' }, 'cnh')).toBe('Informe o número da CNH.');
+    expect(camposComErro({ cnh: '12345678900', cnhCategoria: 'B', cnhValidade: '2030-01-31' })).toEqual([]);
+  });
+
+  it('CNH vencida é aceita e a tela mostra "Vencida"', () => {
+    expect(camposComErro({ cnh: '12345678900', cnhValidade: '2020-01-01' })).toEqual([]);
+    expect(cnhVencida('2020-01-01', '2026-11-21')).toBe(true);
+    expect(cnhVencida('2026-11-21', '2026-11-21')).toBe(false);
+    expect(cnhVencida('2030-01-01', '2026-11-21')).toBe(false);
+    expect(cnhVencida('')).toBe(false);
+  });
+
+  it('validade da CNH: não passa de 15 anos adiante', () => {
+    expect(mensagem({ cnh: '12345678900', cnhValidade: '2999-01-01' }, 'cnhValidade')).toBe('Validade da CNH inválida.');
+  });
+
+  it('RG: órgão, UF e emissão só com o número do RG (o erro cai no RG)', () => {
+    expect(mensagem({ rgOrgaoEmissor: 'SSP' }, 'rg')).toBe('Informe o número do RG.');
+    expect(mensagem({ rgEstadoId: 'uf-rs' }, 'rg')).toBe('Informe o número do RG.');
+    expect(mensagem({ rgDataEmissao: '2010-03-01' }, 'rg')).toBe('Informe o número do RG.');
+    expect(camposComErro({ rg: '123', rgOrgaoEmissor: 'SSP', rgEstadoId: 'uf-rs', rgDataEmissao: '2010-03-01' })).toEqual([]);
+    expect(camposComErro({ rg: '123' })).toEqual([]);
+  });
+
+  it('RG: órgão emissor só com letras', () => {
+    expect(mensagem({ rg: '1', rgOrgaoEmissor: '123' }, 'rgOrgaoEmissor')).toBe('Órgão emissor inválido.');
+    expect(camposComErro({ rg: '1', rgOrgaoEmissor: 'SJS/RS' })).toEqual([]);
+  });
+
+  it('datas não podem ser futuras', () => {
+    expect(mensagem({ rg: '1', rgDataEmissao: '2999-01-01' }, 'rgDataEmissao')).toBe('A emissão não pode ser no futuro.');
+    expect(mensagem({ dataNascimento: '2999-01-01' }, 'dataNascimento')).toBe('A data de nascimento não pode ser no futuro.');
+    expect(mensagem({ tipoPessoa: 'JURIDICA', dataAbertura: '2999-01-01' }, 'dataAbertura')).toBe('A data de abertura não pode ser no futuro.');
+    expect(camposComErro({ tipoPessoa: 'JURIDICA', dataAbertura: '2015-06-10' })).toEqual([]);
+  });
+
+  it('a emissão do RG não vem antes do nascimento', () => {
+    const d = { rg: '1', dataNascimento: '1990-05-17' };
+    expect(mensagem({ ...d, rgDataEmissao: '1990-05-16' }, 'rgDataEmissao')).toBe('A emissão não pode ser anterior ao nascimento.');
+    expect(camposComErro({ ...d, rgDataEmissao: '1990-05-17' })).toEqual([]);
+    expect(camposComErro({ rg: '1', rgDataEmissao: '1980-01-01' })).toEqual([]); // sem nascimento, não há o que comparar
+  });
+
+  it('nacionalidade e filiação têm o limite da API', () => {
+    expect(mensagem({ nacionalidade: 'B' }, 'nacionalidade')).toBe('Nacionalidade deve ter de 2 a 40 caracteres.');
+    expect(camposComErro({ nacionalidade: 'x'.repeat(41) })).toContain('nacionalidade');
+    expect(camposComErro({ nomeMae: 'x'.repeat(256) })).toContain('nomeMae');
+    expect(camposComErro({ nacionalidade: 'Brasileira', nomeMae: 'Ana', nomePai: 'José' })).toEqual([]);
+  });
+
+  it('na pessoa jurídica só a data de abertura é conferida (os campos de PF ficam vazios)', () => {
+    expect(camposComErro({ tipoPessoa: 'JURIDICA', cnhCategoria: 'B' })).toEqual([]);
+  });
+
+  it('as opções do formulário: 9 categorias e os dois tipos de vínculo novos', () => {
+    expect(CNH_CATEGORIA_OPCOES.map((o) => o.valor)).toEqual(['A', 'B', 'AB', 'C', 'D', 'E', 'AC', 'AD', 'AE']);
+    expect(TIPO_VINCULO_OPCOES).toContainEqual({ valor: 'REPRESENTANTE_LEGAL', rotulo: 'Representante legal' });
+    expect(TIPO_VINCULO_OPCOES).toContainEqual({ valor: 'REPRESENTADA', rotulo: 'Empresa representada' });
+  });
+
+  it('o vínculo de representante legal passa pelo schema e vai ao corpo', () => {
+    const v: VinculoForm = { pessoaId: 'a', pessoaRotulo: 'a', pessoaAtiva: true, tipo: 'REPRESENTANTE_LEGAL', observacao: '' };
+    expect(schema.safeParse(valido({ tipoPessoa: 'JURIDICA', vinculos: [v] })).success).toBe(true);
+    expect(paraCorpo(valido({ vinculos: [v] })).vinculos).toEqual([{ pessoaId: 'a', tipo: 'REPRESENTANTE_LEGAL', observacao: null }]);
+  });
+});
 
 describe('schema da pessoa (conforto; a regra é da API)', () => {
   it('aceita uma pessoa física mínima', () => {
@@ -127,7 +235,70 @@ describe('paraForm e paraCorpo', () => {
         },
       ],
       vinculos: [{ pessoaId: 'p2', tipo: 'CONTATO', observacao: null }],
+      ...SEM_COMPLEMENTOS,
     });
+  });
+
+  it('ida e volta dos dados complementares da pessoa física', () => {
+    const f = paraForm(fichaCompleta());
+    expect(f).toMatchObject({
+      rgOrgaoEmissor: 'SSP',
+      rgEstadoId: 'uf-rs',
+      rgDataEmissao: '2010-03-01',
+      cnh: '12345678900',
+      cnhCategoria: 'AB',
+      cnhValidade: '2030-01-31',
+      estadoCivilId: 'ec1',
+      profissaoId: 'pr1',
+      nacionalidade: 'Brasileira',
+      naturalidadeId: 'c9',
+      naturalidadeRotulo: 'Pelotas - RS',
+      nomeMae: 'Ana Souza',
+      nomePai: 'José Souza',
+    });
+    expect(paraCorpo(f)).toMatchObject({
+      rgOrgaoEmissor: 'SSP',
+      rgEstadoId: 'uf-rs',
+      rgDataEmissao: '2010-03-01',
+      cnh: '12345678900',
+      cnhCategoria: 'AB',
+      cnhValidade: '2030-01-31',
+      estadoCivilId: 'ec1',
+      profissaoId: 'pr1',
+      nacionalidade: 'Brasileira',
+      naturalidadeId: 'c9',
+      nomeMae: 'Ana Souza',
+      nomePai: 'José Souza',
+      dataAbertura: null,
+    });
+    expect(paraCorpo(f)).not.toHaveProperty('naturalidadeRotulo');
+  });
+
+  it('a ficha sem os complementos volta tudo vazio no formulário e null no corpo', () => {
+    const f = paraForm(ficha());
+    expect(f).toMatchObject({ rgOrgaoEmissor: '', rgEstadoId: '', cnh: '', cnhCategoria: '', estadoCivilId: '', naturalidadeId: '', naturalidadeRotulo: '', dataAbertura: '' });
+    expect(paraCorpo(f)).toMatchObject(SEM_COMPLEMENTOS);
+  });
+
+  it('pessoa jurídica: leva a data de abertura e manda null em todo campo de pessoa física', () => {
+    const f = paraForm(fichaCompleta());
+    const pj = paraCorpo({ ...f, tipoPessoa: 'JURIDICA', dataAbertura: '2015-06-10' });
+    expect(pj).toMatchObject({ ...SEM_COMPLEMENTOS, dataAbertura: '2015-06-10' });
+    expect(paraCorpo({ ...f, dataAbertura: '2015-06-10' }).dataAbertura).toBeNull();
+  });
+
+  it('o órgão vai em maiúsculas e a CNH só com dígitos', () => {
+    const c = paraCorpo(valido({ rg: '123', rgOrgaoEmissor: ' ssp ', cnh: '123.456.789-00' }));
+    expect(c.rgOrgaoEmissor).toBe('SSP');
+    expect(c.cnh).toBe('12345678900');
+  });
+
+  it('a troca Física/Jurídica limpa os campos novos do bloco que saiu', () => {
+    for (const campo of ['rgOrgaoEmissor', 'rgEstadoId', 'rgDataEmissao', 'cnh', 'cnhCategoria', 'cnhValidade', 'estadoCivilId', 'profissaoId', 'nacionalidade', 'naturalidadeId', 'naturalidadeRotulo', 'nomeMae', 'nomePai'] as const) {
+      expect(CAMPOS_DA_FISICA).toContain(campo);
+    }
+    expect(CAMPOS_DA_JURIDICA).toContain('dataAbertura');
+    for (const campo of [...CAMPOS_DA_FISICA, ...CAMPOS_DA_JURIDICA]) expect(VAZIO).toHaveProperty(campo);
   });
 
   it('o formulário guarda o rótulo da cidade e da pessoa vinculada para os combos', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PessoaLista } from '../api/pessoas';
-import { consultaDePessoas } from '../api/pessoas';
+import { consultaDePessoas, pessoaListaSchema } from '../api/pessoas';
 import { cidadeUf, colunasExportadas, FILTROS_VAZIOS, nomeComFantasia, paraConsulta, tiposDe } from './pessoaFiltros';
 
 const pessoa: PessoaLista = {
@@ -88,5 +88,15 @@ describe('o que a lista mostra e a exportação escreve', () => {
       'Porto Alegre/RS',
       'Ativo',
     ]);
+  });
+
+  it('os dados complementares (LGPD) não vão para a lista nem para a exportação', () => {
+    const campos = ['rgOrgaoEmissor', 'rgUf', 'rgDataEmissao', 'cnh', 'cnhCategoria', 'cnhValidade', 'estadoCivil', 'profissao', 'nacionalidade', 'naturalidade', 'nomeMae', 'nomePai', 'dataAbertura'];
+    const lista = pessoaListaSchema.parse({ ...pessoa, cnh: '12345678900', nomeMae: 'Ana', dataAbertura: '2015-06-10' });
+    for (const c of campos) expect(lista).not.toHaveProperty(c);
+    const exportado = colunasExportadas.map((c) => c.titulo.toLowerCase()).join('|');
+    for (const t of ['cnh', 'mãe', 'pai', 'profissão', 'estado civil', 'naturalidade', 'nacionalidade', 'abertura', 'rg']) {
+      expect(exportado).not.toContain(t);
+    }
   });
 });
