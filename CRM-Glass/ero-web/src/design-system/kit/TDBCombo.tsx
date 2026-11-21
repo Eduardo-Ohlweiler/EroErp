@@ -28,6 +28,8 @@ export type TDBComboProps = PropsDeCampo & {
   onChange?: (id: string) => void;
   onBlur?: () => void;
   placeholder?: string;
+  /** foca o campo ao montar, sem abrir a lista: o primeiro campo do formulário (`autoFocus={!somenteLeitura}`) */
+  autoFocus?: boolean;
 };
 
 /** Espera entre a última tecla e a busca no servidor (ms). Não é animação: é o ritmo da consulta. */
@@ -89,6 +91,7 @@ function TDBComboBase({
   disabled,
   id,
   placeholder,
+  autoFocus,
 }: TDBComboProps) {
   const somenteLeitura = useSomenteLeituraDoForm();
   const [lista, setLista] = useState<OpcaoDoBanco[]>([]);
@@ -171,6 +174,7 @@ function TDBComboBase({
       invalido={!!error}
       desabilitado={!!disabled}
       somenteLeitura={somenteLeitura}
+      autoFocus={autoFocus}
     />
   );
 

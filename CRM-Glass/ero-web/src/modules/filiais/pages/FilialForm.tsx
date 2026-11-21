@@ -161,7 +161,8 @@ export function FilialForm() {
             name="pessoaId"
             label="Pessoa"
             required
-            buscar={buscarPessoas} // falta: `autoFocus={!somenteLeitura}` (o TDBCombo ainda não tem a prop)
+            autoFocus={!somenteLeitura}
+            buscar={buscarPessoas}
             rotuloInicial={rotuloDaPessoaEscolhida}
             disabled={!lePessoas}
             ajuda={

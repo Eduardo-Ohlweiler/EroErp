@@ -627,6 +627,16 @@ describe('fatia 3: TRadio, TCheckBox, TDate, TDBCombo', () => {
     expect(h).toContain('>novo</button>');
   });
 
+  it('TDBCombo e TCombo com autoFocus: o input do combo leva o autofocus e a lista nasce fechada', () => {
+    const buscar = async () => [];
+    const db = html(<TDBCombo label="Pessoa" buscar={buscar} value="" onChange={() => {}} autoFocus />);
+    expect(db).toMatch(/<input[^>]*role="combobox"[^>]*aria-expanded="false"[^>]*autofocus=""/);
+    expect(html(<TDBCombo label="Pessoa" buscar={buscar} value="" onChange={() => {}} />)).not.toContain('autofocus');
+    const fixo = html(<TCombo label="Situação" opcoes={SITUACAO_OPCOES} value="true" onChange={() => {}} autoFocus />);
+    expect(fixo).toMatch(/<input[^>]*role="combobox"[^>]*aria-expanded="false"[^>]*autofocus=""/);
+    expect(html(<TCombo label="Situação" opcoes={SITUACAO_OPCOES} value="true" onChange={() => {}} />)).not.toContain('autofocus');
+  });
+
   it('TDBCombo: opções do combo com o vazio e o valor conhecido que não veio na lista', () => {
     const lista = [{ id: 'u1', nome: 'Ana' }];
     expect(opcoesDoCombo(lista, '', null, 'Todos')).toEqual([
